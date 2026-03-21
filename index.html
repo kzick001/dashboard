@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kozicki Dashboard</title>
     
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%233b82f6'/><text x='50' y='55' dominant-baseline='middle' text-anchor='middle' font-family='system-ui, sans-serif' font-size='65' font-weight='800' fill='white'>K</text></svg>">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = { 
@@ -91,15 +93,16 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover-scale">
                     <div class="flex items-center mb-4">
-                        <div class="bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mr-4">
+                        <div class="bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mr-4 flex-shrink-0">
                             <svg class="w-6 h-6 text-red-500 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                             </svg>
                         </div>
-                        <h2 class="text-xl font-bold">Recent Emails</h2>
+                        <h2 class="text-xl font-bold truncate">Recent Emails</h2>
                     </div>
                     <div id="emailList" class="space-y-3 mt-4 flex flex-col">
                         <span class="text-gray-400 text-sm italic animate-pulse">Syncing pipeline...</span>
@@ -108,25 +111,39 @@
 
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover-scale">
                     <div class="flex items-center mb-4">
-                        <div class="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg mr-4">
+                        <div class="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg mr-4 flex-shrink-0">
                             <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
                         </div>
-                        <h2 class="text-xl font-bold">Upcoming Events</h2>
+                        <h2 class="text-xl font-bold truncate">Upcoming Events</h2>
                     </div>
                     <div id="calendarList" class="space-y-3 mt-4 flex flex-col">
                         <span class="text-gray-400 text-sm italic animate-pulse">Syncing pipeline...</span>
                     </div>
                 </div>
+
+                <a href="live-forge/index.html" class="block bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover-scale">
+                    <div class="flex items-center mb-4">
+                        <div class="bg-emerald-100 dark:bg-emerald-900/30 p-3 rounded-lg mr-4 flex-shrink-0">
+                            <svg class="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-xl font-bold truncate">LiveForge</h2>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">HTML Rendering Sandbox</p>
+                    <div class="mt-4 flex justify-end">
+                        <span class="text-xs font-bold text-emerald-500 uppercase tracking-widest">Launch &rarr;</span>
+                    </div>
+                </a>
+
             </div>
 
-            <!-- Sports Section -->
             <div class="w-full flex flex-col gap-4 mb-8">
                 <h2 class="text-2xl font-bold mt-4">Sports Feed</h2>
 
-                <!-- Pro Sports -->
-                <details class="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                <details class="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover-scale">
                     <summary class="flex justify-between items-center font-bold cursor-pointer p-6">
                         <div class="flex items-center">
                             <div class="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-lg mr-4">
@@ -143,8 +160,7 @@
                     </div>
                 </details>
 
-                <!-- College Sports -->
-                <details class="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                <details class="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover-scale">
                     <summary class="flex justify-between items-center font-bold cursor-pointer p-6">
                         <div class="flex items-center">
                             <div class="bg-orange-100 dark:bg-orange-900/30 p-2 rounded-lg mr-4">
@@ -161,9 +177,8 @@
                     </div>
                 </details>
 
-                <!-- NCAA Tournament -->
                 <div id="ncaa-container" class="transition-all duration-300">
-                    <details id="ncaa-details" class="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                    <details id="ncaa-details" class="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover-scale">
                         <summary id="ncaa-summary" class="flex justify-between items-center font-bold cursor-pointer p-6">
                             <div class="flex items-center">
                                 <div class="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg mr-4">
@@ -288,7 +303,7 @@
         }
 
         async function fetchGoogleData() {
-            const url = 'https://script.google.com/macros/s/AKfycbxQbf7ex5rJcVgavVsaFs7BfhOWi6ioy3HD7TA1Oo9lAaUFitR6seFZrvMiU8_J8uLRPw/exec'; 
+            const url = 'https://script.google.com/macros/s/AKfycbQbf7ex5rJcVgavVsaFs7BfhOWi6ioy3HD7TA1Oo9lAaUFitR6seFZrvMiU8_J8uLRPw/exec'; 
             try {
                 const res = await fetch(url, { method: 'GET', redirect: 'follow' });
                 const data = await res.json();
@@ -507,7 +522,7 @@
                 const data = await resp.json();
                 
                 if (!data?.events || data.events.length === 0) {
-                    container.innerHTML = '<div class="p-6 text-center text-sm text-gray-500 italic">No tournament games today.</div>';
+                    container.innerHTML = '<div class="p-6 text-center text-sm text-gray-500 italic">No games today.</div>';
                     return;
                 }
                 
@@ -543,7 +558,7 @@
                     return `
                         <div class="p-3 bg-white dark:bg-gray-800">
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-[10px] font-bold text-gray-400 tracking-wider truncate">${event.shortName}</span>
+                                <span class="text-[10px] font-bold text-gray-400 tracking-wider truncate max-w-[150px]">${event.shortName}</span>
                                 <span class="text-[10px] font-bold ${statusClass}">${isPre ? time : comp.status?.type?.shortDetail}</span>
                             </div>
                             <div class="flex flex-col gap-1 w-full">
@@ -578,7 +593,8 @@
             return true;
         }
 
-        document.addEventListener("DOMContentLoaded", async () => {
+        // --- Initialization ---
+        async function initializeDashboard() {
             fetchWeather();
             fetchGoogleData();
             
@@ -590,7 +606,16 @@
                 fetchNCAATournament('mens', 'ncaa-mens-feed');
                 fetchNCAATournament('womens', 'ncaa-womens-feed');
             }
-        });
+        }
+
+        document.addEventListener("DOMContentLoaded", initializeDashboard);
+        
+        setInterval(() => {
+            fetchFeedGroup(proConfig, 'pro-feed');
+            fetchFeedGroup(collegeConfig, 'college-feed');
+        }, 15000);
+        
+        setInterval(fetchAllStandings, 3600000);
     </script>
 </body>
 </html>
