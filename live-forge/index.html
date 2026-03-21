@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveForge HTML Preview</title>
+    
+    <!-- SVG Favicon: Dark square with green brackets -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111827'/><text x='50' y='65' font-family='monospace' font-size='50' fill='%2310b981' font-weight='bold' text-anchor='middle'>&lt;/&gt;</text></svg>">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <script>
+        const savedTheme = localStorage.getItem('liveforge-theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+
+    <style>
+        /* Custom scrollbars for editor */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        
+        textarea {
+            tab-size: 4;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 h-screen flex flex-col overflow-hidden font-sans transition-colors duration-300">
+
+    <!-- Dashboard Top Bar -->
+    <div class="w-full px-4 py-2 flex justify-between items-center bg-gray-100 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 flex-none z-20 transition-colors duration-300">
+        <a href="../index.html" class="flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors text-sm font-medium">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            Back to Dashboard
+        </a>
+        
+        <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="theme-toggle" class="sr-only peer">
+            <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+            <span class="ml-2 text-xs font-medium text-gray-500 dark:text-gray-400">Dark Mode</span>
+        </label>
+    </div>
+
+    <!-- Header -->
+    <header class="flex-none bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 flex justify-between items-center z-10 shadow-sm transition-colors duration-300">
+        <div class="flex items-center gap-3">
+            <div class="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg text-emerald-600 dark:text-emerald-500 font-mono font-bold border border-gray-200 dark:border-gray-700">
+                &lt;/&gt;
+            </div>
+            <h1 class="text-xl font-bold tracking-tight text-gray-800 dark:text-gray-100">LiveForge</h1>
+            <span class="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded uppercase tracking-wider ml-2 border border-emerald-200 dark:border-emerald-800/50">Active</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="clearBtn" class="text-sm px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded border border-gray-200 dark:border-gray-700 transition-colors font-medium">
+                Clear Editor
+            </button>
+            <button id="copyBtn" class="text-sm px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded shadow transition-colors">
+                Copy Code
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+        
+        <!-- Editor Pane -->
+        <div class="w-full md:w-1/2 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1e1e1e] relative transition-colors duration-300">
+            <div class="flex-none bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2 flex items-center justify-between transition-colors duration-300">
+                <span class="text-xs font-mono text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold">Editor.html</span>
+                <span id="statusIndicator" class="text-xs text-gray-500 font-medium">Ready</span>
+            </div>
+            <textarea 
+                id="htmlEditor" 
+                class="flex-1 w-full bg-gray-50 dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-300 font-mono text-sm p-4 focus:outline-none resize-none transition-colors duration-300"
+                spellcheck="false"
+                placeholder="Paste your HTML, CSS, and JS here..."
+            ></textarea>
+        </div>
+
+        <!-- Preview Pane -->
+        <div class="w-full md:w-1/2 flex flex-col bg-white relative">
+            <div class="flex-none bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2 flex items-center gap-2 transition-colors duration-300">
+                <span class="text-xs font-mono text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold">Live Render</span>
+            </div>
+            <!-- The sandbox attribute restricts popups and malicious scripts, but allows normal execution -->
+            <iframe 
+                id="previewFrame" 
+                class="flex-1 w-full h-full bg-white border-none"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            ></iframe>
+        </div>
+
+    </main>
+
+    <script>
+        // --- Core UI Logic ---
+        const themeToggle = document.getElementById('theme-toggle');
+        const htmlClass = document.documentElement.classList;
+
+        if (htmlClass.contains('dark')) themeToggle.checked = true;
+
+        themeToggle.addEventListener('change', () => {
+            if (themeToggle.checked) {
+                htmlClass.add('dark');
+                localStorage.setItem('liveforge-theme', 'dark');
+            } else {
+                htmlClass.remove('dark');
+                localStorage.setItem('liveforge-theme', 'light');
+            }
+        });
+
+        // --- Editor Logic ---
+        const editor = document.getElementById('htmlEditor');
+        const preview = document.getElementById('previewFrame');
+        const clearBtn = document.getElementById('clearBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const statusIndicator = document.getElementById('statusIndicator');
+
+        // Boilerplate starter code
+        const defaultCode = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen">
+    <div class="text-center p-8 bg-white rounded-2xl shadow-xl border border-gray-100 max-w-md w-full">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">Transmission Received</h1>
+        <p class="text-gray-500 mb-6">Drop your code in the left pane to forge it live.</p>
+        <button class="bg-emerald-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-emerald-600 transition-colors shadow-md shadow-emerald-500/20">
+            Initialize
+        </button>
+    </div>
+</body>
+</html>`;
+
+        // Load saved code from local storage or use default
+        const savedCode = localStorage.getItem('liveForgeCode');
+        editor.value = savedCode !== null ? savedCode : defaultCode;
+
+        let debounceTimer;
+
+        // Core rendering logic
+        function updatePreview() {
+            const code = editor.value;
+            localStorage.setItem('liveForgeCode', code);
+            
+            const iframeDoc = preview.contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(code);
+            iframeDoc.close();
+            
+            statusIndicator.textContent = 'Saved';
+            statusIndicator.classList.remove('text-emerald-600', 'dark:text-emerald-500');
+            statusIndicator.classList.add('text-gray-500');
+        }
+
+        // Trigger initial render
+        updatePreview();
+
+        // Listen for input and debounce the render to prevent browser lockup
+        editor.addEventListener('input', () => {
+            statusIndicator.textContent = 'Typing...';
+            statusIndicator.classList.add('text-emerald-600', 'dark:text-emerald-500');
+            statusIndicator.classList.remove('text-gray-500');
+            
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(updatePreview, 300);
+        });
+
+        // Allow Tab key to indent rather than leaving the textarea
+        editor.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = editor.selectionStart;
+                const end = editor.selectionEnd;
+                editor.value = editor.value.substring(0, start) + '\t' + editor.value.substring(end);
+                editor.selectionStart = editor.selectionEnd = start + 1;
+                updatePreview();
+            }
+        });
+
+        // Controls
+        clearBtn.addEventListener('click', () => {
+            editor.value = '';
+            editor.focus();
+            updatePreview();
+        });
+
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(editor.value).then(() => {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                copyBtn.classList.replace('bg-emerald-600', 'bg-emerald-800');
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                    copyBtn.classList.replace('bg-emerald-800', 'bg-emerald-600');
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>
