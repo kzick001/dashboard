@@ -1,30 +1,259 @@
-async function fetchGoogleData() {
-    const url = 'https://script.google.com/macros/s/AKfycbxKIcuEZgMfopDpAhczuHvyTAh4qJhqZw7OeWMfxqhY9BmPyIYu4o1K9lchTODYeVGSrg/exec'; 
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kozicki Dashboard</title>
     
-    try {
-        // 'redirect: follow' is the key for GitHub/production environments
-        const res = await fetch(url, { 
-            method: 'GET',
-            redirect: 'follow' 
-        });
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { 
+            darkMode: 'class' 
+        }
+    </script>
+    <script>
+        if (localStorage.getItem('theme') === 'dark') { 
+            document.documentElement.classList.add('dark'); 
+        }
+    </script>
+    
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .accent-color { color: #3b82f6; }
+        .bg-accent-color { background-color: #3b82f6; }
         
-        if (!res.ok) throw new Error('Network response was not ok');
-        const data = await res.json();
+        .hover-scale { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+        .hover-scale:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         
-        // Render Emails
-        const emailList = document.getElementById('emailList');
-        emailList.innerHTML = data.emails.length > 0 
-            ? data.emails.map(subject => `<li class="text-sm border-b border-gray-100 dark:border-gray-700 pb-2">${subject}</li>`).join('')
-            : '<li class="text-sm text-gray-500">No starred emails.</li>';
+        .toggle-checkbox:checked { right: 0; border-color: #3b82f6; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #3b82f6; }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col font-sans text-gray-800 dark:text-gray-100 transition-colors duration-300">
 
-        // Render Calendar
-        const calList = document.getElementById('calendarList');
-        calList.innerHTML = data.calendar.length > 0
-            ? data.calendar.map(item => `<li class="text-sm border-b border-gray-100 dark:border-gray-700 pb-2"><strong>${item.date}</strong><br/>${item.title}</li>`).join('')
-            : '<li class="text-sm text-gray-500">No upcoming events.</li>';
+    <div class="w-full p-4 flex justify-between items-center">
+        <div></div>
+        
+        <div class="flex items-center gap-6">
+            <div id="miniWeather" class="hidden flex items-center text-gray-700 dark:text-gray-300 font-medium bg-white dark:bg-gray-800 px-3 py-1 rounded-full shadow-sm border border-gray-200 dark:border-gray-700">
+                <span id="miniWeatherIcon" class="text-lg mr-1.5"></span>
+                <span id="miniWeatherTemp" class="text-sm"></span>
+            </div>
+
+            <div class="flex items-center">
+                <span class="mr-2 text-sm text-gray-500 dark:text-gray-400">Dark Mode</span>
+                <div class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in">
+                    <input type="checkbox" name="toggle" id="darkModeToggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-gray-300 appearance-none cursor-pointer transition-transform duration-300 z-10 top-0 bottom-0 m-auto right-4"/>
+                    <label for="darkModeToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer transition-colors duration-300"></label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col items-center px-4 w-full">
+        
+        <header class="mb-12 text-center w-full max-w-6xl">
+            <h1 class="text-4xl font-bold tracking-tight mb-2">Kozicki Dashboard</h1>
+            <p class="text-gray-500 dark:text-gray-400 font-medium">Personal Launchpad</p>
+        </header>
+
+        <main class="w-full max-w-6xl flex flex-col gap-8">
             
-    } catch (error) {
-        console.error('Google Data Error:', error);
-        document.getElementById('emailList').innerHTML = '<li class="text-sm text-red-500">Connection failed.</li>';
-    }
-}
+            <div class="w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover-scale">
+                <div class="flex items-center mb-4">
+                    <div class="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg mr-4">
+                        <svg class="w-6 h-6 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold">55426 Forecast</h2>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">5-Day Outlook</p>
+                    </div>
+                </div>
+                
+                <div id="weatherContainer" class="w-full min-h-[100px] flex items-center justify-center">
+                    <div class="animate-pulse flex space-x-4 w-full">
+                        <div class="flex-1 h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                        <div class="flex-1 h-20 bg-gray-200 dark:bg-gray-700 rounded hidden sm:block"></div>
+                        <div class="flex-1 h-20 bg-gray-200 dark:bg-gray-700 rounded hidden sm:block"></div>
+                        <div class="flex-1 h-20 bg-gray-200 dark:bg-gray-700 rounded hidden sm:block"></div>
+                        <div class="flex-1 h-20 bg-gray-200 dark:bg-gray-700 rounded hidden sm:block"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover-scale">
+                    <div class="flex items-center mb-4">
+                        <div class="bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mr-4">
+                            <svg class="w-6 h-6 text-red-500 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-xl font-bold">Starred Emails</h2>
+                    </div>
+                    <ul id="emailList" class="space-y-3 mt-4">
+                        <li class="text-gray-400 text-sm italic animate-pulse">Syncing pipeline...</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover-scale">
+                    <div class="flex items-center mb-4">
+                        <div class="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg mr-4">
+                            <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-xl font-bold">Upcoming Events</h2>
+                    </div>
+                    <ul id="calendarList" class="space-y-3 mt-4">
+                        <li class="text-gray-400 text-sm italic animate-pulse">Syncing pipeline...</li>
+                    </ul>
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+    <footer class="mt-12 text-gray-400 text-xs text-center pb-6 w-full">
+        <p>&copy; <span id="currentYear"></span> Kozicki Dashboard.</p>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const htmlElement = document.documentElement;
+        const darkModeToggle = document.getElementById('darkModeToggle');
+
+        const isDarkMode = localStorage.getItem('theme') === 'dark' || 
+                           (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+        if (isDarkMode) {
+            htmlElement.classList.add('dark');
+            darkModeToggle.checked = true;
+        }
+
+        darkModeToggle.addEventListener('change', () => {
+            if (darkModeToggle.checked) {
+                htmlElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                htmlElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+
+        async function fetchWeather() {
+            const weatherContainer = document.getElementById('weatherContainer');
+            try {
+                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=44.95&longitude=-93.38&current=temperature_2m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=America%2FChicago&temperature_unit=fahrenheit');
+                
+                if (!res.ok) throw new Error('Network response was not ok');
+                const data = await res.json();
+                
+                const currentTemp = Math.round(data.current.temperature_2m);
+                const currentCode = data.current.weathercode;
+                
+                let currentIcon = '☀️';
+                if (currentCode >= 1 && currentCode <= 3) currentIcon = '⛅';
+                if (currentCode >= 45 && currentCode <= 48) currentIcon = '🌫️';
+                if (currentCode >= 51 && currentCode <= 67) currentIcon = '🌧️';
+                if (currentCode >= 71 && currentCode <= 77) currentIcon = '❄️';
+                if (currentCode >= 80 && currentCode <= 82) currentIcon = '🌦️';
+                if (currentCode >= 95 && currentCode <= 99) currentIcon = '⛈️';
+
+                document.getElementById('miniWeatherIcon').textContent = currentIcon;
+                document.getElementById('miniWeatherTemp').textContent = currentTemp + '°F';
+                document.getElementById('miniWeather').classList.remove('hidden');
+
+                let weatherHTML = '<div class="flex flex-col sm:flex-row justify-between gap-4 w-full">';
+                
+                for (let i = 0; i < 5; i++) {
+                    const dateStr = data.daily.time[i] + 'T00:00:00';
+                    const date = new Date(dateStr);
+                    const dayName = new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(date);
+                    
+                    const maxTemp = Math.round(data.daily.temperature_2m_max[i]);
+                    const minTemp = Math.round(data.daily.temperature_2m_min[i]);
+                    const code = data.daily.weathercode[i];
+                    const precipProb = data.daily.precipitation_probability_max[i];
+                    
+                    let icon = '☀️';
+                    if (code >= 1 && code <= 3) icon = '⛅';
+                    if (code >= 45 && code <= 48) icon = '🌫️';
+                    if (code >= 51 && code <= 67) icon = '🌧️';
+                    if (code >= 71 && code <= 77) icon = '❄️';
+                    if (code >= 80 && code <= 82) icon = '🌦️';
+                    if (code >= 95 && code <= 99) icon = '⛈️';
+
+                    const precipDisplay = precipProb > 20 
+                        ? `<div class="text-xs text-blue-500 dark:text-blue-400 font-bold flex items-center mt-1" title="Precipitation Probability"><svg class="w-3 h-3 mr-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.5c-3.033 0-5.5-2.467-5.5-5.5 0-2.333 1.583-4.833 5.5-9.833 3.917 5 5.5 7.5 5.5 9.833 0 3.033-2.467 5.5-5.5 5.5z"/></svg>${precipProb}%</div>`
+                        : `<div class="text-xs opacity-0 mt-1">0%</div>`;
+
+                    weatherHTML += `
+                        <div class="flex flex-col items-center justify-center p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 flex-1 border border-gray-100 dark:border-gray-600">
+                            <span class="font-bold text-sm text-gray-700 dark:text-gray-300 uppercase tracking-wide">${dayName}</span>
+                            <span class="text-3xl my-1">${icon}</span>
+                            <div class="text-sm font-semibold">
+                                <span class="text-gray-900 dark:text-white">${maxTemp}°</span>
+                                <span class="text-gray-300 dark:text-gray-500 mx-1">|</span>
+                                <span class="text-gray-500 dark:text-gray-400">${minTemp}°</span>
+                            </div>
+                            ${precipDisplay}
+                        </div>
+                    `;
+                }
+                
+                weatherHTML += '</div>';
+                weatherContainer.innerHTML = weatherHTML;
+
+            } catch (error) {
+                console.error("Weather fetch failed:", error);
+                weatherContainer.innerHTML = `
+                    <div class="text-center text-red-500 bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800 w-full">
+                        Unable to connect to weather service.
+                    </div>
+                `;
+            }
+        }
+
+        async function fetchGoogleData() {
+            const url = 'https://script.google.com/macros/s/AKfycbxKIcuEZgMfopDpAhczuHvyTAh4qJhqZw7OeWMfxqhY9BmPyIYu4o1K9lchTODYeVGSrg/exec'; 
+            
+            try {
+                const res = await fetch(url, { 
+                    method: 'GET',
+                    redirect: 'follow' 
+                });
+                
+                if (!res.ok) throw new Error('Network response was not ok');
+                const data = await res.json();
+                
+                const emailList = document.getElementById('emailList');
+                emailList.innerHTML = data.emails && data.emails.length > 0 
+                    ? data.emails.map(subject => `<li class="text-sm border-b border-gray-100 dark:border-gray-700 pb-2">${subject}</li>`).join('')
+                    : '<li class="text-sm text-gray-500">Inbox clear. No starred emails.</li>';
+
+                const calList = document.getElementById('calendarList');
+                calList.innerHTML = data.calendar && data.calendar.length > 0
+                    ? data.calendar.map(item => `<li class="text-sm border-b border-gray-100 dark:border-gray-700 pb-2"><strong class="text-gray-900 dark:text-gray-200">${item.date}</strong><br/>${item.title}</li>`).join('')
+                    : '<li class="text-sm text-gray-500">Schedule clear for the next 3 days.</li>';
+                    
+            } catch (error) {
+                console.error('Google Data Error:', error);
+                document.getElementById('emailList').innerHTML = '<li class="text-sm text-red-500">Pipeline error. Check console.</li>';
+                document.getElementById('calendarList').innerHTML = '<li class="text-sm text-red-500">Pipeline error. Check console.</li>';
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchWeather();
+            fetchGoogleData();
+        });
+    </script>
+</body>
+</html>
