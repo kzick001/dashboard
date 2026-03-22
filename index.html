@@ -118,8 +118,8 @@
                 </div>
             </div>
 
-            <!-- 3-COLUMN GRID -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- GRID -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 
                 <!-- EMAILS MODULE -->
                 <div class="relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-fuchsia-500/20 p-6 hover-scale overflow-hidden group">
@@ -170,95 +170,20 @@
                     <p class="text-orange-600/70 font-mono text-xs uppercase relative z-10 mb-2">HTML Rendering Sandbox</p>
                 </a>
 
-            </div>
-
-            <!-- SPORTS DATA TERMINAL -->
-            <div class="w-full flex flex-col gap-4 mb-8">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_#3b82f6]"></span>
-                    <h2 class="text-2xl font-black tracking-tight text-slate-100 uppercase">Sports</h2>
-                </div>
-
-                <!-- PRO SPORTS -->
-                <details class="group relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-blue-500/20 hover-scale overflow-hidden">
-                    <summary class="flex justify-between items-center font-bold cursor-pointer p-6 relative z-10">
-                        <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-blue-500/5 to-transparent h-20 w-full animate-scanline opacity-20 hidden group-open:block"></div>
-                        <div class="flex items-center">
-                            <div class="bg-blue-950/60 p-2.5 rounded-lg mr-4 border border-blue-500/30 group-hover:animate-electric-pulse">
-                                <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M19 3v4M5 8.24A10.05 10.05 0 0012 19c3.86 0 7.2-2.18 8.76-5.44M12 19v3m-3 0h6m-9-6a5 5 0 01-5-5V5h18v2.24a5 5 0 01-5 5"></path>
-                                </svg>
-                            </div>
-                            <span class="text-slate-100 tracking-wide text-lg">Professional Leagues</span>
+                <!-- SPORTS MODULE LINK -->
+                <a href="sports.html" class="block relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-blue-500/20 p-6 hover-scale overflow-hidden group cursor-pointer">
+                    <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-blue-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
+                    
+                    <div class="flex items-center mb-4 mt-4 relative z-10">
+                        <div class="bg-blue-950/60 p-3 rounded-lg mr-4 border border-blue-500/30 animate-electric-pulse flex-shrink-0">
+                            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M19 3v4M5 8.24A10.05 10.05 0 0012 19c3.86 0 7.2-2.18 8.76-5.44M12 19v3m-3 0h6m-9-6a5 5 0 01-5-5V5h18v2.24a5 5 0 01-5 5"></path>
+                            </svg>
                         </div>
-                        <span class="transition-transform duration-300 group-open:rotate-180 text-blue-400">
-                            <svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24"><polyline points="6 9 12 15 18 9"/></svg>
-                        </span>
-                    </summary>
-                    <div id="pro-feed" class="max-h-[500px] overflow-y-auto divide-y divide-blue-900/30 border-t border-blue-500/20 bg-slate-950/50 relative z-10">
-                        <div class="p-8 text-center text-xs font-mono text-blue-500/70 animate-pulse">> Loading pro sports...</div>
+                        <h2 class="text-xl font-bold truncate text-slate-100">Sports</h2>
                     </div>
-                </details>
-
-                <!-- COLLEGIATE -->
-                <details class="group relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-yellow-500/20 hover-scale overflow-hidden">
-                    <summary class="flex justify-between items-center font-bold cursor-pointer p-6 relative z-10">
-                        <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-yellow-500/5 to-transparent h-20 w-full animate-scanline opacity-20 hidden group-open:block"></div>
-                        <div class="flex items-center">
-                            <div class="bg-yellow-950/60 p-2.5 rounded-lg mr-4 border border-yellow-500/30 group-hover:animate-electric-pulse">
-                                <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14v7" />
-                                </svg>
-                            </div>
-                            <span class="text-slate-100 tracking-wide text-lg">Collegiate Athletics</span>
-                        </div>
-                        <span class="transition-transform duration-300 group-open:rotate-180 text-yellow-400">
-                            <svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24"><polyline points="6 9 12 15 18 9"/></svg>
-                        </span>
-                    </summary>
-                    <div id="college-feed" class="max-h-[500px] overflow-y-auto divide-y divide-yellow-900/30 border-t border-yellow-500/20 bg-slate-950/50 relative z-10">
-                        <div class="p-8 text-center text-xs font-mono text-yellow-500/70 animate-pulse">> Loading college sports...</div>
-                    </div>
-                </details>
-
-                <!-- NCAA TOURNAMENT -->
-                <div id="ncaa-container" class="transition-all duration-300">
-                    <details id="ncaa-details" class="group relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-indigo-500/20 hover-scale overflow-hidden">
-                        <summary id="ncaa-summary" class="flex justify-between items-center font-bold cursor-pointer p-6 relative z-10">
-                            <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-indigo-500/5 to-transparent h-20 w-full animate-scanline opacity-20 hidden group-open:block"></div>
-                            <div class="flex items-center">
-                                <div class="bg-indigo-950/60 p-2.5 rounded-lg mr-4 border border-indigo-500/30 group-hover:animate-electric-pulse">
-                                    <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <circle cx="12" cy="12" r="10" stroke-width="2"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.6 5.6c2.5 3.5 6.4 5.4 10.4 5.4M18.4 18.4c-2.5-3.5-6.4-5.4-10.4-5.4M12 2v20M2 12h20"/>
-                                    </svg>
-                                </div>
-                                <span id="ncaa-title" class="text-slate-100 tracking-wide text-lg">NCAA Tournament</span>
-                            </div>
-                            <span class="transition-transform duration-300 group-open:rotate-180 text-indigo-400">
-                                <svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24"><polyline points="6 9 12 15 18 9"/></svg>
-                            </span>
-                        </summary>
-                        <div class="p-0 border-t border-indigo-500/20 relative z-10">
-                            <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-indigo-900/30">
-                                <div class="bg-slate-950/50">
-                                    <h3 class="font-bold p-3 bg-indigo-950/40 text-xs font-mono text-indigo-300 text-center uppercase tracking-widest border-b border-indigo-900/50">Men's Bracket</h3>
-                                    <div id="ncaa-mens-feed" class="max-h-[400px] overflow-y-auto divide-y divide-indigo-900/30">
-                                        <div class="p-4 text-center text-xs font-mono text-indigo-500/70 animate-pulse">> Loading bracket...</div>
-                                    </div>
-                                </div>
-                                <div class="bg-slate-950/50">
-                                    <h3 class="font-bold p-3 bg-indigo-950/40 text-xs font-mono text-indigo-300 text-center uppercase tracking-widest border-b border-indigo-900/50">Women's Bracket</h3>
-                                    <div id="ncaa-womens-feed" class="max-h-[400px] overflow-y-auto divide-y divide-indigo-900/30">
-                                        <div class="p-4 text-center text-xs font-mono text-indigo-500/70 animate-pulse">> Loading bracket...</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </details>
-                </div>
+                    <p class="text-blue-600/70 font-mono text-xs uppercase relative z-10 mb-2">Pro, College & NCAA</p>
+                </a>
 
             </div>
 
@@ -270,7 +195,7 @@
         <p>&copy; <span id="currentYear"></span> KOZICKI_DASHBOARD</p>
     </footer>
 
-    <!-- THE ENGINE ROOM (JS Logic updated with Cyber-Forge DOM rendering & SVG Icons) -->
+    <!-- THE ENGINE ROOM -->
     <script>
         document.getElementById('currentYear').textContent = new Date().getFullYear();
 
@@ -278,12 +203,6 @@
         const htmlElement = document.documentElement;
         const darkModeToggle = document.getElementById('darkModeToggle');
         darkModeToggle.checked = true;
-
-        // --- Custom SVG Strings for Dynamic Injection ---
-        const svgFootball = `<svg class="w-3.5 h-3.5 inline-block -mt-1 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.4 5.6C12.8 3.8 9.3 4 7 6.3l-1.4 1.4c-2.3 2.3-2.5 5.8-.7 8.4l9.1-9.1zM8.6 18.4c2.6 1.8 6.1 1.6 8.4-.7l1.4-1.4c2.3-2.3 2.5-5.8.7-8.4l-9.1 9.1zM11 11l2 2M13 9l2 2M9 13l2 2"/></svg>`;
-        const svgBasketball = `<svg class="w-3.5 h-3.5 inline-block -mt-1 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.6 5.6c2.5 3.5 6.4 5.4 10.4 5.4M18.4 18.4c-2.5-3.5-6.4-5.4-10.4-5.4M12 2v20M2 12h20"/></svg>`;
-        const svgBaseball = `<svg class="w-3.5 h-3.5 inline-block -mt-1 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 6a10 10 0 010 12M19 6a10 10 0 000 12M8 12h8"/></svg>`;
-        const svgHockey = `<svg class="w-3.5 h-3.5 inline-block -mt-1 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v12a5 5 0 005 5h6M19 18h-4v2h4z"/></svg>`;
 
         // --- Weather & Google Pipelines ---
         async function fetchWeather() {
@@ -383,299 +302,13 @@
             }
         }
 
-        // --- Sports Pipelines (Updated with SVGs) ---
-        const proConfig = [
-            { id: 'min-nfl', name: 'Minnesota Vikings', teamId: '15', league: 'nfl', icon: svgFootball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/15/schedule' },
-            { id: 'gb-nfl', name: 'Green Bay Packers', teamId: '9', league: 'nfl', icon: svgFootball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/9/schedule' },
-            { id: 'min-nba', name: 'Minnesota Timberwolves', teamId: '16', league: 'nba', icon: svgBasketball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/16/schedule' },
-            { id: 'min-wnba', name: 'Minnesota Lynx', teamId: '14', league: 'wnba', icon: svgBasketball, gender: 'W', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/14/schedule' },
-            { id: 'mil-nba', name: 'Milwaukee Bucks', teamId: '15', league: 'nba', icon: svgBasketball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/15/schedule' },
-            { id: 'min-mlb', name: 'Minnesota Twins', teamId: '10', league: 'mlb', icon: svgBaseball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/10/schedule' },
-            { id: 'mil-mlb', name: 'Milwaukee Brewers', teamId: '8', league: 'mlb', icon: svgBaseball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/8/schedule' },
-            { id: 'min-nhl', name: 'Minnesota Wild', teamId: '30', league: 'nhl', icon: svgHockey, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/teams/30/schedule' },
-            { id: 'min-pwhl', name: 'Minnesota Frost', teamId: '4', league: 'pwhl', icon: svgHockey, gender: 'W', url: 'https://site.api.espn.com/apis/site/v2/sports/hockey/pwhl/teams/4/schedule' }
-        ];
-
-        const collegeConfig = [
-            { name: 'Wisconsin Football', teamId: '275', icon: svgFootball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/275/schedule' },
-            { name: 'Minnesota Football', teamId: '135', icon: svgFootball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/135/schedule' },
-            { name: 'Wisconsin Basketball', teamId: '275', icon: svgBasketball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/275/schedule' },
-            { name: 'Minnesota Basketball', teamId: '135', icon: svgBasketball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/135/schedule' },
-            { name: 'Wisconsin Basketball', teamId: '275', icon: svgBasketball, gender: 'W', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/teams/275/schedule' },
-            { name: 'Minnesota Basketball', teamId: '135', icon: svgBasketball, gender: 'W', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/teams/135/schedule' },
-            { name: 'Wisconsin Hockey', teamId: '275', icon: svgHockey, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/hockey/mens-college-hockey/teams/275/schedule' },
-            { name: 'Minnesota Hockey', teamId: '135', icon: svgHockey, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/hockey/mens-college-hockey/teams/135/schedule' },
-            { name: 'Wisconsin Hockey', teamId: '275', icon: svgHockey, gender: 'W', url: 'https://site.api.espn.com/apis/site/v2/sports/hockey/womens-college-hockey/teams/275/schedule' },
-            { name: 'Minnesota Hockey', teamId: '135', icon: svgHockey, gender: 'W', url: 'https://site.api.espn.com/apis/site/v2/sports/hockey/womens-college-hockey/teams/135/schedule' }
-        ];
-
-        let standingsCache = {};
-
-        async function fetchAllStandings() {
-            const leagues = [
-                { id: 'nfl', sport: 'football' }, { id: 'nba', sport: 'basketball' },
-                { id: 'wnba', sport: 'basketball' }, { id: 'mlb', sport: 'baseball' }, 
-                { id: 'nhl', sport: 'hockey' }, { id: 'mens-college-basketball', sport: 'basketball' },
-                { id: 'womens-college-basketball', sport: 'basketball' }
-            ];
-            for (const lg of leagues) {
-                try {
-                    const resp = await fetch(`https://site.api.espn.com/apis/v2/sports/${lg.sport}/${lg.id}/standings`);
-                    standingsCache[lg.id] = await resp.json();
-                } catch (e) {}
-            }
-        }
-
-        function getRecord(teamData, leagueId) {
-            let record = teamData?.records?.[0]?.summary || teamData?.team?.record?.items?.[0]?.summary || teamData?.team?.record?.summary;
-            if (record) return record;
-            
-            const data = standingsCache[leagueId];
-            if (!data || !teamData?.team?.id) return '';
-            
-            function search(obj) {
-                if (record) return; 
-                if (!obj || typeof obj !== 'object') return;
-                if (obj.team && String(obj.team.id) === String(teamData.team.id)) {
-                    const stats = obj.stats || [];
-                    const overall = stats.find(s => s.name === 'overall') || stats.find(s => s.type === 'overall') || stats[0];
-                    if (overall) record = overall.displayValue || overall.summary || '';
-                    return;
-                }
-                if (Array.isArray(obj)) { for (let item of obj) search(item); } 
-                else { for (let key in obj) search(obj[key]); }
-            }
-            search(data);
-            return record;
-        }
-
-        function buildTitle(config, event) {
-            let name = config.name;
-            if (config.league === 'nfl' && event?.season?.type === 1) name += ' <span class="text-orange-500 ml-1 font-mono">[PRE]</span>';
-            
-            let genderTag = '';
-            if (config.gender === 'W') genderTag = '<span class="bg-fuchsia-900/50 text-fuchsia-400 border border-fuchsia-500/30 px-1 rounded text-[8px] ml-1 font-mono">W</span>';
-            if (config.gender === 'M') genderTag = '<span class="bg-blue-900/50 text-blue-400 border border-blue-500/30 px-1 rounded text-[8px] ml-1 font-mono">M</span>';
-            
-            return `<div class="flex items-center gap-1">${config.icon} <span class="text-slate-200">${name}</span> ${genderTag}</div>`;
-        }
-
-        function renderStatusCard(config, status, statusClass) {
-            return `
-                <div class="p-4 flex items-center justify-between bg-slate-900/40 hover:bg-slate-800/50 transition-colors">
-                    <span class="text-sm font-bold flex items-center">${buildTitle(config, null)}</span>
-                    <span class="text-[10px] font-mono px-2 py-1 rounded tracking-widest ${statusClass}">${status}</span>
-                </div>
-            `;
-        }
-
-        function processTeamData(config, data) {
-            if (!data?.events || data.events.length === 0) return { html: renderStatusCard(config, 'OFFLINE', 'bg-slate-800 text-slate-500 border border-slate-700'), weight: 6 };
-
-            const isPreseason = data.events.some(e => e.season?.type === 1);
-            if (config.league === 'mlb' && isPreseason) {
-                return { html: renderStatusCard(config, 'SPRING_TRAINING', 'bg-yellow-900/30 text-yellow-500 border border-yellow-700/50'), weight: 5 };
-            }
-
-            const teamEvents = data.events.filter(e => {
-                const comps = e?.competitions?.[0]?.competitors || [];
-                return comps.some(c => String(c?.team?.id) === String(config.teamId));
-            });
-            
-            if (teamEvents.length === 0) return { html: renderStatusCard(config, 'HIBERNATION', 'bg-slate-800 text-slate-500 border border-slate-700'), weight: 5 };
-
-            const now = new Date();
-            let event = teamEvents.find(e => e.status?.type?.state === 'in');
-            
-            if (!event) {
-                event = teamEvents.reduce((closest, current) => {
-                    const cDate = new Date(current.competitions?.[0]?.date || 0);
-                    const clDate = new Date(closest.competitions?.[0]?.date || 0);
-                    return Math.abs(cDate - now) < Math.abs(clDate - now) ? current : closest;
-                });
-            }
-
-            const comp = event?.competitions?.[0];
-            if (!comp) return { html: renderStatusCard(config, 'HIBERNATION', 'bg-slate-800 text-slate-500 border border-slate-700'), weight: 5 };
-
-            const gameDate = new Date(comp.date);
-            const daysDiff = (gameDate - now) / (1000 * 60 * 60 * 24);
-            
-            if (Math.abs(daysDiff) > 21) return { html: renderStatusCard(config, 'HIBERNATION', 'bg-slate-800 text-slate-500 border border-slate-700'), weight: 5 };
-
-            const comps = comp.competitors || [];
-            const home = comps.find(c => c?.homeAway === 'home') || comps[0];
-            const away = comps.find(c => c?.homeAway === 'away') || comps[1];
-
-            const state = comp.status?.type?.state || 'pre';
-            const isLive = state === 'in';
-            const weight = isLive ? 1 : (daysDiff > 0 ? 2 : 3); 
-
-            const venue = comp.notes?.[0]?.headline || comp.venue?.fullName || 'TBD Venue';
-            const displayDate = gameDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: '2-digit' }).toUpperCase();
-            
-            const parseScore = (team) => {
-                if (state === 'pre' || team?.score == null) return '-';
-                return typeof team.score === 'object' ? (team.score.displayValue ?? team.score.value ?? '-') : team.score;
-            };
-            
-            const statusClass = isLive 
-                ? 'bg-red-900/40 text-red-400 border border-red-500/50 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.3)]' 
-                : 'bg-slate-800 text-slate-400 border border-slate-700';
-            
-            const renderRow = (t) => `
-                <div class="flex justify-between items-center group/team">
-                    <div class="flex items-center gap-3">
-                        ${t?.team?.logos?.[0]?.href ? `<img src="${t.team.logos[0].href}" class="w-6 h-6 object-contain drop-shadow-md grayscale group-hover/team:grayscale-0 transition-all">` : '<div class="w-6 h-6 rounded-full bg-slate-800"></div>'}
-                        <div class="flex flex-col">
-                            <span class="text-sm font-bold ${t?.winner ? 'text-cyan-300 drop-shadow-[0_0_5px_rgba(103,232,249,0.5)]' : 'text-slate-300'}">${t?.team?.shortDisplayName || t?.team?.displayName || 'TBA'}</span>
-                            <span class="text-[10px] font-mono text-slate-500">${getRecord(t, config.league)}</span>
-                        </div>
-                    </div>
-                    <span class="text-xl font-mono ${t?.winner ? 'text-cyan-400 font-black' : 'text-slate-500'}">${parseScore(t)}</span>
-                </div>
-            `;
-
-            const html = `
-                <div class="p-4 bg-slate-900/60 hover:bg-slate-800/80 transition-colors border-b border-transparent hover:border-cyan-900/50">
-                    <div class="flex justify-between items-start mb-3">
-                        <div>
-                            <span class="text-[10px] font-mono text-cyan-600 block mb-1 flex items-center">${buildTitle(config, event)}</span>
-                            <div class="text-[10px] font-mono text-slate-400 flex items-center gap-2 bg-slate-950/50 px-2 py-0.5 rounded border border-slate-800">
-                                <span>${displayDate}</span><span class="text-cyan-800">|</span><span class="truncate max-w-[150px]">${venue}</span>
-                            </div>
-                        </div>
-                        <span class="text-[10px] font-mono px-2 py-0.5 rounded ${statusClass}">${comp.status?.type?.shortDetail || 'TBD'}</span>
-                    </div>
-                    <div class="flex flex-col gap-2 mt-2">${renderRow(away)}${renderRow(home)}</div>
-                </div>
-            `;
-            return { html, weight };
-        }
-
-        async function fetchFeedGroup(configArray, containerId) {
-            const container = document.getElementById(containerId);
-            try {
-                const results = await Promise.all(configArray.map(async (config) => {
-                    try {
-                        const resp = await fetch(config.url);
-                        return processTeamData(config, await resp.json());
-                    } catch (e) {
-                        return { html: renderStatusCard(config, 'OFFLINE', 'bg-slate-800 text-slate-500 border border-slate-700'), weight: 6 };
-                    }
-                }));
-                const valid = results.filter(r => r !== null).sort((a, b) => a.weight - b.weight);
-                container.innerHTML = valid.map(r => r.html).join('') || '<div class="p-8 text-center text-xs font-mono text-slate-500">> NO DATA</div>';
-            } catch (e) {
-                container.innerHTML = '<div class="p-8 text-center text-xs font-mono text-red-500">> ERROR</div>';
-            }
-        }
-
-        async function fetchNCAATournament(gender, containerId) {
-            const container = document.getElementById(containerId);
-            try {
-                const now = new Date();
-                const d = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
-                const url = `https://site.api.espn.com/apis/site/v2/sports/basketball/${gender}-college-basketball/scoreboard?dates=${d}`;
-                
-                const resp = await fetch(url);
-                const data = await resp.json();
-                
-                if (!data?.events || data.events.length === 0) {
-                    container.innerHTML = '<div class="p-6 text-center text-xs font-mono text-slate-500">> NO GAMES TODAY</div>';
-                    return;
-                }
-                
-                let targetGames = data.events.sort((a, b) => {
-                    const sA = a.status?.type?.state; const sB = b.status?.type?.state;
-                    if (sA === 'in' && sB !== 'in') return -1;
-                    if (sA !== 'in' && sB === 'in') return 1;
-                    return new Date(a.date) - new Date(b.date);
-                });
-
-                container.innerHTML = targetGames.map(event => {
-                    const comp = event.competitions?.[0];
-                    if (!comp) return '';
-                    const home = comp.competitors?.find(c => c.homeAway === 'home');
-                    const away = comp.competitors?.find(c => c.homeAway === 'away');
-                    if (!home || !away) return '';
-
-                    const state = comp.status?.type?.state;
-                    const isLive = state === 'in';
-                    const isPre = state === 'pre';
-                    
-                    const time = new Date(comp.date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-                    const statusClass = isLive ? 'text-red-400 bg-red-950/40 px-1 rounded border border-red-900 animate-pulse' : 'text-slate-500';
-
-                    const renderTeam = (t) => `
-                        <div class="flex items-center gap-2">
-                            ${t.curatedRank?.current < 26 ? `<span class="text-[9px] text-indigo-400 font-mono bg-indigo-950/50 px-1 rounded border border-indigo-900/50">${t.curatedRank.current}</span>` : ''}
-                            <span class="text-sm font-bold ${t.winner ? 'text-indigo-300 drop-shadow-[0_0_5px_rgba(165,180,252,0.5)]' : 'text-slate-300'}">${t.team?.shortDisplayName || 'TBA'}</span>
-                        </div>
-                        <span class="text-sm font-mono ${t.winner ? 'font-black text-indigo-400' : 'text-slate-600'}">${isPre ? '-' : (t.score || '-')}</span>
-                    `;
-
-                    return `
-                        <div class="p-3 bg-slate-900/40 hover:bg-slate-800/60 transition-colors border-b border-transparent hover:border-indigo-900/30">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-[9px] font-mono text-indigo-600 uppercase truncate max-w-[150px]">${event.shortName}</span>
-                                <span class="text-[10px] font-mono ${statusClass}">${isPre ? time : comp.status?.type?.shortDetail}</span>
-                            </div>
-                            <div class="flex flex-col gap-1 w-full">
-                                <div class="flex justify-between">${renderTeam(away)}</div>
-                                <div class="flex justify-between">${renderTeam(home)}</div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            } catch (e) {
-                container.innerHTML = '<div class="p-4 text-center text-xs font-mono text-red-500">> UNAVAILABLE</div>';
-            }
-        }
-
-        function checkNCAAWindow() {
-            const container = document.getElementById('ncaa-container');
-            const details = document.getElementById('ncaa-details');
-            const title = document.getElementById('ncaa-title');
-            
-            const now = new Date();
-            const year = now.getFullYear();
-            
-            const activeStart = new Date(year, 2, 10);
-            const activeEnd = new Date(year, 3, 15);
-            
-            if (now < activeStart || now > activeEnd) {
-                container.classList.add('opacity-30', 'grayscale', 'pointer-events-none');
-                details.classList.remove('hover-scale');
-                title.innerHTML += ' <span class="text-[10px] font-mono text-slate-500 ml-2 border border-slate-700 px-1 rounded">> INACTIVE</span>';
-                return false;
-            }
-            return true;
-        }
-
         // --- Initialization ---
         async function initializeDashboard() {
             fetchWeather();
             fetchGoogleData();
-            
-            await fetchAllStandings();
-            fetchFeedGroup(proConfig, 'pro-feed');
-            fetchFeedGroup(collegeConfig, 'college-feed');
-            
-            if (checkNCAAWindow()) {
-                fetchNCAATournament('mens', 'ncaa-mens-feed');
-                fetchNCAATournament('womens', 'ncaa-womens-feed');
-            }
         }
 
         document.addEventListener("DOMContentLoaded", initializeDashboard);
-        
-        setInterval(() => {
-            fetchFeedGroup(proConfig, 'pro-feed');
-            fetchFeedGroup(collegeConfig, 'college-feed');
-        }, 15000);
-        
-        setInterval(fetchAllStandings, 3600000);
     </script>
 </body>
 </html>
