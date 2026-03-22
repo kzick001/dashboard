@@ -57,9 +57,17 @@
 </head>
 <body class="bg-slate-950 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black bg-[length:200%_200%] animate-drift min-h-screen flex flex-col font-sans text-slate-200 transition-colors duration-300">
 
-    <div class="flex-1 flex flex-col items-center px-4 w-full pt-16 relative z-10">
-        
-        <a href="index.html" class="absolute top-8 left-8 text-xs font-black text-blue-800 hover:text-blue-400 transition-colors tracking-tighter z-20">&larr; BACK TO LAUNCHPAD</a>
+    <!-- FIXED TOP NAVIGATION -->
+    <div class="fixed top-0 w-full px-6 py-3 flex justify-between items-center z-50 border-b border-blue-900/30 bg-slate-950/80 backdrop-blur-md shadow-lg">
+        <a href="index.html" class="text-[10px] font-black text-blue-500 hover:text-blue-300 transition-colors tracking-tighter flex items-center gap-2">
+            <span>&larr;</span> BACK TO LAUNCHPAD
+        </a>
+        <div class="flex items-center gap-3 text-blue-500 font-mono text-[10px] uppercase tracking-widest">
+            <span class="animate-pulse text-red-500">●</span> TELEMETRY ACTIVE
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col items-center px-4 w-full pt-28 relative z-10">
 
         <header class="mb-12 text-center w-full max-w-6xl">
             <h1 class="text-5xl font-black tracking-tighter mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500 filter drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]">SPORTS TRACKER</h1>
