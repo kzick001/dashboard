@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  #heic-module { font-family: system-ui, sans-serif; padding: 20px; color: #fff; }
+  #drop-zone {
+    border: 2px dashed #4caf50;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    background: #1e1e1e;
+    transition: background 0.2s, border-color 0.2s;
+    cursor: pointer;
+  }
+  #drop-zone.dragover {
+    background: #2e3b32;
+    border-color: #81c784;
+  }
+  #status { margin-top: 15px; font-size: 0.9em; color: #aaa; text-align: center; }
+</style>
+</head>
+<body>
+
+<div id="heic-module">
+  <div id="drop-zone">Drag & Drop HEIC File Here</div>
+  <div id="status">Waiting for file...</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.8/dist/heic2any.min.js"></script>
+<script>
+  const dropZone = document.getElementById('drop-zone');
+  const status = document.getElementById('status');
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, preventDefaults, false);
+  });
+
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+  });
+
+  dropZone.addEventListener('drop', handleDrop, false);
+
+  async function handleDrop(e) {
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.name.toLowerCase().endsWith('.heic')) {
+      status.innerText = 'Please drop a valid HEIC file.';
+      return;
+    }
+
+    status.innerText = 'Converting... This might take a moment.';
+    
+    try {
+      const convertedBlob = await heic2any({ blob: file, toType: 'image/jpeg' });
+      const url = URL.createObjectURL(convertedBlob);
+      
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = file.name.replace(/\.[^/.]+$/, "") + ".jpg"; 
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      window.URL.revokeObjectURL(url);
+      status.innerText = 'Conversion complete. File downloaded.';
+    } catch (error) {
+      status.innerText = 'Conversion failed. See console for details.';
+      console.error(error);
+    }
+  }
+</script>
+</body>
+</html>

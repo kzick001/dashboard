@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEIC to JPEG Converter | Dashboard Tool</title>
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.8/dist/heic2any.min.js"></script>
+<style>
+  :root {
+    --bg-primary: #121212;
+    --bg-secondary: #1e1e1e;
+    --header-bg: #1f1f1f;
+    --text-primary: #e0e0e0;
+    --text-secondary: #aaaaaa;
+    --accent: #4caf50;
+    --accent-hover: #81c784;
+    --border: #333333;
+    --shadow: rgba(0,0,0,0.5);
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  [data-theme="light"] {
+    --bg-primary: #f5f5f7;
+    --bg-secondary: #ffffff;
+    --header-bg: #ffffff;
+    --text-primary: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --accent: #2e7d32;
+    --border: #d2d2d7;
+    --shadow: rgba(0,0,0,0.1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.3s var(--ease), color 0.3s var(--ease);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .app-header {
+    background-color: var(--header-bg);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 5px var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .nav-left, .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .back-link {
+    text-decoration: none;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    line-height: 1;
+    transition: color 0.2s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px; height: 32px;
+  }
+  .back-link:hover {
+    color: var(--accent);
+    transform: translateX(-3px);
+  }
+
+  .app-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .theme-switch-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .theme-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+  }
+  .theme-switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc;
+    transition: .4s var(--ease);
+    border-radius: 34px;
+  }
+  .slider:before {
+    position: absolute; content: "";
+    height: 18px; width: 18px;
+    left: 3px; bottom: 3px;
+    background-color: white;
+    transition: .4s var(--ease);
+    border-radius: 50%;
+  }
+  input:checked + .slider { background-color: var(--accent); }
+  input:checked + .slider:before { transform: translateX(24px); }
+
+  .app-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .converter-card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 10px 30px var(--shadow);
+    transition: background-color 0.3s var(--ease), border-color 0.3s var(--ease);
+  }
+
+  .module-title {
+    font-size: 1rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.1em;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  #drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 3rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.1s var(--ease);
+    position: relative;
+  }
+
+  .file-icon {
+    width: 48px; height: 48px;
+    margin-bottom: 1rem;
+    fill: var(--text-secondary);
+    transition: fill 0.2s var(--ease);
+  }
+
+  #drop-zone:hover {
+    border-color: var(--accent);
+    background-color: rgba(76, 175, 80, 0.05);
+  }
+  
+  #drop-zone:hover .file-icon { fill: var(--accent); }
+
+  #drop-zone.dragover {
+    background-color: rgba(76, 175, 80, 0.1);
+    border-color: var(--accent);
+    transform: scale(1.02);
+  }
+
+  #drop-zone.converting {
+    pointer-events: none;
+    opacity: 0.7;
+    cursor: wait;
+  }
+
+  .instruction-text {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+  }
+  .sub-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
+
+  #file-input { display: none; }
+
+  #status {
+    margin-top: 2rem;
+    font-size: 0.9em;
+    padding: 1rem;
+    border-radius: 6px;
+    text-align: center;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    min-height: 3.5em;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #status.processing { color: var(--accent); border-color: var(--accent); font-weight: 500; }
+  #status.error { color: #ef5350; border-color: #ef5350; }
+  #status.success { color: var(--accent); border-color: var(--accent); }
+
+</style>
+</head>
+<body data-theme="dark">
+
+<header class="app-header">
+  <div class="nav-left">
+    <a href="https://kzick001.github.io/dashboard/" class="back-link" title="Back to Dashboard">&#x2190;</a>
+    <h1 class="app-title">HEIC Converter</h1>
+  </div>
+  <div class="nav-right">
+    <div class="theme-switch-wrapper">
+      <label class="sub-text" for="checkbox">Dark Mode</label>
+      <label class="theme-switch" for="checkbox">
+        <input type="checkbox" id="checkbox" checked />
+        <div class="slider"></div>
+      </label>
+    </div>
+  </div>
+</header>
+
+<main class="app-content">
+  <div class="converter-card">
+    <h2 class="module-title">HEIC to JPEG</h2>
+    
+    <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <svg class="file-icon" viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M16,11V18.1H13.9V12.91L11.91,18.1H10.09L8.1,12.91V18.1H6V11H8.35L11,17.25L13.65,11H16Z" /></svg>
+      <p class="instruction-text">Drag & Drop HEIC File</p>
+      <p class="sub-text">or click to browse</p>
+      <input type="file" id="file-input" accept=".heic" onchange="handleFileSelect(this.files)">
+    </div>
+
+    <div id="status">Waiting for file...</div>
+  </div>
+</main>
+
+<script>
+  const toggleSwitch = document.querySelector('#checkbox');
+  const currentTheme = localStorage.getItem('theme');
+
+  if (currentTheme) {
+    document.body.setAttribute('data-theme', currentTheme);
+    if (currentTheme === 'light') {
+      toggleSwitch.checked = false;
+    }
+  }
+
+  function switchTheme(e) {
+    if (e.target.checked) {
+      document.body.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.body.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+    }    
+  }
+  toggleSwitch.addEventListener('change', switchTheme, false);
+
+  const dropZone = document.getElementById('drop-zone');
+  const status = document.getElementById('status');
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, preventDefaults, false);
+  });
+  function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+  });
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    handleFileSelect(e.dataTransfer.files);
+  }, false);
+
+  async function handleFileSelect(files) {
+    const file = files[0]; 
+    
+    status.className = '';
+    status.innerText = 'Waiting for file...';
+
+    if (!file || !file.name.toLowerCase().endsWith('.heic')) {
+      status.innerText = '⚠️ Invalid file. Please drop a valid .heic image.';
+      status.className = 'error';
+      return;
+    }
+
+    status.innerText = 'Converting high-efficiency data... This may take a moment for larger images.';
+    status.className = 'processing';
+    dropZone.classList.add('converting');
+    
+    try {
+      const convertedBlob = await heic2any({ blob: file, toType: 'image/jpeg' });
+      const url = URL.createObjectURL(convertedBlob);
+      
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = file.name.replace(/\.[^/.]+$/, "") + ".jpg"; 
+      
+      document.body.appendChild(a);
+      a.click(); 
+      
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      status.innerText = '✅ Conversion complete. File downloaded to your Downloads folder.';
+      status.className = 'success';
+    } catch (error) {
+      status.innerText = '❌ Conversion failed. The file may be corrupt. See console for details.';
+      status.className = 'error';
+      console.error('HEIC Conversion Error:', error);
+    } finally {
+      dropZone.classList.remove('converting');
+    }
+  }
+</script>
+</body>
+</html>
