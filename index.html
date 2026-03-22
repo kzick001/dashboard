@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kozicki Dashboard // CORE</title>
+    <title>Launchpad</title>
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%2306b6d4'/><text x='50' y='55' dominant-baseline='middle' text-anchor='middle' font-family='monospace' font-size='65' font-weight='800' fill='%23020617'>K</text></svg>">
     
@@ -85,7 +85,7 @@
     <div class="flex-1 flex flex-col items-center px-4 w-full pt-8 relative z-10">
         
         <header class="mb-12 text-center w-full max-w-6xl">
-            <h1 class="text-5xl font-black tracking-tighter mb-2 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-fuchsia-500 filter drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">KOZICKI_DASHBOARD</h1>
+            <h1 class="text-5xl font-black tracking-tighter mb-2 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-fuchsia-500 filter drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">LAUNCHPAD</h1>
             <p class="text-cyan-600 font-mono text-sm tracking-widest uppercase">Personal Launchpad // V2.0</p>
         </header>
 
@@ -94,7 +94,6 @@
             <!-- WEATHER MODULE -->
             <div class="relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-cyan-500/20 p-6 hover-scale overflow-hidden group">
                 <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
-                <a href="https://kzick001.github.io/dashboard/" class="absolute top-4 left-4 text-[10px] font-black text-cyan-800 hover:text-cyan-400 transition-colors tracking-tighter z-20">&larr; DASHBOARD</a>
                 
                 <div class="flex items-center mb-6 mt-4 relative z-10">
                     <div class="bg-cyan-950/60 p-3 rounded-lg mr-4 border border-cyan-500/30 animate-electric-pulse flex-shrink-0">
@@ -103,7 +102,7 @@
                         </svg>
                     </div>
                     <div>
-                        <h2 class="text-xl font-bold truncate text-slate-100">Atmospherics</h2>
+                        <h2 class="text-xl font-bold truncate text-slate-100">Weather</h2>
                         <p class="text-cyan-600 font-mono text-xs uppercase tracking-widest mt-1">St. Louis Park // 5-Day</p>
                     </div>
                 </div>
@@ -125,7 +124,6 @@
                 <!-- EMAILS MODULE -->
                 <div class="relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-fuchsia-500/20 p-6 hover-scale overflow-hidden group">
                     <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-fuchsia-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
-                    <a href="https://kzick001.github.io/dashboard/" class="absolute top-4 left-4 text-[10px] font-black text-fuchsia-800 hover:text-fuchsia-400 transition-colors tracking-tighter z-20">&larr; DASHBOARD</a>
                     
                     <div class="flex items-center mb-6 mt-4 relative z-10">
                         <div class="bg-fuchsia-950/60 p-3 rounded-lg mr-4 border border-fuchsia-500/30 animate-electric-pulse flex-shrink-0">
@@ -133,17 +131,16 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                             </svg>
                         </div>
-                        <h2 class="text-xl font-bold truncate text-slate-100">Comms Link</h2>
+                        <h2 class="text-xl font-bold truncate text-slate-100">Email</h2>
                     </div>
                     <div id="emailList" class="space-y-3 relative z-10 flex flex-col">
-                        <span class="text-fuchsia-500/70 font-mono text-sm animate-pulse">> Syncing secure pipeline...</span>
+                        <span class="text-fuchsia-500/70 font-mono text-sm animate-pulse">> Loading emails...</span>
                     </div>
                 </div>
 
                 <!-- EVENTS MODULE -->
                 <div class="relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-emerald-500/20 p-6 hover-scale overflow-hidden group">
                     <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-emerald-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
-                    <a href="https://kzick001.github.io/dashboard/" class="absolute top-4 left-4 text-[10px] font-black text-emerald-800 hover:text-emerald-400 transition-colors tracking-tighter z-20">&larr; DASHBOARD</a>
                     
                     <div class="flex items-center mb-6 mt-4 relative z-10">
                         <div class="bg-emerald-950/60 p-3 rounded-lg mr-4 border border-emerald-500/30 animate-electric-pulse flex-shrink-0">
@@ -151,17 +148,16 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
                         </div>
-                        <h2 class="text-xl font-bold truncate text-slate-100">Timeline</h2>
+                        <h2 class="text-xl font-bold truncate text-slate-100">Calendar</h2>
                     </div>
                     <div id="calendarList" class="space-y-3 relative z-10 flex flex-col">
-                        <span class="text-emerald-500/70 font-mono text-sm animate-pulse">> Syncing temporal data...</span>
+                        <span class="text-emerald-500/70 font-mono text-sm animate-pulse">> Loading events...</span>
                     </div>
                 </div>
 
                 <!-- LIVEFORGE MODULE -->
                 <a href="live-forge/index.html" class="block relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-orange-500/20 p-6 hover-scale overflow-hidden group cursor-pointer">
                     <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-orange-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
-                    <div class="absolute top-4 left-4 text-[10px] font-black text-orange-800 group-hover:text-orange-400 transition-colors tracking-tighter z-20">&larr; DASHBOARD</div>
                     
                     <div class="flex items-center mb-4 mt-4 relative z-10">
                         <div class="bg-orange-950/60 p-3 rounded-lg mr-4 border border-orange-500/30 animate-electric-pulse flex-shrink-0">
@@ -171,10 +167,7 @@
                         </div>
                         <h2 class="text-xl font-bold truncate text-slate-100">LiveForge</h2>
                     </div>
-                    <p class="text-orange-600/70 font-mono text-xs uppercase relative z-10">HTML Rendering Sandbox</p>
-                    <div class="mt-6 flex justify-end relative z-10">
-                        <span class="text-xs font-bold text-orange-400 uppercase tracking-widest bg-orange-950/50 px-3 py-1 rounded border border-orange-500/30 group-hover:bg-orange-500 group-hover:text-slate-900 transition-all">EXECUTE &rarr;</span>
-                    </div>
+                    <p class="text-orange-600/70 font-mono text-xs uppercase relative z-10 mb-2">HTML Rendering Sandbox</p>
                 </a>
 
             </div>
@@ -183,7 +176,7 @@
             <div class="w-full flex flex-col gap-4 mb-8">
                 <div class="flex items-center gap-3 mb-2">
                     <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_#3b82f6]"></span>
-                    <h2 class="text-2xl font-black tracking-tight text-slate-100 uppercase">Athletic Telemetry</h2>
+                    <h2 class="text-2xl font-black tracking-tight text-slate-100 uppercase">Sports</h2>
                 </div>
 
                 <!-- PRO SPORTS -->
@@ -203,7 +196,7 @@
                         </span>
                     </summary>
                     <div id="pro-feed" class="max-h-[500px] overflow-y-auto divide-y divide-blue-900/30 border-t border-blue-500/20 bg-slate-950/50 relative z-10">
-                        <div class="p-8 text-center text-xs font-mono text-blue-500/70 animate-pulse">> Initializing pro data streams...</div>
+                        <div class="p-8 text-center text-xs font-mono text-blue-500/70 animate-pulse">> Loading pro sports...</div>
                     </div>
                 </details>
 
@@ -226,7 +219,7 @@
                         </span>
                     </summary>
                     <div id="college-feed" class="max-h-[500px] overflow-y-auto divide-y divide-yellow-900/30 border-t border-yellow-500/20 bg-slate-950/50 relative z-10">
-                        <div class="p-8 text-center text-xs font-mono text-yellow-500/70 animate-pulse">> Initializing collegiate arrays...</div>
+                        <div class="p-8 text-center text-xs font-mono text-yellow-500/70 animate-pulse">> Loading college sports...</div>
                     </div>
                 </details>
 
@@ -242,7 +235,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.6 5.6c2.5 3.5 6.4 5.4 10.4 5.4M18.4 18.4c-2.5-3.5-6.4-5.4-10.4-5.4M12 2v20M2 12h20"/>
                                     </svg>
                                 </div>
-                                <span id="ncaa-title" class="text-slate-100 tracking-wide text-lg">March Madness Matrix</span>
+                                <span id="ncaa-title" class="text-slate-100 tracking-wide text-lg">NCAA Tournament</span>
                             </div>
                             <span class="transition-transform duration-300 group-open:rotate-180 text-indigo-400">
                                 <svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24"><polyline points="6 9 12 15 18 9"/></svg>
@@ -253,13 +246,13 @@
                                 <div class="bg-slate-950/50">
                                     <h3 class="font-bold p-3 bg-indigo-950/40 text-xs font-mono text-indigo-300 text-center uppercase tracking-widest border-b border-indigo-900/50">Men's Bracket</h3>
                                     <div id="ncaa-mens-feed" class="max-h-[400px] overflow-y-auto divide-y divide-indigo-900/30">
-                                        <div class="p-4 text-center text-xs font-mono text-indigo-500/70 animate-pulse">> Scanning live bracket...</div>
+                                        <div class="p-4 text-center text-xs font-mono text-indigo-500/70 animate-pulse">> Loading bracket...</div>
                                     </div>
                                 </div>
                                 <div class="bg-slate-950/50">
                                     <h3 class="font-bold p-3 bg-indigo-950/40 text-xs font-mono text-indigo-300 text-center uppercase tracking-widest border-b border-indigo-900/50">Women's Bracket</h3>
                                     <div id="ncaa-womens-feed" class="max-h-[400px] overflow-y-auto divide-y divide-indigo-900/30">
-                                        <div class="p-4 text-center text-xs font-mono text-indigo-500/70 animate-pulse">> Scanning live bracket...</div>
+                                        <div class="p-4 text-center text-xs font-mono text-indigo-500/70 animate-pulse">> Loading bracket...</div>
                                     </div>
                                 </div>
                             </div>
@@ -274,7 +267,7 @@
     </div>
 
     <footer class="mt-12 text-slate-600 font-mono text-[10px] tracking-widest text-center pb-6 w-full relative z-10 border-t border-cyan-900/30 pt-4">
-        <p>&copy; <span id="currentYear"></span> KOZICKI_DASHBOARD // SECURE CONNECTION</p>
+        <p>&copy; <span id="currentYear"></span> KOZICKI_DASHBOARD</p>
     </footer>
 
     <!-- THE ENGINE ROOM (JS Logic updated with Cyber-Forge DOM rendering & SVG Icons) -->
@@ -349,28 +342,44 @@
                 }
                 weatherContainer.innerHTML = weatherHTML + '</div>';
             } catch (error) {
-                weatherContainer.innerHTML = `<div class="p-4 bg-red-950/30 border border-red-500/50 rounded flex items-center gap-3 w-full justify-center"><span class="text-red-500 animate-ping">●</span><span class="text-xs font-mono text-red-400 uppercase">Atmospheric Sensor Offline</span></div>`;
+                weatherContainer.innerHTML = `<div class="p-4 bg-red-950/30 border border-red-500/50 rounded flex items-center gap-3 w-full justify-center"><span class="text-red-500 animate-ping">●</span><span class="text-xs font-mono text-red-400 uppercase">Weather unavailable</span></div>`;
             }
         }
 
         async function fetchGoogleData() {
             const url = 'https://script.google.com/macros/s/AKfycbQbf7ex5rJcVgavVsaFs7BfhOWi6ioy3HD7TA1Oo9lAaUFitR6seFZrvMiU8_J8uLRPw/exec'; 
+            const emailList = document.getElementById('emailList');
+            const calList = document.getElementById('calendarList');
+
             try {
                 const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+                
+                if (!res.ok) throw new Error(`HTTP_ERR_${res.status}`);
+
+                // Apps Script loves returning an HTML login page if auth expires or permissions are wrong.
+                const contentType = res.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") === -1) {
+                    throw new Error('AUTH_OR_CORS_BLOCK');
+                }
+
                 const data = await res.json();
                 
-                const emailList = document.getElementById('emailList');
                 emailList.innerHTML = data.emails && data.emails.length > 0 
                     ? data.emails.map(subject => `<a href="https://mail.google.com/" target="_blank" class="block text-sm font-mono border-b border-fuchsia-900/30 pb-2 text-slate-300 hover:text-fuchsia-400 hover:pl-2 transition-all cursor-pointer">> ${subject}</a>`).join('')
-                    : '<span class="text-sm font-mono text-slate-500">> INBOX_ZERO</span>';
+                    : '<span class="text-sm font-mono text-slate-500">> INBOX EMPTY</span>';
 
-                const calList = document.getElementById('calendarList');
                 calList.innerHTML = data.calendar && data.calendar.length > 0
                     ? data.calendar.map(item => `<a href="https://calendar.google.com/" target="_blank" class="block text-sm border-b border-emerald-900/30 pb-2 text-slate-300 hover:text-emerald-400 hover:pl-2 transition-all cursor-pointer"><strong class="text-emerald-300 font-mono text-xs mr-2">[${item.date}]</strong>${item.title}</a>`).join('')
-                    : '<span class="text-sm font-mono text-slate-500">> NO_TEMPORAL_ANOMALIES</span>';
+                    : '<span class="text-sm font-mono text-slate-500">> NO EVENTS</span>';
             } catch (error) {
-                document.getElementById('emailList').innerHTML = '<span class="text-xs font-mono text-red-500">> PIPELINE_ERR</span>';
-                document.getElementById('calendarList').innerHTML = '<span class="text-xs font-mono text-red-500">> PIPELINE_ERR</span>';
+                let errCode = '> ERROR';
+                // Catching specific browser network/CORS rejections
+                if (error.message.includes('Failed to fetch') || error.name === 'TypeError') errCode = '> NETWORK ERROR';
+                else if (error.message.includes('AUTH_OR_CORS_BLOCK')) errCode = '> AUTH REQUIRED';
+                else errCode = `> ${error.message}`;
+
+                emailList.innerHTML = `<span class="text-[10px] font-mono text-red-500">${errCode}</span>`;
+                calList.innerHTML = `<span class="text-[10px] font-mono text-red-500">${errCode}</span>`;
             }
         }
 
@@ -556,9 +565,9 @@
                     }
                 }));
                 const valid = results.filter(r => r !== null).sort((a, b) => a.weight - b.weight);
-                container.innerHTML = valid.map(r => r.html).join('') || '<div class="p-8 text-center text-xs font-mono text-slate-500">> NO_DATA_FOUND</div>';
+                container.innerHTML = valid.map(r => r.html).join('') || '<div class="p-8 text-center text-xs font-mono text-slate-500">> NO DATA</div>';
             } catch (e) {
-                container.innerHTML = '<div class="p-8 text-center text-xs font-mono text-red-500">> CRITICAL_FEED_ERROR</div>';
+                container.innerHTML = '<div class="p-8 text-center text-xs font-mono text-red-500">> ERROR</div>';
             }
         }
 
@@ -573,7 +582,7 @@
                 const data = await resp.json();
                 
                 if (!data?.events || data.events.length === 0) {
-                    container.innerHTML = '<div class="p-6 text-center text-xs font-mono text-slate-500">> NO_ACTIVE_BRACKET_MATCHES</div>';
+                    container.innerHTML = '<div class="p-6 text-center text-xs font-mono text-slate-500">> NO GAMES TODAY</div>';
                     return;
                 }
                 
@@ -620,7 +629,7 @@
                     `;
                 }).join('');
             } catch (e) {
-                container.innerHTML = '<div class="p-4 text-center text-xs font-mono text-red-500">> SENSOR_OFFLINE</div>';
+                container.innerHTML = '<div class="p-4 text-center text-xs font-mono text-red-500">> UNAVAILABLE</div>';
             }
         }
 
