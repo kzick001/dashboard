@@ -61,7 +61,8 @@
         .hover-scale:hover h2, 
         .hover-scale:hover p, 
         .hover-scale:hover span, 
-        .hover-scale:hover a {
+        .hover-scale:hover a,
+        .hover-scale:hover li {
             text-shadow: 1px 0 rgba(255,0,0,0.5), -1px 0 rgba(0,255,255,0.5);
         }
 
@@ -113,7 +114,6 @@
                 <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
                 
                 <div class="flex flex-col md:flex-row items-center gap-6 relative z-10">
-                    <!-- Title Card Block -->
                     <div class="flex items-center gap-4 w-full md:w-auto md:min-w-[240px] border-b md:border-b-0 md:border-r border-cyan-500/10 pb-4 md:pb-0 md:pr-6">
                         <div class="bg-cyan-950/60 p-3 rounded-lg border border-cyan-500/30 animate-electric-pulse flex-shrink-0">
                             <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -126,7 +126,6 @@
                         </div>
                     </div>
                     
-                    <!-- Forecast Grid -->
                     <div id="weatherContainer" class="w-full min-h-[60px] flex items-center justify-center">
                         <div class="animate-pulse flex space-x-3 w-full">
                             <div class="flex-1 h-14 bg-cyan-950/40 border border-cyan-800/50 rounded"></div>
@@ -139,13 +138,10 @@
                 </div>
             </div>
 
-            <!-- GRID -->
+            <!-- PRIMARY GRID (Top Layer) -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                
-                <!-- EMAILS MODULE -->
                 <div class="relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-fuchsia-500/20 p-6 hover-scale overflow-hidden group">
                     <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-fuchsia-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
-                    
                     <div class="flex items-center mb-6 mt-4 relative z-10">
                         <div class="bg-fuchsia-950/60 p-3 rounded-lg mr-4 border border-fuchsia-500/30 animate-electric-pulse flex-shrink-0">
                             <svg class="w-6 h-6 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,10 +155,8 @@
                     </div>
                 </div>
 
-                <!-- EVENTS MODULE -->
                 <div class="relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-emerald-500/20 p-6 hover-scale overflow-hidden group">
                     <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-emerald-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
-                    
                     <div class="flex items-center mb-6 mt-4 relative z-10">
                         <div class="bg-emerald-950/60 p-3 rounded-lg mr-4 border border-emerald-500/30 animate-electric-pulse flex-shrink-0">
                             <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -176,10 +170,8 @@
                     </div>
                 </div>
 
-                <!-- LIVEFORGE MODULE -->
                 <a href="live-forge/index.html" class="block relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-orange-500/20 p-6 hover-scale overflow-hidden group cursor-pointer">
                     <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-orange-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
-                    
                     <div class="flex items-center mb-4 mt-4 relative z-10">
                         <div class="bg-orange-950/60 p-3 rounded-lg mr-4 border border-orange-500/30 animate-electric-pulse flex-shrink-0">
                             <svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -191,26 +183,51 @@
                     <p class="text-orange-600/70 font-mono text-xs uppercase relative z-10 mb-2">HTML Rendering Sandbox</p>
                 </a>
 
-                <!-- SPORTS MODULE LINK -->
                 <a href="sports.html" class="block relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-blue-500/20 p-6 hover-scale overflow-hidden group cursor-pointer">
                     <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-blue-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
-                    
                     <div class="flex items-center mb-4 mt-4 relative z-10">
                         <div class="bg-blue-950/60 p-3 rounded-lg mr-4 border border-blue-500/30 animate-electric-pulse flex-shrink-0">
                             <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
-                                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-                                <path d="M4 22h16"/>
-                                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
-                                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
-                                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
                             </svg>
                         </div>
                         <h2 class="text-xl font-bold truncate text-slate-100">Sports</h2>
                     </div>
                     <p class="text-blue-600/70 font-mono text-xs uppercase relative z-10 mb-2">Live Telemetry // Standings</p>
                 </a>
+            </div>
 
+            <!-- NEURAL LINK MULTIPLEXER (Full Width Sub-Grid) -->
+            <div class="relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-purple-500/20 p-6 hover-scale overflow-hidden group">
+                <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-purple-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
+                <div class="flex items-center mb-6 mt-2 relative z-10">
+                    <div class="bg-purple-950/60 p-3 rounded-lg mr-4 border border-purple-500/30 animate-electric-pulse flex-shrink-0">
+                        <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold truncate text-slate-100 uppercase tracking-tight">Neural Links</h2>
+                        <p class="text-purple-600 font-mono text-[10px] uppercase tracking-widest">Gemini Multiplexer</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 relative z-10">
+                    <a href="https://gemini.google.com/gem/1ee3cdd8bdff" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-[10px] text-slate-400 hover:text-purple-400 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">SSP Apps</a>
+                    <a href="https://gemini.google.com/gem/d7aa441f9adf" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-[10px] text-slate-400 hover:text-purple-400 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">DM Assistant - DCW</a>
+                    <a href="https://gemini.google.com/gem/0dc9daf99e5a" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-[10px] text-slate-400 hover:text-purple-400 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">World Dungeon Campaign</a>
+                    <a href="https://gemini.google.com/gem/83325a84f21b" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-[10px] text-slate-400 hover:text-purple-400 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Kzick Dashboard</a>
+                    <a href="https://gemini.google.com/gem/632acd4f3367" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-[10px] text-slate-400 hover:text-purple-400 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">SSP Assistant</a>
+                    <a href="https://gemini.google.com/gem/a297ae8d2ca3" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-[10px] text-slate-400 hover:text-purple-400 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Roll20 Asset Generator</a>
+                    <a href="https://gemini.google.com/gem/7ec5f23e1ad0" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-[10px] text-slate-400 hover:text-purple-400 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Maker Space</a>
+                    <a href="https://gemini.google.com/gem/8c5c96b37138" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-[10px] text-slate-400 hover:text-purple-400 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Undead Barrage</a>
+                    <a href="https://gemini.google.com/gem/1f991e49de86" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-[10px] text-slate-400 hover:text-purple-400 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center leading-tight">Graphics for Undead Barrage</a>
+                    <a href="https://gemini.google.com/gem/a70141b1339a" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-[10px] text-slate-400 hover:text-purple-400 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Image Generator V2</a>
+                    <a href="https://gemini.google.com/gem/0c02dc03dd5a" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-[10px] text-slate-400 hover:text-purple-400 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Clarence V2</a>
+                    <a href="https://gemini.google.com/gem/ff2688525ab1" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-[10px] text-slate-400 hover:text-purple-400 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Canna Lab</a>
+                    <a href="https://gemini.google.com/gem/ab29d7fd327a" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-[10px] text-slate-400 hover:text-purple-400 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Chef Gemini</a>
+                    <a href="https://gemini.google.com/gem/dffc379d829f" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-[10px] text-slate-400 hover:text-purple-400 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">D&D Assistant V2</a>
+                </div>
             </div>
 
         </main>
@@ -229,7 +246,6 @@
         const darkModeToggle = document.getElementById('darkModeToggle');
         darkModeToggle.checked = true;
 
-        // --- Weather & Google Pipelines ---
         async function fetchWeather() {
             const weatherContainer = document.getElementById('weatherContainer');
             try {
@@ -248,10 +264,8 @@
 
                 const miniIcon = document.getElementById('miniWeatherIcon');
                 const miniTemp = document.getElementById('miniWeatherTemp');
-                
                 miniIcon.textContent = currentIcon;
                 miniIcon.classList.remove('animate-pulse', 'text-slate-500');
-                
                 miniTemp.textContent = Math.round(data.current.temperature_2m) + '°F';
                 miniTemp.classList.remove('text-slate-500');
                 miniTemp.classList.add('text-cyan-300');
@@ -260,8 +274,6 @@
                 for (let i = 0; i < 5; i++) {
                     const date = new Date(data.daily.time[i] + 'T00:00:00');
                     const dayName = new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(date);
-                    const formattedDate = new Intl.DateTimeFormat('en-US', { month: '2-digit', day: '2-digit' }).format(date);
-                    
                     const code = data.daily.weathercode[i];
                     let icon = '☀️';
                     if (code >= 1 && code <= 3) icon = '⛅';
@@ -270,7 +282,6 @@
                     if (code >= 71 && code <= 77) icon = '❄️';
                     if (code >= 80 && code <= 82) icon = '🌦️';
                     if (code >= 95 && code <= 99) icon = '⛈️';
-
                     const precip = data.daily.precipitation_probability_max[i];
                     const precipDisplay = precip > 20 
                         ? `<div class="text-[10px] text-cyan-400 font-mono flex items-center"><svg class="w-3 h-3 mr-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.5c-3.033 0-5.5-2.467-5.5-5.5 0-2.333 1.583-4.833 5.5-9.833 3.917 5 5.5 7.5 5.5 9.833 0 3.033-2.467 5.5-5.5 5.5z"/></svg>${precip}%</div>`
@@ -286,8 +297,7 @@
                                 <span class="text-slate-400">${Math.round(data.daily.temperature_2m_min[i])}°</span>
                             </div>
                             ${precipDisplay}
-                        </div>
-                    `;
+                        </div>`;
                 }
                 weatherContainer.innerHTML = weatherHTML + '</div>';
             } catch (error) {
@@ -299,18 +309,15 @@
             const url = 'https://script.google.com/macros/s/AKfycbQbf7ex5rJcVgavVsaFs7BfhOWi6ioy3HD7TA1Oo9lAaUFitR6seFZrvMiU8_J8uLRPw/exec'; 
             const emailList = document.getElementById('emailList');
             const calList = document.getElementById('calendarList');
-
             try {
                 const res = await fetch(url, { method: 'GET', redirect: 'follow' });
                 if (!res.ok) throw new Error(`HTTP_ERR_${res.status}`);
                 const contentType = res.headers.get("content-type");
                 if (contentType && contentType.indexOf("application/json") === -1) throw new Error('AUTH_REQUIRED');
                 const data = await res.json();
-                
                 emailList.innerHTML = data.emails && data.emails.length > 0 
                     ? data.emails.map(subject => `<a href="https://mail.google.com/" target="_blank" class="block text-sm font-mono border-b border-fuchsia-900/30 pb-2 text-slate-300 hover:text-fuchsia-400 hover:pl-2 transition-all cursor-pointer">> ${subject}</a>`).join('')
                     : '<span class="text-xs font-mono text-slate-500 uppercase">> Inbox Empty</span>';
-
                 calList.innerHTML = data.calendar && data.calendar.length > 0
                     ? data.calendar.map(item => `<a href="https://calendar.google.com/" target="_blank" class="block text-sm border-b border-emerald-900/30 pb-2 text-slate-300 hover:text-emerald-400 hover:pl-2 transition-all cursor-pointer"><strong class="text-emerald-300 font-mono text-xs mr-2">[${item.date}]</strong>${item.title}</a>`).join('')
                     : '<span class="text-xs font-mono text-slate-500 uppercase">> No Events</span>';
@@ -321,12 +328,10 @@
             }
         }
 
-        // --- Initialization ---
         async function initializeDashboard() {
             fetchWeather();
             fetchGoogleData();
         }
-
         document.addEventListener("DOMContentLoaded", initializeDashboard);
     </script>
 </body>
