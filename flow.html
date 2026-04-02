@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flow v2.3</title>
+    <title>Flow v2.4</title>
     
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='25' fill='%23020617' stroke='%2306b6d4' stroke-width='4'/%3E%3Cellipse cx='50' cy='50' rx='45' ry='15' fill='none' stroke='%2306b6d4' stroke-width='4' transform='rotate(-20 50 50)'/%3E%3C/svg%3E">
     
@@ -60,7 +60,7 @@
         <div id="commandDeck" class="absolute top-24 left-6 w-80 max-h-[80vh] overflow-y-auto overflow-x-hidden bg-slate-950/80 backdrop-blur-xl border border-slate-800/60 rounded-xl p-6 pointer-events-auto panel-slide -translate-x-[120%] shadow-2xl">
             <div class="mb-5 pb-3 border-b border-slate-800">
                 <h2 class="text-lg font-semibold tracking-wide text-slate-200">Flow Parameters</h2>
-                <p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mt-1">Zen Engine v2.3</p>
+                <p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mt-1">Zen Engine v2.4</p>
             </div>
 
             <div class="space-y-5">
@@ -118,7 +118,7 @@
                     </div>
                     <div>
                         <label class="flex justify-between text-[10px] font-mono text-slate-500 mb-1.5 uppercase">
-                            Density <span id="denVal" class="text-slate-300">80</span>
+                            Particle Density <span id="denVal" class="text-slate-300">80</span>
                         </label>
                         <input type="range" id="densitySlider" min="20" max="200" step="10" value="80">
                     </div>
@@ -132,7 +132,19 @@
                         <input type="range" id="sensitivitySlider" min="0.1" max="3" step="0.1" value="1.0">
                     </div>
                     <div>
-                        <label class="flex justify-between text-[10px] font-mono text-slate-500 mb-1.5 uppercase" title="Lower is smoother, higher is more snappy">
+                        <label class="flex justify-between text-[10px] font-mono text-slate-500 mb-1.5 uppercase" title="Higher values isolate peaks">
+                            Peak Distortion <span id="distVal" class="text-slate-300">1.0x</span>
+                        </label>
+                        <input type="range" id="distortionSlider" min="1.0" max="3.0" step="0.1" value="1.0">
+                    </div>
+                    <div>
+                        <label class="flex justify-between text-[10px] font-mono text-slate-500 mb-1.5 uppercase" title="Controls lines inside Saturn rings">
+                            Groove Density <span id="grooveVal" class="text-slate-300">3</span>
+                        </label>
+                        <input type="range" id="groovesSlider" min="1" max="20" step="1" value="3">
+                    </div>
+                    <div>
+                        <label class="flex justify-between text-[10px] font-mono text-slate-500 mb-1.5 uppercase">
                             Audio Dampening <span id="dampVal" class="text-slate-300">Smooth</span>
                         </label>
                         <input type="range" id="dampeningSlider" min="0.05" max="0.5" step="0.05" value="0.15">
@@ -177,7 +189,7 @@
             let width, height, timeTick = 0;
 
             const palettes = {
-                sunset: ['#fcd34d', '#f97316', '#ef4444', '#8b5cf6', '#2e1065'], // V2.2 Synthwave
+                sunset: ['#fcd34d', '#f97316', '#ef4444', '#8b5cf6', '#2e1065'], 
                 nordic: ['#94a3b8', '#64748b', '#38bdf8', '#818cf8', '#0f172a'],
                 matcha: ['#d9f99d', '#a3e635', '#4d7c0f', '#ecfccb', '#052e16'],
                 grayscale: ['#333333', '#666666', '#999999', '#cccccc', '#111111'],
@@ -194,6 +206,8 @@
                 direction: 'float',
                 audio: false,
                 sensitivity: 1.0,
+                distortion: 1.0,  // Audio Exponential Curve
+                grooves: 3,       // Saturn Band Lines
                 dampening: 0.15,
                 persistence: true,
                 breath: false,
@@ -213,7 +227,7 @@
 
             // --- ENGINE REGISTRY CLASSES ---
 
-            // 1. Saturn Multiplexer Engine (V2.3 Vinyl Nested Loops)
+            // 1. Saturn Multiplexer Engine (V2.4 Dynamic Grooves + Peak Distortion)
             class SaturnEngine {
                 constructor() {}
                 init() {
@@ -238,6 +252,7 @@
                     const cx = width / 2, cy = height / 2;
                     const rPlanet = Math.min(width, height) * 0.15 * state.scale * state.mass;
                     const ringTilt = 0.35;
+                    const bandSpacing = rPlanet * 0.3; // Distance to the next audio band
 
                     const bands = [
                         { s: 60, e: 120, rBase: rPlanet * 1.3, color: state.colors[3], w: 1 },
@@ -250,22 +265,35 @@
                         bands.forEach((band) => {
                             ctx.globalAlpha = isFront ? 0.9 : 0.3;
                             
-                            // Nested loop for vinyl record grooves
-                            for(let track = -1; track <= 1; track++) {
+                            let numGrooves = state.grooves;
+                            // Dynamically scale the spread. At grooves=20, it fills 100% of the bandSpacing
+                            let maxSpread = bandSpacing * (numGrooves / 20); 
+                            let step = numGrooves > 1 ? maxSpread / (numGrooves - 1) : 0;
+                            
+                            for(let track = 0; track < numGrooves; track++) {
                                 ctx.beginPath();
                                 ctx.strokeStyle = band.color;
-                                ctx.lineWidth = (band.w / 2) * state.scale * state.mass;
-                                let trackOffset = track * (8 * state.scale * state.mass); // Gap between grooves
+                                // Thinner lines as density increases to prevent solid bleeding
+                                let thicknessMod = numGrooves > 3 ? (3 / numGrooves) * 1.5 : 1;
+                                ctx.lineWidth = (band.w / 2) * state.scale * state.mass * thicknessMod;
+                                
+                                // Center the grooves around the rBase
+                                let trackOffset = (track * step) - (maxSpread / 2);
                                 
                                 let first = true;
                                 for(let i = startAngle; i <= endAngle + 0.05; i += 0.05) {
                                     let angle = Math.min(i, endAngle);
                                     let localBin = Math.floor((Math.abs(angle - Math.PI) / Math.PI) * (band.e - band.s)) + band.s;
-                                    let localMod = state.audio ? state.smoothedAudio[localBin] : 0;
-                                    let globalMod = getAudioBand(band.s, band.e);
+                                    
+                                    let rawAudio = state.audio ? state.smoothedAudio[localBin] : 0;
+                                    let localMod = Math.pow(rawAudio, state.distortion); // Peak Distortion
+                                    
+                                    let globalRaw = getAudioBand(band.s, band.e);
+                                    let globalMod = Math.pow(globalRaw, state.distortion); // Peak Distortion
                                     
                                     let baseRadius = band.rBase + trackOffset;
                                     let r = baseRadius + ((globalMod * 40) + (localMod * 30)) * state.sensitivity * state.scale * state.mass;
+                                    
                                     let x = cx + Math.cos(angle) * r;
                                     let y = cy + Math.sin(angle) * r * ringTilt;
                                     
@@ -291,7 +319,7 @@
                 }
             }
 
-            // 2. Outrun Grid Engine (V2.3 True Camera Projection)
+            // 2. Outrun Grid Engine
             class MeshEngine {
                 constructor() {}
                 init() {}
@@ -302,21 +330,19 @@
                     const fov = 400 * state.scale;
                     const gridW = width * 1.5;
                     
-                    // 1. Static Vertical Lines (Perspective)
                     ctx.beginPath();
                     ctx.strokeStyle = state.colors[1];
                     ctx.globalAlpha = 0.2;
                     ctx.lineWidth = 1 * state.scale;
                     
                     for(let x = -gridW; x <= gridW; x += 100) {
-                        let startScale = fov / 10;   // Near camera
-                        let endScale = fov / 2000;   // Far horizon
+                        let startScale = fov / 10;
+                        let endScale = fov / 2000;
                         ctx.moveTo(width/2 + (x * endScale), horizonY + (cameraHeight * endScale));
                         ctx.lineTo(width/2 + (x * startScale), horizonY + (cameraHeight * startScale));
                     }
                     ctx.stroke();
 
-                    // 2. Moving Horizontal Lines (Audio Reactive Terrain)
                     const numH = 45;
                     let zOffset = (timeTick * 4 * state.velocity) % 40;
 
@@ -333,21 +359,21 @@
                         
                         let first = true;
                         
-                        // Audio mapping based on Z-depth (closer lines map to lower bass frequencies)
                         let bin = Math.floor((1 - (i / numH)) * 60); 
                         let rawAudio = state.audio ? state.smoothedAudio[bin] : 0;
+                        // Peak Distortion Exponent
+                        let distortedAudio = Math.pow(rawAudio, state.distortion);
 
                         for(let x = -gridW; x <= gridW; x += 40) {
                             let edgeFade = Math.max(0, 1 - Math.pow(Math.abs(x) / gridW, 2));
-                            let altitude = rawAudio * state.sensitivity * 250 * edgeFade * state.mass;
+                            let altitude = distortedAudio * state.sensitivity * 250 * edgeFade * state.mass;
                             
-                            // Mathematical Ceiling: Altitude cannot exceed camera height. Prevents horizon crossover.
                             altitude = Math.min(altitude, cameraHeight * 0.95);
 
                             let px = width/2 + (x * scaleProj);
                             let py = horizonY + ((cameraHeight - altitude) * scaleProj);
                             
-                            if (py > height * 1.5) continue; // Culling off-screen rendering
+                            if (py > height * 1.5) continue; 
 
                             if (first) { ctx.moveTo(px, py); first = false; }
                             else ctx.lineTo(px, py);
@@ -416,7 +442,7 @@
                 }
             }
 
-            // 4. Particle Engine (Wraps legacy Zen, Neural, Orbs)
+            // 4. Particle Engine
             class ParticleEngine {
                 constructor() {}
                 init() {
@@ -460,7 +486,9 @@
                         }
                         for (let i = this.ripples.length - 1; i >= 0; i--) {
                             let rip = this.ripples[i];
-                            let audioBoost = state.audio ? state.smoothedAudio[10]*15*state.sensitivity : 0;
+                            let rawAudio = state.audio ? state.smoothedAudio[10] : 0;
+                            let distAudio = Math.pow(rawAudio, state.distortion);
+                            let audioBoost = distAudio * 15 * state.sensitivity;
                             rip.r += (0.5 * state.velocity) + audioBoost;
                             ctx.beginPath(); ctx.strokeStyle = rip.c; ctx.globalAlpha = 0.5 * (1 - rip.r/rip.max);
                             ctx.lineWidth = 1.5 * state.scale * state.mass; 
@@ -473,7 +501,9 @@
                             ctx.fillStyle = p.c; ctx.beginPath();
                             if(state.theme === 'orbs') {
                                 ctx.globalAlpha = 0.4;
-                                ctx.arc(p.x, p.y, p.s * state.scale * state.mass * (1 + state.smoothedAudio[0]*2), 0, Math.PI*2);
+                                let rawAudio = state.smoothedAudio[0];
+                                let distAudio = Math.pow(rawAudio, state.distortion);
+                                ctx.arc(p.x, p.y, p.s * state.scale * state.mass * (1 + distAudio*2), 0, Math.PI*2);
                             } else {
                                 ctx.globalAlpha = 0.8;
                                 ctx.arc(p.x, p.y, p.s * state.scale * state.mass, 0, Math.PI*2);
@@ -487,7 +517,9 @@
                                 for(let j=i+1; j<this.particles.length; j++) {
                                     let p1 = this.particles[i], p2 = this.particles[j];
                                     let dx = p1.x - p2.x, dy = p1.y - p2.y, dist = Math.sqrt(dx*dx + dy*dy);
-                                    let threshold = state.audio ? 100 + (state.smoothedAudio[i%20])*150*state.sensitivity : 120;
+                                    let rawAudio = state.smoothedAudio[i%20];
+                                    let distAudio = Math.pow(rawAudio, state.distortion);
+                                    let threshold = state.audio ? 100 + distAudio*150*state.sensitivity : 120;
                                     threshold *= state.scale * state.mass;
                                     
                                     if(dist < threshold) {
@@ -562,7 +594,7 @@
             }
             fetchWeather(); setInterval(fetchWeather, 600000);
 
-            // Interface
+            // Interface Control Panel Binding
             document.getElementById('themeSelect').addEventListener('change', e => switchTheme(e.target.value));
             document.getElementById('paletteSelect').addEventListener('change', e => { state.colors = palettes[e.target.value]; currentEngine.init(); });
             
@@ -577,6 +609,8 @@
             document.getElementById('scaleSlider').addEventListener('input', e => { state.scale = parseFloat(e.target.value); document.getElementById('scaleVal').textContent = state.scale.toFixed(1) + 'x'; });
             document.getElementById('massSlider').addEventListener('input', e => { state.mass = parseFloat(e.target.value); document.getElementById('massVal').textContent = state.mass.toFixed(1) + 'x'; });
             document.getElementById('sensitivitySlider').addEventListener('input', e => { state.sensitivity = parseFloat(e.target.value); document.getElementById('sensVal').textContent = state.sensitivity.toFixed(1) + 'x'; });
+            document.getElementById('distortionSlider').addEventListener('input', e => { state.distortion = parseFloat(e.target.value); document.getElementById('distVal').textContent = state.distortion.toFixed(1) + 'x'; });
+            document.getElementById('groovesSlider').addEventListener('input', e => { state.grooves = parseInt(e.target.value); document.getElementById('grooveVal').textContent = state.grooves; });
             document.getElementById('velocitySlider').addEventListener('input', e => { state.velocity = parseFloat(e.target.value); document.getElementById('velVal').textContent = state.velocity.toFixed(1) + 'x'; });
             document.getElementById('densitySlider').addEventListener('input', e => { state.density = parseInt(e.target.value); currentEngine.init(); });
             
