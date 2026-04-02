@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flow v2.1</title>
+    <title>Flow v2.2</title>
+    
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='25' fill='%23020617' stroke='%2306b6d4' stroke-width='4'/%3E%3Cellipse cx='50' cy='50' rx='45' ry='15' fill='none' stroke='%2306b6d4' stroke-width='4' transform='rotate(-20 50 50)'/%3E%3C/svg%3E">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <script>
@@ -26,6 +29,12 @@
         .cyber-toggle:checked + .toggle-label { background-color: #475569; }
 
         .dir-btn.active { border-color: #06b6d4; color: #06b6d4; background-color: rgba(6, 182, 212, 0.1); }
+        
+        /* Custom scrollbar for deep menus */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
 </head>
 <body class="w-screen h-screen text-slate-100 font-sans select-none">
@@ -35,6 +44,9 @@
     <div class="fixed bottom-6 right-8 text-right z-10 drop-shadow-lg pointer-events-none">
         <div id="hudTime" class="text-4xl font-light text-slate-200 tracking-widest">--:--</div>
         <div class="flex items-center justify-end gap-2 mt-1 text-slate-400 font-mono text-xs uppercase tracking-wider">
+            <div id="miniWeatherIcon" class="text-slate-500 animate-pulse">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2" stroke-dasharray="16 16"/></svg>
+            </div>
             <span id="hudWeatherTemp">SYNCING...</span>
         </div>
     </div>
@@ -46,10 +58,10 @@
             </svg>
         </button>
 
-        <div id="commandDeck" class="absolute top-24 left-6 w-80 max-h-[80vh] overflow-y-auto overflow-x-hidden bg-slate-950/80 backdrop-blur-xl border border-slate-800/60 rounded-xl p-6 pointer-events-auto panel-slide -translate-x-[120%] shadow-2xl custom-scrollbar">
+        <div id="commandDeck" class="absolute top-24 left-6 w-80 max-h-[80vh] overflow-y-auto overflow-x-hidden bg-slate-950/80 backdrop-blur-xl border border-slate-800/60 rounded-xl p-6 pointer-events-auto panel-slide -translate-x-[120%] shadow-2xl">
             <div class="mb-5 pb-3 border-b border-slate-800">
                 <h2 class="text-lg font-semibold tracking-wide text-slate-200">Flow Parameters</h2>
-                <p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mt-1">Zen Engine v2.1</p>
+                <p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mt-1">Zen Engine v2.2</p>
             </div>
 
             <div class="space-y-5">
@@ -58,7 +70,7 @@
                         <label class="block text-[10px] font-mono text-slate-500 mb-1.5 uppercase">Visual Matrix</label>
                         <select id="themeSelect" class="w-full bg-slate-900/50 border border-slate-700 rounded p-2 text-xs font-mono text-slate-300 focus:outline-none focus:border-slate-500 transition-colors">
                             <option value="saturn">Saturn Multiplexer</option>
-                            <option value="mesh">Cymatic Topography (3D)</option>
+                            <option value="mesh">Outrun Grid (Horizon)</option>
                             <option value="galaxy">Void Galaxy</option>
                             <option value="zen">Zen Garden</option>
                             <option value="neural">Neural Synapse</option>
@@ -68,6 +80,7 @@
                     <div>
                         <label class="block text-[10px] font-mono text-slate-500 mb-1.5 uppercase">Color Palette</label>
                         <select id="paletteSelect" class="w-full bg-slate-900/50 border border-slate-700 rounded p-2 text-xs font-mono text-slate-300 focus:outline-none focus:border-slate-500 transition-colors">
+                            <option value="sunset">Sunset (Synthwave)</option>
                             <option value="nordic">Nordic Drift (Slate/Blue)</option>
                             <option value="matcha">Matcha (Sage/Forest)</option>
                             <option value="grayscale">Grayscale (Monochrome)</option>
@@ -91,6 +104,12 @@
                             Global Scale <span id="scaleVal" class="text-slate-300">1.0x</span>
                         </label>
                         <input type="range" id="scaleSlider" min="0.5" max="2.0" step="0.1" value="1.0">
+                    </div>
+                    <div>
+                        <label class="flex justify-between text-[10px] font-mono text-slate-500 mb-1.5 uppercase">
+                            Entity Mass <span id="massVal" class="text-slate-300">1.0x</span>
+                        </label>
+                        <input type="range" id="massSlider" min="0.2" max="3.0" step="0.1" value="1.0">
                     </div>
                     <div>
                         <label class="flex justify-between text-[10px] font-mono text-slate-500 mb-1.5 uppercase">
@@ -159,6 +178,7 @@
             let width, height, timeTick = 0;
 
             const palettes = {
+                sunset: ['#fcd34d', '#f97316', '#ef4444', '#8b5cf6', '#2e1065'], // V2.2 Synthwave
                 nordic: ['#94a3b8', '#64748b', '#38bdf8', '#818cf8', '#0f172a'],
                 matcha: ['#d9f99d', '#a3e635', '#4d7c0f', '#ecfccb', '#052e16'],
                 grayscale: ['#333333', '#666666', '#999999', '#cccccc', '#111111'],
@@ -167,19 +187,20 @@
 
             const state = {
                 theme: 'saturn',
-                colors: palettes.nordic,
+                colors: palettes.sunset,
                 velocity: 1.0,
                 density: 80,
                 scale: 1.0,
+                mass: 1.0, // Multiplier for object sizes
                 direction: 'float',
                 audio: false,
                 sensitivity: 1.0,
-                dampening: 0.15, // The Lerp factor for smoothing
+                dampening: 0.15,
                 persistence: true,
                 breath: false,
                 mouseX: -1000, mouseY: -1000,
                 rawAudio: new Uint8Array(256).fill(0),
-                smoothedAudio: new Float32Array(256).fill(0) // Butter smooth 0.0 - 1.0 floats
+                smoothedAudio: new Float32Array(256).fill(0)
             };
 
             // Audio Core
@@ -188,7 +209,7 @@
                 if (!state.audio) return 0;
                 let sum = 0;
                 for(let i=startBin; i<endBin; i++) sum += state.smoothedAudio[i];
-                return sum / (endBin - startBin); // Already normalized 0-1
+                return sum / (endBin - startBin); // Normalized 0-1
             }
 
             // --- ENGINE REGISTRY CLASSES ---
@@ -214,24 +235,25 @@
                 }
                 draw() {
                     ctx.fillStyle = state.colors[1];
-                    this.stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.s * state.scale, 0, Math.PI*2); ctx.fill(); });
+                    this.stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.s * state.scale * state.mass, 0, Math.PI*2); ctx.fill(); });
 
                     const cx = width / 2, cy = height / 2;
-                    const rPlanet = Math.min(width, height) * 0.15 * state.scale;
+                    const rPlanet = Math.min(width, height) * 0.15 * state.scale * state.mass;
                     const ringTilt = 0.35;
 
+                    // V2.2: Inverted Assignment. Inner = Highs (60-120), Outer = Sub-bass (0-6)
                     const bands = [
-                        { s: 0, e: 6, rBase: rPlanet * 1.3, color: state.colors[0], w: 4 },
-                        { s: 6, e: 20, rBase: rPlanet * 1.6, color: state.colors[1], w: 3 },
-                        { s: 20, e: 60, rBase: rPlanet * 1.9, color: state.colors[2], w: 2 },
-                        { s: 60, e: 120, rBase: rPlanet * 2.2, color: state.colors[3], w: 1.5 }
+                        { s: 60, e: 120, rBase: rPlanet * 1.3, color: state.colors[3], w: 1.5 },
+                        { s: 20, e: 60, rBase: rPlanet * 1.6, color: state.colors[2], w: 2 },
+                        { s: 6, e: 20, rBase: rPlanet * 1.9, color: state.colors[1], w: 3 },
+                        { s: 0, e: 6, rBase: rPlanet * 2.2, color: state.colors[0], w: 4 }
                     ];
 
                     const drawRings = (startAngle, endAngle, isFront) => {
                         bands.forEach((band) => {
                             ctx.beginPath();
                             ctx.strokeStyle = band.color;
-                            ctx.lineWidth = band.w * state.scale;
+                            ctx.lineWidth = band.w * state.scale * state.mass;
                             ctx.globalAlpha = isFront ? 0.9 : 0.3;
                             
                             let first = true;
@@ -241,7 +263,7 @@
                                 let localMod = state.audio ? state.smoothedAudio[localBin] : 0;
                                 let globalMod = getAudioBand(band.s, band.e);
                                 
-                                let r = band.rBase + ((globalMod * 40) + (localMod * 30)) * state.sensitivity * state.scale;
+                                let r = band.rBase + ((globalMod * 40) + (localMod * 30)) * state.sensitivity * state.scale * state.mass;
                                 let x = cx + Math.cos(angle) * r;
                                 let y = cy + Math.sin(angle) * r * ringTilt;
                                 
@@ -266,46 +288,59 @@
                 }
             }
 
-            // 2. Cymatic Mesh (3D Topography) Engine
+            // 2. Outrun Grid Engine (V2.2 Horizon Perspective)
             class MeshEngine {
                 constructor() {}
                 init() {}
                 update() {}
                 draw() {
-                    const lines = 35;
-                    const fov = 350 * state.scale;
-                    ctx.lineWidth = 1.5;
+                    const horizonY = height * 0.45;
+                    const fov = 400 * state.scale;
                     
-                    let zOffset = (timeTick * 0.05 * state.velocity) % 1;
+                    // Draw Static Radiating Vertical Lines
+                    ctx.beginPath();
+                    ctx.strokeStyle = state.colors[1];
+                    ctx.globalAlpha = 0.2;
+                    ctx.lineWidth = 1 * state.scale;
+                    
+                    let vLimit = width * 3;
+                    for(let x = -vLimit; x <= vLimit; x += (100 * state.scale)) {
+                        ctx.moveTo(width/2, horizonY);
+                        ctx.lineTo(width/2 + x, height);
+                    }
+                    ctx.stroke();
 
-                    for(let z = 1; z < lines; z++) {
-                        let actualZ = z - zOffset;
-                        if (actualZ <= 0) continue; 
+                    // Draw Segmented Audio-Reactive Horizontal Lines
+                    const numH = 40;
+                    let zOffset = (timeTick * 1.5 * state.velocity) % 20;
 
+                    for(let i = 1; i < numH; i++) {
+                        let z = (i * 20) - zOffset;
+                        if (z < 5) continue; // Behind camera
+                        
+                        let scaleProj = fov / z;
+                        let yBase = horizonY + (30 * scaleProj);
+                        if (yBase > height * 1.5) continue; // Off screen bottom
+                        
                         ctx.beginPath();
-                        ctx.strokeStyle = state.colors[(z % 3) + 1];
-                        ctx.globalAlpha = Math.max(0, 1 - (actualZ / lines)); 
+                        ctx.strokeStyle = state.colors[(i % 3) + 1];
+                        ctx.globalAlpha = Math.min(1, (z > 400 ? 1 - (z-400)/400 : 1)); // Fade far horizon
+                        ctx.lineWidth = 1.5 * state.scale * state.mass;
                         
                         let first = true;
-                        let gridWidth = width * 0.8 * state.scale;
-                        
-                        for(let x = -gridWidth; x <= gridWidth; x += (30 * state.scale)) {
-                            let audioMod = 0;
-                            if(state.audio) {
-                                let bin = Math.floor((Math.abs(x) / gridWidth) * 80);
-                                // The Window Function: Tapers audio reaction to 0 at the absolute edges to prevent jagged tearing
-                                let edgeFade = Math.max(0, 1 - Math.pow(Math.abs(x) / gridWidth, 2));
-                                audioMod = (state.smoothedAudio[bin] || 0) * state.sensitivity * 120 * edgeFade * state.scale;
-                            }
-
-                            let scaleProj = fov / (fov + actualZ * 20);
+                        let gridW = width * 1.5;
+                        for(let x = -gridW; x <= gridW; x += 40) {
                             let px = width/2 + (x * scaleProj);
                             
-                            let yBase = height/2 + (50 * state.scale) + (actualZ * 12 * state.scale);
-                            yBase += Math.sin(x*0.005 + timeTick*0.01) * 30 * state.scale;
+                            // Audio maps to Depth (Z). Closer to camera (small Z) = lower frequency bin
+                            let bin = Math.floor((i / numH) * 60); 
+                            let rawAudio = state.audio ? state.smoothedAudio[bin] : 0;
                             
-                            let py = yBase - (audioMod * scaleProj);
-
+                            let edgeFade = Math.max(0, 1 - Math.pow(Math.abs(x) / (width*0.8), 2));
+                            let audioMod = rawAudio * state.sensitivity * 80 * edgeFade * scaleProj * state.mass;
+                            
+                            let py = yBase - audioMod;
+                            
                             if (first) { ctx.moveTo(px, py); first = false; }
                             else ctx.lineTo(px, py);
                         }
@@ -372,7 +407,7 @@
                     ctx.drawImage(this.offCanvas, 0, 0);
                     this.stars.forEach(s => {
                         ctx.fillStyle = s.c;
-                        ctx.fillRect(s.x, s.y, s.s * state.scale, s.s * state.scale);
+                        ctx.fillRect(s.x, s.y, s.s * state.scale * state.mass, s.s * state.scale * state.mass);
                     });
                 }
             }
@@ -395,18 +430,15 @@
                     this.particles.forEach(p => {
                         let spd = state.velocity;
                         
-                        // Repel
                         let dx = p.x - state.mouseX, dy = p.y - state.mouseY, dist = Math.sqrt(dx*dx + dy*dy);
                         if(dist < 150) { p.x += (dx/dist)*2; p.y += (dy/dist)*2; }
                         
-                        // Velocity & Direction
                         let vx = p.vx * spd; let vy = p.vy * spd;
                         if (state.direction === 'up') { vy -= 1.5 * spd; vx *= 0.5; }
                         if (state.direction === 'down') { vy += 1.5 * spd; vx *= 0.5; }
 
                         p.x += vx; p.y += vy;
                         
-                        // Wrapping logic
                         if(p.x < -50) p.x = width + 50; 
                         if(p.x > width + 50) p.x = -50;
                         if(state.direction === 'up' && p.y < -50) p.y = height + 50;
@@ -427,7 +459,9 @@
                             let audioBoost = state.audio ? state.smoothedAudio[10]*15*state.sensitivity : 0;
                             rip.r += (0.5 * state.velocity) + audioBoost;
                             ctx.beginPath(); ctx.strokeStyle = rip.c; ctx.globalAlpha = 0.5 * (1 - rip.r/rip.max);
-                            ctx.lineWidth = 1.5 * state.scale; ctx.arc(rip.x, rip.y, rip.r * state.scale, 0, Math.PI*2); ctx.stroke();
+                            ctx.lineWidth = 1.5 * state.scale * state.mass; 
+                            ctx.arc(rip.x, rip.y, rip.r * state.scale * state.mass, 0, Math.PI*2); 
+                            ctx.stroke();
                             if (rip.r >= rip.max) this.ripples.splice(i, 1);
                         }
                     } else {
@@ -435,22 +469,22 @@
                             ctx.fillStyle = p.c; ctx.beginPath();
                             if(state.theme === 'orbs') {
                                 ctx.globalAlpha = 0.4;
-                                ctx.arc(p.x, p.y, p.s * state.scale * (1 + state.smoothedAudio[0]*2), 0, Math.PI*2);
+                                ctx.arc(p.x, p.y, p.s * state.scale * state.mass * (1 + state.smoothedAudio[0]*2), 0, Math.PI*2);
                             } else {
                                 ctx.globalAlpha = 0.8;
-                                ctx.arc(p.x, p.y, p.s * state.scale, 0, Math.PI*2);
+                                ctx.arc(p.x, p.y, p.s * state.scale * state.mass, 0, Math.PI*2);
                             }
                             ctx.fill();
                         });
 
                         if (state.theme === 'neural') {
-                            ctx.lineWidth = 1;
+                            ctx.lineWidth = 1 * state.mass;
                             for(let i=0; i<this.particles.length; i++) {
                                 for(let j=i+1; j<this.particles.length; j++) {
                                     let p1 = this.particles[i], p2 = this.particles[j];
                                     let dx = p1.x - p2.x, dy = p1.y - p2.y, dist = Math.sqrt(dx*dx + dy*dy);
                                     let threshold = state.audio ? 100 + (state.smoothedAudio[i%20])*150*state.sensitivity : 120;
-                                    threshold *= state.scale;
+                                    threshold *= state.scale * state.mass;
                                     
                                     if(dist < threshold) {
                                         ctx.beginPath(); ctx.strokeStyle = state.colors[2];
@@ -504,10 +538,22 @@
             
             async function fetchWeather() {
                 try {
-                    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=44.95&longitude=-93.36&current=temperature_2m&temperature_unit=fahrenheit');
+                    // MPLS Coordinates
+                    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=44.98&longitude=-93.26&current=temperature_2m,weathercode&temperature_unit=fahrenheit');
                     if(res.ok) {
                         const data = await res.json();
-                        document.getElementById('hudWeatherTemp').textContent = `${Math.round(data.current.temperature_2m)}°F // LOCAL`;
+                        let temp = Math.round(data.current.temperature_2m);
+                        let code = data.current.weathercode;
+                        
+                        let svg = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`; // Sun
+                        if (code >= 1 && code <= 3) svg = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>`; // Cloud
+                        if (code >= 51 && code <= 67) svg = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18v-4m-4 4v-4m8 4v-4M4.041 11.041A5.001 5.001 0 0113 7.002 5.002 5.002 0 0121 12.001c0 2.21-1.43 4.072-3.414 4.708M3 15h14"></path></svg>`; // Rain
+                        if (code >= 71 && code <= 77) svg = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12h-2m-2 0a4 4 0 11-8 0 4 4 0 018 0zm-8 4v2m0-10V6m-4 2l1.414 1.414M16 16l-1.414-1.414M6 16l1.414-1.414M16 8l-1.414 1.414"></path></svg>`; // Snow
+                        if (code >= 95) svg = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>`; // Thunder
+
+                        document.getElementById('miniWeatherIcon').innerHTML = svg;
+                        document.getElementById('miniWeatherIcon').classList.remove('animate-pulse', 'text-slate-500');
+                        document.getElementById('hudWeatherTemp').textContent = `${temp}°F // MPLS`;
                     }
                 } catch(e) { console.warn("Weather fetch failed."); }
             }
@@ -517,7 +563,6 @@
             document.getElementById('themeSelect').addEventListener('change', e => switchTheme(e.target.value));
             document.getElementById('paletteSelect').addEventListener('change', e => { state.colors = palettes[e.target.value]; currentEngine.init(); });
             
-            // Direction Buttons
             document.querySelectorAll('.dir-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     document.querySelectorAll('.dir-btn').forEach(b => b.classList.remove('active'));
@@ -526,8 +571,8 @@
                 });
             });
 
-            // Sliders
             document.getElementById('scaleSlider').addEventListener('input', e => { state.scale = parseFloat(e.target.value); document.getElementById('scaleVal').textContent = state.scale.toFixed(1) + 'x'; });
+            document.getElementById('massSlider').addEventListener('input', e => { state.mass = parseFloat(e.target.value); document.getElementById('massVal').textContent = state.mass.toFixed(1) + 'x'; });
             document.getElementById('sensitivitySlider').addEventListener('input', e => { state.sensitivity = parseFloat(e.target.value); document.getElementById('sensVal').textContent = state.sensitivity.toFixed(1) + 'x'; });
             document.getElementById('velocitySlider').addEventListener('input', e => { state.velocity = parseFloat(e.target.value); document.getElementById('velVal').textContent = state.velocity.toFixed(1) + 'x'; });
             document.getElementById('densitySlider').addEventListener('input', e => { state.density = parseInt(e.target.value); currentEngine.init(); });
@@ -535,7 +580,6 @@
             const dampTextMap = { 0.05: "Liquid", 0.1: "Smooth", 0.15: "Balanced", 0.2: "Responsive", 0.3: "Fast", 0.4: "Snappy", 0.5: "Raw" };
             document.getElementById('dampeningSlider').addEventListener('input', e => { 
                 state.dampening = parseFloat(e.target.value); 
-                // Find closest key for text
                 let closest = Object.keys(dampTextMap).reduce((a, b) => Math.abs(b - state.dampening) < Math.abs(a - state.dampening) ? b : a);
                 document.getElementById('dampVal').textContent = dampTextMap[closest] || state.dampening; 
             });
@@ -580,7 +624,6 @@
             function animate() {
                 timeTick++;
                 
-                // Audio Interpolation (The Lerp)
                 if(state.audio && analyser) {
                     analyser.getByteFrequencyData(state.rawAudio);
                     for(let i=0; i<256; i++) {
@@ -588,12 +631,9 @@
                         state.smoothedAudio[i] += (target - state.smoothedAudio[i]) * state.dampening;
                     }
                 } else {
-                    for(let i=0; i<256; i++) {
-                        state.smoothedAudio[i] += (0 - state.smoothedAudio[i]) * state.dampening;
-                    }
+                    for(let i=0; i<256; i++) state.smoothedAudio[i] += (0 - state.smoothedAudio[i]) * state.dampening;
                 }
 
-                // Transition Logic Coordinator
                 if (isTransitioning) {
                     globalAlpha -= 0.05;
                     if (globalAlpha <= 0) {
@@ -607,7 +647,6 @@
                     globalAlpha = Math.min(1.0, globalAlpha + 0.05);
                 }
 
-                // Persistence Layer (Ghost Trails)
                 if(state.persistence && state.theme !== 'saturn' && state.theme !== 'galaxy' && state.theme !== 'mesh') {
                     ctx.fillStyle = `rgba(2, 6, 23, 0.15)`;
                     ctx.fillRect(0, 0, width, height);
@@ -616,11 +655,9 @@
                     ctx.fillRect(0, 0, width, height);
                 }
 
-                // Deep Breath Modifier
                 let breathMod = state.breath ? 0.7 + Math.sin(timeTick * 0.02) * 0.3 : 1;
                 ctx.globalAlpha = globalAlpha * breathMod;
 
-                // Engine Execution
                 currentEngine.update();
                 currentEngine.draw();
 
@@ -628,7 +665,6 @@
                 requestAnimationFrame(animate);
             }
 
-            // Ignition
             resize(); 
             requestAnimationFrame(animate);
 
