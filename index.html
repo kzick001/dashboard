@@ -36,12 +36,12 @@
             }
         }
     </script>
-    <script>
-        document.documentElement.classList.add('dark'); 
-    </script>
     
     <style>
-        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            transition: filter 0.5s ease-in-out; /* Smooth transition for Override Mode */
+        }
         
         /* 0.02 Opacity Texture Overlay */
         .noise-bg::before {
@@ -57,7 +57,6 @@
         .hover-scale { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out; }
         .hover-scale:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(6, 182, 212, 0.3); border-color: rgba(6, 182, 212, 0.6); }
         
-        /* Tactical Feedback: Chromatic Aberration on Hover */
         .hover-scale:hover h2, 
         .hover-scale:hover p, 
         .hover-scale:hover span, 
@@ -66,9 +65,17 @@
             text-shadow: 1px 0 rgba(255,0,0,0.5), -1px 0 rgba(0,255,255,0.5);
         }
 
-        .toggle-checkbox:checked { right: 0; border-color: #06b6d4; }
-        .toggle-checkbox:checked + .toggle-label { background-color: #06b6d4; box-shadow: 0 0 10px #06b6d4; }
+        /* Toggle Base */
+        .toggle-checkbox { left: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* Toggle Checked State (Override Active) */
+        .toggle-checkbox:checked { left: 16px; border-color: #f43f5e; } /* Rose-500 border */
+        .toggle-checkbox:checked + .toggle-label { background-color: #f43f5e; box-shadow: 0 0 12px #f43f5e; }
         
+        /* The Override Matrix */
+        body.override-active {
+            filter: hue-rotate(-165deg) saturate(1.3) contrast(1.1);
+        }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #020617; }
         ::-webkit-scrollbar-thumb { background: #0891b2; border-radius: 10px; }
@@ -77,10 +84,13 @@
 </head>
 <body class="noise-bg bg-slate-950 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black bg-[length:200%_200%] animate-drift min-h-screen flex flex-col font-sans text-slate-200 transition-colors duration-300">
 
-    <!-- FIXED TOP NAVIGATION & STATUS -->
     <div class="fixed top-0 w-full px-6 py-3 flex justify-between items-center z-50 border-b border-cyan-900/30 bg-slate-950/80 backdrop-blur-md shadow-lg">
-        <div class="flex items-center gap-3 text-cyan-500 font-mono text-[10px] uppercase tracking-widest">
-            <span class="animate-pulse text-red-500">●</span> SYSTEM ONLINE
+        
+        <div class="flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest cursor-default select-none">
+            <span class="animate-pulse text-red-500">●</span> 
+            <span id="sysStatusText" class="text-cyan-500 font-bold transition-colors">SYSTEM ONLINE</span>
+            <span class="text-slate-700 hidden sm:inline">//</span>
+            <span id="sysUptime" class="text-cyan-800 hidden sm:inline">UPTIME: 00:00:00</span>
         </div>
         
         <div class="flex items-center gap-6">
@@ -91,15 +101,14 @@
 
             <div class="flex items-center">
                 <span class="mr-3 text-[10px] font-mono text-slate-500 uppercase tracking-widest">Override</span>
-                <div class="relative inline-block w-8 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="toggle" id="darkModeToggle" checked class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-slate-900 border-2 border-cyan-800 appearance-none cursor-pointer transition-transform duration-300 z-10 top-0 bottom-0 m-auto right-0"/>
-                    <label for="darkModeToggle" class="toggle-label block overflow-hidden h-4 rounded-full bg-cyan-500 shadow-[0_0_10px_#06b6d4] cursor-pointer transition-colors duration-300"></label>
+                <div class="relative inline-block w-8 h-4 align-middle select-none">
+                    <input type="checkbox" id="overrideToggle" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-slate-900 border-2 border-slate-600 appearance-none cursor-pointer z-10 top-0 m-auto"/>
+                    <label for="overrideToggle" class="toggle-label block overflow-hidden h-4 rounded-full bg-slate-800 shadow-inner cursor-pointer transition-all duration-300"></label>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- PADDED MAIN CONTENT -->
     <div class="flex-1 flex flex-col items-center px-4 w-full pt-28 relative z-10">
         
         <header class="mb-12 text-center w-full max-w-6xl">
@@ -109,7 +118,6 @@
 
         <main class="w-full max-w-6xl flex flex-col gap-8">
             
-            <!-- WEATHER MODULE -->
             <div class="relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-cyan-500/20 p-5 hover-scale overflow-hidden group">
                 <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
                 
@@ -138,87 +146,89 @@
                 </div>
             </div>
 
-            <!-- PRIMARY GRID (Top Layer) -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-12">
                 
-                <!-- EMAIL BUTTON -->
                 <a href="https://mail.google.com/" target="_blank" class="block relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-fuchsia-500/20 p-8 hover-scale overflow-hidden group cursor-pointer flex flex-col items-center justify-center text-center">
                     <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-fuchsia-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
                     <div class="bg-fuchsia-950/60 p-5 rounded-2xl mb-4 border border-fuchsia-500/30 group-hover:animate-electric-pulse transition-all relative z-10">
-                        <svg class="w-10 h-10 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                        </svg>
+                        <svg class="w-10 h-10 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                     </div>
                     <h2 class="text-xl font-bold truncate text-slate-100 relative z-10">Email</h2>
                 </a>
 
-                <!-- CALENDAR BUTTON -->
                 <a href="https://calendar.google.com/" target="_blank" class="block relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-emerald-500/20 p-8 hover-scale overflow-hidden group cursor-pointer flex flex-col items-center justify-center text-center">
                     <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-emerald-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
                     <div class="bg-emerald-950/60 p-5 rounded-2xl mb-4 border border-emerald-500/30 group-hover:animate-electric-pulse transition-all relative z-10">
-                        <svg class="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
+                        <svg class="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
                     <h2 class="text-xl font-bold truncate text-slate-100 relative z-10">Calendar</h2>
                 </a>
 
-                <!-- LIVEFORGE BUTTON -->
                 <a href="live-forge/index.html" class="block relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-orange-500/20 p-8 hover-scale overflow-hidden group cursor-pointer flex flex-col items-center justify-center text-center">
                     <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-orange-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
                     <div class="bg-orange-950/60 p-5 rounded-2xl mb-4 border border-orange-500/30 group-hover:animate-electric-pulse transition-all relative z-10">
-                        <svg class="w-10 h-10 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-                        </svg>
+                        <svg class="w-10 h-10 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
                     </div>
                     <h2 class="text-xl font-bold truncate text-slate-100 relative z-10">LiveForge</h2>
                 </a>
 
-                <!-- SPORTS BUTTON -->
                 <a href="sports.html" class="block relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-blue-500/20 p-8 hover-scale overflow-hidden group cursor-pointer flex flex-col items-center justify-center text-center">
                     <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-blue-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
                     <div class="bg-blue-950/60 p-5 rounded-2xl mb-4 border border-blue-500/30 group-hover:animate-electric-pulse transition-all relative z-10">
-                        <svg class="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
-                        </svg>
+                        <svg class="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
                     </div>
                     <h2 class="text-xl font-bold truncate text-slate-100 relative z-10">Sports</h2>
                 </a>
-            </div>
 
-            <!-- NEURAL LINK MULTIPLEXER (Full Width Sub-Grid) -->
-            <div class="relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-purple-500/20 p-6 hover-scale overflow-hidden group">
-                <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-purple-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
-                <div class="flex items-center mb-6 mt-2 relative z-10">
-                    <div class="bg-purple-950/60 p-3 rounded-lg mr-4 border border-purple-500/30 animate-electric-pulse flex-shrink-0">
-                        <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
+                <a href="flow.html" class="block relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-teal-500/20 p-8 hover-scale overflow-hidden group cursor-pointer flex flex-col items-center justify-center text-center">
+                    <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-teal-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
+                    <div class="bg-teal-950/60 p-5 rounded-2xl mb-4 border border-teal-500/30 group-hover:animate-electric-pulse transition-all relative z-10">
+                        <svg class="w-10 h-10 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10v4m4-8v12m4-16v20m4-16v12m4-8v4" /></svg>
                     </div>
-                    <div>
-                        <h2 class="text-xl font-bold truncate text-slate-100 uppercase tracking-tight">Custom Gems</h2>
-                        <p class="text-purple-600 font-mono text-[10px] uppercase tracking-widest">Gemini Multiplexer</p>
+                    <h2 class="text-xl font-bold truncate text-slate-100 relative z-10">Flow</h2>
+                </a>
+
+                <div class="relative w-full z-20">
+                    <button id="gemsDropdownBtn" class="w-full block relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-purple-500/20 p-8 hover-scale overflow-hidden group cursor-pointer flex flex-col items-center justify-center text-center">
+                        <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-purple-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
+                        <div class="bg-purple-950/60 p-5 rounded-2xl mb-4 border border-purple-500/30 group-hover:animate-electric-pulse transition-all relative z-10">
+                            <svg class="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </div>
+                        <h2 class="text-xl font-bold truncate text-slate-100 relative z-10">Custom Gems</h2>
+                        
+                        <div class="absolute bottom-4 right-4 text-purple-500/50 group-hover:text-purple-400 transition-colors z-10">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </button>
+
+                    <div id="gemsDropdownMenu" class="absolute top-full right-0 mt-4 w-[85vw] max-w-[600px] bg-slate-950/95 backdrop-blur-xl border border-purple-500/40 rounded-xl shadow-[0_0_40px_rgba(168,85,247,0.2)] p-5 hidden opacity-0 transition-opacity duration-200 z-50 origin-top-right">
+                        <div class="mb-4 pb-3 border-b border-purple-500/20 flex justify-between items-center">
+                            <span class="text-purple-400 font-mono text-[10px] uppercase tracking-widest font-bold">Gemini Multiplexer Links</span>
+                            <button id="closeGemsBtn" class="text-slate-500 hover:text-red-400 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <a href="https://gemini.google.com/gem/1ee3cdd8bdff" target="_blank" class="p-2.5 bg-slate-900/50 border border-purple-500/20 rounded font-mono text-[10px] text-slate-200 hover:text-purple-300 hover:border-purple-500/60 hover:bg-purple-950/30 transition-all text-center uppercase tracking-tighter flex items-center justify-center">SSP Apps</a>
+                            <a href="https://gemini.google.com/gem/d7aa441f9adf" target="_blank" class="p-2.5 bg-slate-900/50 border border-purple-500/20 rounded font-mono text-[10px] text-slate-200 hover:text-purple-300 hover:border-purple-500/60 hover:bg-purple-950/30 transition-all text-center uppercase tracking-tighter flex items-center justify-center">DM Assistant - DCW</a>
+                            <a href="https://gemini.google.com/gem/0dc9daf99e5a" target="_blank" class="p-2.5 bg-slate-900/50 border border-purple-500/20 rounded font-mono text-[10px] text-slate-200 hover:text-purple-300 hover:border-purple-500/60 hover:bg-purple-950/30 transition-all text-center uppercase tracking-tighter flex items-center justify-center">World Dungeon Campaign</a>
+                            <a href="https://gemini.google.com/gem/83325a84f21b" target="_blank" class="p-2.5 bg-slate-900/50 border border-purple-500/20 rounded font-mono text-[10px] text-slate-200 hover:text-purple-300 hover:border-purple-500/60 hover:bg-purple-950/30 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Kzick Dashboard</a>
+                            <a href="https://gemini.google.com/gem/632acd4f3367" target="_blank" class="p-2.5 bg-slate-900/50 border border-purple-500/20 rounded font-mono text-[10px] text-slate-200 hover:text-purple-300 hover:border-purple-500/60 hover:bg-purple-950/30 transition-all text-center uppercase tracking-tighter flex items-center justify-center">SSP Assistant</a>
+                            <a href="https://gemini.google.com/gem/a297ae8d2ca3" target="_blank" class="p-2.5 bg-slate-900/50 border border-purple-500/20 rounded font-mono text-[10px] text-slate-200 hover:text-purple-300 hover:border-purple-500/60 hover:bg-purple-950/30 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Roll20 Asset Gen</a>
+                            <a href="https://gemini.google.com/gem/7ec5f23e1ad0" target="_blank" class="p-2.5 bg-slate-900/50 border border-purple-500/20 rounded font-mono text-[10px] text-slate-200 hover:text-purple-300 hover:border-purple-500/60 hover:bg-purple-950/30 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Maker Space</a>
+                            <a href="https://gemini.google.com/gem/8c5c96b37138" target="_blank" class="p-2.5 bg-slate-900/50 border border-purple-500/20 rounded font-mono text-[10px] text-slate-200 hover:text-purple-300 hover:border-purple-500/60 hover:bg-purple-950/30 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Undead Barrage</a>
+                            <a href="https://gemini.google.com/gem/1f991e49de86" target="_blank" class="p-2.5 bg-slate-900/50 border border-purple-500/20 rounded font-mono text-[10px] text-slate-200 hover:text-purple-300 hover:border-purple-500/60 hover:bg-purple-950/30 transition-all text-center uppercase tracking-tighter flex items-center justify-center leading-tight">Graphics Undead Barrage</a>
+                            <a href="https://gemini.google.com/gem/a70141b1339a" target="_blank" class="p-2.5 bg-slate-900/50 border border-purple-500/20 rounded font-mono text-[10px] text-slate-200 hover:text-purple-300 hover:border-purple-500/60 hover:bg-purple-950/30 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Image Generator V2</a>
+                            <a href="https://gemini.google.com/gem/0c02dc03dd5a" target="_blank" class="p-2.5 bg-slate-900/50 border border-purple-500/20 rounded font-mono text-[10px] text-slate-200 hover:text-purple-300 hover:border-purple-500/60 hover:bg-purple-950/30 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Clarence V2</a>
+                            <a href="https://gemini.google.com/gem/ff2688525ab1" target="_blank" class="p-2.5 bg-slate-900/50 border border-purple-500/20 rounded font-mono text-[10px] text-slate-200 hover:text-purple-300 hover:border-purple-500/60 hover:bg-purple-950/30 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Canna Lab</a>
+                            <a href="https://gemini.google.com/gem/ab29d7fd327a" target="_blank" class="p-2.5 bg-slate-900/50 border border-purple-500/20 rounded font-mono text-[10px] text-slate-200 hover:text-purple-300 hover:border-purple-500/60 hover:bg-purple-950/30 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Chef Gemini</a>
+                            <a href="https://gemini.google.com/gem/dffc379d829f" target="_blank" class="p-2.5 bg-slate-900/50 border border-purple-500/20 rounded font-mono text-[10px] text-slate-200 hover:text-purple-300 hover:border-purple-500/60 hover:bg-purple-950/30 transition-all text-center uppercase tracking-tighter flex items-center justify-center">D&D Assistant V2</a>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 relative z-10">
-                    <a href="https://gemini.google.com/gem/1ee3cdd8bdff" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-xs text-slate-200 hover:text-purple-300 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">SSP Apps</a>
-                    <a href="https://gemini.google.com/gem/d7aa441f9adf" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-xs text-slate-200 hover:text-purple-300 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">DM Assistant - DCW</a>
-                    <a href="https://gemini.google.com/gem/0dc9daf99e5a" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-xs text-slate-200 hover:text-purple-300 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">World Dungeon Campaign</a>
-                    <a href="https://gemini.google.com/gem/83325a84f21b" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-xs text-slate-200 hover:text-purple-300 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Kzick Dashboard</a>
-                    <a href="https://gemini.google.com/gem/632acd4f3367" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-xs text-slate-200 hover:text-purple-300 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">SSP Assistant</a>
-                    <a href="https://gemini.google.com/gem/a297ae8d2ca3" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-xs text-slate-200 hover:text-purple-300 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Roll20 Asset Generator</a>
-                    <a href="https://gemini.google.com/gem/7ec5f23e1ad0" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-xs text-slate-200 hover:text-purple-300 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Maker Space</a>
-                    <a href="https://gemini.google.com/gem/8c5c96b37138" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-xs text-slate-200 hover:text-purple-300 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Undead Barrage</a>
-                    <a href="https://gemini.google.com/gem/1f991e49de86" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-xs text-slate-200 hover:text-purple-300 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center leading-tight">Graphics for Undead Barrage</a>
-                    <a href="https://gemini.google.com/gem/a70141b1339a" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-xs text-slate-200 hover:text-purple-300 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Image Generator V2</a>
-                    <a href="https://gemini.google.com/gem/0c02dc03dd5a" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-xs text-slate-200 hover:text-purple-300 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Clarence V2</a>
-                    <a href="https://gemini.google.com/gem/ff2688525ab1" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-xs text-slate-200 hover:text-purple-300 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Canna Lab</a>
-                    <a href="https://gemini.google.com/gem/ab29d7fd327a" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-xs text-slate-200 hover:text-purple-300 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">Chef Gemini</a>
-                    <a href="https://gemini.google.com/gem/dffc379d829f" target="_blank" class="p-2 bg-slate-950/50 border border-purple-500/10 rounded font-mono text-xs text-slate-200 hover:text-purple-300 hover:border-purple-500/40 transition-all text-center uppercase tracking-tighter flex items-center justify-center">D&D Assistant V2</a>
-                </div>
-            </div>
 
+            </div>
         </main>
 
     </div>
@@ -227,14 +237,66 @@
         <p>&copy; <span id="currentYear"></span> Launchpad // Authorized Access Only</p>
     </footer>
 
-    <!-- THE ENGINE ROOM -->
     <script>
         document.getElementById('currentYear').textContent = new Date().getFullYear();
 
-        const htmlElement = document.documentElement;
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        darkModeToggle.checked = true;
+        // --- System Uptime Logic ---
+        const startTime = Date.now();
+        const uptimeDisplay = document.getElementById('sysUptime');
+        
+        function updateUptime() {
+            let diff = Math.floor((Date.now() - startTime) / 1000);
+            let h = String(Math.floor(diff / 3600)).padStart(2, '0');
+            let m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+            let s = String(diff % 60).padStart(2, '0');
+            uptimeDisplay.textContent = `UPTIME: ${h}:${m}:${s}`;
+        }
+        setInterval(updateUptime, 1000);
 
+        // --- Override Matrix Logic ---
+        const overrideToggle = document.getElementById('overrideToggle');
+        const sysStatusText = document.getElementById('sysStatusText');
+        
+        overrideToggle.checked = false; // Always start normalized
+        
+        overrideToggle.addEventListener('change', (e) => {
+            if(e.target.checked) {
+                document.body.classList.add('override-active');
+                sysStatusText.textContent = "OVERRIDE ACTIVE";
+                sysStatusText.classList.replace('text-cyan-500', 'text-red-500');
+            } else {
+                document.body.classList.remove('override-active');
+                sysStatusText.textContent = "SYSTEM ONLINE";
+                sysStatusText.classList.replace('text-red-500', 'text-cyan-500');
+            }
+        });
+
+        // --- Custom Gems Dropdown Logic ---
+        const gemsBtn = document.getElementById('gemsDropdownBtn');
+        const gemsMenu = document.getElementById('gemsDropdownMenu');
+        const closeGems = document.getElementById('closeGemsBtn');
+
+        function toggleGems(e) {
+            if(e) e.stopPropagation();
+            if (gemsMenu.classList.contains('hidden')) {
+                gemsMenu.classList.remove('hidden');
+                setTimeout(() => gemsMenu.classList.remove('opacity-0'), 10);
+            } else {
+                gemsMenu.classList.add('opacity-0');
+                setTimeout(() => gemsMenu.classList.add('hidden'), 200);
+            }
+        }
+
+        gemsBtn.addEventListener('click', toggleGems);
+        closeGems.addEventListener('click', toggleGems);
+
+        document.addEventListener('click', (e) => {
+            if (!gemsBtn.contains(e.target) && !gemsMenu.contains(e.target) && !gemsMenu.classList.contains('hidden')) {
+                toggleGems();
+            }
+        });
+
+        // --- Weather API Logic ---
         async function fetchWeather() {
             const weatherContainer = document.getElementById('weatherContainer');
             try {
@@ -294,11 +356,7 @@
             }
         }
 
-        async function initializeDashboard() {
-            fetchWeather();
-        }
-        
-        document.addEventListener("DOMContentLoaded", initializeDashboard);
+        document.addEventListener("DOMContentLoaded", fetchWeather);
     </script>
 </body>
 </html>
