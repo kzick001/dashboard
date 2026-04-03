@@ -3,309 +3,708 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saturn Multiplexer v1.6</title>
+    <title>Flow v2.4</title>
+    
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='25' fill='%23020617' stroke='%2306b6d4' stroke-width='4'/%3E%3Cellipse cx='50' cy='50' rx='45' ry='15' fill='none' stroke='%2306b6d4' stroke-width='4' transform='rotate(-20 50 50)'/%3E%3C/svg%3E">
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
-                    },
-                    animation: {
-                        'scanline': 'scanline 6s linear infinite',
-                        'electric-pulse': 'electric-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    },
-                    keyframes: {
-                        scanline: {
-                            '0%': { transform: 'translateY(-100%)' },
-                            '100%': { transform: 'translateY(1000%)' }
-                        },
-                        'electric-pulse': {
-                            '0%, 100%': { opacity: 1, borderColor: 'rgba(245, 158, 11, 0.6)', boxShadow: '0 0 10px rgba(245, 158, 11, 0.3)' },
-                            '50%': { opacity: .6, borderColor: 'rgba(245, 158, 11, 0.2)', boxShadow: 'none' },
-                        }
-                    }
-                }
-            }
+            theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } }
         }
     </script>
     <style>
-        body { background: radial-gradient(circle at 50% 50%, #020617 0%, #0f172a 100%); }
-        ::-webkit-scrollbar { display: none; }
+        body { background-color: #020617; overflow: hidden; margin: 0; padding: 0; }
+        .ghost-fade { transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .panel-slide { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         
-        /* Custom Hardware Toggle Styles */
-        .cyber-switch input:checked + div { background-color: currentColor; box-shadow: 0 0 15px currentColor; }
-        .cyber-switch input:checked + div > div { transform: translateX(100%); background-color: #fff; }
+        input[type=range] { -webkit-appearance: none; background: transparent; width: 100%; }
+        input[type=range]::-webkit-slider-runnable-track { height: 2px; background: #334155; border-radius: 1px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 12px; width: 12px; border-radius: 50%; background: #94a3b8; margin-top: -5px; cursor: pointer; transition: background 0.2s; }
+        input[type=range]:hover::-webkit-slider-thumb { background: #cbd5e1; }
+        
+        .cyber-toggle:checked { right: 0; border-color: #94a3b8; }
+        .cyber-toggle:checked + .toggle-label { background-color: #475569; }
+
+        .dir-btn.active { border-color: #06b6d4; color: #06b6d4; background-color: rgba(6, 182, 212, 0.1); }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4 text-slate-300">
+<body class="w-screen h-screen text-slate-100 font-sans select-none">
 
-    <div class="relative bg-slate-900/80 backdrop-blur-sm rounded-xl shadow-lg border border-amber-500/20 p-6 hover-scale overflow-hidden group w-full max-w-4xl">
-        
-        <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-amber-500/5 to-transparent h-20 w-full animate-scanline opacity-20"></div>
-        
-        <a href="https://kzick001.github.io/dashboard/" class="absolute top-4 left-4 text-[10px] font-black text-amber-800 hover:text-amber-400 transition-colors tracking-tighter z-20">&larr; DASHBOARD</a>
+    <canvas id="coreCanvas" class="fixed inset-0 w-full h-full z-0"></canvas>
 
-        <div class="flex items-center space-x-3 mb-6 z-10 relative mt-4">
-            <div class="w-8 h-8 flex items-center justify-center rounded bg-amber-950/60 border border-amber-500/30 group-hover:animate-electric-pulse transition-all">
-                <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21a9 9 0 100-18 9 9 0 000 18zm0 0v-5m0 0a3 3 0 110-6 3 3 0 010 6z"></path>
-                </svg>
+    <div class="fixed bottom-6 right-8 text-right z-10 drop-shadow-lg pointer-events-none">
+        <div id="hudTime" class="text-4xl font-light text-slate-200 tracking-widest">--:--</div>
+        <div class="flex items-center justify-end gap-2 mt-1 text-slate-400 font-mono text-xs uppercase tracking-wider">
+            <div id="miniWeatherIcon" class="text-slate-500 animate-pulse">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2" stroke-dasharray="16 16"/></svg>
             </div>
-            <h2 class="text-xl font-bold truncate text-slate-100 font-sans tracking-tight">Saturn Multiplexer v1.6</h2>
+            <span id="hudWeatherTemp">SYNCING...</span>
         </div>
+    </div>
 
-        <div id="loading-state" class="font-mono text-sm text-red-500 animate-pulse mb-4 z-10 relative">
-            > Syncing secure pipeline... 
-            <br>> Establishing isolated canvas context...
-            <br>> Calibrating Z-Depth buffer...
-        </div>
+    <div id="ghostLayer" class="fixed inset-0 z-20 pointer-events-none ghost-fade">
+        <button id="menuToggle" class="absolute top-6 left-6 w-12 h-12 rounded-full bg-slate-900/50 backdrop-blur-md border border-slate-700/50 flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 transition-all pointer-events-auto shadow-lg hover:shadow-cyan-500/20">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+            </svg>
+        </button>
 
-        <div id="app-core" class="hidden z-10 relative flex flex-col gap-6">
-            
-            <div class="flex flex-col md:flex-row justify-between items-center gap-6 p-5 bg-slate-950/80 rounded-lg border border-slate-800 shadow-inner">
-                
-                <div class="flex gap-6">
-                    <label class="cyber-switch flex flex-col space-y-2 cursor-pointer group text-yellow-500">
-                        <span class="font-mono text-[10px] text-slate-500 group-hover:text-yellow-500 transition-colors tracking-widest">YIELD: SINGULARITY</span>
-                        <div class="relative w-12 h-6">
-                            <input type="checkbox" id="switch-yellow" class="sr-only">
-                            <div class="block w-full h-full bg-slate-800 rounded-full border border-slate-700 transition-all duration-300">
-                                <div class="absolute left-1 top-1 bg-slate-500 w-4 h-4 rounded-full transition-transform duration-300"></div>
-                            </div>
-                        </div>
-                    </label>
+        <div id="commandDeck" class="absolute top-24 left-6 w-80 max-h-[80vh] overflow-y-auto overflow-x-hidden bg-slate-950/80 backdrop-blur-xl border border-slate-800/60 rounded-xl p-6 pointer-events-auto panel-slide -translate-x-[120%] shadow-2xl">
+            <div class="mb-5 pb-3 border-b border-slate-800">
+                <h2 class="text-lg font-semibold tracking-wide text-slate-200">Flow Parameters</h2>
+                <p class="text-[10px] font-mono text-slate-500 uppercase tracking-widest mt-1">Zen Engine v2.4</p>
+            </div>
 
-                    <label class="cyber-switch flex flex-col space-y-2 cursor-pointer group text-red-600">
-                        <span class="font-mono text-[10px] text-slate-500 group-hover:text-red-500 transition-colors tracking-widest">CRITICAL: EJECTION</span>
-                        <div class="relative w-12 h-6">
-                            <input type="checkbox" id="switch-red" class="sr-only">
-                            <div class="block w-full h-full bg-slate-800 rounded-full border border-slate-700 transition-all duration-300">
-                                <div class="absolute left-1 top-1 bg-slate-500 w-4 h-4 rounded-full transition-transform duration-300"></div>
-                            </div>
-                        </div>
-                    </label>
-                </div>
-
-                <div class="flex flex-col space-y-2 w-full md:w-48">
-                    <div class="flex justify-between font-mono text-[10px] text-slate-500 tracking-widest">
-                        <span>CHROMA_SAT</span>
-                        <span id="sat-val" class="text-amber-500 font-bold">70%</span>
+            <div class="space-y-5">
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-[10px] font-mono text-slate-500 mb-1.5 uppercase">Visual Matrix</label>
+                        <select id="themeSelect" class="w-full bg-slate-900/50 border border-slate-700 rounded p-2 text-xs font-mono text-slate-300 focus:outline-none focus:border-slate-500 transition-colors">
+                            <option value="saturn">Saturn Multiplexer (Vinyl)</option>
+                            <option value="mesh">Outrun Grid (Horizon)</option>
+                            <option value="galaxy">Void Galaxy</option>
+                            <option value="zen">Zen Garden</option>
+                            <option value="neural">Neural Synapse</option>
+                            <option value="orbs">Bioluminescent Orbs</option>
+                        </select>
                     </div>
-                    <input type="range" id="slider-sat" min="0" max="100" value="70" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500">
+                    <div>
+                        <label class="block text-[10px] font-mono text-slate-500 mb-1.5 uppercase">Color Palette</label>
+                        <select id="paletteSelect" class="w-full bg-slate-900/50 border border-slate-700 rounded p-2 text-xs font-mono text-slate-300 focus:outline-none focus:border-slate-500 transition-colors">
+                            <option value="sunset">Sunset (Synthwave)</option>
+                            <option value="nordic">Nordic Drift (Slate/Blue)</option>
+                            <option value="matcha">Matcha (Sage/Forest)</option>
+                            <option value="grayscale">Grayscale (Monochrome)</option>
+                            <option value="neon">Neon Tokyo (Pink/Cyan)</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
 
-            <div class="flex justify-between text-[10px] text-slate-500 font-mono px-2 border-b border-slate-800/50 pb-2">
-                <span>SYS_VELOCITY: <span id="telemetry-vel" class="text-amber-400">0.10</span></span>
-                <span>PEAK_DISTORTION: <span id="telemetry-dist" class="text-amber-400">0.00</span></span>
-                <span>STATE: <span id="telemetry-state" class="text-emerald-400">NOMINAL</span></span>
-            </div>
+                <div>
+                    <label class="block text-[10px] font-mono text-slate-500 mb-1.5 uppercase">Flow Direction</label>
+                    <div class="flex gap-2">
+                        <button class="dir-btn active flex-1 py-1.5 border border-slate-700 rounded text-xs bg-slate-900/50 text-slate-400 transition-colors hover:bg-slate-800" data-dir="float">Float</button>
+                        <button class="dir-btn flex-1 py-1.5 border border-slate-700 rounded text-xs bg-slate-900/50 text-slate-400 transition-colors hover:bg-slate-800" data-dir="up">Up</button>
+                        <button class="dir-btn flex-1 py-1.5 border border-slate-700 rounded text-xs bg-slate-900/50 text-slate-400 transition-colors hover:bg-slate-800" data-dir="down">Down</button>
+                    </div>
+                </div>
 
-            <div class="relative w-full aspect-[21/9] bg-[#020617] rounded border border-slate-800 overflow-hidden shadow-inner">
-                <canvas id="saturn-canvas" class="absolute inset-0 w-full h-full"></canvas>
+                <div class="space-y-3 pt-2 border-t border-slate-800/50">
+                    <div>
+                        <label class="flex justify-between text-[10px] font-mono text-slate-500 mb-1.5 uppercase">
+                            Global Scale <span id="scaleVal" class="text-slate-300">1.0x</span>
+                        </label>
+                        <input type="range" id="scaleSlider" min="0.5" max="2.0" step="0.1" value="1.0">
+                    </div>
+                    <div>
+                        <label class="flex justify-between text-[10px] font-mono text-slate-500 mb-1.5 uppercase">
+                            Entity Mass <span id="massVal" class="text-slate-300">1.0x</span>
+                        </label>
+                        <input type="range" id="massSlider" min="0.2" max="3.0" step="0.1" value="1.0">
+                    </div>
+                    <div>
+                        <label class="flex justify-between text-[10px] font-mono text-slate-500 mb-1.5 uppercase">
+                            Velocity <span id="velVal" class="text-slate-300">1.0x</span>
+                        </label>
+                        <input type="range" id="velocitySlider" min="0.1" max="2" step="0.1" value="1.0">
+                    </div>
+                    <div>
+                        <label class="flex justify-between text-[10px] font-mono text-slate-500 mb-1.5 uppercase">
+                            Particle Density <span id="denVal" class="text-slate-300">80</span>
+                        </label>
+                        <input type="range" id="densitySlider" min="20" max="200" step="10" value="80">
+                    </div>
+                </div>
+
+                <div class="space-y-3 pt-2 border-t border-slate-800/50">
+                    <div>
+                        <label class="flex justify-between text-[10px] font-mono text-slate-500 mb-1.5 uppercase">
+                            Audio Sensitivity <span id="sensVal" class="text-slate-300">1.0x</span>
+                        </label>
+                        <input type="range" id="sensitivitySlider" min="0.1" max="3" step="0.1" value="1.0">
+                    </div>
+                    <div>
+                        <label class="flex justify-between text-[10px] font-mono text-slate-500 mb-1.5 uppercase" title="Higher values isolate peaks">
+                            Peak Distortion <span id="distVal" class="text-slate-300">1.0x</span>
+                        </label>
+                        <input type="range" id="distortionSlider" min="1.0" max="3.0" step="0.1" value="1.0">
+                    </div>
+                    <div>
+                        <label class="flex justify-between text-[10px] font-mono text-slate-500 mb-1.5 uppercase" title="Controls lines inside Saturn rings">
+                            Groove Density <span id="grooveVal" class="text-slate-300">3</span>
+                        </label>
+                        <input type="range" id="groovesSlider" min="1" max="20" step="1" value="3">
+                    </div>
+                    <div>
+                        <label class="flex justify-between text-[10px] font-mono text-slate-500 mb-1.5 uppercase">
+                            Audio Dampening <span id="dampVal" class="text-slate-300">Smooth</span>
+                        </label>
+                        <input type="range" id="dampeningSlider" min="0.05" max="0.5" step="0.05" value="0.15">
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-800 space-y-2.5">
+                    <div class="flex justify-between items-center group">
+                        <span class="text-[11px] font-mono text-slate-400 flex items-center gap-2">
+                            <svg class="w-3 h-3 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
+                            SYSTEM AUDIO
+                        </span>
+                        <div class="relative inline-block w-8 align-middle">
+                            <input type="checkbox" id="toggleAudio" class="cyber-toggle absolute block w-4 h-4 rounded-full bg-slate-300 border-2 border-slate-600 appearance-none cursor-pointer transition-all z-10 top-0 bottom-0 m-auto"/>
+                            <label for="toggleAudio" class="toggle-label block overflow-hidden h-4 rounded-full bg-slate-800 cursor-pointer transition-colors"></label>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-[11px] font-mono text-slate-400">GHOST TRAILS</span>
+                        <div class="relative inline-block w-8 align-middle">
+                            <input type="checkbox" id="togglePersistence" checked class="cyber-toggle absolute block w-4 h-4 rounded-full bg-slate-300 border-2 border-slate-600 appearance-none cursor-pointer transition-all z-10 top-0 bottom-0 m-auto"/>
+                            <label for="togglePersistence" class="toggle-label block overflow-hidden h-4 rounded-full bg-slate-800 cursor-pointer transition-colors"></label>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-[11px] font-mono text-slate-400">DEEP BREATH</span>
+                        <div class="relative inline-block w-8 align-middle">
+                            <input type="checkbox" id="toggleBreath" class="cyber-toggle absolute block w-4 h-4 rounded-full bg-slate-300 border-2 border-slate-600 appearance-none cursor-pointer transition-all z-10 top-0 bottom-0 m-auto"/>
+                            <label for="toggleBreath" class="toggle-label block overflow-hidden h-4 rounded-full bg-slate-800 cursor-pointer transition-colors"></label>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        (() => {
-            'use strict';
+        (function() {
+            // --- Architecture Setup ---
+            const canvas = document.getElementById('coreCanvas');
+            const ctx = canvas.getContext('2d');
+            let width, height, timeTick = 0;
 
-            document.addEventListener('DOMContentLoaded', () => {
-                setTimeout(() => {
-                    document.getElementById('loading-state').style.display = 'none';
-                    document.getElementById('app-core').classList.remove('hidden');
-                    initEngine();
-                }, 800);
-            });
+            const palettes = {
+                sunset: ['#fcd34d', '#f97316', '#ef4444', '#8b5cf6', '#2e1065'], 
+                nordic: ['#94a3b8', '#64748b', '#38bdf8', '#818cf8', '#0f172a'],
+                matcha: ['#d9f99d', '#a3e635', '#4d7c0f', '#ecfccb', '#052e16'],
+                grayscale: ['#333333', '#666666', '#999999', '#cccccc', '#111111'],
+                neon: ['#f43f5e', '#8b5cf6', '#06b6d4', '#fcd34d', '#2e1065']
+            };
 
-            function initEngine() {
-                const canvas = document.getElementById('saturn-canvas');
-                const ctx = canvas.getContext('2d');
-                const yellowSwitch = document.getElementById('switch-yellow');
-                const redSwitch = document.getElementById('switch-red');
-                const satSlider = document.getElementById('slider-sat');
-                const satValText = document.getElementById('sat-val');
-                
-                const tVel = document.getElementById('telemetry-vel');
-                const tDist = document.getElementById('telemetry-dist');
-                const tState = document.getElementById('telemetry-state');
+            const state = {
+                theme: 'saturn',
+                colors: palettes.sunset,
+                velocity: 1.0,
+                density: 80,
+                scale: 1.0,
+                mass: 1.0,
+                direction: 'float',
+                audio: false,
+                sensitivity: 1.0,
+                distortion: 1.0,  // Audio Exponential Curve
+                grooves: 3,       // Saturn Band Lines
+                dampening: 0.15,
+                persistence: true,
+                breath: false,
+                mouseX: -1000, mouseY: -1000,
+                rawAudio: new Uint8Array(256).fill(0),
+                smoothedAudio: new Float32Array(256).fill(0)
+            };
 
-                let width, height, centerX, centerY;
-                
-                function resize() {
-                    width = canvas.width = canvas.offsetWidth;
-                    height = canvas.height = canvas.offsetHeight;
-                    centerX = width / 2;
-                    centerY = height / 2;
+            // Audio Core
+            let audioCtx, analyser, mediaStream;
+            function getAudioBand(startBin, endBin) {
+                if (!state.audio) return 0;
+                let sum = 0;
+                for(let i=startBin; i<endBin; i++) sum += state.smoothedAudio[i];
+                return sum / (endBin - startBin);
+            }
+
+            // --- ENGINE REGISTRY CLASSES ---
+
+            // 1. Saturn Multiplexer Engine (V2.4 Dynamic Grooves + Peak Distortion)
+            class SaturnEngine {
+                constructor() {}
+                init() {
+                    this.stars = [];
+                    for(let i=0; i<150; i++) this.stars.push({x: Math.random()*width, y: Math.random()*height, s: Math.random()*1.5});
                 }
-                window.addEventListener('resize', resize);
-                resize();
-
-                satSlider.addEventListener('input', (e) => {
-                    satValText.innerText = e.target.value + '%';
-                });
-
-                const rings = [];
-                const ringCount = 16;
-                for(let i = 0; i < ringCount; i++) {
-                    rings.push({ baseRadius: 60 + (i * 15), phaseOffset: Math.random() * Math.PI * 2 });
+                update() {
+                    this.stars.forEach(s => {
+                        let vx = 0; let vy = 0;
+                        if (state.direction === 'float') vx = -0.1 * state.velocity;
+                        if (state.direction === 'up') vy = -0.3 * state.velocity;
+                        if (state.direction === 'down') vy = 0.3 * state.velocity;
+                        s.x += vx; s.y += vy;
+                        if(s.x < 0) s.x = width; if(s.x > width) s.x = 0;
+                        if(s.y < 0) s.y = height; if(s.y > height) s.y = 0;
+                    });
                 }
+                draw() {
+                    ctx.fillStyle = state.colors[1];
+                    this.stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.s * state.scale * state.mass, 0, Math.PI*2); ctx.fill(); });
 
-                let time = 0;
+                    const cx = width / 2, cy = height / 2;
+                    const rPlanet = Math.min(width, height) * 0.15 * state.scale * state.mass;
+                    const ringTilt = 0.35;
+                    const bandSpacing = rPlanet * 0.3; // Distance to the next audio band
 
-                function render() {
-                    const isYellow = yellowSwitch.checked;
-                    const isRed = redSwitch.checked;
-                    
-                    // Baseline Config
-                    let config = {
-                        wireframe: false,
-                        scale: 1.0,
-                        mass: 1,
-                        velocity: 0.1, 
-                        particleDensity: 40,
-                        audioSensitivity: 1,
-                        distortionMulti: 1
+                    const bands = [
+                        { s: 60, e: 120, rBase: rPlanet * 1.3, color: state.colors[3], w: 1 },
+                        { s: 20, e: 60, rBase: rPlanet * 1.6, color: state.colors[2], w: 1.5 },
+                        { s: 6, e: 20, rBase: rPlanet * 1.9, color: state.colors[1], w: 2 },
+                        { s: 0, e: 6, rBase: rPlanet * 2.2, color: state.colors[0], w: 2.5 }
+                    ];
+
+                    const drawRings = (startAngle, endAngle, isFront) => {
+                        bands.forEach((band) => {
+                            ctx.globalAlpha = isFront ? 0.9 : 0.3;
+                            
+                            let numGrooves = state.grooves;
+                            // Dynamically scale the spread. At grooves=20, it fills 100% of the bandSpacing
+                            let maxSpread = bandSpacing * (numGrooves / 20); 
+                            let step = numGrooves > 1 ? maxSpread / (numGrooves - 1) : 0;
+                            
+                            for(let track = 0; track < numGrooves; track++) {
+                                ctx.beginPath();
+                                ctx.strokeStyle = band.color;
+                                // Thinner lines as density increases to prevent solid bleeding
+                                let thicknessMod = numGrooves > 3 ? (3 / numGrooves) * 1.5 : 1;
+                                ctx.lineWidth = (band.w / 2) * state.scale * state.mass * thicknessMod;
+                                
+                                // Center the grooves around the rBase
+                                let trackOffset = (track * step) - (maxSpread / 2);
+                                
+                                let first = true;
+                                for(let i = startAngle; i <= endAngle + 0.05; i += 0.05) {
+                                    let angle = Math.min(i, endAngle);
+                                    let localBin = Math.floor((Math.abs(angle - Math.PI) / Math.PI) * (band.e - band.s)) + band.s;
+                                    
+                                    let rawAudio = state.audio ? state.smoothedAudio[localBin] : 0;
+                                    let localMod = Math.pow(rawAudio, state.distortion); // Peak Distortion
+                                    
+                                    let globalRaw = getAudioBand(band.s, band.e);
+                                    let globalMod = Math.pow(globalRaw, state.distortion); // Peak Distortion
+                                    
+                                    let baseRadius = band.rBase + trackOffset;
+                                    let r = baseRadius + ((globalMod * 40) + (localMod * 30)) * state.sensitivity * state.scale * state.mass;
+                                    
+                                    let x = cx + Math.cos(angle) * r;
+                                    let y = cy + Math.sin(angle) * r * ringTilt;
+                                    
+                                    if (first) { ctx.moveTo(x, y); first = false; }
+                                    else ctx.lineTo(x, y);
+                                }
+                                ctx.stroke();
+                            }
+                        });
                     };
 
-                    // Anomaly Overrides
-                    if (isRed) {
-                        config = { wireframe: true, scale: 1.8, mass: 3, velocity: 1.7, particleDensity: 100, audioSensitivity: 3, distortionMulti: 4 };
-                        tState.innerText = "CATASTROPHIC";
-                        tState.className = "text-red-500 animate-pulse";
-                    } else if (isYellow) {
-                        config = { wireframe: true, scale: 1.8, mass: 3, velocity: 0.2, particleDensity: 100, audioSensitivity: 3, distortionMulti: 4 };
-                        tState.innerText = "SINGULARITY";
-                        tState.className = "text-yellow-500";
-                    } else {
-                        tState.innerText = "NOMINAL";
-                        tState.className = "text-emerald-400";
+                    drawRings(Math.PI, Math.PI * 2, false);
+
+                    ctx.globalAlpha = 1;
+                    let grad = ctx.createLinearGradient(cx - rPlanet, cy - rPlanet, cx + rPlanet, cy + rPlanet);
+                    grad.addColorStop(0, state.colors[4]);
+                    grad.addColorStop(1, '#000000');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath(); ctx.arc(cx, cy, rPlanet, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = state.colors[1]; ctx.lineWidth = 1; ctx.stroke();
+
+                    drawRings(0, Math.PI, true);
+                }
+            }
+
+            // 2. Outrun Grid Engine
+            class MeshEngine {
+                constructor() {}
+                init() {}
+                update() {}
+                draw() {
+                    const horizonY = height * 0.35;
+                    const cameraHeight = 150 * state.scale;
+                    const fov = 400 * state.scale;
+                    const gridW = width * 1.5;
+                    
+                    ctx.beginPath();
+                    ctx.strokeStyle = state.colors[1];
+                    ctx.globalAlpha = 0.2;
+                    ctx.lineWidth = 1 * state.scale;
+                    
+                    for(let x = -gridW; x <= gridW; x += 100) {
+                        let startScale = fov / 10;
+                        let endScale = fov / 2000;
+                        ctx.moveTo(width/2 + (x * endScale), horizonY + (cameraHeight * endScale));
+                        ctx.lineTo(width/2 + (x * startScale), horizonY + (cameraHeight * startScale));
                     }
+                    ctx.stroke();
 
-                    time += config.velocity * 0.05;
-                    tVel.innerText = config.velocity.toFixed(2);
+                    const numH = 45;
+                    let zOffset = (timeTick * 4 * state.velocity) % 40;
 
-                    // Mock FFT Audio Pipeline
-                    const audioData = rings.map((_, i) => {
-                        const freqSim = Math.sin(time * 3 + i * 0.5) * 0.5 + 0.5;
-                        return (freqSim + (Math.random() * 0.1)) * config.audioSensitivity;
-                    });
-                    const peakAmp = Math.max(...audioData);
-                    tDist.innerText = (peakAmp * config.distortionMulti).toFixed(2);
+                    for(let i = 1; i < numH; i++) {
+                        let z = (i * 40) - zOffset;
+                        if (z < 10) continue; 
 
-                    const saturation = satSlider.value;
-
-                    // Clear Canvas (Trail Effect)
-                    ctx.fillStyle = `rgba(2, 6, 23, ${config.wireframe ? 1 : 0.3})`;
-                    ctx.fillRect(0, 0, width, height);
-
-                    const tilt = 0.35; // 3D Camera pitch
-
-                    // Helper to generate orbital points for a ring
-                    function getRingGeometry(ring, index) {
-                        const points = [];
-                        const currentRadius = (ring.baseRadius + (audioData[index] * 20)) * config.scale;
-                        const distortion = peakAmp * config.distortionMulti * 15;
-                        const segments = config.wireframe ? config.particleDensity : 60;
-                        
-                        for(let s = 0; s <= segments; s++) {
-                            const angle = (s / segments) * Math.PI * 2;
-                            const rotatedAngle = angle + (time * 0.5) + ring.phaseOffset;
-                            
-                            // Apply global peak distortion
-                            const noise = Math.sin(angle * 6 + time * 2) * distortion;
-                            const r = currentRadius + noise;
-                            
-                            // 3D coordinates (Orbiting on X/Z plane)
-                            const x3d = Math.cos(rotatedAngle) * r;
-                            const z3d = Math.sin(rotatedAngle) * r;
-                            
-                            // Project to 2D with tilt
-                            const x2d = centerX + x3d;
-                            const y2d = centerY + (z3d * tilt);
-                            
-                            points.push({ x: x2d, y: y2d, z: z3d });
-                        }
-                        return points;
-                    }
-
-                    // Render Pass Logic
-                    function drawRingPass(points, index, isFront) {
-                        const hue = (index * (360 / ringCount) + (time * 20)) % 360;
-                        ctx.strokeStyle = `hsla(${hue}, ${saturation}%, 60%, ${config.wireframe ? 0.9 : 0.5})`;
-                        ctx.lineWidth = config.wireframe ? 1 : 1.5 + (audioData[index] * 2);
+                        let scaleProj = fov / z;
                         
                         ctx.beginPath();
-                        let isDrawing = false;
+                        ctx.strokeStyle = state.colors[(i % 3) + 1];
+                        ctx.globalAlpha = Math.min(1, (z > 800 ? 1 - (z-800)/1000 : 1)); 
+                        ctx.lineWidth = 1.5 * state.scale * state.mass;
                         
-                        for(let i = 0; i < points.length; i++) {
-                            const p = points[i];
-                            // Check depth to split front/back arcs (slight overlap at 0 to prevent visual gaps)
-                            const shouldDraw = isFront ? p.z >= -1 : p.z < 1; 
+                        let first = true;
+                        
+                        let bin = Math.floor((1 - (i / numH)) * 60); 
+                        let rawAudio = state.audio ? state.smoothedAudio[bin] : 0;
+                        // Peak Distortion Exponent
+                        let distortedAudio = Math.pow(rawAudio, state.distortion);
+
+                        for(let x = -gridW; x <= gridW; x += 40) {
+                            let edgeFade = Math.max(0, 1 - Math.pow(Math.abs(x) / gridW, 2));
+                            let altitude = distortedAudio * state.sensitivity * 250 * edgeFade * state.mass;
                             
-                            if (shouldDraw) {
-                                if (!isDrawing) { ctx.moveTo(p.x, p.y); isDrawing = true; }
-                                else { ctx.lineTo(p.x, p.y); }
+                            altitude = Math.min(altitude, cameraHeight * 0.95);
+
+                            let px = width/2 + (x * scaleProj);
+                            let py = horizonY + ((cameraHeight - altitude) * scaleProj);
+                            
+                            if (py > height * 1.5) continue; 
+
+                            if (first) { ctx.moveTo(px, py); first = false; }
+                            else ctx.lineTo(px, py);
+                        }
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // 3. Void Galaxy Engine
+            class GalaxyEngine {
+                constructor() {}
+                init() {
+                    this.offCanvas = document.createElement('canvas');
+                    this.offCanvas.width = width; this.offCanvas.height = height;
+                    const oCtx = this.offCanvas.getContext('2d');
+                    
+                    oCtx.fillStyle = '#020617';
+                    oCtx.fillRect(0, 0, width, height);
+
+                    oCtx.fillStyle = '#ffffff';
+                    oCtx.globalAlpha = 0.3;
+                    for(let i=0; i<1500; i++) { oCtx.fillRect(Math.random()*width, Math.random()*height, 1, 1); }
+
+                    oCtx.globalCompositeOperation = 'screen';
+                    for(let i=0; i<3; i++) {
+                        let cx = Math.random()*width, cy = Math.random()*height;
+                        let r = width * 0.4;
+                        let grad = oCtx.createRadialGradient(cx, cy, 0, cx, cy, r);
+                        grad.addColorStop(0, state.colors[i+1] + '40');
+                        grad.addColorStop(1, 'transparent');
+                        oCtx.fillStyle = grad;
+                        oCtx.beginPath(); oCtx.arc(cx, cy, r, 0, Math.PI*2); oCtx.fill();
+                    }
+
+                    this.stars = [];
+                    for(let i=0; i<400; i++) {
+                        this.stars.push({
+                            x: Math.random()*width, y: Math.random()*height, 
+                            s: Math.random()*2+0.5, 
+                            spd: Math.random()*0.3 + 0.1,
+                            c: state.colors[Math.floor(Math.random()*4)]
+                        });
+                    }
+                }
+                update() {
+                    this.stars.forEach(s => {
+                        let warp = state.audio ? getAudioBand(0, 10) * 4 * state.sensitivity : 0;
+                        let vx = 0; let vy = 0;
+                        if (state.direction === 'float') vx = -(s.spd * state.velocity) - warp;
+                        if (state.direction === 'up') vy = -(s.spd * state.velocity * 2) - warp;
+                        if (state.direction === 'down') vy = (s.spd * state.velocity * 2) + warp;
+
+                        s.x += vx; s.y += vy;
+                        if(s.x < 0) s.x = width; if(s.x > width) s.x = 0;
+                        if(s.y < 0) s.y = height; if(s.y > height) s.y = 0;
+                    });
+                }
+                draw() {
+                    ctx.globalAlpha = 1;
+                    ctx.drawImage(this.offCanvas, 0, 0);
+                    this.stars.forEach(s => {
+                        ctx.fillStyle = s.c;
+                        ctx.fillRect(s.x, s.y, s.s * state.scale * state.mass, s.s * state.scale * state.mass);
+                    });
+                }
+            }
+
+            // 4. Particle Engine
+            class ParticleEngine {
+                constructor() {}
+                init() {
+                    this.particles = []; this.ripples = [];
+                    for(let i=0; i<state.density; i++) {
+                        this.particles.push({
+                            x: Math.random()*width, y: Math.random()*height,
+                            s: (state.theme === 'orbs') ? Math.random()*15+5 : Math.random()*2+1,
+                            vx: (Math.random()-0.5)*1.2, vy: (Math.random()-0.5)*1.2,
+                            c: state.colors[Math.floor(Math.random()*4)]
+                        });
+                    }
+                }
+                update() {
+                    this.particles.forEach(p => {
+                        let spd = state.velocity;
+                        
+                        let dx = p.x - state.mouseX, dy = p.y - state.mouseY, dist = Math.sqrt(dx*dx + dy*dy);
+                        if(dist < 150) { p.x += (dx/dist)*2; p.y += (dy/dist)*2; }
+                        
+                        let vx = p.vx * spd; let vy = p.vy * spd;
+                        if (state.direction === 'up') { vy -= 1.5 * spd; vx *= 0.5; }
+                        if (state.direction === 'down') { vy += 1.5 * spd; vx *= 0.5; }
+
+                        p.x += vx; p.y += vy;
+                        
+                        if(p.x < -50) p.x = width + 50; 
+                        if(p.x > width + 50) p.x = -50;
+                        if(state.direction === 'up' && p.y < -50) p.y = height + 50;
+                        else if(state.direction === 'down' && p.y > height + 50) p.y = -50;
+                        else if(state.direction === 'float') {
+                            if(p.y < -50) p.y = height + 50; 
+                            if(p.y > height + 50) p.y = -50;
+                        }
+                    });
+                }
+                draw() {
+                    if (state.theme === 'zen') {
+                        if (Math.random() < 0.02 * state.velocity && this.ripples.length < 10) {
+                            this.ripples.push({ x: Math.random()*width, y: Math.random()*height, r: 1, max: Math.random()*150+50, c: state.colors[Math.floor(Math.random()*4)] });
+                        }
+                        for (let i = this.ripples.length - 1; i >= 0; i--) {
+                            let rip = this.ripples[i];
+                            let rawAudio = state.audio ? state.smoothedAudio[10] : 0;
+                            let distAudio = Math.pow(rawAudio, state.distortion);
+                            let audioBoost = distAudio * 15 * state.sensitivity;
+                            rip.r += (0.5 * state.velocity) + audioBoost;
+                            ctx.beginPath(); ctx.strokeStyle = rip.c; ctx.globalAlpha = 0.5 * (1 - rip.r/rip.max);
+                            ctx.lineWidth = 1.5 * state.scale * state.mass; 
+                            ctx.arc(rip.x, rip.y, rip.r * state.scale * state.mass, 0, Math.PI*2); 
+                            ctx.stroke();
+                            if (rip.r >= rip.max) this.ripples.splice(i, 1);
+                        }
+                    } else {
+                        this.particles.forEach((p, i) => {
+                            ctx.fillStyle = p.c; ctx.beginPath();
+                            if(state.theme === 'orbs') {
+                                ctx.globalAlpha = 0.4;
+                                let rawAudio = state.smoothedAudio[0];
+                                let distAudio = Math.pow(rawAudio, state.distortion);
+                                ctx.arc(p.x, p.y, p.s * state.scale * state.mass * (1 + distAudio*2), 0, Math.PI*2);
                             } else {
-                                isDrawing = false;
+                                ctx.globalAlpha = 0.8;
+                                ctx.arc(p.x, p.y, p.s * state.scale * state.mass, 0, Math.PI*2);
+                            }
+                            ctx.fill();
+                        });
+
+                        if (state.theme === 'neural') {
+                            ctx.lineWidth = 1 * state.mass;
+                            for(let i=0; i<this.particles.length; i++) {
+                                for(let j=i+1; j<this.particles.length; j++) {
+                                    let p1 = this.particles[i], p2 = this.particles[j];
+                                    let dx = p1.x - p2.x, dy = p1.y - p2.y, dist = Math.sqrt(dx*dx + dy*dy);
+                                    let rawAudio = state.smoothedAudio[i%20];
+                                    let distAudio = Math.pow(rawAudio, state.distortion);
+                                    let threshold = state.audio ? 100 + distAudio*150*state.sensitivity : 120;
+                                    threshold *= state.scale * state.mass;
+                                    
+                                    if(dist < threshold) {
+                                        ctx.beginPath(); ctx.strokeStyle = state.colors[2];
+                                        ctx.globalAlpha = (1 - dist/threshold) * 0.5;
+                                        ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+                                    }
+                                }
                             }
                         }
-                        ctx.stroke();
                     }
+                }
+            }
 
-                    // Pre-calculate geometry for this frame
-                    const ringGeometries = rings.map((ring, i) => getRingGeometry(ring, i));
+            // --- THE ENGINE REGISTRY ---
+            const engines = {
+                saturn: new SaturnEngine(), mesh: new MeshEngine(), galaxy: new GalaxyEngine(),
+                zen: new ParticleEngine(), neural: new ParticleEngine(), orbs: new ParticleEngine()
+            };
 
-                    // PASS 1: BACKGROUND ARCS (Z < 0)
-                    ringGeometries.forEach((points, i) => drawRingPass(points, i, false));
+            let currentEngine = engines[state.theme];
 
-                    // PASS 2: THE ENTITY
-                    const planetRadius = 35 * config.scale * config.mass;
-                    if (config.wireframe) {
-                        ctx.strokeStyle = '#f8fafc';
-                        ctx.lineWidth = 1;
-                        ctx.beginPath();
-                        ctx.arc(centerX, centerY, planetRadius, 0, Math.PI * 2);
-                        ctx.stroke();
-                        // Tactical Crosshairs
-                        ctx.beginPath();
-                        ctx.moveTo(centerX - planetRadius - 15, centerY); ctx.lineTo(centerX + planetRadius + 15, centerY);
-                        ctx.moveTo(centerX, centerY - planetRadius - 15); ctx.lineTo(centerX, centerY + planetRadius + 15);
-                        ctx.stroke();
-                    } else {
-                        const gradient = ctx.createRadialGradient(
-                            centerX - planetRadius * 0.3, centerY - planetRadius * 0.3, 0, 
-                            centerX, centerY, planetRadius
-                        );
-                        gradient.addColorStop(0, '#475569'); // slate-600
-                        gradient.addColorStop(0.8, '#0f172a'); // slate-900
-                        gradient.addColorStop(1, '#020617'); // slate-950
+            // --- TRANSITION STATE ---
+            let isTransitioning = false; let globalAlpha = 1.0; let nextEngineKey = null;
+
+            function switchTheme(newTheme) {
+                if (newTheme === state.theme) return;
+                nextEngineKey = newTheme; isTransitioning = true;
+            }
+
+            // --- UI BINDINGS ---
+            let idleTimer;
+            const ghostLayer = document.getElementById('ghostLayer');
+            const cmdDeck = document.getElementById('commandDeck');
+            let isMenuOpen = false;
+
+            function resetIdleTimer() {
+                ghostLayer.classList.remove('opacity-0'); clearTimeout(idleTimer);
+                idleTimer = setTimeout(() => { if (!isMenuOpen) ghostLayer.classList.add('opacity-0'); }, 3000);
+            }
+            window.addEventListener('mousemove', resetIdleTimer); window.addEventListener('click', resetIdleTimer);
+            resetIdleTimer();
+
+            document.getElementById('menuToggle').addEventListener('click', () => {
+                isMenuOpen = !isMenuOpen;
+                if(isMenuOpen) cmdDeck.classList.remove('-translate-x-[120%]');
+                else { cmdDeck.classList.add('-translate-x-[120%]'); resetIdleTimer(); }
+            });
+
+            function updateTime() { document.getElementById('hudTime').textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); }
+            setInterval(updateTime, 1000); updateTime();
+            
+            async function fetchWeather() {
+                try {
+                    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=44.98&longitude=-93.26&current=temperature_2m,weathercode&temperature_unit=fahrenheit');
+                    if(res.ok) {
+                        const data = await res.json();
+                        let temp = Math.round(data.current.temperature_2m);
+                        let code = data.current.weathercode;
                         
-                        ctx.fillStyle = gradient;
-                        ctx.beginPath();
-                        ctx.arc(centerX, centerY, planetRadius, 0, Math.PI * 2);
-                        ctx.fill();
-                        
-                        // Atmosphere Glow
-                        ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
-                        ctx.lineWidth = 2;
-                        ctx.stroke();
+                        let svg = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`;
+                        if (code >= 1 && code <= 3) svg = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>`;
+                        if (code >= 51 && code <= 67) svg = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18v-4m-4 4v-4m8 4v-4M4.041 11.041A5.001 5.001 0 0113 7.002 5.002 5.002 0 0121 12.001c0 2.21-1.43 4.072-3.414 4.708M3 15h14"></path></svg>`;
+                        if (code >= 71 && code <= 77) svg = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12h-2m-2 0a4 4 0 11-8 0 4 4 0 018 0zm-8 4v2m0-10V6m-4 2l1.414 1.414M16 16l-1.414-1.414M6 16l1.414-1.414M16 8l-1.414 1.414"></path></svg>`;
+                        if (code >= 95) svg = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>`;
+
+                        document.getElementById('miniWeatherIcon').innerHTML = svg;
+                        document.getElementById('miniWeatherIcon').classList.remove('animate-pulse', 'text-slate-500');
+                        document.getElementById('hudWeatherTemp').textContent = `${temp}°F // MPLS`;
                     }
+                } catch(e) { console.warn("Weather fetch failed."); }
+            }
+            fetchWeather(); setInterval(fetchWeather, 600000);
 
-                    // PASS 3: FOREGROUND ARCS (Z >= 0)
-                    ringGeometries.forEach((points, i) => drawRingPass(points, i, true));
+            // Interface Control Panel Binding
+            document.getElementById('themeSelect').addEventListener('change', e => switchTheme(e.target.value));
+            document.getElementById('paletteSelect').addEventListener('change', e => { state.colors = palettes[e.target.value]; currentEngine.init(); });
+            
+            document.querySelectorAll('.dir-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.dir-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    state.direction = e.target.dataset.dir;
+                });
+            });
 
-                    requestAnimationFrame(render);
+            document.getElementById('scaleSlider').addEventListener('input', e => { state.scale = parseFloat(e.target.value); document.getElementById('scaleVal').textContent = state.scale.toFixed(1) + 'x'; });
+            document.getElementById('massSlider').addEventListener('input', e => { state.mass = parseFloat(e.target.value); document.getElementById('massVal').textContent = state.mass.toFixed(1) + 'x'; });
+            document.getElementById('sensitivitySlider').addEventListener('input', e => { state.sensitivity = parseFloat(e.target.value); document.getElementById('sensVal').textContent = state.sensitivity.toFixed(1) + 'x'; });
+            document.getElementById('distortionSlider').addEventListener('input', e => { state.distortion = parseFloat(e.target.value); document.getElementById('distVal').textContent = state.distortion.toFixed(1) + 'x'; });
+            document.getElementById('groovesSlider').addEventListener('input', e => { state.grooves = parseInt(e.target.value); document.getElementById('grooveVal').textContent = state.grooves; });
+            document.getElementById('velocitySlider').addEventListener('input', e => { state.velocity = parseFloat(e.target.value); document.getElementById('velVal').textContent = state.velocity.toFixed(1) + 'x'; });
+            document.getElementById('densitySlider').addEventListener('input', e => { state.density = parseInt(e.target.value); currentEngine.init(); });
+            
+            const dampTextMap = { 0.05: "Liquid", 0.1: "Smooth", 0.15: "Balanced", 0.2: "Responsive", 0.3: "Fast", 0.4: "Snappy", 0.5: "Raw" };
+            document.getElementById('dampeningSlider').addEventListener('input', e => { 
+                state.dampening = parseFloat(e.target.value); 
+                let closest = Object.keys(dampTextMap).reduce((a, b) => Math.abs(b - state.dampening) < Math.abs(a - state.dampening) ? b : a);
+                document.getElementById('dampVal').textContent = dampTextMap[closest] || state.dampening; 
+            });
+
+            document.getElementById('togglePersistence').addEventListener('change', e => state.persistence = e.target.checked);
+            document.getElementById('toggleBreath').addEventListener('change', e => state.breath = e.target.checked);
+
+            document.getElementById('toggleAudio').addEventListener('change', async (e) => {
+                if(e.target.checked) {
+                    try {
+                        mediaStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+                        mediaStream.getVideoTracks().forEach(t => t.stop()); 
+                        if (mediaStream.getAudioTracks().length === 0) throw new Error("NO_AUDIO");
+                        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        analyser = audioCtx.createAnalyser();
+                        audioCtx.createMediaStreamSource(mediaStream).connect(analyser);
+                        analyser.fftSize = 256;
+                        state.audio = true;
+                        mediaStream.getAudioTracks()[0].onended = disableAudio;
+                    } catch (err) { disableAudio(); }
+                } else disableAudio();
+            });
+
+            function disableAudio() {
+                if(audioCtx) audioCtx.suspend();
+                if(mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+                state.audio = false;
+                state.smoothedAudio.fill(0);
+                document.getElementById('toggleAudio').checked = false;
+            }
+
+            function resize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+                Object.values(engines).forEach(engine => engine.init());
+            }
+            window.addEventListener('resize', resize);
+            window.addEventListener('mousemove', e => { state.mouseX = e.clientX; state.mouseY = e.clientY; });
+            window.addEventListener('mouseleave', () => { state.mouseX = -1000; state.mouseY = -1000; });
+
+            // --- MAIN RENDER LOOP ---
+            function animate() {
+                timeTick++;
+                
+                if(state.audio && analyser) {
+                    analyser.getByteFrequencyData(state.rawAudio);
+                    for(let i=0; i<256; i++) {
+                        let target = state.rawAudio[i] / 255;
+                        state.smoothedAudio[i] += (target - state.smoothedAudio[i]) * state.dampening;
+                    }
+                } else {
+                    for(let i=0; i<256; i++) state.smoothedAudio[i] += (0 - state.smoothedAudio[i]) * state.dampening;
                 }
 
-                render();
+                if (isTransitioning) {
+                    globalAlpha -= 0.05;
+                    if (globalAlpha <= 0) {
+                        globalAlpha = 0;
+                        state.theme = nextEngineKey;
+                        currentEngine = engines[state.theme];
+                        currentEngine.init();
+                        isTransitioning = false;
+                    }
+                } else if (globalAlpha < 1.0) {
+                    globalAlpha = Math.min(1.0, globalAlpha + 0.05);
+                }
+
+                if(state.persistence && state.theme !== 'saturn' && state.theme !== 'galaxy' && state.theme !== 'mesh') {
+                    ctx.fillStyle = `rgba(2, 6, 23, 0.15)`;
+                    ctx.fillRect(0, 0, width, height);
+                } else {
+                    ctx.fillStyle = '#020617';
+                    ctx.fillRect(0, 0, width, height);
+                }
+
+                let breathMod = state.breath ? 0.7 + Math.sin(timeTick * 0.02) * 0.3 : 1;
+                ctx.globalAlpha = globalAlpha * breathMod;
+
+                currentEngine.update();
+                currentEngine.draw();
+
+                ctx.globalAlpha = 1;
+                requestAnimationFrame(animate);
             }
+
+            resize(); 
+            requestAnimationFrame(animate);
+
         })();
     </script>
 </body>
