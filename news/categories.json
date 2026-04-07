@@ -1,0 +1,66 @@
+[
+  {
+    "title": "Applied AI",
+    "description": "Focuses on practical implementations of artificial intelligence, automation pipelines, and machine learning models in enterprise environments. Covers tool-switching, API integration, and real-world deployment over theoretical hype."
+  },
+  {
+    "title": "Geopolitics",
+    "description": "Hard news on international relations, diplomatic shifts, resource conflicts, and global supply chain vulnerabilities. Tracks military movements, treaties, and strategic maneuvers between nations."
+  },
+  {
+    "title": "Macro-Finance",
+    "description": "Analysis of global economic trends, central bank policies, and inflationary pressures. Monitors fiat currency valuations, institutional investment shifts, and broad market indicators."
+  },
+  {
+    "title": "Future of Work",
+    "description": "Examines remote logistics, asynchronous team dynamics, and the evolving creator economy. Tracks labor rights shifts and the impact of automation on traditional employment structures."
+  },
+  {
+    "title": "Sustainability",
+    "description": "Practical technology for climate adaptation, green energy grids, and resource conservation. Focuses on actionable engineering solutions rather than political rhetoric."
+  },
+  {
+    "title": "Information Integrity",
+    "description": "Developments in verifying digital provenance, cryptographic watermarking, and filtering deepfakes. Examines the ongoing battle against AI-generated misinformation and synthetic slop."
+  },
+  {
+    "title": "Tactical Gaming",
+    "description": "Deep dives into cooperative multiplayer strategy, meta-shifts, and high-level competitive mechanics. Covers game balancing, tactical execution, and esports analytics."
+  },
+  {
+    "title": "Maker Tech",
+    "description": "Advancements in 3D printing, subtractive manufacturing, CNC milling, and small-scale fabrication. Focuses on hardware hacking, custom PCBs, and desktop manufacturing tools."
+  },
+  {
+    "title": "Modern Programming",
+    "description": "Explores software system architecture, vibe coding, and prompt-driven development. Covers the evolution of coding frameworks, local LLM integration, and sovereign computing stacks."
+  },
+  {
+    "title": "Investigative Journalism",
+    "description": "Long-form, high-signal reporting on tech industry transparency, regulatory shifts, and corporate malfeasance. Prioritizes original, deep-dive human reporting that AI cannot easily synthesize."
+  },
+  {
+    "title": "Local Infrastructure (MN Specific)",
+    "description": "News concerning transit funding, zoning laws, public utilities, road construction, and urban development specific to the Twin Cities region. Tracks physical infrastructure updates in Minneapolis, St. Louis Park, and the broader metro."
+  },
+  {
+    "title": "Frontier Science",
+    "description": "Updates on space exploration, astrophysics, and breakthroughs in theoretical physics. Covers new discoveries, orbital deployments, and fundamental scientific research."
+  },
+  {
+    "title": "Immersive Media",
+    "description": "Developments in virtual reality, augmented reality, and spatial computing interfaces. Explores adaptive content that changes based on user interaction and environmental mapping."
+  },
+  {
+    "title": "DIY Engineering (Small Spaces/Ramblers)",
+    "description": "Technical home updates, ergonomic fabrication, and space optimization for mid-century ramblers. Focuses on structural modifications, clever storage, and compact workshop organization."
+  },
+  {
+    "title": "Legal Trends",
+    "description": "Regulatory shifts in data privacy, intellectual property, and technology law. Tracks landmark court cases affecting digital rights, software patents, and the pharmaceutical landscape."
+  },
+  {
+    "title": "Regional Civic Policy (MN Specific)",
+    "description": "Legislative tracking and grassroots political movements within Minnesota. Focuses on municipal ordinances, state-level bills, and local governance impacting the Twin Cities metro."
+  }
+]
