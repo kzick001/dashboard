@@ -1,9 +1,10 @@
+```html
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sonic Forge V1.0.0</title>
+    <title>Sonic Forge V1.1.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
     <script>
@@ -23,310 +24,356 @@
         }
     </script>
     <style>
-        body { background-color: #020617; background-image: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #020617 70%); min-height: 100vh; color: #e2e8f0; }
-        @keyframes scanline {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(1000%); }
-        }
-        .animate-scanline { animation: scanline 8s linear infinite; }
-        .hover-scale { transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-        .hover-scale:hover { transform: scale(1.005); }
-        @keyframes electric-pulse {
-            0%, 100% { box-shadow: 0 0 5px rgba(217, 70, 239, 0.2); border-color: rgba(217, 70, 239, 0.3); }
-            50% { box-shadow: 0 0 15px rgba(217, 70, 239, 0.5); border-color: rgba(217, 70, 239, 0.8); }
-        }
-        .group-hover\:animate-electric-pulse:hover { animation: electric-pulse 1.5s infinite; }
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #000; color: #e2e8f0; transition: background-color 0.2s; }
         
-        /* Custom Scrollbar for Controls */
-        .cyber-scroll::-webkit-scrollbar { width: 6px; }
-        .cyber-scroll::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); border-radius: 4px; }
-        .cyber-scroll::-webkit-scrollbar-thumb { background: rgba(217, 70, 239, 0.3); border-radius: 4px; }
-        .cyber-scroll::-webkit-scrollbar-thumb:hover { background: rgba(217, 70, 239, 0.6); }
+        /* Immersive Canvas & Scanlines */
+        #visualizerCanvas { position: absolute; inset: 0; width: 100vw; height: 100vh; z-index: 0; }
+        .scanline-overlay { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to bottom, transparent, rgba(217, 70, 239, 0.05), transparent); height: 20vh; width: 100vw; animation: scanline 8s linear infinite; opacity: 0.3; z-index: 10; }
+        @keyframes scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(1000%); } }
+
+        /* UI Overlays */
+        .glass-panel { background: rgba(2, 6, 23, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(217, 70, 239, 0.15); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
+        .cyber-scroll::-webkit-scrollbar { width: 4px; }
+        .cyber-scroll::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
+        .cyber-scroll::-webkit-scrollbar-thumb { background: rgba(217, 70, 239, 0.4); border-radius: 4px; }
+        .cyber-scroll::-webkit-scrollbar-thumb:hover { background: rgba(217, 70, 239, 0.8); }
 
         /* Range Slider Styling */
-        input[type=range] { -webkit-appearance: none; background: transparent; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 12px; width: 12px; border-radius: 50%; background: #d946ef; cursor: pointer; margin-top: -4px; box-shadow: 0 0 10px rgba(217,70,239,0.5); }
+        input[type=range] { -webkit-appearance: none; background: transparent; width: 100%; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 12px; width: 12px; border-radius: 50%; background: #d946ef; cursor: pointer; margin-top: -4px; box-shadow: 0 0 10px rgba(217,70,239,0.5); transition: transform 0.1s; }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #334155; border-radius: 2px; }
         
         /* Color Picker Reset */
-        input[type="color"] { -webkit-appearance: none; border: none; width: 100%; height: 30px; border-radius: 4px; padding: 0; overflow: hidden; cursor: pointer; }
+        input[type="color"] { -webkit-appearance: none; border: none; width: 100%; height: 24px; border-radius: 4px; padding: 0; overflow: hidden; cursor: pointer; background: transparent; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
+
+        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 5px rgba(217,70,239,0.2); } 50% { box-shadow: 0 0 15px rgba(217,70,239,0.6); } }
+        .anim-pulse-border { animation: pulse-glow 2s infinite; }
     </style>
 </head>
-<body class="p-4 md:p-8 flex items-center justify-center font-sans">
+<body class="font-sans">
 
-<div id="forgeContainer" class="relative w-full max-w-7xl bg-slate-900/80 backdrop-blur-md rounded-xl shadow-2xl border border-fuchsia-500/20 p-6 transition-transform duration-75 group overflow-hidden">
-    <!-- Scanline -->
-    <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-fuchsia-500/10 to-transparent h-20 w-full animate-scanline opacity-30 z-0"></div>
+<!-- Render Layer & Screen Shake Wrapper -->
+<div id="forgeContainer" class="fixed inset-0 w-screen h-screen z-0 pointer-events-none origin-center">
+    <canvas id="visualizerCanvas"></canvas>
+    <div class="scanline-overlay"></div>
+</div>
 
-    <!-- Navigation -->
-    <a href="https://kzick001.github.io/dashboard/" class="absolute top-4 left-4 text-[10px] font-black text-fuchsia-800 hover:text-fuchsia-400 transition-colors tracking-tighter z-20 uppercase flex items-center gap-1">
-        <span>&larr;</span> Dashboard
-    </a>
-
-    <!-- Header -->
-    <header class="flex items-center gap-4 mb-6 mt-4 relative z-10 pl-2">
-        <div class="p-3 bg-fuchsia-950/60 border border-fuchsia-500/30 rounded-lg group-hover:animate-electric-pulse transition-all">
-            <svg class="w-6 h-6 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-            </svg>
+<!-- LEFT DOCK: Terminal, I/O, Pipeline -->
+<div class="fixed bottom-6 left-6 z-20 w-80 flex flex-col gap-3 pointer-events-none">
+    
+    <!-- Navigation / Header -->
+    <div class="glass-panel rounded-lg p-3 pointer-events-auto flex items-center gap-3">
+        <div class="p-2 bg-fuchsia-950/60 border border-fuchsia-500/30 rounded anim-pulse-border">
+            <svg class="w-5 h-5 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
         </div>
         <div>
-            <h2 class="text-2xl font-black truncate text-slate-100 tracking-tight uppercase leading-none">Sonic Forge</h2>
-            <p class="font-mono text-[10px] text-fuchsia-500/70 uppercase tracking-widest mt-1">Engine v1.0.0 // DOM-Sync Active</p>
+            <h1 class="text-sm font-black uppercase tracking-widest text-slate-100">Sonic Forge</h1>
+            <p class="font-mono text-[9px] text-fuchsia-500">v1.1.2 // Production Engine</p>
         </div>
-    </header>
+    </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 relative z-10">
-        
-        <!-- Left Column: Canvas & Terminal & Pipeline -->
-        <div class="lg:col-span-3 flex flex-col gap-4">
-            <!-- Canvas Container -->
-            <div class="relative w-full aspect-video bg-black/60 rounded-lg border border-slate-800 shadow-inner overflow-hidden flex flex-col justify-end group/canvas">
-                <canvas id="visualizerCanvas" class="w-full h-full absolute inset-0 z-0"></canvas>
-                
-                <!-- Terminal Overlay -->
-                <div id="terminal" class="absolute bottom-4 left-4 font-mono text-[10px] text-fuchsia-400/80 space-y-1 pointer-events-none z-10 bg-slate-950/70 p-3 rounded backdrop-blur-md border border-fuchsia-500/20 w-72 h-36 overflow-hidden flex flex-col justify-end shadow-lg transition-opacity duration-300 opacity-50 group-hover/canvas:opacity-100">
-                    <div class="animate-pulse">> System initialized.</div>
-                </div>
+    <!-- Terminal -->
+    <div id="terminal" class="glass-panel rounded-lg p-3 font-mono text-[10px] text-fuchsia-400/80 space-y-1 h-28 flex flex-col justify-end overflow-hidden pointer-events-auto transition-opacity hover:opacity-100 opacity-60">
+        <div class="animate-pulse">> System initialized. Waiting for pipeline...</div>
+    </div>
 
-                <!-- Input Pipeline Overlay -->
-                <div class="absolute top-4 right-4 flex gap-2 z-10">
-                    <button id="btnHijack" class="px-3 py-1.5 bg-fuchsia-900/40 hover:bg-fuchsia-500/40 border border-fuchsia-500/30 rounded text-[10px] font-mono text-fuchsia-300 uppercase tracking-wider backdrop-blur-sm transition-all">Hijack System Audio</button>
-                    <input type="file" id="audioFile" accept="audio/*" class="hidden">
-                    <button onclick="document.getElementById('audioFile').click()" class="px-3 py-1.5 bg-slate-800/60 hover:bg-slate-700 border border-slate-600 rounded text-[10px] font-mono text-slate-300 uppercase tracking-wider backdrop-blur-sm transition-all">Upload MP3</button>
-                    <button id="btnOsc" class="px-3 py-1.5 bg-slate-800/60 hover:bg-slate-700 border border-slate-600 rounded text-[10px] font-mono text-slate-300 uppercase tracking-wider backdrop-blur-sm transition-all" title="Generate Test Tone">TEST</button>
-                </div>
+    <!-- Input Pipeline -->
+    <div class="glass-panel rounded-lg p-3 pointer-events-auto flex flex-col gap-2">
+        <span class="font-mono text-[9px] text-slate-500 uppercase tracking-widest">Audio Pipeline</span>
+        <button id="btnHijack" class="w-full py-1.5 bg-fuchsia-900/40 hover:bg-fuchsia-500/40 border border-fuchsia-500/30 rounded text-[10px] font-mono text-fuchsia-300 uppercase tracking-wider transition-all">Hijack System Audio</button>
+        <div class="grid grid-cols-2 gap-2">
+            <input type="file" id="audioFile" accept="audio/*" class="hidden">
+            <button onclick="document.getElementById('audioFile').click()" class="py-1.5 bg-slate-800/60 hover:bg-slate-700 border border-slate-600 rounded text-[10px] font-mono text-slate-300 uppercase tracking-wider transition-all">Upload MP3</button>
+            <button id="btnOsc" class="py-1.5 bg-slate-800/60 hover:bg-slate-700 border border-slate-600 rounded text-[10px] font-mono text-slate-300 uppercase tracking-wider transition-all">Test Tone</button>
+        </div>
+    </div>
+
+    <!-- Memory Core -->
+    <div class="glass-panel rounded-lg p-3 pointer-events-auto flex flex-col gap-2">
+        <div class="flex justify-between items-end">
+            <span class="font-mono text-[9px] text-slate-500 uppercase tracking-widest">Memory Core</span>
+            <button id="btnExport" class="text-fuchsia-400 hover:text-fuchsia-300 font-mono text-[9px] uppercase transition-all">Copy JSON</button>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+            <div class="flex flex-col gap-1">
+                <button onclick="saveSlot(1)" class="py-1 bg-slate-800 hover:bg-fuchsia-900/50 border border-slate-700 hover:border-fuchsia-500/50 text-slate-300 font-mono text-[9px] transition-all rounded">Save 1</button>
+                <button onclick="loadSlot(1)" class="py-1 bg-slate-900 hover:bg-slate-700 border border-slate-800 text-slate-400 font-mono text-[9px] transition-all rounded">Load 1</button>
             </div>
-
-            <!-- Memory Core (Import/Export) -->
-            <div class="grid grid-cols-2 gap-4">
-                <!-- Save Slots -->
-                <div class="bg-slate-900/50 border border-slate-800 rounded p-3 flex flex-col gap-2">
-                    <span class="font-mono text-[9px] text-slate-500 uppercase tracking-widest mb-1">Volatile Memory (Write)</span>
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="saveSlot(1)" class="py-1 bg-slate-800 hover:bg-fuchsia-900/50 border border-slate-700 hover:border-fuchsia-500/50 text-slate-300 font-mono text-[10px] transition-all">Save 1</button>
-                        <button onclick="saveSlot(2)" class="py-1 bg-slate-800 hover:bg-fuchsia-900/50 border border-slate-700 hover:border-fuchsia-500/50 text-slate-300 font-mono text-[10px] transition-all">Save 2</button>
-                        <button onclick="saveSlot(3)" class="py-1 bg-slate-800 hover:bg-fuchsia-900/50 border border-slate-700 hover:border-fuchsia-500/50 text-slate-300 font-mono text-[10px] transition-all">Save 3</button>
-                    </div>
-                    <button id="btnExport" class="w-full mt-1 py-1.5 bg-slate-800 text-fuchsia-400 hover:text-fuchsia-300 border border-slate-700 hover:border-fuchsia-500 font-mono text-[10px] uppercase transition-all">Copy RAW JSON</button>
-                </div>
-
-                <!-- Load Slots & Inject -->
-                <div class="bg-slate-900/50 border border-slate-800 rounded p-3 flex flex-col gap-2">
-                    <span class="font-mono text-[9px] text-slate-500 uppercase tracking-widest mb-1">Volatile Memory (Read)</span>
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="loadSlot(1)" class="py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-mono text-[10px] transition-all">Load 1</button>
-                        <button onclick="loadSlot(2)" class="py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-mono text-[10px] transition-all">Load 2</button>
-                        <button onclick="loadSlot(3)" class="py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-mono text-[10px] transition-all">Load 3</button>
-                    </div>
-                    <div class="flex gap-2 mt-1">
-                        <input type="text" id="importJsonStr" placeholder="Paste JSON payload..." class="w-full bg-black/40 border border-slate-700 rounded px-2 font-mono text-[9px] text-fuchsia-300 placeholder-slate-600 focus:outline-none focus:border-fuchsia-500">
-                        <button id="btnImport" class="px-3 py-1.5 bg-slate-800 text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 font-mono text-[10px] uppercase transition-all">Inject</button>
-                    </div>
-                </div>
+            <div class="flex flex-col gap-1">
+                <button onclick="saveSlot(2)" class="py-1 bg-slate-800 hover:bg-fuchsia-900/50 border border-slate-700 hover:border-fuchsia-500/50 text-slate-300 font-mono text-[9px] transition-all rounded">Save 2</button>
+                <button onclick="loadSlot(2)" class="py-1 bg-slate-900 hover:bg-slate-700 border border-slate-800 text-slate-400 font-mono text-[9px] transition-all rounded">Load 2</button>
+            </div>
+            <div class="flex flex-col gap-1">
+                <button onclick="saveSlot(3)" class="py-1 bg-slate-800 hover:bg-fuchsia-900/50 border border-slate-700 hover:border-fuchsia-500/50 text-slate-300 font-mono text-[9px] transition-all rounded">Save 3</button>
+                <button onclick="loadSlot(3)" class="py-1 bg-slate-900 hover:bg-slate-700 border border-slate-800 text-slate-400 font-mono text-[9px] transition-all rounded">Load 3</button>
             </div>
         </div>
-
-        <!-- Right Column: The Modulator Suite (Scrollable) -->
-        <div class="lg:col-span-1 bg-slate-950/40 rounded border border-slate-800/80 p-4 h-[600px] overflow-y-auto cyber-scroll flex flex-col gap-6">
-            
-            <!-- AESTHETICS -->
-            <section class="space-y-3">
-                <h3 class="font-mono text-[10px] text-fuchsia-500 font-black tracking-widest uppercase border-b border-slate-800 pb-1">Render Variables</h3>
-                
-                <div class="space-y-1">
-                    <label class="font-mono text-[9px] text-slate-400">MODE</label>
-                    <select id="mode" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs py-1 px-2 rounded font-mono focus:border-fuchsia-500 focus:outline-none">
-                        <option value="bars">Bars</option>
-                        <option value="mirrored-bars">Mirrored Bars</option>
-                        <option value="radial">Radial</option>
-                        <option value="oscilloscope">Oscilloscope</option>
-                        <option value="saturn-multiplexer">Saturn Multiplexer</option>
-                        <option value="neural-net">Neural Net</option>
-                    </select>
-                </div>
-
-                <div class="space-y-1">
-                    <label class="font-mono text-[9px] text-slate-400">THEME</label>
-                    <select id="theme" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs py-1 px-2 rounded font-mono focus:border-fuchsia-500 focus:outline-none">
-                        <option value="cyber-fuchsia">Cyber-Fuchsia</option>
-                        <option value="toxic-sludge">Toxic Sludge</option>
-                        <option value="neon-blood">Neon Blood</option>
-                        <option value="void-glacier">Void Glacier</option>
-                        <option value="golden-era">Golden Era</option>
-                        <option value="custom">Custom Override</option>
-                    </select>
-                </div>
-
-                <div id="customColorsWrap" class="grid grid-cols-2 gap-2 hidden">
-                    <div>
-                        <label class="font-mono text-[8px] text-slate-500">START</label>
-                        <input type="color" id="colorStart" value="#d946ef">
-                    </div>
-                    <div>
-                        <label class="font-mono text-[8px] text-slate-500">END</label>
-                        <input type="color" id="colorEnd" value="#0ea5e9">
-                    </div>
-                </div>
-
-                <div>
-                    <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">GLOW INTENSITY</span><span id="glowVal" class="text-fuchsia-400">20</span></div>
-                    <input type="range" id="glow" min="0" max="100" value="20">
-                </div>
-            </section>
-
-            <!-- ENGINE -->
-            <section class="space-y-3">
-                <h3 class="font-mono text-[10px] text-fuchsia-500 font-black tracking-widest uppercase border-b border-slate-800 pb-1">Audio Math Engine</h3>
-                
-                <div class="space-y-1">
-                    <label class="font-mono text-[9px] text-slate-400">FFT RESOLUTION</label>
-                    <select id="fftSize" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs py-1 px-2 rounded font-mono focus:border-fuchsia-500 focus:outline-none">
-                        <option value="32">32 (Retro)</option>
-                        <option value="64">64</option>
-                        <option value="128">128</option>
-                        <option value="256" selected>256 (Balanced)</option>
-                        <option value="512">512</option>
-                        <option value="1024">1024 (HD)</option>
-                        <option value="2048">2048</option>
-                    </select>
-                </div>
-
-                <div>
-                    <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">SMOOTHING</span><span id="smoothingVal" class="text-fuchsia-400">0.88</span></div>
-                    <input type="range" id="smoothing" min="0" max="0.99" step="0.01" value="0.88">
-                </div>
-                
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <div class="flex justify-between font-mono text-[8px] mb-1"><span class="text-slate-400">MIN DB</span><span id="minDecibelsVal" class="text-fuchsia-400">-90</span></div>
-                        <input type="range" id="minDecibels" min="-120" max="-40" step="1" value="-90">
-                    </div>
-                    <div>
-                        <div class="flex justify-between font-mono text-[8px] mb-1"><span class="text-slate-400">MAX DB</span><span id="maxDecibelsVal" class="text-fuchsia-400">-10</span></div>
-                        <input type="range" id="maxDecibels" min="-30" max="0" step="1" value="-10">
-                    </div>
-                </div>
-            </section>
-
-            <!-- NEURAL NET SPECIFICS (Hidden by default) -->
-            <section id="panelNeural" class="space-y-3 hidden bg-fuchsia-950/10 p-2 border border-fuchsia-900/30 rounded">
-                <h3 class="font-mono text-[10px] text-fuchsia-400 font-black tracking-widest uppercase border-b border-slate-800 pb-1">O(n²) Neural Net</h3>
-                
-                <div>
-                    <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">NODE COUNT</span><span id="nodeCountVal" class="text-fuchsia-400">100</span></div>
-                    <input type="range" id="nodeCount" min="20" max="250" value="100">
-                </div>
-                <div>
-                    <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">BASE RADIUS</span><span id="connectionRadiusVal" class="text-fuchsia-400">80</span></div>
-                    <input type="range" id="connectionRadius" min="20" max="200" value="80">
-                </div>
-                <div>
-                    <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">SYNAPTIC MULT</span><span id="synapticMultiplierVal" class="text-fuchsia-400">2.5</span></div>
-                    <input type="range" id="synapticMultiplier" min="0" max="5" step="0.1" value="2.5">
-                </div>
-                <div>
-                    <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">VELOCITY</span><span id="velocityVal" class="text-fuchsia-400">1.5</span></div>
-                    <input type="range" id="velocity" min="0" max="10" step="0.1" value="1.5">
-                </div>
-                
-                <div class="grid grid-cols-2 gap-2 mt-2">
-                    <div class="space-y-1">
-                        <label class="font-mono text-[8px] text-slate-400">DIRECTION</label>
-                        <select id="direction" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-[10px] py-1 px-1 rounded font-mono">
-                            <option value="float">Float</option>
-                            <option value="rise">Rise</option>
-                            <option value="sink">Sink</option>
-                            <option value="through" selected>Through (Warp)</option>
-                        </select>
-                    </div>
-                    <div class="flex items-end pb-1">
-                        <label class="flex items-center gap-2 cursor-pointer font-mono text-[9px] text-slate-300 hover:text-white">
-                            <input type="checkbox" id="collisions" class="accent-fuchsia-500 rounded" checked>
-                            <span>COLLISIONS</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="hidden"><input type="range" id="nodeSize" value="2"></div>
-            </section>
-
-            <!-- SATURN SPECIFICS (Hidden by default) -->
-            <section id="panelSaturn" class="space-y-3 hidden bg-cyan-950/10 p-2 border border-cyan-900/30 rounded">
-                <h3 class="font-mono text-[10px] text-cyan-400 font-black tracking-widest uppercase border-b border-slate-800 pb-1">Saturn Multiplexer</h3>
-                
-                <div>
-                    <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">RING COUNT</span><span id="ringCountVal" class="text-fuchsia-400">4</span></div>
-                    <input type="range" id="ringCount" min="2" max="8" value="4">
-                </div>
-                <div>
-                    <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">ORBITAL TILT</span><span id="orbitalTiltVal" class="text-fuchsia-400">0.35</span></div>
-                    <input type="range" id="orbitalTilt" min="0.1" max="1.0" step="0.05" value="0.35">
-                </div>
-                <div class="mt-2">
-                    <label class="flex items-center gap-2 cursor-pointer font-mono text-[9px] text-slate-300 hover:text-white">
-                        <input type="checkbox" id="driveInversion" class="accent-fuchsia-500 rounded">
-                        <span>INVERT BASS DRIVE</span>
-                    </label>
-                </div>
-            </section>
-
-            <!-- PRO MODIFIERS -->
-            <section class="space-y-4">
-                <h3 class="font-mono text-[10px] text-fuchsia-500 font-black tracking-widest uppercase border-b border-slate-800 pb-1">Pro Modifiers</h3>
-                
-                <!-- Ghost Trails -->
-                <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
-                    <label class="flex items-center gap-2 cursor-pointer font-mono text-[10px] text-slate-200 hover:text-white mb-2">
-                        <input type="checkbox" id="ghostTrails" class="accent-fuchsia-500 rounded" checked>
-                        <span class="font-black">PEAK GHOST TRAILS</span>
-                    </label>
-                    <div class="flex justify-between font-mono text-[8px] mb-1"><span class="text-slate-500">DECAY RATE</span><span id="trailDecayVal" class="text-slate-400">0.92</span></div>
-                    <input type="range" id="trailDecay" min="0.80" max="0.99" step="0.01" value="0.92">
-                </div>
-
-                <!-- Bass Bloom -->
-                <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
-                    <label class="flex items-center gap-2 cursor-pointer font-mono text-[10px] text-slate-200 hover:text-white mb-2">
-                        <input type="checkbox" id="bassBloom" class="accent-fuchsia-500 rounded" checked>
-                        <span class="font-black">BASS BLOOM</span>
-                    </label>
-                    <div class="flex justify-between font-mono text-[8px] mb-1"><span class="text-slate-500">BLOOM INTENSITY</span><span id="bloomIntensityVal" class="text-slate-400">2.5</span></div>
-                    <input type="range" id="bloomIntensity" min="1.0" max="5.0" step="0.1" value="2.5">
-                </div>
-
-                <!-- Screen Shake -->
-                <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
-                    <label class="flex items-center gap-2 cursor-pointer font-mono text-[10px] text-slate-200 hover:text-white mb-2">
-                        <input type="checkbox" id="screenShake" class="accent-fuchsia-500 rounded">
-                        <span class="font-black">SUB-HARMONIC SHAKE</span>
-                    </label>
-                    <div class="flex justify-between font-mono text-[8px] mb-1"><span class="text-slate-500">SHAKE INTENSITY</span><span id="shakeIntensityVal" class="text-slate-400">12</span></div>
-                    <input type="range" id="shakeIntensity" min="2" max="25" step="1" value="12">
-                </div>
-
-                <!-- Stereo Split -->
-                <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
-                    <label class="flex items-center gap-2 cursor-pointer font-mono text-[10px] text-slate-200 hover:text-white">
-                        <input type="checkbox" id="stereoSplit" class="accent-fuchsia-500 rounded">
-                        <span class="font-black uppercase tracking-wider">Stereo Routing (L/R)</span>
-                    </label>
-                </div>
-
-            </section>
+        <textarea id="importJsonStr" rows="3" class="w-full bg-black/40 border border-slate-700 rounded p-1.5 font-mono text-[9px] text-fuchsia-300 placeholder-slate-600 focus:outline-none focus:border-fuchsia-500 cyber-scroll resize-none" placeholder="Paste JSON payload..."></textarea>
+        <div class="flex gap-2">
+            <button id="btnImport" class="flex-1 py-1.5 bg-slate-800 text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 font-mono text-[9px] uppercase transition-all rounded">Inject Payload</button>
+            <button id="btnClearImport" class="px-3 py-1.5 bg-slate-900 text-slate-500 hover:text-slate-300 border border-slate-800 font-mono text-[9px] uppercase transition-all rounded">Clear</button>
         </div>
     </div>
 </div>
 
-<!-- Hidden audio element for files -->
+<!-- RIGHT SIDEBAR: Modulator Suite -->
+<aside id="controls" class="fixed top-0 right-0 h-screen w-80 glass-panel border-l border-fuchsia-500/20 overflow-y-auto cyber-scroll z-20 p-5 flex flex-col gap-6 pointer-events-auto">
+    
+    <!-- 1. AESTHETICS -->
+    <section class="space-y-3">
+        <h3 class="font-mono text-[10px] text-fuchsia-500 font-black tracking-widest uppercase border-b border-slate-800 pb-1">1. Render Target</h3>
+        
+        <div class="space-y-1">
+            <label class="font-mono text-[9px] text-slate-400">VISUALIZER MODE</label>
+            <select id="mode" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs py-1.5 px-2 rounded font-mono focus:border-fuchsia-500 focus:outline-none">
+                <option value="bars">Classic Bars</option>
+                <option value="mirrored-bars">Mirrored Bars</option>
+                <option value="radial">Radial Array</option>
+                <option value="oscilloscope">Oscilloscope</option>
+                <option value="saturn-multiplexer">Saturn Multiplexer</option>
+                <option value="floating-objects">Floating Objects</option>
+                <option value="neural-net" selected>Neural Net (Plexus)</option>
+            </select>
+        </div>
+
+        <div class="space-y-1">
+            <label class="font-mono text-[9px] text-slate-400">COLOR THEME</label>
+            <select id="theme" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs py-1.5 px-2 rounded font-mono focus:border-fuchsia-500 focus:outline-none">
+                <option value="cyber-fuchsia">Cyber-Fuchsia</option>
+                <option value="toxic-sludge">Toxic Sludge</option>
+                <option value="neon-blood">Neon Blood</option>
+                <option value="void-glacier">Void Glacier</option>
+                <option value="golden-era">Golden Era</option>
+                <option value="custom">Custom (3-Point)</option>
+            </select>
+        </div>
+
+        <div id="panelCustomColors" class="grid grid-cols-3 gap-2 hidden bg-slate-900/50 p-2 rounded border border-slate-800">
+            <div><label class="block font-mono text-[8px] text-slate-500 mb-1 text-center">BG</label><input type="color" id="colorBg" value="#020617"></div>
+            <div><label class="block font-mono text-[8px] text-slate-500 mb-1 text-center">PRIMARY</label><input type="color" id="colorPrimary" value="#d946ef"></div>
+            <div><label class="block font-mono text-[8px] text-slate-500 mb-1 text-center">SECONDARY</label><input type="color" id="colorSecondary" value="#0ea5e9"></div>
+        </div>
+
+        <div>
+            <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">BASE GLOW</span><span id="glowVal" class="text-fuchsia-400">20</span></div>
+            <input type="range" id="glow" min="0" max="100" value="20">
+        </div>
+    </section>
+
+    <!-- 2. ENGINE MATH -->
+    <section class="space-y-3">
+        <h3 class="font-mono text-[10px] text-fuchsia-500 font-black tracking-widest uppercase border-b border-slate-800 pb-1">2. Audio Engine</h3>
+        <div class="space-y-1">
+            <label class="font-mono text-[9px] text-slate-400">FFT RESOLUTION</label>
+            <select id="fftSize" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs py-1 px-2 rounded font-mono focus:border-fuchsia-500 focus:outline-none">
+                <option value="32">32</option><option value="64">64</option><option value="128">128</option>
+                <option value="256" selected>256</option><option value="512">512</option><option value="1024">1024</option><option value="2048">2048</option>
+            </select>
+        </div>
+        <div>
+            <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">SMOOTHING</span><span id="smoothingVal" class="text-fuchsia-400">0.88</span></div>
+            <input type="range" id="smoothing" min="0" max="0.99" step="0.01" value="0.88">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <div class="flex justify-between font-mono text-[8px] mb-1"><span class="text-slate-400">MIN DB</span><span id="minDecibelsVal" class="text-fuchsia-400">-90</span></div>
+                <input type="range" id="minDecibels" min="-120" max="-40" step="1" value="-90">
+            </div>
+            <div>
+                <div class="flex justify-between font-mono text-[8px] mb-1"><span class="text-slate-400">MAX DB</span><span id="maxDecibelsVal" class="text-fuchsia-400">-10</span></div>
+                <input type="range" id="maxDecibels" min="-30" max="0" step="1" value="-10">
+            </div>
+        </div>
+    </section>
+
+    <!-- SPECIFIC PANELS (Toggled via JS) -->
+    <div id="dynamicPanels" class="space-y-3">
+        
+        <!-- Radial Options -->
+        <section id="panelRadial" class="hidden bg-slate-900/40 p-3 rounded border border-slate-700/50 space-y-2">
+            <h3 class="font-mono text-[9px] text-slate-300 tracking-widest uppercase">Radial Config</h3>
+            <div>
+                <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">FREQ CAP (CLOSE GAP)</span><span id="frequencyCapVal" class="text-fuchsia-400">0.75</span></div>
+                <input type="range" id="frequencyCap" min="0.1" max="1.0" step="0.01" value="0.75">
+            </div>
+        </section>
+
+        <!-- Oscilloscope Options -->
+        <section id="panelOsci" class="hidden bg-slate-900/40 p-3 rounded border border-slate-700/50 space-y-2">
+            <h3 class="font-mono text-[9px] text-slate-300 tracking-widest uppercase">Oscilloscope Config</h3>
+            <div>
+                <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">TIME SCALE</span><span id="timeScaleVal" class="text-fuchsia-400">1.0</span></div>
+                <input type="range" id="timeScale" min="0.1" max="5.0" step="0.1" value="1.0">
+            </div>
+            <label class="flex items-center gap-2 cursor-pointer font-mono text-[9px] text-slate-300 hover:text-white mt-2">
+                <input type="checkbox" id="phaseLock" class="accent-fuchsia-500 rounded" checked><span>PHASE LOCK (ZERO-CROSSING)</span>
+            </label>
+        </section>
+
+        <!-- Saturn Options -->
+        <section id="panelSaturn" class="hidden bg-cyan-950/20 p-3 rounded border border-cyan-900/40 space-y-2">
+            <h3 class="font-mono text-[9px] text-cyan-400 tracking-widest uppercase">Saturn Multiplexer</h3>
+            <div>
+                <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">RING COUNT</span><span id="ringCountVal" class="text-cyan-400">4</span></div>
+                <input type="range" id="ringCount" min="2" max="8" value="4">
+            </div>
+            <div>
+                <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">ORBITAL TILT</span><span id="orbitalTiltVal" class="text-cyan-400">0.35</span></div>
+                <input type="range" id="orbitalTilt" min="0.1" max="1.0" step="0.05" value="0.35">
+            </div>
+            <div>
+                <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">CORE PLANET SIZE</span><span id="coreSizeVal" class="text-cyan-400">40</span></div>
+                <input type="range" id="coreSize" min="0" max="150" step="1" value="40">
+            </div>
+            <div class="space-y-1 pt-1">
+                <label class="flex items-center gap-2 cursor-pointer font-mono text-[9px] text-slate-300 hover:text-white"><input type="checkbox" id="showCorePlanet" class="accent-cyan-500 rounded" checked><span>SHOW PLANET</span></label>
+                <label class="flex items-center gap-2 cursor-pointer font-mono text-[9px] text-slate-300 hover:text-white"><input type="checkbox" id="planetReactive" class="accent-cyan-500 rounded" checked><span>REACTIVE PLANET</span></label>
+                <label class="flex items-center gap-2 cursor-pointer font-mono text-[9px] text-slate-300 hover:text-white"><input type="checkbox" id="driveInversion" class="accent-cyan-500 rounded"><span>INVERT BASS RINGS</span></label>
+            </div>
+        </section>
+
+        <!-- Neural Net Options -->
+        <section id="panelNeural" class="bg-fuchsia-950/20 p-3 rounded border border-fuchsia-900/40 space-y-2">
+            <h3 class="font-mono text-[9px] text-fuchsia-400 tracking-widest uppercase">Neural Net (Plexus)</h3>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <div class="flex justify-between font-mono text-[8px] mb-1"><span class="text-slate-400">NODES</span><span id="nnNodeCountVal" class="text-fuchsia-400">150</span></div>
+                    <input type="range" id="nnNodeCount" min="20" max="250" value="150">
+                </div>
+                <div>
+                    <div class="flex justify-between font-mono text-[8px] mb-1"><span class="text-slate-400">SIZE</span><span id="nnNodeSizeVal" class="text-fuchsia-400">2</span></div>
+                    <input type="range" id="nnNodeSize" min="1" max="10" step="0.5" value="2">
+                </div>
+            </div>
+            <div>
+                <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">CONNECTION RADIUS</span><span id="nnConnectionRadiusVal" class="text-fuchsia-400">80</span></div>
+                <input type="range" id="nnConnectionRadius" min="20" max="250" value="80">
+            </div>
+            <div>
+                <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">SYNAPTIC MULTIPLIER</span><span id="nnSynapticMultiplierVal" class="text-fuchsia-400">2.5</span></div>
+                <input type="range" id="nnSynapticMultiplier" min="0" max="5" step="0.1" value="2.5">
+            </div>
+            <div>
+                <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">VELOCITY</span><span id="nnVelocityVal" class="text-fuchsia-400">1.5</span></div>
+                <input type="range" id="nnVelocity" min="0" max="10" step="0.1" value="1.5">
+            </div>
+            <div class="flex gap-2 items-end pt-1">
+                <select id="nnDirection" class="flex-1 bg-slate-900 border border-slate-700 text-slate-200 text-[10px] py-1 px-1 rounded font-mono">
+                    <option value="float">Float</option><option value="rise">Rise</option><option value="sink">Sink</option><option value="through" selected>Through</option>
+                </select>
+                <label class="flex items-center gap-2 cursor-pointer font-mono text-[9px] text-slate-300 hover:text-white pb-1"><input type="checkbox" id="nnCollisions" class="accent-fuchsia-500 rounded" checked><span>COLLISIONS</span></label>
+            </div>
+        </section>
+
+        <!-- Floating Objects Options -->
+        <section id="panelFloating" class="hidden bg-emerald-950/20 p-3 rounded border border-emerald-900/40 space-y-2">
+            <h3 class="font-mono text-[9px] text-emerald-400 tracking-widest uppercase">Floating Objects</h3>
+            <div class="grid grid-cols-2 gap-2 mb-2">
+                <div class="space-y-1">
+                    <label class="font-mono text-[8px] text-slate-400">SHAPE</label>
+                    <select id="foShape" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-[10px] py-1 px-1 rounded font-mono">
+                        <option value="circle">Circle</option><option value="square">Square</option><option value="cross" selected>Cross</option><option value="star">Star</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="font-mono text-[8px] text-slate-400">AUDIO TARGET</label>
+                    <select id="foReactiveTarget" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-[10px] py-1 px-1 rounded font-mono">
+                        <option value="size" selected>Size Scale</option><option value="velocity">Velocity Kick</option><option value="glow">Flash Glow</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">DENSITY</span><span id="foDensityVal" class="text-emerald-400">100</span></div>
+                <input type="range" id="foDensity" min="10" max="300" value="100">
+            </div>
+            <div>
+                <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-slate-400">BASE SIZE</span><span id="foSizeVal" class="text-emerald-400">5</span></div>
+                <input type="range" id="foSize" min="1" max="50" value="5">
+            </div>
+            <div class="flex gap-2 items-end pt-1">
+                <select id="foDirection" class="flex-1 bg-slate-900 border border-slate-700 text-slate-200 text-[10px] py-1 px-1 rounded font-mono">
+                    <option value="float">Float</option><option value="rise" selected>Rise</option><option value="sink">Sink</option><option value="through">Through</option>
+                </select>
+                <label class="flex items-center gap-2 cursor-pointer font-mono text-[9px] text-slate-300 hover:text-white pb-1"><input type="checkbox" id="foCollisions" class="accent-emerald-500 rounded" checked><span>COLLISIONS</span></label>
+            </div>
+        </section>
+    </div>
+
+    <!-- 3. BACKGROUND LAYER -->
+    <section class="space-y-3">
+        <h3 class="font-mono text-[10px] text-slate-400 font-black tracking-widest uppercase border-b border-slate-800 pb-1">3. Background Layer</h3>
+        <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50">
+            <label class="flex items-center gap-2 cursor-pointer font-mono text-[10px] text-slate-200 hover:text-white mb-2">
+                <input type="checkbox" id="bgEnabled" class="accent-slate-400 rounded" checked>
+                <span class="font-black">ENABLE PARTICLES</span>
+            </label>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <div class="flex justify-between font-mono text-[8px] mb-1"><span class="text-slate-500">DENSITY</span><span id="bgDensityVal" class="text-slate-400">200</span></div>
+                    <input type="range" id="bgDensity" min="50" max="500" value="200">
+                </div>
+                <div>
+                    <div class="flex justify-between font-mono text-[8px] mb-1"><span class="text-slate-500">SPEED</span><span id="bgSpeedVal" class="text-slate-400">0.5</span></div>
+                    <input type="range" id="bgSpeed" min="0" max="5" step="0.1" value="0.5">
+                </div>
+            </div>
+            <select id="bgDirection" class="w-full mt-2 bg-slate-900 border border-slate-700 text-slate-400 text-[10px] py-1 px-1 rounded font-mono">
+                <option value="float" selected>Float</option><option value="rise">Rise</option><option value="sink">Sink</option><option value="through">Through</option>
+            </select>
+        </div>
+    </section>
+
+    <!-- 4. PRO MODIFIERS -->
+    <section class="space-y-3 pb-6">
+        <h3 class="font-mono text-[10px] text-fuchsia-500 font-black tracking-widest uppercase border-b border-slate-800 pb-1">4. Pro Modifiers</h3>
+        
+        <!-- Ghost / Bloom / Shake -->
+        <div class="bg-slate-900/50 p-2 rounded border border-slate-800/50 space-y-3">
+            <div>
+                <label class="flex items-center gap-2 cursor-pointer font-mono text-[10px] text-slate-200 hover:text-white mb-1"><input type="checkbox" id="ghostTrails" class="accent-fuchsia-500 rounded" checked><span class="font-bold">PEAK GHOST TRAILS</span></label>
+                <div class="flex justify-between font-mono text-[8px] mb-1"><span class="text-slate-500">DECAY RATE</span><span id="trailDecayVal" class="text-slate-400">0.92</span></div>
+                <input type="range" id="trailDecay" min="0.80" max="0.99" step="0.01" value="0.92">
+            </div>
+            <div>
+                <label class="flex items-center gap-2 cursor-pointer font-mono text-[10px] text-slate-200 hover:text-white mb-1"><input type="checkbox" id="bassBloom" class="accent-fuchsia-500 rounded" checked><span class="font-bold">BASS BLOOM</span></label>
+                <div class="flex justify-between font-mono text-[8px] mb-1"><span class="text-slate-500">INTENSITY</span><span id="bloomIntensityVal" class="text-slate-400">2.5</span></div>
+                <input type="range" id="bloomIntensity" min="1.0" max="5.0" step="0.1" value="2.5">
+            </div>
+            <div>
+                <label class="flex items-center gap-2 cursor-pointer font-mono text-[10px] text-slate-200 hover:text-white mb-1"><input type="checkbox" id="screenShake" class="accent-fuchsia-500 rounded"><span class="font-bold">SUB-HARMONIC SHAKE</span></label>
+                <div class="flex justify-between font-mono text-[8px] mb-1"><span class="text-slate-500">FORCE</span><span id="shakeIntensityVal" class="text-slate-400">12</span></div>
+                <input type="range" id="shakeIntensity" min="2" max="25" step="1" value="12">
+            </div>
+            <label class="flex items-center gap-2 cursor-pointer font-mono text-[10px] text-slate-200 hover:text-white pt-1 border-t border-slate-800"><input type="checkbox" id="stereoSplit" class="accent-fuchsia-500 rounded"><span class="font-bold uppercase">Stereo Routing (L/R)</span></label>
+        </div>
+
+        <!-- Camera & Fractal -->
+        <div class="bg-indigo-950/20 p-2 rounded border border-indigo-900/40 space-y-3">
+            <div>
+                <label class="flex items-center gap-2 cursor-pointer font-mono text-[10px] text-slate-200 hover:text-white mb-1"><input type="checkbox" id="autoCamera" class="accent-indigo-500 rounded"><span class="font-bold text-indigo-400">AUTO-CAMERA DRIFT</span></label>
+                <div class="flex justify-between font-mono text-[8px] mb-1"><span class="text-slate-500">PAN SPEED</span><span id="cameraSpeedVal" class="text-slate-400">1.0</span></div>
+                <input type="range" id="cameraSpeed" min="0.1" max="5.0" step="0.1" value="1.0">
+            </div>
+            <div class="pt-1 border-t border-indigo-900/40">
+                <div class="flex justify-between font-mono text-[9px] mb-1"><span class="text-indigo-400 font-bold">KALEIDOSCOPE (SLICES)</span><span id="fractalMultiplierVal" class="text-indigo-400">0</span></div>
+                <input type="range" id="fractalMultiplier" min="0" max="12" step="2" value="0">
+                <p class="text-[8px] text-slate-500 font-mono mt-1 leading-tight">Zero disables fractal buffer. High slice counts create complex mandalas.</p>
+            </div>
+        </div>
+    </section>
+</aside>
+
+<!-- Hidden elements -->
 <audio id="internalAudio" class="hidden" crossorigin="anonymous"></audio>
 
 <script>
     /**
-     * SONIC FORGE V1.0.0
-     * Architecture Spec V6 Implementation
-     * DOM is Truth. No Frameworks.
+     * SONIC FORGE V1.1.2
+     * Architecture Spec Implementation
+     * DOM is Truth. Zero Dependencies.
      */
     
     const DOM = {
@@ -334,41 +381,45 @@
         ctx: document.getElementById('visualizerCanvas').getContext('2d'),
         term: document.getElementById('terminal'),
         container: document.getElementById('forgeContainer'),
-        audio: document.getElementById('internalAudio'),
-        
-        // Panels
-        pNeural: document.getElementById('panelNeural'),
-        pSaturn: document.getElementById('panelSaturn'),
-        pCustomColors: document.getElementById('customColorsWrap'),
-        
-        // Input Groups (Mapped exactly to JSON Schema)
-        engine: ['fftSize', 'smoothing', 'minDecibels', 'maxDecibels'],
-        render: ['mode', 'theme', 'colorStart', 'colorEnd', 'glow'],
-        multiplexer: ['ringCount', 'orbitalTilt', 'driveInversion'],
-        neuralNet: ['nodeCount', 'nodeSize', 'connectionRadius', 'synapticMultiplier', 'velocity', 'direction', 'collisions'],
-        modifiers: ['ghostTrails', 'trailDecay', 'bassBloom', 'bloomIntensity', 'screenShake', 'shakeIntensity', 'stereoSplit']
+        audio: document.getElementById('internalAudio')
     };
 
-    // --- PIPELINE & STATE GLOBALS ---
+    const offCanvas = document.createElement('canvas');
+    const offCtx = offCanvas.getContext('2d');
+
+    // State Mapping Arrays
+    const mapEngine = ['fftSize', 'smoothing', 'minDecibels', 'maxDecibels'];
+    const mapRender = ['mode', 'glow'];
+    const mapRadial = ['frequencyCap'];
+    const mapOsci = ['timeScale', 'phaseLock'];
+    const mapSaturn = ['ringCount', 'orbitalTilt', 'driveInversion', 'showCorePlanet', 'planetReactive', 'coreSize'];
+    const mapNN = ['nnNodeCount', 'nnNodeSize', 'nnConnectionRadius', 'nnSynapticMultiplier', 'nnVelocity', 'nnDirection', 'nnCollisions'];
+    const mapFO = ['foShape', 'foDensity', 'foSize', 'foDirection', 'foCollisions', 'foReactiveTarget'];
+    const mapBG = ['bgEnabled', 'bgDensity', 'bgDirection', 'bgSpeed'];
+    const mapMods = ['ghostTrails', 'trailDecay', 'bassBloom', 'bloomIntensity', 'screenShake', 'shakeIntensity', 'stereoSplit', 'fractalMultiplier', 'autoCamera', 'cameraSpeed'];
+
     let audioCtx = null;
-    let analyserL = null;
-    let analyserR = null;
+    let analyserL = null, analyserR = null;
     let currentSource = null;
+    let currentSplitter = null; // AUDIT FIX: Prevent Audio Graph Leak
+    let currentBlobUrl = null;  // AUDIT FIX: Prevent RAM Sieve from file uploads
     let animId = null;
     let peakMap = new Float32Array(0);
     let isShaking = false;
-    let plexusNodes = [];
+    let cameraAngle = 0;
+    
+    let nodesNN = [];
+    let nodesFO = [];
+    let nodesBG = [];
 
-    // Themes
     const themes = {
-        'cyber-fuchsia': { start: '#d946ef', end: '#0ea5e9' },
-        'toxic-sludge': { start: '#84cc16', end: '#10b981' },
-        'neon-blood': { start: '#ef4444', end: '#f97316' },
-        'void-glacier': { start: '#38bdf8', end: '#818cf8' },
-        'golden-era': { start: '#eab308', end: '#f59e0b' }
+        'cyber-fuchsia': { bg: '#020617', primary: '#d946ef', secondary: '#0ea5e9' },
+        'toxic-sludge': { bg: '#022c22', primary: '#84cc16', secondary: '#10b981' },
+        'neon-blood': { bg: '#2a0606', primary: '#ef4444', secondary: '#f97316' },
+        'void-glacier': { bg: '#0f172a', primary: '#38bdf8', secondary: '#818cf8' },
+        'golden-era': { bg: '#1c1311', primary: '#eab308', secondary: '#f59e0b' }
     };
 
-    // --- TERMINAL LOGIC ---
     function sysLog(msg, isError = false) {
         const line = document.createElement('div');
         line.className = `${isError ? 'text-red-500 font-bold' : 'text-fuchsia-400'} whitespace-nowrap`;
@@ -378,20 +429,14 @@
         while(DOM.term.children.length > 8) DOM.term.removeChild(DOM.term.firstChild);
     }
 
-    // --- AUDIO PIPELINE (Section 2) ---
-    async function initAudioContext() {
+    // --- PIPELINE & WEBAUDIO ---
+    async function attachSource(newSourceNode, streamOrElement = null) {
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             analyserL = audioCtx.createAnalyser();
             analyserR = audioCtx.createAnalyser();
         }
-        if (audioCtx.state === 'suspended') {
-            await audioCtx.resume();
-        }
-    }
-
-    async function attachSource(newSourceNode, streamOrElement = null) {
-        await initAudioContext();
+        if (audioCtx.state === 'suspended') await audioCtx.resume();
         
         if (currentSource) {
             currentSource.disconnect();
@@ -406,7 +451,6 @@
         }
         
         currentSource = newSourceNode;
-        // attach tracking refs for teardown
         if (streamOrElement instanceof MediaStream) currentSource._mediaStream = streamOrElement;
         if (streamOrElement instanceof HTMLMediaElement) currentSource._mediaElement = streamOrElement;
 
@@ -418,164 +462,172 @@
     function routeSignal() {
         if (!currentSource || !analyserL) return;
         currentSource.disconnect();
+        if (currentSplitter) {
+            currentSplitter.disconnect();
+            currentSplitter = null;
+        }
+
         const isStereo = document.getElementById('stereoSplit').checked;
-        
         if (isStereo && currentSource.channelCount > 1) {
-            const splitter = audioCtx.createChannelSplitter(2);
-            currentSource.connect(splitter);
-            splitter.connect(analyserL, 0);
-            splitter.connect(analyserR, 1);
+            currentSplitter = audioCtx.createChannelSplitter(2);
+            currentSource.connect(currentSplitter);
+            currentSplitter.connect(analyserL, 0);
+            currentSplitter.connect(analyserR, 1);
             sysLog("Stereo routing: ACTIVE");
         } else {
             currentSource.connect(analyserL);
             currentSource.connect(analyserR);
-            if (isStereo) sysLog("Stereo bypass: Mono source detected.");
-            else sysLog("Routing: Mono sum.");
+            sysLog(isStereo ? "Stereo bypass: Mono source." : "Routing: Mono sum.");
         }
     }
 
-    // --- DOM EVENT DELEGATION & UI SYNC ---
-    function getVal(id) {
+    // --- DOM SYNC HELPER ---
+    const getVal = (id) => {
         const el = document.getElementById(id);
+        if(!el) return null;
         if (el.type === 'checkbox') return el.checked;
         if (el.type === 'number' || el.type === 'range') return parseFloat(el.value);
         return el.value;
-    }
+    };
+    
+    const constructObj = (keys) => keys.reduce((acc, k) => {
+        let rawKey = k;
+        if(k.startsWith('nn') || k.startsWith('fo') || k.startsWith('bg')) rawKey = k.charAt(2).toLowerCase() + k.slice(3);
+        return {...acc, [rawKey]: getVal(k)};
+    }, {});
 
     function syncUI() {
-        // Update readout spans
-        const readouts = ['glow', 'fftSize', 'smoothing', 'minDecibels', 'maxDecibels', 'nodeCount', 'connectionRadius', 'synapticMultiplier', 'velocity', 'ringCount', 'orbitalTilt', 'trailDecay', 'bloomIntensity', 'shakeIntensity'];
+        const readouts = [...mapEngine, ...mapRender, ...mapRadial, ...mapOsci, ...mapSaturn, ...mapNN, ...mapFO, ...mapBG, ...mapMods];
         readouts.forEach(id => {
             const el = document.getElementById(id + 'Val');
             if (el) el.textContent = document.getElementById(id).value;
         });
 
-        // Panel toggles
         const mode = getVal('mode');
-        DOM.pNeural.classList.toggle('hidden', mode !== 'neural-net');
-        DOM.pSaturn.classList.toggle('hidden', mode !== 'saturn-multiplexer');
-        DOM.pCustomColors.classList.toggle('hidden', getVal('theme') !== 'custom');
+        document.getElementById('panelNeural').classList.toggle('hidden', mode !== 'neural-net');
+        document.getElementById('panelSaturn').classList.toggle('hidden', mode !== 'saturn-multiplexer');
+        document.getElementById('panelRadial').classList.toggle('hidden', mode !== 'radial');
+        document.getElementById('panelOsci').classList.toggle('hidden', mode !== 'oscilloscope');
+        document.getElementById('panelFloating').classList.toggle('hidden', mode !== 'floating-objects');
+        document.getElementById('panelCustomColors').classList.toggle('hidden', getVal('theme') !== 'custom');
     }
 
     function syncEngineParams() {
         if (!analyserL) return;
-        const fft = getVal('fftSize');
-        const smooth = getVal('smoothing');
-        const minD = getVal('minDecibels');
-        const maxD = getVal('maxDecibels');
-        
+        const p = { fft: getVal('fftSize'), sm: getVal('smoothing'), min: getVal('minDecibels'), max: getVal('maxDecibels') };
         [analyserL, analyserR].forEach(a => {
-            a.fftSize = fft;
-            a.smoothingTimeConstant = smooth;
-            a.minDecibels = minD;
-            a.maxDecibels = maxD;
+            a.fftSize = p.fft; a.smoothingTimeConstant = p.sm;
+            a.minDecibels = p.min; a.maxDecibels = p.max;
         });
     }
 
-    // Attach master listener to container
-    DOM.container.addEventListener('input', (e) => {
+    document.getElementById('controls').addEventListener('input', (e) => {
         syncUI();
-        if (DOM.engine.includes(e.target.id) || e.target.id === 'stereoSplit') {
+        if (mapEngine.includes(e.target.id) || e.target.id === 'stereoSplit') {
             if (e.target.id === 'stereoSplit') routeSignal();
             syncEngineParams();
         }
-        if (DOM.neuralNet.includes(e.target.id)) {
-            syncNodes(getVal('nodeCount'));
-        }
+        const w = DOM.canvas.width; const h = DOM.canvas.height;
+        if (e.target.id === 'nnNodeCount') reconcileNodes(nodesNN, getVal('nnNodeCount'), w, h);
+        if (e.target.id === 'foDensity') reconcileNodes(nodesFO, getVal('foDensity'), w, h);
+        if (e.target.id === 'bgDensity') reconcileNodes(nodesBG, getVal('bgDensity'), w, h);
     });
 
-    // --- DOM-SYNC MEMORY CORE (Section 1 & 5) ---
+    // --- MEMORY CORE (Save/Load/Hydrate) ---
     function buildStateObject() {
-        const construct = (keys) => keys.reduce((acc, k) => ({...acc, [k]: getVal(k)}), {});
         return {
             theme: getVal('theme'),
-            engine: construct(DOM.engine),
-            render: construct(DOM.render),
-            multiplexer: construct(DOM.multiplexer),
-            neuralNet: construct(DOM.neuralNet),
-            modifiers: construct(DOM.modifiers)
+            colors: { bg: getVal('colorBg'), primary: getVal('colorPrimary'), secondary: getVal('colorSecondary') },
+            engine: constructObj(mapEngine),
+            render: constructObj(mapRender),
+            radial: constructObj(mapRadial),
+            oscilloscope: constructObj(mapOsci),
+            multiplexer: constructObj(mapSaturn),
+            neuralNet: constructObj(mapNN),
+            floatingObjects: constructObj(mapFO),
+            bgParticles: constructObj(mapBG),
+            modifiers: constructObj(mapMods)
         };
     }
 
     function hydrateState(jsonString) {
         try {
             const raw = JSON.parse(jsonString);
-            const flatState = { 
-                ...(raw.engine || {}), 
-                ...(raw.render || {}), 
-                ...(raw.multiplexer || {}),
-                ...(raw.neuralNet || {}),
-                ...(raw.modifiers || {}) 
+            const flatMap = {
+                theme: raw.theme, colorBg: raw.colors?.bg, colorPrimary: raw.colors?.primary, colorSecondary: raw.colors?.secondary,
+                fftSize: raw.engine?.fftSize, smoothing: raw.engine?.smoothing, minDecibels: raw.engine?.minDecibels, maxDecibels: raw.engine?.maxDecibels,
+                mode: raw.render?.mode, glow: raw.render?.glow, frequencyCap: raw.radial?.frequencyCap,
+                timeScale: raw.oscilloscope?.timeScale, phaseLock: raw.oscilloscope?.phaseLock,
+                ringCount: raw.multiplexer?.ringCount, orbitalTilt: raw.multiplexer?.orbitalTilt, driveInversion: raw.multiplexer?.driveInversion, showCorePlanet: raw.multiplexer?.showCorePlanet, planetReactive: raw.multiplexer?.planetReactive, coreSize: raw.multiplexer?.coreSize,
+                nnNodeCount: raw.neuralNet?.nodeCount, nnNodeSize: raw.neuralNet?.nodeSize, nnConnectionRadius: raw.neuralNet?.connectionRadius, nnSynapticMultiplier: raw.neuralNet?.synapticMultiplier, nnVelocity: raw.neuralNet?.velocity, nnDirection: raw.neuralNet?.direction, nnCollisions: raw.neuralNet?.collisions,
+                foShape: raw.floatingObjects?.shape, foDensity: raw.floatingObjects?.density, foSize: raw.floatingObjects?.size, foDirection: raw.floatingObjects?.direction, foCollisions: raw.floatingObjects?.collisions, foReactiveTarget: raw.floatingObjects?.reactiveTarget,
+                bgEnabled: raw.bgParticles?.enabled, bgDensity: raw.bgParticles?.density, bgDirection: raw.bgParticles?.direction, bgSpeed: raw.bgParticles?.speed,
+                ghostTrails: raw.modifiers?.ghostTrails, trailDecay: raw.modifiers?.trailDecay, bassBloom: raw.modifiers?.bassBloom, bloomIntensity: raw.modifiers?.bloomIntensity, screenShake: raw.modifiers?.screenShake, shakeIntensity: raw.modifiers?.shakeIntensity, stereoSplit: raw.modifiers?.stereoSplit, fractalMultiplier: raw.modifiers?.fractalMultiplier, autoCamera: raw.modifiers?.autoCamera, cameraSpeed: raw.modifiers?.cameraSpeed
             };
-            if (raw.theme) flatState.theme = raw.theme;
             
-            Object.keys(flatState).forEach(key => {
-                const el = document.getElementById(key);
-                if (!el || flatState[key] === undefined || flatState[key] === null) return;
-                
-                if (el.type === 'checkbox') el.checked = flatState[key];
-                else el.value = flatState[key];
-                
+            Object.keys(flatMap).forEach(id => {
+                const el = document.getElementById(id);
+                if (!el || flatMap[id] === undefined || flatMap[id] === null) return;
+                if (el.type === 'checkbox') el.checked = flatMap[id];
+                else el.value = flatMap[id];
                 el.dispatchEvent(new Event('input', { bubbles: true }));
             });
-            sysLog("HYDRATION SUCCESS. Parameters mapped.");
-        } catch (e) {
-            sysLog("FATAL: Invalid JSON Payload", true);
-        }
+            
+            const w = DOM.canvas.width || window.innerWidth; const h = DOM.canvas.height || window.innerHeight;
+            reconcileNodes(nodesNN, getVal('nnNodeCount'), w, h);
+            reconcileNodes(nodesFO, getVal('foDensity'), w, h);
+            reconcileNodes(nodesBG, getVal('bgDensity'), w, h);
+            
+            sysLog("HYDRATION SUCCESS. Matrix realigned.");
+        } catch (e) { sysLog("FATAL: Invalid JSON Payload", true); }
     }
 
     window.saveSlot = (num) => {
-        const json = JSON.stringify(buildStateObject());
-        localStorage.setItem(`sonic_forge_v1_slot_${num}`, json);
-        sysLog(`Slot ${num} written to volatile memory.`);
+        const slotKey = `sonic_forge_v1.1_slot_${num}`;
+        if (localStorage.getItem(slotKey) && !window.confirm(`Overwrite existing config in Slot ${num}?`)) return;
+        localStorage.setItem(slotKey, JSON.stringify(buildStateObject()));
+        sysLog(`Slot ${num} written to persistent memory.`);
     };
-
     window.loadSlot = (num) => {
-        const json = localStorage.getItem(`sonic_forge_v1_slot_${num}`);
-        if (json) hydrateState(json);
-        else sysLog(`Slot ${num} is empty.`, true);
+        const json = localStorage.getItem(`sonic_forge_v1.1_slot_${num}`);
+        if (json) hydrateState(json); else sysLog(`Slot ${num} is empty.`, true);
     };
 
     document.getElementById('btnExport').addEventListener('click', () => {
-        const json = JSON.stringify(buildStateObject(), null, 2);
-        navigator.clipboard.writeText(json).then(() => sysLog("Payload copied to clipboard."));
+        navigator.clipboard.writeText(JSON.stringify(buildStateObject(), null, 2)).then(() => sysLog("JSON copied to clipboard."));
     });
-
     document.getElementById('btnImport').addEventListener('click', () => {
         const val = document.getElementById('importJsonStr').value;
         if(val) hydrateState(val);
     });
+    document.getElementById('btnClearImport').addEventListener('click', () => { document.getElementById('importJsonStr').value = ''; });
 
-    // --- INPUT TRIGGERS ---
+    // --- I/O EVENTS ---
     document.getElementById('btnHijack').addEventListener('click', async () => {
         try {
-            sysLog("Requesting DisplayMedia. Waiting for user grant...");
+            sysLog("Requesting DisplayMedia. Awaiting grant...");
             const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
             stream.getVideoTracks().forEach(t => { t.stop(); stream.removeTrack(t); });
-            const audioTracks = stream.getAudioTracks();
-            if (audioTracks.length === 0) throw new Error("No audio track found in stream.");
-            
-            await initAudioContext();
-            const source = audioCtx.createMediaStreamSource(new MediaStream(audioTracks));
-            attachSource(source, stream);
-            sysLog("System Audio Hijacked successfully.");
-        } catch(e) {
-            sysLog("Hijack Failed: " + e.message, true);
-        }
+            const tracks = stream.getAudioTracks();
+            if (tracks.length === 0) throw new Error("No audio track.");
+            await attachSource(new (window.AudioContext || window.webkitAudioContext)().createMediaStreamSource(new MediaStream(tracks)), stream);
+            sysLog("System Audio Hijacked.");
+        } catch(e) { sysLog("Hijack Failed: " + e.message, true); }
     });
 
     document.getElementById('audioFile').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        DOM.audio.src = URL.createObjectURL(file);
-        sysLog(`Loading ${file.name}...`);
         
+        // AUDIT FIX: Purge old blob URLs to prevent RAM hemorrhage
+        if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+        currentBlobUrl = URL.createObjectURL(file);
+        
+        DOM.audio.src = currentBlobUrl;
+        sysLog(`Loading ${file.name}...`);
         await initAudioContext();
-        // create source only once per element
-        if(!DOM.audio.sourceNode) {
-            DOM.audio.sourceNode = audioCtx.createMediaElementSource(DOM.audio);
-        }
-        attachSource(DOM.audio.sourceNode, DOM.audio);
+        if(!DOM.audio.sourceNode) DOM.audio.sourceNode = audioCtx.createMediaElementSource(DOM.audio);
+        await attachSource(DOM.audio.sourceNode, DOM.audio);
         DOM.audio.play();
         sysLog("Playback started.");
     });
@@ -584,26 +636,149 @@
         await initAudioContext();
         const osc = audioCtx.createOscillator();
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(110, audioCtx.currentTime); // A2
-        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 2); // A5 sweep
+        osc.frequency.setValueAtTime(110, audioCtx.currentTime); 
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 2); 
         osc.start();
-        attachSource(osc);
+        await attachSource(osc);
         sysLog("Oscillator Test Tone Active.");
         setTimeout(() => { if(currentSource===osc) { osc.stop(); sysLog("Test tone ended."); } }, 2000);
     });
 
+    // --- PHYSICS & RENDERING MATH ---
+    function reconcileNodes(arr, density, w, h) {
+        while (arr.length < density) arr.push({ x: Math.random()*w, y: Math.random()*h, vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2 });
+        if (arr.length > density) arr.length = density;
+    }
 
-    // --- PHYSICS HELPERS ---
-    function syncNodes(targetCount) {
-        const w = DOM.canvas.width || 800;
-        const h = DOM.canvas.height || 600;
-        while (plexusNodes.length < targetCount) {
-            plexusNodes.push({
-                x: Math.random() * w, y: Math.random() * h,
-                vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2
-            });
+    function drawShape(ctx, shape, x, y, size) {
+        ctx.beginPath();
+        if (shape === 'circle') { ctx.arc(x, y, size, 0, Math.PI * 2); }
+        else if (shape === 'square') { ctx.rect(x - size, y - size, size * 2, size * 2); }
+        else if (shape === 'cross') {
+            ctx.moveTo(x - size, y); ctx.lineTo(x + size, y);
+            ctx.moveTo(x, y - size); ctx.lineTo(x, y + size);
         }
-        if (plexusNodes.length > targetCount) plexusNodes.length = targetCount;
+        else if (shape === 'star') {
+            for(let i=0; i<5; i++) {
+                ctx.lineTo(Math.cos((18+i*72)/180*Math.PI)*size + x, -Math.sin((18+i*72)/180*Math.PI)*size + y);
+                ctx.lineTo(Math.cos((54+i*72)/180*Math.PI)*(size*0.5) + x, -Math.sin((54+i*72)/180*Math.PI)*(size*0.5) + y);
+            }
+            ctx.closePath();
+        }
+        shape === 'cross' ? ctx.stroke() : ctx.fill();
+    }
+
+    function updateVectors(n, dir, vel, w, h, cx, cy) {
+        if (dir === 'float') {
+            const speed = Math.sqrt(n.vx*n.vx + n.vy*n.vy) || 0.01;
+            n.vx = (n.vx / speed) * vel; n.vy = (n.vy / speed) * vel;
+        } else {
+            if (dir === 'rise') n.vy -= 0.1 * vel;
+            if (dir === 'sink') n.vy += 0.1 * vel;
+            if (dir === 'through') {
+                const safeDx = (n.x - cx) || 0.1; const safeDy = (n.y - cy) || 0.1;
+                const angle = Math.atan2(safeDy, safeDx);
+                n.vx += Math.cos(angle) * 0.1 * vel; n.vy += Math.sin(angle) * 0.1 * vel;
+            }
+            n.vx *= 0.98; n.vy *= 0.98;
+        }
+    }
+
+    function checkBounds(n, dir, w, h, cx, cy) {
+        if (dir === 'float') {
+            if (n.x < 0 || n.x > w) n.vx *= -1;
+            if (n.y < 0 || n.y > h) n.vy *= -1;
+        } else {
+            if (n.x < -20 || n.x > w + 20 || n.y < -20 || n.y > h + 20) {
+                if (dir === 'through') {
+                    n.x = cx + (Math.random()*4-2); n.y = cy + (Math.random()*4-2);
+                } else {
+                    if (dir === 'rise') n.y = h + 10;
+                    if (dir === 'sink') n.y = -10;
+                    n.x = Math.random() * w;
+                }
+            }
+        }
+    }
+
+    function renderParticleLayer(ctx, arr, isBG, bassAvg, w, h, prm, colorStr, activeGlow) {
+        const cx = w/2, cy = h/2;
+        const collisionSq = (prm.size * 2) ** 2;
+
+        for (let i = 0; i < arr.length; i++) {
+            const n1 = arr[i];
+            const speedMult = isBG ? prm.speed : (prm.reactiveTarget === 'velocity' ? 1 + (bassAvg/255)*5 : 1);
+            const sizeMult = isBG ? prm.size : (prm.reactiveTarget === 'size' ? prm.size * (1 + (bassAvg/255)*2) : prm.size);
+
+            updateVectors(n1, prm.direction, isBG ? speedMult : prm.velocity * speedMult, w, h, cx, cy);
+
+            if (!isBG && prm.collisions) {
+                for (let j = i + 1; j < arr.length; j++) {
+                    const n2 = arr[j];
+                    let dx = n1.x - n2.x; let dy = n1.y - n2.y;
+                    let distSq = (dx*dx) + (dy*dy);
+                    if (distSq === 0) { dx = 0.1; dy = 0; distSq = 0.01; }
+
+                    if (distSq < collisionSq) {
+                        const dist = Math.sqrt(distSq);
+                        const nx = dx/dist, ny = dy/dist;
+                        const p = (n1.vx*nx + n1.vy*ny - n2.vx*nx - n2.vy*ny);
+                        n1.vx -= p*nx; n1.vy -= p*ny; n2.vx += p*nx; n2.vy += p*ny;
+                        const overlap = (sizeMult*2) - dist;
+                        n1.x += nx*(overlap/2.1); n1.y += ny*(overlap/2.1);
+                        n2.x -= nx*(overlap/2.1); n2.y -= ny*(overlap/2.1);
+                    }
+                }
+            }
+
+            n1.x += n1.vx; n1.y += n1.vy;
+            checkBounds(n1, prm.direction, w, h, cx, cy);
+
+            ctx.fillStyle = colorStr; ctx.strokeStyle = colorStr; ctx.lineWidth = 2;
+            
+            // AUDIT FIX: Restore active glow specifically for shape rendering without polluting global state
+            if (!isBG && prm.reactiveTarget === 'glow') {
+                ctx.shadowBlur = (bassAvg/255) * 30; ctx.shadowColor = colorStr;
+            } else if (!isBG) {
+                ctx.shadowBlur = activeGlow; ctx.shadowColor = colorStr;
+            } else {
+                ctx.shadowBlur = 0; // BG layers have no glow to save CPU
+            }
+            
+            drawShape(ctx, isBG ? 'circle' : prm.shape, n1.x, n1.y, sizeMult);
+            ctx.shadowBlur = 0; // Reset for next loop iteration
+        }
+    }
+
+    function applyKaleidoscope(mainCtx, mainCanvas, slices, bgColor) {
+        if (slices < 2) return;
+        const w = mainCanvas.width; const h = mainCanvas.height;
+        
+        offCtx.clearRect(0, 0, w, h);
+        offCtx.drawImage(mainCanvas, 0, 0);
+        
+        mainCtx.setTransform(1, 0, 0, 1, 0, 0); 
+        
+        // AUDIT FIX: Prevent Transparent Void corners by repainting background
+        mainCtx.fillStyle = bgColor;
+        mainCtx.fillRect(0, 0, w, h);
+        
+        mainCtx.save();
+        mainCtx.translate(w/2, h/2);
+        const angle = (Math.PI * 2) / slices;
+        
+        for (let i = 0; i < slices; i++) {
+            mainCtx.save();
+            mainCtx.rotate(i * angle);
+            if (i % 2 !== 0) mainCtx.scale(1, -1);
+            mainCtx.beginPath();
+            mainCtx.moveTo(0, 0);
+            mainCtx.arc(0, 0, Math.max(w, h), -angle/2, angle/2);
+            mainCtx.clip();
+            mainCtx.drawImage(offCanvas, -w/2, -h/2);
+            mainCtx.restore();
+        }
+        mainCtx.restore();
     }
 
     function getLogBands(data, numBands) {
@@ -611,15 +786,12 @@
         const minLog = Math.log10(1); 
         const maxLog = Math.log10(data.length);
         const range = maxLog - minLog;
-        
         for (let i = 0; i < numBands; i++) {
             const startLog = minLog + (i * (range / numBands));
             const endLog = minLog + ((i + 1) * (range / numBands));
-            
             const startIdx = Math.floor(Math.pow(10, startLog));
             let endIdx = Math.min(Math.floor(Math.pow(10, endLog)), data.length);
             if (endIdx <= startIdx) endIdx = startIdx + 1; 
-            
             let sum = 0;
             for (let j = startIdx; j < endIdx; j++) sum += data[j] || 0;
             bands.push(sum / (endIdx - startIdx)); 
@@ -627,28 +799,29 @@
         return bands;
     }
 
-    // --- RENDER PIPELINE ---
+    // --- MAIN RENDER LOOP ---
     function renderLoop() {
         animId = requestAnimationFrame(renderLoop);
-        
         if (!analyserL) return;
 
-        const w = DOM.canvas.clientWidth;
-        const h = DOM.canvas.clientHeight;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const ctx = DOM.ctx;
+
         if(DOM.canvas.width !== w || DOM.canvas.height !== h) {
-            DOM.canvas.width = w;
-            DOM.canvas.height = h;
-            syncNodes(getVal('nodeCount'));
+            DOM.canvas.width = w; DOM.canvas.height = h;
+            offCanvas.width = w; offCanvas.height = h;
+            reconcileNodes(nodesNN, getVal('nnNodeCount'), w, h);
+            reconcileNodes(nodesFO, getVal('foDensity'), w, h);
+            reconcileNodes(nodesBG, getVal('bgDensity'), w, h);
         }
         
-        const ctx = DOM.ctx;
         const bufferLength = analyserL.frequencyBinCount;
         const dataL = new Uint8Array(bufferLength);
         const dataR = new Uint8Array(bufferLength);
         analyserL.getByteFrequencyData(dataL);
         analyserR.getByteFrequencyData(dataR);
 
-        // Calculate Bass Bloom bounds (Section 3.2)
         let bassSum = 0;
         const bassBounds = Math.max(1, Math.floor(bufferLength * 0.1));
         for (let i = 0; i < bassBounds; i++) bassSum += dataL[i];
@@ -656,50 +829,52 @@
 
         const s = buildStateObject();
         
-        // Background
-        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        // 1. Matrix Reset & Frame Clear
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        let cBg = s.colors.bg, cPri = s.colors.primary, cSec = s.colors.secondary;
+        if (s.theme !== 'custom' && themes[s.theme]) {
+            cBg = themes[s.theme].bg; cPri = themes[s.theme].primary; cSec = themes[s.theme].secondary;
+        }
+        
+        // AUDIT FIX: Sync the DOM body to the canvas background to mask Quake Bleed
+        document.body.style.backgroundColor = cBg;
+        
+        ctx.fillStyle = cBg;
         ctx.fillRect(0, 0, w, h);
 
-        // Color Routing
-        let cStart = s.render.colorStart;
-        let cEnd = s.render.colorEnd;
-        if (s.render.theme !== 'custom') {
-            cStart = themes[s.render.theme].start;
-            cEnd = themes[s.render.theme].end;
+        // 2. Auto-Camera Transform
+        if (s.modifiers.autoCamera) {
+            cameraAngle += 0.001 * s.modifiers.cameraSpeed;
+            ctx.translate(w/2, h/2);
+            ctx.translate(Math.cos(cameraAngle) * 50, Math.sin(cameraAngle) * 50);
+            ctx.rotate(cameraAngle * 0.5);
+            ctx.translate(-w/2, -h/2);
         }
 
-        // Bloom Application
-        const baseGlow = s.render.glow;
-        const dynamicGlow = baseGlow + ((bassAvg / 255) * baseGlow * s.modifiers.bloomIntensity);
-        ctx.shadowBlur = s.modifiers.bassBloom ? dynamicGlow : baseGlow;
-        ctx.shadowColor = cStart;
+        const dynamicGlow = s.render.glow + ((bassAvg / 255) * s.render.glow * s.modifiers.bloomIntensity);
+        const activeGlow = s.modifiers.bassBloom ? dynamicGlow : s.render.glow;
 
-        // Screen Shake (Section 3.3)
-        if (s.modifiers.screenShake && bassAvg > 230) {
-            const x = (Math.random() - 0.5) * 2 * s.modifiers.shakeIntensity;
-            const y = (Math.random() - 0.5) * 2 * s.modifiers.shakeIntensity;
-            DOM.container.style.transform = `translate(${x}px, ${y}px)`;
-            isShaking = true;
-        } else if (isShaking) {
-            DOM.container.style.transform = 'translate(0px, 0px)';
-            isShaking = false;
+        // 3. Background Layer (No glow for performance)
+        ctx.shadowBlur = 0;
+        if (s.bgParticles.enabled) {
+            renderParticleLayer(ctx, nodesBG, true, bassAvg, w, h, s.bgParticles, cSec, 0);
         }
 
-        // Ghost Trails Reallocation (Section 3.1)
-        if (peakMap.length !== bufferLength) peakMap = new Float32Array(bufferLength);
-
-        // Helper gradient
-        const bgGradient = ctx.createLinearGradient(0, h, 0, 0);
-        bgGradient.addColorStop(0, cEnd);
-        bgGradient.addColorStop(1, cStart);
+        // 4. Set Master Glow
+        ctx.shadowBlur = activeGlow;
+        ctx.shadowColor = cPri;
 
         const mode = s.render.mode;
-
-        ctx.fillStyle = bgGradient;
-        ctx.strokeStyle = bgGradient;
         ctx.lineWidth = 2;
 
+        // 5. Primary Render Mode Logic
         if (mode === 'bars' || mode === 'mirrored-bars') {
+            if (peakMap.length !== bufferLength) peakMap = new Float32Array(bufferLength);
+            
+            const gradient = ctx.createLinearGradient(0, h, 0, 0);
+            gradient.addColorStop(0, cSec); gradient.addColorStop(1, cPri);
+            ctx.fillStyle = gradient;
+
             const barW = (w / bufferLength) * (mode==='mirrored-bars' ? 0.5 : 1) * 0.8;
             const gap = (w / bufferLength) * (mode==='mirrored-bars' ? 0.5 : 1) * 0.2;
             const totalW = barW + gap;
@@ -707,8 +882,6 @@
             for (let i = 0; i < bufferLength; i++) {
                 const valL = dataL[i];
                 const valR = s.modifiers.stereoSplit ? dataR[i] : dataL[i];
-                
-                // Trails
                 peakMap[i] = Math.max(valL, peakMap[i] * s.modifiers.trailDecay);
                 
                 const bhL = (valL / 255) * h * 0.8;
@@ -720,13 +893,10 @@
                     ctx.fillRect(x, h - bhL, barW, bhL);
                     if (s.modifiers.ghostTrails) ctx.fillRect(x, h - pkH - 2, barW, 2);
                 } else {
-                    // Mirrored Center
                     const cx = w/2;
-                    // Right
-                    ctx.fillRect(cx + (i * totalW), h - bhR, barW, bhR);
+                    ctx.fillRect(cx + (i * totalW), h - bhR, barW, bhR); // Right
                     if (s.modifiers.ghostTrails) ctx.fillRect(cx + (i * totalW), h - pkH - 2, barW, 2);
-                    // Left
-                    if (i > 0) {
+                    if (i > 0) { // Left
                         ctx.fillRect(cx - (i * totalW), h - bhL, barW, bhL);
                         if (s.modifiers.ghostTrails) ctx.fillRect(cx - (i * totalW), h - pkH - 2, barW, 2);
                     }
@@ -736,48 +906,54 @@
         else if (mode === 'oscilloscope') {
             const tData = new Uint8Array(bufferLength);
             analyserL.getByteTimeDomainData(tData);
+            
+            let startIdx = 0;
+            if (s.oscilloscope.phaseLock) {
+                for (let i = 0; i < bufferLength - 1; i++) {
+                    if (tData[i] < 128 && tData[i + 1] >= 128) { startIdx = i; break; }
+                }
+            }
+            
             ctx.beginPath();
-            const sliceWidth = w * 1.0 / bufferLength;
+            ctx.strokeStyle = cPri;
+            const renderLen = bufferLength - startIdx;
+            const sliceWidth = (w * s.oscilloscope.timeScale) / renderLen;
             let x = 0;
-            for(let i = 0; i < bufferLength; i++) {
+            for(let i = startIdx; i < bufferLength; i++) {
                 const v = tData[i] / 128.0;
                 const y = v * h/2;
-                if(i === 0) ctx.moveTo(x, y);
+                if(i === startIdx) ctx.moveTo(x, y);
                 else ctx.lineTo(x, y);
                 x += sliceWidth;
             }
-            ctx.lineTo(w, h/2);
             ctx.stroke();
         }
         else if (mode === 'radial') {
             const cx = w/2, cy = h/2;
             const radius = Math.min(w,h) * 0.2;
+            const activeLength = Math.max(1, Math.floor(bufferLength * s.radial.frequencyCap));
+            if (peakMap.length !== bufferLength) peakMap = new Float32Array(bufferLength);
+
             ctx.beginPath();
-            for(let i=0; i < bufferLength; i+=2) { // step by 2 to prevent crushing
-                const rad = (i / bufferLength) * Math.PI * 2;
+            ctx.strokeStyle = cPri;
+            for(let i=0; i < activeLength; i+=2) { 
+                const rad = (i / activeLength) * Math.PI * 2;
                 const amt = dataL[i]/255;
                 const barH = amt * (h * 0.3);
-                
-                const x1 = cx + Math.cos(rad) * radius;
-                const y1 = cy + Math.sin(rad) * radius;
-                const x2 = cx + Math.cos(rad) * (radius + barH);
-                const y2 = cy + Math.sin(rad) * (radius + barH);
-                
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
+                const x1 = cx + Math.cos(rad) * radius; const y1 = cy + Math.sin(rad) * radius;
+                const x2 = cx + Math.cos(rad) * (radius + barH); const y2 = cy + Math.sin(rad) * (radius + barH);
+                ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
             }
             ctx.stroke();
             
-            // Peak ghost dots on outer edge
             if (s.modifiers.ghostTrails) {
-                for(let i=0; i < bufferLength; i+=2) {
+                ctx.fillStyle = cSec;
+                for(let i=0; i < activeLength; i+=2) {
                     peakMap[i] = Math.max(dataL[i], peakMap[i] * s.modifiers.trailDecay);
-                    const rad = (i / bufferLength) * Math.PI * 2;
+                    const rad = (i / activeLength) * Math.PI * 2;
                     const pkH = (peakMap[i]/255) * (h * 0.3);
-                    const px = cx + Math.cos(rad) * (radius + pkH + 5);
-                    const py = cy + Math.sin(rad) * (radius + pkH + 5);
                     ctx.beginPath();
-                    ctx.arc(px, py, 1.5, 0, Math.PI*2);
+                    ctx.arc(cx + Math.cos(rad) * (radius + pkH + 5), cy + Math.sin(rad) * (radius + pkH + 5), 1.5, 0, Math.PI*2);
                     ctx.fill();
                 }
             }
@@ -794,115 +970,103 @@
             const maxRadius = Math.min(w,h) * 0.45;
             const ringSpacing = maxRadius / m.ringCount;
 
+            if (m.showCorePlanet) {
+                const dynSize = m.planetReactive ? m.coreSize + ((dataL[0]/255) * m.coreSize*0.5) : m.coreSize;
+                ctx.beginPath(); ctx.fillStyle = cPri; ctx.arc(0, 0, dynSize, 0, Math.PI * 2); ctx.fill();
+            }
+
             for(let i=0; i<m.ringCount; i++) {
-                // Inversion logic
                 const dataIdx = m.driveInversion ? (m.ringCount - 1 - i) : i;
                 const intensity = bands[dataIdx] / 255;
-                
-                const baseRad = (i+1) * ringSpacing;
-                const r = baseRad + (intensity * ringSpacing * 1.5);
+                const r = (i+1) * ringSpacing + (intensity * ringSpacing * 1.5);
                 
                 ctx.beginPath();
                 ctx.lineWidth = 1 + (intensity * 4);
-                // Dynamic opacity based on frequency intensity
-                ctx.strokeStyle = `rgba(${parseInt(cStart.slice(1,3),16)},${parseInt(cStart.slice(3,5),16)},${parseInt(cStart.slice(5,7),16)}, ${0.2 + intensity*0.8})`;
+                
+                let rgbBase = cSec;
+                if(cSec.length === 7) {
+                    const rgb = parseInt(cSec.slice(1), 16);
+                    ctx.strokeStyle = `rgba(${(rgb>>16)&255}, ${(rgb>>8)&255}, ${rgb&255}, ${0.2 + intensity*0.8})`;
+                } else {
+                    ctx.strokeStyle = cSec;
+                }
                 ctx.arc(0, 0, r, 0, Math.PI*2);
                 ctx.stroke();
             }
             ctx.restore();
         }
+        else if (mode === 'floating-objects') {
+            renderParticleLayer(ctx, nodesFO, false, bassAvg, w, h, s.floatingObjects, cPri, activeGlow);
+        }
         else if (mode === 'neural-net') {
-            // Section 4.2: Fluid Vector Physics Engine
             const nn = s.neuralNet;
             const dynRadius = nn.connectionRadius * (1 + ((bassAvg/255) * nn.synapticMultiplier));
             const radiusSq = dynRadius * dynRadius;
             const collisionSq = (nn.nodeSize * 2) ** 2;
             const cx = w / 2, cy = h / 2;
+            let hr = 217, hg = 70, hb = 239;
+            if(cPri.length === 7) {
+                const prgb = parseInt(cPri.slice(1), 16);
+                hr = (prgb>>16)&255; hg = (prgb>>8)&255; hb = prgb&255;
+            }
 
-            // hex to rgb for plexus lines
-            const hr = parseInt(cStart.slice(1,3), 16);
-            const hg = parseInt(cStart.slice(3,5), 16);
-            const hb = parseInt(cStart.slice(5,7), 16);
+            for (let i = 0; i < nodesNN.length; i++) {
+                const n1 = nodesNN[i];
+                updateVectors(n1, nn.direction, nn.velocity, w, h, cx, cy);
 
-            for (let i = 0; i < plexusNodes.length; i++) {
-                const n1 = plexusNodes[i];
-
-                if (nn.direction === 'float') {
-                    const speed = Math.sqrt(n1.vx*n1.vx + n1.vy*n1.vy) || 0.01;
-                    n1.vx = (n1.vx / speed) * nn.velocity;
-                    n1.vy = (n1.vy / speed) * nn.velocity;
-                } else {
-                    if (nn.direction === 'rise') n1.vy -= 0.1 * nn.velocity;
-                    if (nn.direction === 'sink') n1.vy += 0.1 * nn.velocity;
-                    if (nn.direction === 'through') {
-                        const safeDx = (n1.x - cx) || 0.1; 
-                        const safeDy = (n1.y - cy) || 0.1;
-                        const angle = Math.atan2(safeDy, safeDx);
-                        n1.vx += Math.cos(angle) * 0.1 * nn.velocity;
-                        n1.vy += Math.sin(angle) * 0.1 * nn.velocity;
-                    }
-                    n1.vx *= 0.98; n1.vy *= 0.98;
-                }
-
-                for (let j = i + 1; j < plexusNodes.length; j++) {
-                    const n2 = plexusNodes[j];
-                    let dx = n1.x - n2.x;
-                    let dy = n1.y - n2.y;
-                    let distSq = (dx * dx) + (dy * dy);
-
+                for (let j = i + 1; j < nodesNN.length; j++) {
+                    const n2 = nodesNN[j];
+                    let dx = n1.x - n2.x; let dy = n1.y - n2.y;
+                    let distSq = (dx*dx) + (dy*dy);
                     if (distSq === 0) { dx = 0.1; dy = 0; distSq = 0.01; }
 
                     if (distSq < radiusSq) {
-                        const opacity = 1 - (distSq / radiusSq);
                         ctx.beginPath();
                         ctx.lineWidth = 1 + (bassAvg/255)*2;
-                        ctx.strokeStyle = `rgba(${hr}, ${hg}, ${hb}, ${opacity})`;
-                        ctx.moveTo(n1.x, n1.y);
-                        ctx.lineTo(n2.x, n2.y);
+                        ctx.strokeStyle = `rgba(${hr}, ${hg}, ${hb}, ${1 - (distSq / radiusSq)})`;
+                        ctx.moveTo(n1.x, n1.y); ctx.lineTo(n2.x, n2.y);
                         ctx.stroke();
                     }
 
                     if (nn.collisions && distSq < collisionSq) {
                         const dist = Math.sqrt(distSq);
-                        const nx = dx / dist; const ny = dy / dist;
-                        const p = (n1.vx * nx + n1.vy * ny - n2.vx * nx - n2.vy * ny);
-                        n1.vx -= p * nx; n1.vy -= p * ny;
-                        n2.vx += p * nx; n2.vy += p * ny;
-
-                        const overlap = (nn.nodeSize * 2) - dist;
-                        n1.x += nx * (overlap / 2.1); n1.y += ny * (overlap / 2.1);
-                        n2.x -= nx * (overlap / 2.1); n2.y -= ny * (overlap / 2.1);
+                        const nx = dx/dist, ny = dy/dist;
+                        const p = (n1.vx*nx + n1.vy*ny - n2.vx*nx - n2.vy*ny);
+                        n1.vx -= p*nx; n1.vy -= p*ny; n2.vx += p*nx; n2.vy += p*ny;
+                        const overlap = (nn.nodeSize*2) - dist;
+                        n1.x += nx*(overlap/2.1); n1.y += ny*(overlap/2.1);
+                        n2.x -= nx*(overlap/2.1); n2.y -= ny*(overlap/2.1);
                     }
                 }
                 
                 n1.x += n1.vx; n1.y += n1.vy;
-
-                if (nn.direction === 'float') {
-                    if (n1.x < 0 || n1.x > w) n1.vx *= -1;
-                    if (n1.y < 0 || n1.y > h) n1.vy *= -1;
-                } else {
-                    if (n1.x < -20 || n1.x > w + 20 || n1.y < -20 || n1.y > h + 20) {
-                        if (nn.direction === 'through') {
-                            n1.x = cx + (Math.random() * 4 - 2);
-                            n1.y = cy + (Math.random() * 4 - 2);
-                        } else {
-                            if (nn.direction === 'rise') n1.y = h + 10;
-                            if (nn.direction === 'sink') n1.y = -10;
-                            n1.x = Math.random() * w;
-                        }
-                    }
-                }
+                checkBounds(n1, nn.direction, w, h, cx, cy);
                 
-                ctx.beginPath();
-                ctx.fillStyle = cEnd;
-                ctx.arc(n1.x, n1.y, nn.nodeSize, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.fillStyle = cSec; ctx.arc(n1.x, n1.y, nn.nodeSize, 0, Math.PI * 2); ctx.fill();
             }
+        }
+
+        // 6. Fractal Multiplier (Matrix-Safe)
+        ctx.shadowBlur = 0; // Disable shadow before copying to buffer
+        applyKaleidoscope(ctx, DOM.canvas, s.modifiers.fractalMultiplier, cBg);
+
+        // 7. Screen Shake (DOM Translation applied to wrapper)
+        if (s.modifiers.screenShake && bassAvg > 230) {
+            const x = (Math.random() - 0.5) * 2 * s.modifiers.shakeIntensity;
+            const y = (Math.random() - 0.5) * 2 * s.modifiers.shakeIntensity;
+            DOM.container.style.transform = `translate(${x}px, ${y}px)`;
+            isShaking = true;
+        } else if (isShaking) {
+            DOM.container.style.transform = 'translate(0px, 0px)';
+            isShaking = false;
         }
     }
 
-    // Init UI State map
+    // Init 
     syncUI();
+    reconcileNodes(nodesNN, getVal('nnNodeCount'), window.innerWidth, window.innerHeight);
+    reconcileNodes(nodesFO, getVal('foDensity'), window.innerWidth, window.innerHeight);
+    reconcileNodes(nodesBG, getVal('bgDensity'), window.innerWidth, window.innerHeight);
 
 </script>
 </body>
