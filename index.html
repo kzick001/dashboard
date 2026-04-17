@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Launchpad V2.2.2</title>
+    <title>Launchpad V2.2.3</title>
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23000000'/><text x='50' y='55' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='65' font-weight='200' fill='%23ffffff'>K</text></svg>">
     
@@ -143,13 +143,11 @@
 
     <canvas id="matrixCanvas" class="fixed inset-0 w-full h-full pointer-events-none opacity-0 z-0 transition-opacity duration-700"></canvas>
 
-    <!-- UI Overlay for Ghost Protocol Fading -->
     <div id="mainUI" class="flex flex-col flex-1 w-full relative z-10 transition-opacity duration-1000">
         
-        <!-- Header Nav -->
         <div class="fixed top-0 w-full px-8 py-4 flex justify-between items-center z-50 bg-black/40 backdrop-blur-2xl border-b border-white/5">
             <div class="flex items-center gap-4 font-mono text-[10px] uppercase tracking-[0.2em] cursor-default select-none text-slate-500">
-                <span>KZICK // OS V2.2.2</span>
+                <span>KZICK // OS V2.2.3</span>
             </div>
             
             <div class="flex items-center gap-6">
@@ -169,7 +167,6 @@
                 <h1 class="text-6xl sm:text-8xl font-light tracking-tight mb-2 text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-500">Launchpad</h1>
             </header>
 
-            <!-- Sortable App Grid (Weather Extracted) -->
             <main id="springboard" class="w-full max-w-5xl grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8 mb-8">
                 
                 <a href="https://mail.google.com/" data-id="email" target="_blank" draggable="true" class="app-tile group flex flex-col items-center justify-center p-6 rounded-[2rem] backdrop-blur-3xl overflow-hidden aspect-square">
@@ -195,7 +192,6 @@
 
                 <a href="sports.html" data-id="sports" draggable="true" class="app-tile group flex flex-col items-center justify-center p-6 rounded-[2rem] backdrop-blur-3xl overflow-hidden aspect-square">
                     <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
-                        <!-- New Football Icon -->
                         <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24">
                             <ellipse cx="12" cy="12" rx="10" ry="6" transform="rotate(-45 12 12)" stroke-linecap="round" stroke-linejoin="round"/>
                             <path d="M9 15l6-6M10 12l2-2M12 14l2-2M11 13l2-2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -220,7 +216,6 @@
 
                 <div data-id="gems" data-folder="multiplexer" draggable="true" class="app-tile group flex flex-col items-center justify-center p-6 rounded-[2rem] backdrop-blur-3xl overflow-hidden aspect-square">
                     <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full pointer-events-none">
-                        <!-- New 3D Diamond Icon -->
                         <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                             <path d="M6 2L2 8l10 14L22 8l-4-6H6z"/>
                             <path d="M2 8h20M12 22V8M6 2l6 6M18 2l-6 6"/>
@@ -230,7 +225,6 @@
                 </div>
             </main>
 
-            <!-- WEATHER ANCHOR: Panoramic, Bottom-Docked, Excluded from Drag/Drop -->
             <div id="weather-anchor" class="w-full max-w-5xl app-tile rounded-[2rem] backdrop-blur-3xl p-6 sm:p-8 cursor-default flex flex-col">
                 <div class="flex justify-between items-start w-full relative z-10 mb-4">
                     <div>
@@ -241,12 +235,10 @@
                     </button>
                 </div>
                 
-                <!-- Panoramic 6-Day Container -->
                 <div id="weatherContainer" class="w-full relative z-10 flex items-center justify-between font-mono text-sm text-slate-400">
                     <div class="animate-pulse tracking-widest">SYNCING PIPELINE...</div>
                 </div>
 
-                <!-- GPU Accelerated Accordion Drawer -->
                 <div id="weather-drawer-inner" class="w-full">
                     <div class="drawer-content">
                         <div class="pt-6 mt-4 border-t border-white/5 grid grid-cols-2 sm:grid-cols-4 gap-y-4 gap-x-8 text-xs sm:text-sm font-mono text-slate-400">
@@ -267,10 +259,8 @@
         </div>
     </div>
 
-    <!-- Modals (Preserved from V2.2.1) -->
     <div id="folderModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
         <div id="modalBackdrop" class="absolute inset-0 bg-black/70 backdrop-blur-md cursor-pointer transition-opacity"></div>
-        
         <div id="modalContent" class="relative w-[90%] max-w-2xl bg-[#0a0a0a]/90 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-2xl p-8 transform scale-95 transition-transform duration-300">
             <div class="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
                 <h3 id="modalTitle" class="text-2xl font-light tracking-wide text-white">Folder</h3>
@@ -278,17 +268,22 @@
                     <svg class="w-6 h-6 text-slate-400 hover:text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div id="modalLinks" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-2">
-            </div>
+            <div id="modalLinks" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-2"></div>
         </div>
     </div>
 
-    <!-- Shielded Complication Pill (Date Added, Blur Enforced) -->
     <div class="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 flex flex-col items-end gap-1 z-50 cursor-default select-none pointer-events-none">
-        <!-- Shield Background -->
-        <div id="complicationPill" class="flex flex-col items-end px-6 py-4 bg-black/60 backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.8)] transition-all duration-300 pointer-events-auto">
-            <div id="localTime" class="text-4xl sm:text-5xl font-light tracking-tighter text-white drop-shadow-md">...</div>
-            <div id="localDate" class="text-xs font-mono text-cyan-400/80 tracking-widest uppercase mt-1">...</div>
+        <div id="complicationPill" class="flex items-center gap-5 px-6 py-4 bg-black/60 backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.8)] transition-all duration-300 pointer-events-auto">
+            
+            <div class="flex flex-col items-end border-r border-white/10 pr-5">
+                <div id="localTime" class="text-4xl sm:text-5xl font-light tracking-tighter text-white drop-shadow-md">...</div>
+                <div id="localDate" class="text-xs font-mono text-cyan-400/80 tracking-widest uppercase mt-1">...</div>
+            </div>
+
+            <div id="comp-temp" class="text-3xl sm:text-4xl font-light text-white/90 drop-shadow-md tracking-tighter min-w-[3rem] text-center">
+                --&deg;
+            </div>
+
         </div>
     </div>
 
@@ -328,7 +323,6 @@
             h = h ? h : 12;
             document.getElementById('localTime').textContent = `${h}:${m} ${ampm}`;
             
-            // Format: Month ##, YYYY
             document.getElementById('localDate').textContent = new Intl.DateTimeFormat('en-US', {
                 month: 'short', day: '2-digit', year: 'numeric'
             }).format(now);
@@ -356,7 +350,7 @@
         let matrixActive = false;
         let ghostActive = false;
         let lastDrawTime = 0;
-        let fpsInterval = 1000 / 30; // 30 FPS Default
+        let fpsInterval = 1000 / 30; 
         let ghostTimer;
 
         function initMatrix() {
@@ -383,8 +377,7 @@
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; 
                 ctx.fillRect(0, 0, matrixWidth, matrixHeight);
                 
-                // Color dynamically based on mode
-                ctx.fillStyle = matrixActive ? '#00ff00' : 'rgba(6, 182, 212, 1)'; // Phosphor vs Cyan
+                ctx.fillStyle = matrixActive ? '#00ff00' : 'rgba(6, 182, 212, 1)'; 
                 ctx.font = '15pt monospace';
                 
                 for(let i = 0; i < drops.length; i++) {
@@ -400,7 +393,6 @@
             if(matrixActive || ghostActive) initMatrix(); 
         });
 
-        // Manual Override Switch
         const overrideToggle = document.getElementById('overrideToggle');
         overrideToggle.checked = false; 
         overrideToggle.addEventListener('change', (e) => {
@@ -408,7 +400,7 @@
                 document.body.classList.add('matrix-mode');
                 canvas.style.opacity = '1';
                 matrixActive = true;
-                fpsInterval = 1000 / 30; // 30 FPS Smooth
+                fpsInterval = 1000 / 30; 
                 initMatrix();
                 requestAnimationFrame(drawMatrix);
             } else {
@@ -419,20 +411,19 @@
                     setTimeout(() => { ctx.clearRect(0, 0, matrixWidth, matrixHeight); }, 700);
                 } else {
                     matrixActive = false;
-                    canvas.style.opacity = '0.5'; // Return to ghost opacity
+                    canvas.style.opacity = '0.5'; 
                 }
             }
         });
 
-        // Ghost Protocol Core
         function triggerGhostProtocol() {
-            if (document.hidden) return; // Don't trigger if tab is backgrounded
+            if (document.hidden) return; 
             ghostActive = true;
             document.getElementById('mainUI').style.opacity = '0.3';
             
             if (!matrixActive) {
                 canvas.style.opacity = '0.5';
-                fpsInterval = 1000 / 15; // 15 FPS Throttle for CPU saving
+                fpsInterval = 1000 / 15; 
                 initMatrix();
                 requestAnimationFrame(drawMatrix);
             }
@@ -451,7 +442,7 @@
                 }
             }
             clearTimeout(ghostTimer);
-            ghostTimer = setTimeout(triggerGhostProtocol, 300000); // 5 mins
+            ghostTimer = setTimeout(triggerGhostProtocol, 300000); 
         }
 
         ['mousemove', 'keydown', 'touchstart'].forEach(evt => 
@@ -459,7 +450,6 @@
         );
         resetGhostTimer();
 
-        // Kill render loop on tab switch
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 clearTimeout(ghostTimer);
@@ -469,7 +459,7 @@
         });
 
 
-        // --- 4. MODAL UI (Restored from V2.2.1) ---
+        // --- 4. MODAL UI ---
         const folderData = {
             'vault': {
                 title: 'Secure Vault',
@@ -481,7 +471,7 @@
                 ]
             },
             'multiplexer': {
-                title: 'Gems Array', // Updated title
+                title: 'Gems Array', 
                 links: [
                     { name: 'SSP Apps', url: 'https://gemini.google.com/gem/1ee3cdd8bdff' },
                     { name: 'DM Asst DCW', url: 'https://gemini.google.com/gem/d7aa441f9adf' },
@@ -585,20 +575,18 @@
         });
 
 
-        // --- 6. SECURE TOMORROW.IO PROTOCOL PIPELINE (V4 PANORAMIC) ---
+        // --- 6. SECURE TOMORROW.IO PROTOCOL PIPELINE ---
         (async function initWeatherPipeline() {
             const CACHE_KEY = 'kzick_weather_v2.2.2';
             const TTL = 5 * 60 * 1000; 
             const weatherContainer = document.getElementById('weatherContainer');
             
-            // Proprietary Lexicon from Docs
             const codeMap = {
                 1000: '☀️', 1100: '🌤', 1101: '⛅', 1102: '☁️', 1001: '☁️',
                 2000: '🌫️', 2100: '🌫️', 4000: '🌧', 4200: '🌧', 4001: '🌧', 
                 4201: '🌧', 5000: '❄️', 5001: '❄️', 5100: '❄️', 8000: '⛈'
             };
 
-            // Weather Drawer Toggle
             document.getElementById('weatherToggleBtn').addEventListener('click', () => {
                 document.getElementById('weather-drawer-inner').classList.toggle('expanded');
             });
@@ -608,14 +596,16 @@
                     const timelines = data?.data?.timelines || data?.timelines;
                     if (!timelines) throw new Error("Invalid schema");
                     
-                    // V4 Extract Daily - Object key parsing
                     const daily = timelines.daily || [];
                     if (!daily.length) throw new Error("No daily data available");
 
-                    // Get closest available for current (per docs)
+                    // Inject current temperature into complication pill
                     const minutely = timelines.minutely || [];
                     const hourly = timelines.hourly || [];
                     const currentVals = minutely[0]?.values || hourly[0]?.values || daily[0]?.values || {};
+                    const currentTemp = Math.round(currentVals.temperature || daily[0]?.values?.temperatureMax || 0);
+                    const compTempEl = document.getElementById('comp-temp');
+                    if (compTempEl) compTempEl.innerHTML = `${currentTemp}&deg;`;
 
                     // UI Expansion - 6 Days Panoramic
                     let html = '<div class="flex gap-4 sm:gap-8 w-full justify-between items-center px-2">';
@@ -625,7 +615,6 @@
                         const dCode = vals.weatherCodeMax || vals.weatherCodeMin || vals.weatherCode || 1100;
                         const icon = codeMap[dCode] || '🌤';
                         
-                        // "TODAY" Override
                         let dayLabel = 'UNK';
                         if (i === 0) {
                             dayLabel = 'TODAY';
@@ -663,7 +652,6 @@
                     document.getElementById('dt-gust').textContent = `${Math.round(tVals.windGustMax || 0)} mph`;
                     document.getElementById('dt-dir').textContent = `${Math.round(tVals.windDirectionAvg || 0)}°`;
                     
-                    // EPA AQI Logic
                     const aqi = tVals.epaPrimaryAQI ?? tVals.epaIndex ?? '--';
                     document.getElementById('dt-aqi').textContent = aqi;
 
