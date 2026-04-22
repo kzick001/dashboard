@@ -7,6 +7,7 @@
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23000000'/><text x='50' y='55' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='65' font-weight='200' fill='%23ffffff'>K</text></svg>">
     
+   <script src="vault-config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = { 
@@ -574,6 +575,78 @@
             if (folderTile) openModal(folderTile.getAttribute('data-folder'));
         });
 
+
+       // --- 5.5 DYNAMIC VAULT ENGINE (SURGICAL OVERRIDE) ---
+        (function initDynamicVault() {
+            if (!window.KzickVaultManifest) return;
+
+            const vaultTile = document.querySelector('[data-id="vault"]');
+            if (!vaultTile) return;
+
+            // 1. Hijack existing tile parameters (Remove old modal tie-in, fix overflow clipping)
+            vaultTile.removeAttribute('data-folder');
+            vaultTile.classList.remove('overflow-hidden'); 
+            vaultTile.style.overflow = 'visible'; 
+
+            // 2. Machine the UI Payload (0fr to 1fr hack)
+            let payload = `
+            <div id="vault-dropdown" class="absolute top-[105%] left-0 w-64 sm:w-72 z-50 grid transition-all duration-500 origin-top" style="grid-template-rows: 0fr; opacity: 0; pointer-events: none; transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.1);">
+                <div class="overflow-hidden min-h-0 bg-[#0a0a0a]/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8)] flex flex-col text-left">
+                    <div class="p-3">`;
+
+            window.KzickVaultManifest.forEach(group => {
+                payload += `
+                    <div class="mb-3 last:mb-0">
+                        <span class="block px-3 py-1 text-[10px] font-mono text-cyan-400/80 uppercase tracking-widest">${group.category}</span>
+                        <div class="flex flex-col gap-1 mt-1">
+                            ${group.links.map(link => `
+                                <a href="${link.url}" target="_blank" class="px-3 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex justify-between items-center group/link">
+                                    ${link.text}
+                                    <span class="text-slate-600 group-hover/link:text-cyan-400 transition-colors text-xs">↗</span>
+                                </a>
+                            `).join('')}
+                        </div>
+                    </div>`;
+            });
+
+            payload += `</div></div></div>`;
+
+            // 3. Synchronous Injection
+            vaultTile.insertAdjacentHTML('beforeend', payload);
+
+            // 4. Mount Event Delegation & Spring Physics
+            const dropdown = document.getElementById('vault-dropdown');
+            let isVaultOpen = false;
+
+            vaultTile.addEventListener('click', (e) => {
+                if (typeof isDragging !== 'undefined' && isDragging) return; // Respect global drag constraints
+                if (e.target.closest('a')) return; // Let actual links route normally
+
+                isVaultOpen = !isVaultOpen;
+                if (isVaultOpen) {
+                    dropdown.style.gridTemplateRows = '1fr';
+                    dropdown.style.opacity = '1';
+                    dropdown.style.pointerEvents = 'auto';
+                    vaultTile.style.borderColor = 'rgba(6, 182, 212, 0.5)'; // Apply cyan active glow
+                } else {
+                    dropdown.style.gridTemplateRows = '0fr';
+                    dropdown.style.opacity = '0';
+                    dropdown.style.pointerEvents = 'none';
+                    vaultTile.style.borderColor = ''; 
+                }
+            });
+
+            // 5. Environmental Cleanup (Click outside to close)
+            document.addEventListener('click', (e) => {
+                if (isVaultOpen && !vaultTile.contains(e.target)) {
+                    isVaultOpen = false;
+                    dropdown.style.gridTemplateRows = '0fr';
+                    dropdown.style.opacity = '0';
+                    dropdown.style.pointerEvents = 'none';
+                    vaultTile.style.borderColor = '';
+                }
+            });
+        })();
 
         // --- 6. SECURE TOMORROW.IO PROTOCOL PIPELINE ---
         (async function initWeatherPipeline() {
