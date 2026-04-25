@@ -3,156 +3,759 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tony Kiosk V0.3.1</title>
+    <title>Launchpad V2.2.3</title>
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23000000'/><text x='50' y='55' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='65' font-weight='200' fill='%23ffffff'>K</text></svg>">
     
+   <script src="vault-config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = { 
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
-                    colors: { slate: { 850: '#151e2e', 900: '#0f172a', 950: '#020617' } }
+                    colors: {
+                        brand: {
+                            400: 'var(--brand-400)',
+                            500: 'var(--brand-500)',
+                            800: 'var(--brand-800)',
+                            900: 'var(--brand-900)',
+                        }
+                    },
+                    transitionTimingFunction: {
+                        'spring': 'cubic-bezier(0.175, 0.885, 0.32, 1.1)',
+                    }
                 }
             }
         }
     </script>
     
-    <style type="text/tailwindcss">
-        @layer base {
-            body {
-                @apply bg-black text-slate-200 overflow-hidden;
-                width: 1440px; height: 900px; cursor: none;
-            }
+    <style>
+        /* BASE CUPERTINO THEME - CYAN UPGRADED */
+        :root {
+            --brand-400: #22d3ee; 
+            --brand-500: #06b6d4; 
+            --brand-800: #155e75; 
+            --brand-900: #164e63; 
+            --glow-color: 6, 182, 212; /* Cyan Core */
+            --glass-bg: rgba(255, 255, 255, 0.04); /* +10% Contrast */
         }
-        @keyframes pan {
-            0% { transform: translate(0, 0) scale(1.05); }
-            100% { transform: translate(-2%, -1%) scale(1.1); }
+
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            background-color: #000000; 
+            transition: filter 0.5s ease-in-out, background-color 0.5s ease; 
+            overflow-x: hidden;
         }
-        @keyframes blink { 50% { opacity: 0; } }
-        .bg-mesh {
-            background: radial-gradient(circle at 20% 30%, rgba(15, 23, 42, 0.8), transparent 70%),
-                        radial-gradient(circle at 80% 70%, rgba(2, 6, 23, 0.9), transparent 70%);
-            animation: pan 40s ease-in-out infinite alternate;
-            will-change: transform;
+
+        /* SMART GLASS TILE ENGINE */
+        .app-tile {
+            position: relative;
+            background: var(--glass-bg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            /* 10% Cyan ambient glow */
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8), 0 0 15px rgba(var(--glow-color), 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1), border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
         }
-        .animate-blink { animation: blink 1s step-start infinite; }
-        ::-webkit-scrollbar { display: none; }
+
+        /* DYNAMIC MOUSE SHINE */
+        .app-tile::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(
+                600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                rgba(var(--glow-color), 0.15), 
+                transparent 40%
+            );
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+            z-index: 1;
+            border-radius: inherit;
+        }
+
+        .app-tile:hover {
+            transform: translateY(-4px) scale(1.02);
+            border-color: rgba(var(--glow-color), 0.3);
+            background: rgba(255, 255, 255, 0.06);
+            /* 50% Cyan Bloom */
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.8), 0 0 40px rgba(var(--glow-color), 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            z-index: 20;
+        }
+        
+        .app-tile:hover::before { opacity: 1; }
+
+        /* THE MATRIX OVERRIDE HIJACK */
+        body.matrix-mode {
+            --brand-400: #00ff00;
+            --brand-500: #00dd00;
+            --brand-800: #005500;
+            --brand-900: #002200;
+            --glow-color: 0, 255, 0; /* Phosphor Green Hijack */
+            background: #000000 !important;
+        }
+
+        body.matrix-mode .app-tile, 
+        body.matrix-mode #modalContent,
+        body.matrix-mode #weather-anchor {
+            background: #000000 !important;
+            backdrop-filter: none !important;
+            border-color: #00ff0044 !important;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.1) !important;
+        }
+
+        body.matrix-mode .app-tile:hover, body.matrix-mode #weather-anchor:hover {
+            border-color: #00ff00 !important;
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.4) !important;
+        }
+
+        body.matrix-mode .app-tile *, 
+        body.matrix-mode #modalContent *,
+        body.matrix-mode header *,
+        body.matrix-mode #weather-anchor *,
+        body.matrix-mode #complicationPill * {
+            color: #00ff00 !important;
+            text-shadow: 0 0 8px rgba(0, 255, 0, 0.5) !important;
+        }
+
+        /* OVERRIDE TOGGLE UI */
+        .toggle-checkbox { left: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1); }
+        .toggle-checkbox:checked { left: 16px; border-color: #00ff00; } 
+        .toggle-checkbox:checked + .toggle-label { background-color: #00ff00; box-shadow: 0 0 12px rgba(0, 255, 0, 0.5); }
+
+        /* WEATHER DRAWER ACCELERATION */
+        #weather-drawer-inner {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+        }
+        #weather-drawer-inner.expanded { grid-template-rows: 1fr; }
+        .drawer-content { min-height: 0; overflow: hidden; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
     </style>
 </head>
-<body class="relative flex flex-col p-10">
+<body class="bg-[#000000] bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-cyan-900/10 via-[#000000] to-black min-h-screen flex flex-col text-slate-300 antialiased selection:bg-brand-500/30 selection:text-white">
 
-    <div class="fixed inset-0 z-0 bg-black overflow-hidden pointer-events-none">
-        <div class="absolute inset-0 bg-mesh"></div>
-    </div>
+    <canvas id="matrixCanvas" class="fixed inset-0 w-full h-full pointer-events-none opacity-0 z-0 transition-opacity duration-700"></canvas>
 
-    <div class="z-10 flex justify-between items-center mb-8 border-b border-slate-800/60 pb-4">
-        <div class="text-[10px] font-mono tracking-[0.3em] text-slate-500 uppercase">Raspberry Tony // V0.3.1 Dashboard</div>
-        <div class="flex items-center gap-2">
-            <span id="sys-status-dot" class="text-green-500 animate-blink">●</span> 
-            <span id="sys-status-text" class="text-[10px] font-mono text-slate-400 uppercase tracking-widest">System Online</span>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-12 gap-10 z-10 flex-1">
+    <div id="mainUI" class="flex flex-col flex-1 w-full relative z-10 transition-opacity duration-1000">
         
-        <div class="col-span-3 flex flex-col gap-8">
-            <div class="flex flex-col">
-                <div class="text-[8rem] font-light tracking-tighter text-white leading-none flex items-center">
-                    <span id="comp-hour">--</span><span class="animate-blink opacity-40 mx-1">:</span><span id="comp-minute">--</span>
-                </div>
-                <div id="comp-date" class="text-xl font-mono text-cyan-500/80 tracking-widest uppercase mt-4">Awaiting Sync</div>
+        <div class="fixed top-0 w-full px-8 py-4 flex justify-between items-center z-50 bg-black/40 backdrop-blur-2xl border-b border-white/5">
+            <div class="flex items-center gap-4 font-mono text-[10px] uppercase tracking-[0.2em] cursor-default select-none text-slate-500">
+                <span>KZICK // OS V2.2.3</span>
             </div>
-
-            <div class="bg-slate-900/40 backdrop-blur-md border border-slate-700/30 rounded-[2.5rem] p-8 flex flex-col shadow-2xl relative overflow-hidden">
-                <div class="text-[10px] font-mono text-slate-500 tracking-widest uppercase mb-8">Current Conditions</div>
-                <div class="flex flex-col items-center gap-4">
-                    <div id="current-icon" class="w-32 h-32 text-slate-200"></div>
-                    <div class="flex flex-col items-center">
-                        <div id="current-temp" class="text-8xl font-light text-white leading-none tracking-tighter">--°</div>
-                        <div class="flex gap-6 mt-4 text-2xl font-mono">
-                            <span id="high-temp" class="text-red-500/80">--°</span>
-                            <span id="low-temp" class="text-blue-500/80">--°</span>
-                        </div>
+            
+            <div class="flex items-center gap-6">
+                <div class="flex items-center">
+                    <span class="mr-3 text-[9px] font-mono text-slate-500 uppercase tracking-[0.2em]">OVERRIDE</span>
+                    <div class="relative inline-block w-8 h-4 align-middle select-none">
+                        <input type="checkbox" id="overrideToggle" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-black border border-white/20 appearance-none cursor-pointer z-10 top-0 m-auto"/>
+                        <label for="overrideToggle" class="toggle-label block overflow-hidden h-4 rounded-full bg-white/5 shadow-inner cursor-pointer transition-all duration-300"></label>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-span-6 flex flex-col gap-8">
-            <div class="bg-slate-900/40 backdrop-blur-md border border-slate-700/30 rounded-[2.5rem] p-8">
-                <div class="text-[10px] font-mono text-slate-500 tracking-widest uppercase mb-6 border-b border-slate-800 pb-4">5 Day Forecast</div>
-                <div id="forecast-container" class="flex justify-between items-center h-40"></div>
-            </div>
+        <div class="flex-1 flex flex-col items-center px-6 w-full pt-32 pb-32">
+            
+            <header class="mb-12 text-center w-full max-w-6xl">
+                <h1 class="text-6xl sm:text-8xl font-light tracking-tight mb-2 text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-500">Launchpad</h1>
+            </header>
 
-            <div class="bg-slate-900/40 backdrop-blur-md border border-slate-700/30 rounded-[2.5rem] p-8 flex-1 flex flex-col min-h-0">
-                <div class="text-[10px] font-mono text-slate-500 tracking-widest uppercase mb-6 border-b border-slate-800 pb-4 flex justify-between items-center">
-                    <span>Sports Pipeline</span>
-                    <span class="text-blue-500/60">ESPN // NCAA</span>
-                </div>
-                <div class="flex flex-col gap-4 overflow-hidden flex-1">
-                    <div id="pro-sports-container" class="flex flex-col gap-3"></div>
-                    <div class="h-px bg-slate-800/50 my-2"></div>
-                    <div id="college-sports-container" class="flex flex-col gap-3"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-span-3 flex flex-col gap-8">
-            <div class="bg-slate-900/40 backdrop-blur-md border border-slate-700/30 rounded-[2.5rem] p-8 flex flex-col gap-8">
-                <div class="flex justify-between items-center">
-                    <div class="flex flex-col gap-1">
-                        <span class="text-[9px] font-mono text-slate-600 tracking-widest uppercase">Wind</span>
-                        <div class="flex items-center gap-2 text-white font-mono text-xl">
-                            <svg id="wind-dir-icon" class="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2.5" d="M12 2L16 10L12 8L8 10L12 2Z"></path></svg>
-                            <span id="wind-speed">--</span>
-                        </div>
+            <main id="springboard" class="w-full max-w-5xl grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8 mb-8">
+                
+                <a href="https://mail.google.com/" data-id="email" target="_blank" draggable="true" class="app-tile group flex flex-col items-center justify-center p-6 rounded-[2rem] backdrop-blur-3xl overflow-hidden aspect-square">
+                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
+                        <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">Email</span>
                     </div>
-                    <div class="flex flex-col items-end gap-1">
-                        <span class="text-[9px] font-mono text-slate-600 tracking-widest uppercase text-right">Dew Point</span>
-                        <span id="dew-point" class="text-white font-mono text-xl text-right">--°</span>
-                    </div>
-                </div>
+                </a>
 
-                <div class="flex flex-col items-center py-4 border-y border-slate-800/50">
-                    <span class="text-[9px] font-mono text-slate-600 tracking-widest uppercase mb-4">Air Quality Index</span>
-                    <div class="relative w-32 h-32">
-                        <svg class="w-full h-full transform -rotate-90">
-                            <circle cx="64" cy="64" r="58" fill="none" class="stroke-slate-800" stroke-width="6"></circle>
-                            <circle id="aqi-ring" cx="64" cy="64" r="58" fill="none" class="stroke-slate-600" stroke-width="6" stroke-dasharray="364" stroke-dashoffset="364" stroke-linecap="round"></circle>
+                <a href="https://calendar.google.com/" data-id="calendar" target="_blank" draggable="true" class="app-tile group flex flex-col items-center justify-center p-6 rounded-[2rem] backdrop-blur-3xl overflow-hidden aspect-square">
+                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
+                        <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">Calendar</span>
+                    </div>
+                </a>
+
+                <a href="live-forge/index.html" data-id="liveforge" draggable="true" class="app-tile group flex flex-col items-center justify-center p-6 rounded-[2rem] backdrop-blur-3xl overflow-hidden aspect-square">
+                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
+                        <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                        <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">LiveForge</span>
+                    </div>
+                </a>
+
+                <a href="sports.html" data-id="sports" draggable="true" class="app-tile group flex flex-col items-center justify-center p-6 rounded-[2rem] backdrop-blur-3xl overflow-hidden aspect-square">
+                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
+                        <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24">
+                            <ellipse cx="12" cy="12" rx="10" ry="6" transform="rotate(-45 12 12)" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M9 15l6-6M10 12l2-2M12 14l2-2M11 13l2-2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <div class="absolute inset-0 flex flex-col items-center justify-center">
-                            <span id="aqi-value" class="text-4xl font-bold text-white tracking-tighter">--</span>
+                        <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">Sports</span>
+                    </div>
+                </a>
+
+                <a href="flow-lab/index.html" data-id="sonicforge" draggable="true" class="app-tile group flex flex-col items-center justify-center p-6 rounded-[2rem] backdrop-blur-3xl overflow-hidden aspect-square">
+                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
+                        <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+                        <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">Sonic Forge</span>
+                    </div>
+                </a>
+
+                <div data-id="vault" data-folder="vault" draggable="true" class="app-tile group flex flex-col items-center justify-center p-6 rounded-[2rem] backdrop-blur-3xl overflow-hidden aspect-square">
+                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full pointer-events-none">
+                        <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"></path></svg>
+                        <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">Vault</span>
+                    </div>
+                </div>
+
+                <div data-id="gems" data-folder="multiplexer" draggable="true" class="app-tile group flex flex-col items-center justify-center p-6 rounded-[2rem] backdrop-blur-3xl overflow-hidden aspect-square">
+                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full pointer-events-none">
+                        <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                            <path d="M6 2L2 8l10 14L22 8l-4-6H6z"/>
+                            <path d="M2 8h20M12 22V8M6 2l6 6M18 2l-6 6"/>
+                        </svg>
+                        <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">Gems</span>
+                    </div>
+                </div>
+            </main>
+
+            <div id="weather-anchor" class="w-full max-w-5xl app-tile rounded-[2rem] backdrop-blur-3xl p-6 sm:p-8 cursor-default flex flex-col">
+                <div class="flex justify-between items-start w-full relative z-10 mb-4">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-light text-slate-200 tracking-wide">Atmospherics</h2>
+                    </div>
+                    <button id="weatherToggleBtn" class="text-slate-500 hover:text-cyan-400 transition-colors focus:outline-none p-2" title="Toggle Telemetry">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                </div>
+                
+                <div id="weatherContainer" class="w-full relative z-10 flex items-center justify-between font-mono text-sm text-slate-400">
+                    <div class="animate-pulse tracking-widest">SYNCING PIPELINE...</div>
+                </div>
+
+                <div id="weather-drawer-inner" class="w-full">
+                    <div class="drawer-content">
+                        <div class="pt-6 mt-4 border-t border-white/5 grid grid-cols-2 sm:grid-cols-4 gap-y-4 gap-x-8 text-xs sm:text-sm font-mono text-slate-400">
+                            <div><span class="block text-slate-600 text-[10px] uppercase mb-1">Low Temp</span><span id="dt-low" class="text-slate-200">--°</span></div>
+                            <div><span class="block text-slate-600 text-[10px] uppercase mb-1">Dew Point</span><span id="dt-dew" class="text-slate-200">--°</span></div>
+                            <div><span class="block text-slate-600 text-[10px] uppercase mb-1">Humidity</span><span id="dt-rh" class="text-slate-200">--%</span></div>
+                            <div><span class="block text-slate-600 text-[10px] uppercase mb-1">Precip</span><span id="dt-precip" class="text-slate-200">--%</span></div>
+                            
+                            <div><span class="block text-slate-600 text-[10px] uppercase mb-1">Wind</span><span id="dt-wind" class="text-slate-200">-- mph</span></div>
+                            <div><span class="block text-slate-600 text-[10px] uppercase mb-1">Gust</span><span id="dt-gust" class="text-slate-200">-- mph</span></div>
+                            <div><span class="block text-slate-600 text-[10px] uppercase mb-1">Direction</span><span id="dt-dir" class="text-slate-200">--°</span></div>
+                            <div><span class="block text-slate-600 text-[10px] uppercase mb-1">AQI</span><span id="dt-aqi" class="text-slate-200">--</span></div>
                         </div>
                     </div>
                 </div>
-
-                <div class="grid grid-cols-1 gap-6">
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="text-slate-500 font-mono tracking-widest text-[10px]">SUNRISE</span>
-                        <span id="sunrise-time" class="text-white font-light text-lg tracking-tight">--:--</span>
-                    </div>
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="text-amber-500/80 font-mono tracking-widest text-[10px]">GOLDEN</span>
-                        <span id="golden-hour-time" class="text-amber-500/80 font-light text-lg tracking-tight">--:--</span>
-                    </div>
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="text-slate-500 font-mono tracking-widest text-[10px]">SUNSET</span>
-                        <span id="sunset-time" class="text-white font-light text-lg tracking-tight">--:--</span>
-                    </div>
-                </div>
             </div>
 
-            <div class="flex-1 flex flex-col justify-end items-end pr-4 opacity-30 mix-blend-screen">
-                <img src="rt-logo.png" class="w-48 h-auto grayscale brightness-150">
-            </div>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <div id="folderModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div id="modalBackdrop" class="absolute inset-0 bg-black/70 backdrop-blur-md cursor-pointer transition-opacity"></div>
+        <div id="modalContent" class="relative w-[90%] max-w-2xl bg-[#0a0a0a]/90 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-2xl p-8 transform scale-95 transition-transform duration-300">
+            <div class="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+                <h3 id="modalTitle" class="text-2xl font-light tracking-wide text-white">Folder</h3>
+                <button id="closeModalBtn" class="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors focus:outline-none">
+                    <svg class="w-6 h-6 text-slate-400 hover:text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="modalLinks" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-2"></div>
+        </div>
+    </div>
+
+    <div class="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 flex flex-col items-end gap-1 z-50 cursor-default select-none pointer-events-none">
+        <div id="complicationPill" class="flex items-center gap-5 px-6 py-4 bg-black/60 backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.8)] transition-all duration-300 pointer-events-auto">
+            
+            <div class="flex flex-col items-end border-r border-white/10 pr-5">
+                <div id="localTime" class="text-4xl sm:text-5xl font-light tracking-tighter text-white drop-shadow-md">...</div>
+                <div id="localDate" class="text-xs font-mono text-cyan-400/80 tracking-widest uppercase mt-1">...</div>
+            </div>
+
+            <div id="comp-temp" class="text-3xl sm:text-4xl font-light text-white/90 drop-shadow-md tracking-tighter min-w-[3rem] text-center">
+                --&deg;
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- 0. HYDRATE LAYOUT ---
+        (function() {
+            const savedLayout = localStorage.getItem('kzick_layout_v2.2.2');
+            if (savedLayout) {
+                try {
+                    const order = JSON.parse(savedLayout);
+                    const board = document.getElementById('springboard');
+                    if(board) {
+                        const tiles = Array.from(board.children);
+                        const tileMap = {};
+                        tiles.forEach(t => tileMap[t.getAttribute('data-id')] = t);
+                        
+                        order.forEach(id => {
+                            if (tileMap[id]) board.appendChild(tileMap[id]);
+                        });
+                        tiles.forEach(t => {
+                            if (!order.includes(t.getAttribute('data-id'))) {
+                                board.appendChild(t);
+                            }
+                        });
+                    }
+                } catch(e) { console.error("Grid Restore Failed", e); }
+            }
+        })();
+
+        // --- 1. LOCAL CHRONOMETER & DATE ---
+        function updateClock() {
+            const now = new Date();
+            let h = now.getHours();
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12;
+            h = h ? h : 12;
+            document.getElementById('localTime').textContent = `${h}:${m} ${ampm}`;
+            
+            document.getElementById('localDate').textContent = new Intl.DateTimeFormat('en-US', {
+                month: 'short', day: '2-digit', year: 'numeric'
+            }).format(now);
+        }
+        updateClock(); 
+        setInterval(updateClock, 1000);
+
+        // --- 2. SMART GLASS TRACKING ---
+        document.addEventListener('mousemove', e => {
+            document.querySelectorAll('.app-tile').forEach(tile => {
+                const rect = tile.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                tile.style.setProperty('--mouse-x', `${x}px`);
+                tile.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+
+        // --- 3. MATRIX OVERRIDE & GHOST PROTOCOL ---
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン'.split('');
+        let matrixWidth, matrixHeight, columns;
+        let drops = [];
+        let matrixActive = false;
+        let ghostActive = false;
+        let lastDrawTime = 0;
+        let fpsInterval = 1000 / 30; 
+        let ghostTimer;
+
+        function initMatrix() {
+            const dpr = window.devicePixelRatio || 1;
+            matrixWidth = window.innerWidth;
+            matrixHeight = window.innerHeight;
+            canvas.width = matrixWidth * dpr;
+            canvas.height = matrixHeight * dpr;
+            ctx.scale(dpr, dpr);
+            
+            columns = Math.floor(matrixWidth / 20);
+            drops = [];
+            for(let i = 0; i < columns; i++) drops[i] = Math.random() * -100;
+        }
+
+        function drawMatrix(timestamp) {
+            if (!matrixActive && !ghostActive) return;
+            requestAnimationFrame(drawMatrix);
+            
+            const delta = timestamp - lastDrawTime;
+            if (delta > fpsInterval) {
+                lastDrawTime = timestamp - (delta % fpsInterval);
+                
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; 
+                ctx.fillRect(0, 0, matrixWidth, matrixHeight);
+                
+                ctx.fillStyle = matrixActive ? '#00ff00' : 'rgba(6, 182, 212, 1)'; 
+                ctx.font = '15pt monospace';
+                
+                for(let i = 0; i < drops.length; i++) {
+                    const text = chars[Math.floor(Math.random() * chars.length)];
+                    ctx.fillText(text, i * 20, drops[i] * 20);
+                    if(drops[i] * 20 > matrixHeight && Math.random() > 0.975) drops[i] = 0;
+                    drops[i]++;
+                }
+            }
+        }
+
+        window.addEventListener('resize', () => { 
+            if(matrixActive || ghostActive) initMatrix(); 
+        });
+
+        const overrideToggle = document.getElementById('overrideToggle');
+        overrideToggle.checked = false; 
+        overrideToggle.addEventListener('change', (e) => {
+            if(e.target.checked) {
+                document.body.classList.add('matrix-mode');
+                canvas.style.opacity = '1';
+                matrixActive = true;
+                fpsInterval = 1000 / 30; 
+                initMatrix();
+                requestAnimationFrame(drawMatrix);
+            } else {
+                document.body.classList.remove('matrix-mode');
+                if (!ghostActive) {
+                    canvas.style.opacity = '0';
+                    matrixActive = false;
+                    setTimeout(() => { ctx.clearRect(0, 0, matrixWidth, matrixHeight); }, 700);
+                } else {
+                    matrixActive = false;
+                    canvas.style.opacity = '0.5'; 
+                }
+            }
+        });
+
+        function triggerGhostProtocol() {
+            if (document.hidden) return; 
+            ghostActive = true;
+            document.getElementById('mainUI').style.opacity = '0.3';
+            
+            if (!matrixActive) {
+                canvas.style.opacity = '0.5';
+                fpsInterval = 1000 / 15; 
+                initMatrix();
+                requestAnimationFrame(drawMatrix);
+            }
+        }
+
+        function resetGhostTimer() {
+            if (ghostActive) {
+                ghostActive = false;
+                document.getElementById('mainUI').style.opacity = '1';
+                if (!matrixActive) {
+                    canvas.style.opacity = '0';
+                    setTimeout(() => { if(!matrixActive && !ghostActive) ctx.clearRect(0, 0, matrixWidth, matrixHeight); }, 700);
+                } else {
+                    canvas.style.opacity = '1';
+                    fpsInterval = 1000 / 30;
+                }
+            }
+            clearTimeout(ghostTimer);
+            ghostTimer = setTimeout(triggerGhostProtocol, 300000); 
+        }
+
+        ['mousemove', 'keydown', 'touchstart'].forEach(evt => 
+            document.addEventListener(evt, resetGhostTimer, { passive: true })
+        );
+        resetGhostTimer();
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                clearTimeout(ghostTimer);
+            } else {
+                resetGhostTimer();
+            }
+        });
+
+
+        // --- 4. MODAL UI ---
+        const folderData = {
+            'vault': {
+                title: 'Secure Vault',
+                links: [
+                    { name: '/src/dashboard', url: 'https://github.com/kzick001/dashboard/tree/main' },
+                    { name: '/src/undead-barrage', url: 'https://github.com/kzick001/undead-barrage' },
+                    { name: 'Audio Array', url: 'https://open.spotify.com/' },
+                    { name: 'G-Drive Encrypted', url: 'https://drive.google.com/drive/folders/1sQ5Z4Lp_7fcM0W7W4effQdT0BLQWEuSm' }
+                ]
+            },
+            'multiplexer': {
+                title: 'Gems Array', 
+                links: [
+                    { name: 'SSP Apps', url: 'https://gemini.google.com/gem/1ee3cdd8bdff' },
+                    { name: 'DM Asst DCW', url: 'https://gemini.google.com/gem/d7aa441f9adf' },
+                    { name: 'World Dungeon', url: 'https://gemini.google.com/gem/0dc9daf99e5a' },
+                    { name: 'Kzick Dash', url: 'https://gemini.google.com/gem/83325a84f21b' },
+                    { name: 'SSP Assistant', url: 'https://gemini.google.com/gem/632acd4f3367' },
+                    { name: 'Roll20 Asset', url: 'https://gemini.google.com/gem/a297ae8d2ca3' },
+                    { name: 'Maker Space', url: 'https://gemini.google.com/gem/7ec5f23e1ad0' },
+                    { name: 'Undead Barrage', url: 'https://gemini.google.com/gem/8c5c96b37138' },
+                    { name: 'GFX Barrage', url: 'https://gemini.google.com/gem/1f991e49de86' },
+                    { name: 'Image Gen V2', url: 'https://gemini.google.com/gem/a70141b1339a' },
+                    { name: 'Clarence V2', url: 'https://gemini.google.com/gem/0c02dc03dd5a' },
+                    { name: 'Canna Lab', url: 'https://gemini.google.com/gem/ff2688525ab1' }
+                ]
+            }
+        };
+
+        const modal = document.getElementById('folderModal');
+        const modalContent = document.getElementById('modalContent');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalLinks = document.getElementById('modalLinks');
+        
+        function openModal(folderId) {
+            const data = folderData[folderId];
+            if (!data) return;
+            
+            modalTitle.textContent = data.title;
+            modalLinks.innerHTML = data.links.map(link => `
+                <a href="${link.url}" target="_blank" class="px-4 py-3 rounded-xl text-base font-medium text-slate-300 bg-white/5 hover:bg-white/10 hover:text-white transition-all flex items-center justify-between border border-white/5 hover:border-white/20">
+                    ${link.name} <span class="text-slate-500 text-xs">↗</span>
+                </a>
+            `).join('');
+            
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    modal.classList.remove('opacity-0');
+                    modalContent.classList.remove('scale-95');
+                    modalContent.classList.add('scale-100');
+                });
+            });
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+        document.getElementById('modalBackdrop').addEventListener('click', closeModal);
+
+        // --- 5. NATIVE DRAG & DROP PERSISTENCE ---
+        const board = document.getElementById('springboard');
+        let draggedItem = null;
+        let isDragging = false;
+
+        board.addEventListener('dragstart', e => {
+            const tile = e.target.closest('.app-tile');
+            if(!tile) return;
+            isDragging = true;
+            draggedItem = tile;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', tile.getAttribute('data-id') || 'tile'); 
+            setTimeout(() => draggedItem.style.opacity = '0.4', 0);
+        });
+
+        board.addEventListener('dragover', e => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+
+        board.addEventListener('drop', e => {
+            e.preventDefault();
+            const targetItem = e.target.closest('.app-tile');
+            if (targetItem && draggedItem && targetItem !== draggedItem) {
+                const nodes = Array.from(board.children);
+                const draggedIdx = nodes.indexOf(draggedItem);
+                const targetIdx = nodes.indexOf(targetItem);
+                
+                if (draggedIdx < targetIdx) targetItem.after(draggedItem);
+                else targetItem.before(draggedItem);
+                
+                const newOrder = Array.from(board.children).map(t => t.getAttribute('data-id'));
+                localStorage.setItem('kzick_layout_v2.2.2', JSON.stringify(newOrder));
+            }
+            if(draggedItem) draggedItem.style.opacity = '1';
+        });
+
+        board.addEventListener('dragend', () => {
+            if(draggedItem) draggedItem.style.opacity = '1';
+            draggedItem = null;
+            setTimeout(() => { isDragging = false; }, 100);
+        });
+
+        board.addEventListener('click', e => {
+            if (isDragging) return; 
+            const folderTile = e.target.closest('[data-folder]');
+            if (folderTile) openModal(folderTile.getAttribute('data-folder'));
+        });
+
+
+       // --- 5.5 DYNAMIC VAULT ENGINE (SURGICAL OVERRIDE) ---
+        (function initDynamicVault() {
+            if (!window.KzickVaultManifest) return;
+
+            const vaultTile = document.querySelector('[data-id="vault"]');
+            if (!vaultTile) return;
+
+            // 1. Hijack existing tile parameters (Remove old modal tie-in, fix overflow clipping)
+            vaultTile.removeAttribute('data-folder');
+            vaultTile.classList.remove('overflow-hidden'); 
+            vaultTile.style.overflow = 'visible'; 
+
+            // 2. Machine the UI Payload (0fr to 1fr hack)
+            let payload = `
+            <div id="vault-dropdown" class="absolute top-[105%] left-0 w-64 sm:w-72 z-50 grid transition-all duration-500 origin-top" style="grid-template-rows: 0fr; opacity: 0; pointer-events: none; transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.1);">
+                <div class="overflow-hidden min-h-0 bg-[#0a0a0a]/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8)] flex flex-col text-left">
+                    <div class="p-3">`;
+
+            window.KzickVaultManifest.forEach(group => {
+                payload += `
+                    <div class="mb-3 last:mb-0">
+                        <span class="block px-3 py-1 text-[10px] font-mono text-cyan-400/80 uppercase tracking-widest">${group.category}</span>
+                        <div class="flex flex-col gap-1 mt-1">
+                            ${group.links.map(link => `
+                                <a href="${link.url}" target="_blank" class="px-3 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex justify-between items-center group/link">
+                                    ${link.text}
+                                    <span class="text-slate-600 group-hover/link:text-cyan-400 transition-colors text-xs">↗</span>
+                                </a>
+                            `).join('')}
+                        </div>
+                    </div>`;
+            });
+
+            payload += `</div></div></div>`;
+
+            // 3. Synchronous Injection
+            vaultTile.insertAdjacentHTML('beforeend', payload);
+
+            // 4. Mount Event Delegation & Spring Physics
+            const dropdown = document.getElementById('vault-dropdown');
+            let isVaultOpen = false;
+
+            vaultTile.addEventListener('click', (e) => {
+                if (typeof isDragging !== 'undefined' && isDragging) return; // Respect global drag constraints
+                if (e.target.closest('a')) return; // Let actual links route normally
+
+                isVaultOpen = !isVaultOpen;
+                if (isVaultOpen) {
+                    dropdown.style.gridTemplateRows = '1fr';
+                    dropdown.style.opacity = '1';
+                    dropdown.style.pointerEvents = 'auto';
+                    vaultTile.style.borderColor = 'rgba(6, 182, 212, 0.5)'; // Apply cyan active glow
+                } else {
+                    dropdown.style.gridTemplateRows = '0fr';
+                    dropdown.style.opacity = '0';
+                    dropdown.style.pointerEvents = 'none';
+                    vaultTile.style.borderColor = ''; 
+                }
+            });
+
+            // 5. Environmental Cleanup (Click outside to close)
+            document.addEventListener('click', (e) => {
+                if (isVaultOpen && !vaultTile.contains(e.target)) {
+                    isVaultOpen = false;
+                    dropdown.style.gridTemplateRows = '0fr';
+                    dropdown.style.opacity = '0';
+                    dropdown.style.pointerEvents = 'none';
+                    vaultTile.style.borderColor = '';
+                }
+            });
+        })();
+
+        // --- 6. SECURE TOMORROW.IO PROTOCOL PIPELINE ---
+        (async function initWeatherPipeline() {
+            const CACHE_KEY = 'kzick_weather_v2.2.2';
+            const TTL = 5 * 60 * 1000; 
+            const weatherContainer = document.getElementById('weatherContainer');
+            
+            const codeMap = {
+                1000: '☀️', 1100: '🌤', 1101: '⛅', 1102: '☁️', 1001: '☁️',
+                2000: '🌫️', 2100: '🌫️', 4000: '🌧', 4200: '🌧', 4001: '🌧', 
+                4201: '🌧', 5000: '❄️', 5001: '❄️', 5100: '❄️', 8000: '⛈'
+            };
+
+            document.getElementById('weatherToggleBtn').addEventListener('click', () => {
+                document.getElementById('weather-drawer-inner').classList.toggle('expanded');
+            });
+
+            function renderWeather(data) {
+                try {
+                    const timelines = data?.data?.timelines || data?.timelines;
+                    if (!timelines) throw new Error("Invalid schema");
+                    
+                    const daily = timelines.daily || [];
+                    if (!daily.length) throw new Error("No daily data available");
+
+                    // Inject current temperature into complication pill
+                    const minutely = timelines.minutely || [];
+                    const hourly = timelines.hourly || [];
+                    const currentVals = minutely[0]?.values || hourly[0]?.values || daily[0]?.values || {};
+                    const currentTemp = Math.round(currentVals.temperature || daily[0]?.values?.temperatureMax || 0);
+                    const compTempEl = document.getElementById('comp-temp');
+                    if (compTempEl) compTempEl.innerHTML = `${currentTemp}&deg;`;
+
+                    // UI Expansion - 6 Days Panoramic
+                    let html = '<div class="flex gap-4 sm:gap-8 w-full justify-between items-center px-2">';
+                    
+                    for (let i = 0; i < 6 && i < daily.length; i++) {
+                        const vals = daily[i].values;
+                        const dCode = vals.weatherCodeMax || vals.weatherCodeMin || vals.weatherCode || 1100;
+                        const icon = codeMap[dCode] || '🌤';
+                        
+                        let dayLabel = 'UNK';
+                        if (i === 0) {
+                            dayLabel = 'TODAY';
+                        } else {
+                            const rawTime = daily[i].startTime || daily[i].time;
+                            const date = rawTime ? new Date(rawTime) : new Date(Date.now() + (i * 86400000));
+                            if (!isNaN(date.getTime())) {
+                                dayLabel = new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(date);
+                            }
+                        }
+
+                        const maxT = Math.round(vals.temperatureMax || vals.temperature);
+                        const minT = Math.round(vals.temperatureMin || vals.temperature - 10);
+                        const isToday = i === 0 ? 'text-cyan-400 font-bold' : 'text-slate-500 font-medium';
+
+                        html += `
+                            <div class="flex flex-col items-center flex-1">
+                                <span class="text-[10px] sm:text-xs uppercase tracking-widest mb-3 ${isToday}">${dayLabel}</span>
+                                <span class="text-4xl sm:text-5xl mb-3 filter drop-shadow-lg">${icon}</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-base sm:text-lg text-slate-200 font-bold">${maxT}°</span>
+                                    <span class="text-xs sm:text-sm text-slate-500">${minT}°</span>
+                                </div>
+                            </div>`;
+                    }
+                    weatherContainer.innerHTML = html + '</div>';
+
+                    // Populate Drawer (Today's Telemetry)
+                    const tVals = daily[0].values;
+                    document.getElementById('dt-low').textContent = `${Math.round(tVals.temperatureMin || 0)}°`;
+                    document.getElementById('dt-dew').textContent = `${Math.round(tVals.dewPointAvg || 0)}°`;
+                    document.getElementById('dt-rh').textContent = `${Math.round(tVals.humidityAvg || 0)}%`;
+                    document.getElementById('dt-precip').textContent = `${Math.round(tVals.precipitationProbabilityAvg || 0)}%`;
+                    document.getElementById('dt-wind').textContent = `${Math.round(tVals.windSpeedAvg || 0)} mph`;
+                    document.getElementById('dt-gust').textContent = `${Math.round(tVals.windGustMax || 0)} mph`;
+                    document.getElementById('dt-dir').textContent = `${Math.round(tVals.windDirectionAvg || 0)}°`;
+                    
+                    const aqi = tVals.epaPrimaryAQI ?? tVals.epaIndex ?? '--';
+                    document.getElementById('dt-aqi').textContent = aqi;
+
+                } catch(e) {
+                    console.error("Parse Error", e);
+                    weatherContainer.innerHTML = `<div class="text-red-400 tracking-widest text-xs py-4">PIPELINE PARSE FAILURE</div>`;
+                }
+            }
+
+            const cached = sessionStorage.getItem(CACHE_KEY);
+            if (cached) {
+                const { timestamp, data } = JSON.parse(cached);
+                if (Date.now() - timestamp < TTL) {
+                    return renderWeather(data);
+                }
+            }
+
+            try {
+                const proxyUrl = `https://kzick-weather.askozicki.workers.dev?lat=44.95&lon=-93.38`;
+                const res = await fetch(proxyUrl);
+                if (!res.ok) throw new Error(`Proxy Auth/Response Failed: ${res.status}`);
+                
+                const data = await res.json();
+                sessionStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data }));
+                renderWeather(data);
+
+            } catch (error) {
+                console.warn("Proxy connection failed", error);
+                weatherContainer.innerHTML = `<div class="text-red-400 tracking-widest text-xs py-4">PROXY UNREACHABLE</div>`;
+            }
+        })();
+    </script>
 </body>
 </html>
