@@ -1,1 +1,68 @@
-raspberry pi dashboard goes here
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tony's Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="dashboard">
+    <div class="card hero">
+      <div class="time-date">
+        <h1 id="time">--:--</h1>
+        <h2 id="date">Loading...</h2>
+      </div>
+      <div class="current-weather">
+        <div class="weather-main">
+          <span id="current-temp">--°</span>
+        </div>
+        <div class="high-low">
+          H: <span id="today-high">--°</span> / L: <span id="today-low">--°</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card sun-cycle">
+      <h3>Sun Cycle</h3>
+      <div class="sun-grid">
+        <span>🌅 Sunrise:</span> <span id="sunrise">--:--</span>
+        <span>🌇 Sunset:</span> <span id="sunset">--:--</span>
+      </div>
+      <div class="golden-hour">
+        <strong>Golden Hour</strong><br>
+        <span id="golden-hour-range">--:-- to --:--</span>
+      </div>
+    </div>
+    
+    <div class="card sports" id="twins-card">
+      <div class="team-header">
+        <h3>MN Twins</h3>
+      </div>
+      <div class="game-info">
+        <div><strong>Last:</strong> <span id="twins-last">Loading...</span></div>
+        <div class="next"><strong>Next:</strong> <span id="twins-next">Loading...</span></div>
+      </div>
+    </div>
+
+    <div class="card horizon">
+      <h3>5-Day Forecast</h3>
+      <div class="forecast-grid" id="forecast-container">
+        <p class="text-muted">Fetching forecast...</p>
+      </div>
+    </div>
+
+    <div class="card sports" id="brewers-card">
+      <div class="team-header">
+        <h3>MKE Brewers</h3>
+      </div>
+      <div class="game-info">
+        <div><strong>Last:</strong> <span id="brewers-last">Loading...</span></div>
+        <div class="next"><strong>Next:</strong> <span id="brewers-next">Loading...</span></div>
+      </div>
+    </div>
+  </main>
+  
+  <script src="app.js"></script>
+</body>
+</html>
