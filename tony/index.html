@@ -1,68 +1,184 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tony's Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tony Kiosk V0.2</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { 
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+                    colors: {
+                        slate: { 850: '#151e2e', 900: '#0f172a', 950: '#020617' }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Kiosk Hard-Locks */
+        body {
+            width: 1440px;
+            height: 900px;
+            overflow: hidden;
+            background-color: #000000;
+            cursor: none; /* Hide mouse completely */
+        }
+        
+        /* Smooth SVG Ring Transitions */
+        #aqi-ring {
+            transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1), stroke 1s ease;
+        }
+        #wind-dir-icon {
+            transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Hide scrollbars for sports containers if they happen to overflow slightly */
+        ::-webkit-scrollbar { display: none; }
+    </style>
 </head>
-<body>
-  <main class="dashboard">
-    <div class="card hero">
-      <div class="time-date">
-        <h1 id="time">--:--</h1>
-        <h2 id="date">Loading...</h2>
-      </div>
-      <div class="current-weather">
-        <div class="weather-main">
-          <span id="current-temp">--°</span>
+<body class="text-slate-200 font-sans relative flex flex-col">
+
+    <div class="absolute top-0 w-full flex justify-between px-8 py-3 text-[10px] font-mono tracking-widest uppercase text-slate-500 border-b border-slate-800 bg-black z-50">
+        <div>DASHBOARD // V0.2 KIOSK</div>
+        <div class="flex items-center gap-2">
+            <span id="sys-status-dot" class="text-green-500 animate-pulse">●</span> 
+            <span id="sys-status-text" class="text-slate-300">ONLINE</span>
         </div>
-        <div class="high-low">
-          H: <span id="today-high">--°</span> / L: <span id="today-low">--°</span>
-        </div>
-      </div>
-    </div>
-    
-    <div class="card sun-cycle">
-      <h3>Sun Cycle</h3>
-      <div class="sun-grid">
-        <span>🌅 Sunrise:</span> <span id="sunrise">--:--</span>
-        <span>🌇 Sunset:</span> <span id="sunset">--:--</span>
-      </div>
-      <div class="golden-hour">
-        <strong>Golden Hour</strong><br>
-        <span id="golden-hour-range">--:-- to --:--</span>
-      </div>
-    </div>
-    
-    <div class="card sports" id="twins-card">
-      <div class="team-header">
-        <h3>MN Twins</h3>
-      </div>
-      <div class="game-info">
-        <div><strong>Last:</strong> <span id="twins-last">Loading...</span></div>
-        <div class="next"><strong>Next:</strong> <span id="twins-next">Loading...</span></div>
-      </div>
     </div>
 
-    <div class="card horizon">
-      <h3>5-Day Forecast</h3>
-      <div class="forecast-grid" id="forecast-container">
-        <p class="text-muted">Fetching forecast...</p>
-      </div>
+    <div class="grid grid-cols-4 grid-rows-2 gap-6 w-full h-full pt-16 pb-32 px-8">
+        
+        <div class="bg-slate-900/80 border border-slate-700/50 rounded-[2rem] p-6 flex flex-col justify-between shadow-2xl relative overflow-hidden">
+            <h2 class="text-xs font-mono text-slate-500 tracking-widest uppercase mb-2">Weather</h2>
+            <div class="flex items-center justify-between h-full">
+                <div id="current-icon" class="w-24 h-24 text-slate-300">
+                    <svg class="w-full h-full animate-pulse opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                </div>
+                <div class="flex flex-col items-end">
+                    <div id="current-temp" class="text-[6.5rem] font-light text-white leading-none tracking-tighter">--°</div>
+                    <div class="flex gap-4 mt-1 text-3xl font-medium tracking-tight">
+                        <span id="high-temp" class="text-red-500">--°</span>
+                        <span id="low-temp" class="text-blue-500">--°</span>
+                    </div>
+                </div>
+            </div>
+            <div id="weather-desc" class="absolute bottom-6 left-6 text-xs font-mono text-slate-400 uppercase tracking-widest">SYNCING...</div>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-700/50 rounded-[2rem] p-6 flex flex-col justify-between shadow-2xl">
+            <h2 class="text-xs font-mono text-slate-500 tracking-widest uppercase mb-4 border-b border-slate-800 pb-2">Atmospherics</h2>
+            <div class="flex justify-between h-full w-full items-center">
+                
+                <div class="flex flex-col gap-5 font-mono text-sm text-slate-400">
+                    <div>
+                        <span class="text-[10px] text-slate-600 tracking-widest block mb-0.5">DEW POINT</span>
+                        <span id="dew-point" class="text-white text-xl font-bold">--°</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-600 tracking-widest block mb-0.5">RELATIVE HUMIDITY</span>
+                        <span id="humidity" class="text-white text-xl font-bold">--%</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-600 tracking-widest block mb-0.5">WIND VECTOR</span>
+                        <div class="flex items-center gap-2 text-white text-xl font-bold">
+                            <svg id="wind-dir-icon" class="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 2L16 10L12 8L8 10L12 2Z"></path><path stroke-width="2" stroke-linecap="round" d="M12 22v-6"></path></svg>
+                            <span id="wind-speed">-- mph</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col items-center justify-center border-l border-slate-800 pl-6 w-1/2">
+                    <span class="text-[10px] font-mono text-slate-600 mb-2 tracking-widest">US AQI</span>
+                    <div class="relative w-24 h-24">
+                        <svg class="w-full h-full transform -rotate-90">
+                            <circle cx="48" cy="48" r="42" fill="none" class="stroke-slate-800" stroke-width="8"></circle>
+                            <circle id="aqi-ring" cx="48" cy="48" r="42" fill="none" class="stroke-slate-600" stroke-width="8" stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round"></circle>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span id="aqi-value" class="font-mono text-2xl text-white font-bold tracking-tighter">--</span>
+                        </div>
+                    </div>
+                    <span id="aqi-desc" class="text-[10px] font-mono text-slate-400 mt-4 text-center uppercase tracking-widest font-bold h-6">AWAITING DATA</span>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-700/50 rounded-[2rem] p-6 flex flex-col justify-between shadow-2xl">
+            <h2 class="text-xs font-mono text-slate-500 tracking-widest uppercase mb-4 border-b border-slate-800 pb-2">Solar Cycle</h2>
+            <div class="flex flex-col gap-6 h-full justify-center">
+                <div class="flex items-center gap-5 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
+                    <svg class="w-12 h-12 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 17h16"></path>
+                    </svg>
+                    <div>
+                        <span class="text-[10px] font-mono text-slate-500 tracking-widest block mb-1">SUNRISE</span>
+                        <span id="sunrise-time" class="text-3xl font-light text-white tracking-tight">--:--</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-5 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
+                    <svg class="w-12 h-12 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 21v-1m0-16V3m9 9h1M4 12H3m15.364 6.364l.707.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 17h16 M12 16v5 M9 21h6"></path>
+                    </svg>
+                    <div>
+                        <span class="text-[10px] font-mono text-slate-500 tracking-widest block mb-1">SUNSET</span>
+                        <span id="sunset-time" class="text-3xl font-light text-white tracking-tight">--:--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-700/50 rounded-[2rem] p-6 flex flex-col shadow-2xl relative">
+            <h2 class="text-xs font-mono text-slate-500 tracking-widest uppercase mb-4 border-b border-slate-800 pb-2 flex justify-between">
+                <span>Pro Sports</span>
+                <span class="text-blue-500">ESP-N</span>
+            </h2>
+            <div id="pro-sports-container" class="flex flex-col gap-4 flex-1 overflow-hidden">
+                <div class="font-mono text-xs text-slate-500 animate-pulse">> PIPELINE INITIALIZING...</div>
+            </div>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-700/50 rounded-[2rem] p-6 col-span-3 flex flex-col shadow-2xl">
+            <h2 class="text-xs font-mono text-slate-500 tracking-widest uppercase mb-4 border-b border-slate-800 pb-2">5-Day Horizon</h2>
+            <div id="forecast-container" class="flex justify-around items-center w-full h-full px-4">
+                <div class="font-mono text-sm text-slate-500 animate-pulse">> AWAITING METEOROLOGICAL PAYLOAD...</div>
+            </div>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-700/50 rounded-[2rem] p-6 flex flex-col shadow-2xl relative">
+            <h2 class="text-xs font-mono text-slate-500 tracking-widest uppercase mb-4 border-b border-slate-800 pb-2 flex justify-between">
+                <span>College Sports</span>
+                <span class="text-yellow-500">NCAA</span>
+            </h2>
+            <div id="college-sports-container" class="flex flex-col gap-4 flex-1 overflow-hidden">
+                <div class="font-mono text-xs text-slate-500 animate-pulse">> PIPELINE INITIALIZING...</div>
+            </div>
+        </div>
+
     </div>
 
-    <div class="card sports" id="brewers-card">
-      <div class="team-header">
-        <h3>MKE Brewers</h3>
-      </div>
-      <div class="game-info">
-        <div><strong>Last:</strong> <span id="brewers-last">Loading...</span></div>
-        <div class="next"><strong>Next:</strong> <span id="brewers-next">Loading...</span></div>
-      </div>
+    <div class="absolute bottom-8 right-8 flex items-center bg-black/60 backdrop-blur-none border border-slate-700/80 rounded-[2rem] px-8 py-5 shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50">
+        <div class="flex flex-col items-end border-r border-slate-700 pr-6 mr-6">
+            <div id="comp-time" class="text-6xl font-light tracking-tighter text-white leading-none">--:--</div>
+            <div id="comp-date" class="text-xs font-mono text-cyan-400 tracking-widest uppercase mt-2">--</div>
+        </div>
+        <div id="comp-temp" class="text-5xl font-light text-white tracking-tighter min-w-[3rem] text-center">
+            --°
+        </div>
     </div>
-  </main>
-  
-  <script src="app.js"></script>
+
+    <script src="app.js"></script>
 </body>
 </html>
