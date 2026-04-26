@@ -152,13 +152,18 @@ const SportsPipeline = {
             if (!res.ok) throw new Error("HTTP " + res.status);
             const rawData = await res.json();
 
-            // Aggressive Payload Trimmer
             const trimmedEvents = (rawData?.events || []).map(e => {
-                const comp = e.competitions?.[0];
+                const comp = e?.competitions?.[0];
                 return {
+                    date: e?.date,
                     competitions: [{
                         date: comp?.date,
-                        status: { type: { state: comp?.status?.type?.state, shortDetail: comp?.status?.type?.shortDetail } },
+                        status: { 
+                            type: { 
+                                state: comp?.status?.type?.state, 
+                                shortDetail: comp?.status?.type?.shortDetail 
+                            } 
+                        },
                         broadcasts: [{ names: [comp?.broadcasts?.[0]?.names?.[0]] }],
                         competitors: (comp?.competitors || []).map(c => ({
                             homeAway: c?.homeAway,
@@ -257,9 +262,14 @@ const SportsPipeline = {
             return payload.isLive;
         }
 
-        const comp = target.competitions?.[0];
-        const home = comp?.competitors?.find(c => c?.homeAway === 'home') || comp?.competitors?.[0];
-        const away = comp?.competitors?.find(c => c?.homeAway === 'away') || comp?.competitors?.[1];
+        const comp = target?.competitions?.[0];
+        
+        let home = comp?.competitors?.find(c => c?.homeAway === 'home');
+        let away = comp?.competitors?.find(c => c?.homeAway === 'away');
+        if (!home || !away) {
+            home = comp?.competitors?.[0];
+            away = comp?.competitors?.[1];
+        }
 
         const myTeam = String(home?.team?.id) === String(team.id) ? home : (String(away?.team?.id) === String(team.id) ? away : null);
         const opp = String(home?.team?.id) === String(team.id) ? away : home;
@@ -285,8 +295,12 @@ const SportsPipeline = {
 
         if (past.length > 0) {
             const lastGame = past[0]?.competitions?.[0];
-            const lastHome = lastGame?.competitors?.find(c => c?.homeAway === 'home') || lastGame?.competitors?.[0];
-            const lastAway = lastGame?.competitors?.find(c => c?.homeAway === 'away') || lastGame?.competitors?.[1];
+            let lastHome = lastGame?.competitors?.find(c => c?.homeAway === 'home');
+            let lastAway = lastGame?.competitors?.find(c => c?.homeAway === 'away');
+            if (!lastHome || !lastAway) {
+                lastHome = lastGame?.competitors?.[0];
+                lastAway = lastGame?.competitors?.[1];
+            }
 
             const lastMyTeam = String(lastHome?.team?.id) === String(team.id) ? lastHome : (String(lastAway?.team?.id) === String(team.id) ? lastAway : null);
             const lastOpp = String(lastHome?.team?.id) === String(team.id) ? lastAway : lastHome;
@@ -309,7 +323,6 @@ const SportsPipeline = {
         let anyGameLive = false;
         const allTeams = [...CONFIG.teams.pro, ...CONFIG.teams.college];
 
-        // Strict sequential fetch loop to bypass HTTP 429 blocks
         for (const t of allTeams) {
             try {
                 const d = await this.fetchTeam(t);
@@ -332,9 +345,8 @@ const SportsPipeline = {
 };
 
 function boot() {
-    // Garbage Collector: Nuke corrupted V0.3 storage blocks
     Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('tony_v03')) {
+        if (key.startsWith('tony_v02') || key.startsWith('tony_v03')) {
             localStorage.removeItem(key);
         }
     });
