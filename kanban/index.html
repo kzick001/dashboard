@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WIP-Limited Kanban</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 p-8 font-sans">
+
+  <div class="max-w-4xl mx-auto mb-8 flex gap-4">
+    <input type="text" id="taskInput" placeholder="New task..." class="flex-1 p-2 border rounded shadow-sm">
+    <button onclick="addTask()" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">Add Task</button>
+  </div>
+
+  <div class="max-w-4xl mx-auto grid grid-cols-3 gap-6">
+    <div class="bg-white p-4 rounded shadow">
+      <h2 class="font-bold text-lg mb-4 border-b pb-2">To Do</h2>
+      <div id="col-todo" class="space-y-3"></div>
+    </div>
+
+    <div class="bg-white p-4 rounded shadow border-t-4 border-blue-500">
+      <h2 class="font-bold text-lg mb-4 border-b pb-2 flex justify-between">
+        <span>Doing</span>
+        <span id="wip-counter" class="text-sm font-normal text-gray-500">0 / 2</span>
+      </h2>
+      <div id="col-doing" class="space-y-3"></div>
+    </div>
+
+    <div class="bg-white p-4 rounded shadow">
+      <h2 class="font-bold text-lg mb-4 border-b pb-2">Done</h2>
+      <div id="col-done" class="space-y-3"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "YOUR_WORKER_URL_HERE";
+    const API_KEY = "kanban-auth-token-9988";
+    
+    let tasks = [];
+
+    // Network: Load from Worker
+    async function loadTasks() {
+      try {
+        const res = await fetch(API_URL, {
+          headers: { "x-api-key": API_KEY }
+        });
+        if (res.ok) {
+          tasks = await res.json();
+          render();
+        } else {
+          console.error("Failed to load", res.status);
+        }
+      } catch (e) {
+        console.error("Network error", e);
+      }
+    }
+
+    // Network: Save to Worker
+    async function saveTasks() {
+      try {
+        await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": API_KEY
+          },
+          body: JSON.stringify(tasks)
+        });
+      } catch (e) {
+        console.error("Network error saving", e);
+      }
+    }
+
+    // State: Add a new task
+    function addTask() {
+      const input = document.getElementById("taskInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      tasks.push({ id: Date.now(), text: text, status: "todo" });
+      input.value = "";
+      
+      render();
+      saveTasks();
+    }
+
+    // State: Update task status
+    function moveTask(id, newStatus) {
+      const task = tasks.find(t => t.id === id);
+      if (task) {
+        task.status = newStatus;
+        render();
+        saveTasks();
+      }
+    }
+
+    // State: Delete task
+    function deleteTask(id) {
+      tasks = tasks.filter(t => t.id !== id);
+      render();
+      saveTasks();
+    }
+
+    // UI: Render the board
+    function render() {
+      const todoCol = document.getElementById("col-todo");
+      const doingCol = document.getElementById("col-doing");
+      const doneCol = document.getElementById("col-done");
+      const wipCounter = document.getElementById("wip-counter");
+
+      // Clear current DOM
+      todoCol.innerHTML = "";
+      doingCol.innerHTML = "";
+      doneCol.innerHTML = "";
+
+      // Enforce WIP Limit (Max 2)
+      const doingCount = tasks.filter(t => t.status === "doing").length;
+      const isWipFull = doingCount >= 2;
+      wipCounter.innerText = `${doingCount} / 2`;
+      wipCounter.className = `text-sm font-normal ${isWipFull ? 'text-red-500 font-bold' : 'text-gray-500'}`;
+
+      // Populate tasks
+      tasks.forEach(task => {
+        const div = document.createElement("div");
+        div.className = "p-3 border rounded bg-gray-50 text-sm";
+        
+        let content = `<p class="mb-2">${task.text}</p><div class="flex justify-between gap-2">`;
+
+        if (task.status === "todo") {
+          const btnClass = isWipFull ? "opacity-50 cursor-not-allowed bg-gray-400" : "bg-blue-100 text-blue-700 hover:bg-blue-200";
+          content += `<button ${isWipFull ? 'disabled' : ''} onclick="moveTask(${task.id}, 'doing')" class="px-2 py-1 rounded w-full text-center ${btnClass}">Move to Doing &rarr;</button>`;
+        } 
+        else if (task.status === "doing") {
+          content += `<button onclick="moveTask(${task.id}, 'todo')" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">&larr; Back</button>`;
+          content += `<button onclick="moveTask(${task.id}, 'done')" class="px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200">Done &rarr;</button>`;
+        } 
+        else if (task.status === "done") {
+          content += `<button onclick="moveTask(${task.id}, 'doing')" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">&larr; Doing</button>`;
+          content += `<button onclick="deleteTask(${task.id})" class="px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200">Delete</button>`;
+        }
+
+        content += `</div>`;
+        div.innerHTML = content;
+
+        if (task.status === "todo") todoCol.appendChild(div);
+        if (task.status === "doing") doingCol.appendChild(div);
+        if (task.status === "done") doneCol.appendChild(div);
+      });
+    }
+
+    // Init
+    loadTasks();
+  </script>
+</body>
+</html>
