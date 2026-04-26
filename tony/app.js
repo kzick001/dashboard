@@ -4,8 +4,7 @@ const CONFIG = {
         weatherProxy: `https://kzick-weather.askozicki.workers.dev?lat=44.9483&lon=-93.3666`,
         weatherInterval: 5 * 60 * 1000,
         sportsLiveInterval: 5 * 60 * 1000,
-        sportsIdleInterval: 6 * 60 * 60 * 1000,
-        standingsInterval: 60 * 60 * 1000
+        sportsIdleInterval: 6 * 60 * 60 * 1000
     },
     teams: {
         pro: [
@@ -24,7 +23,6 @@ const CONFIG = {
 };
 
 let sportsIntervalTimer = null;
-let standingsCache = {};
 
 const StorageEngine = {
     get(key) {
@@ -141,52 +139,10 @@ const WeatherPipeline = {
 };
 
 const SportsPipeline = {
-    async fetchAllStandings() {
-        const uniqueLeagues = [];
-        const allTeams = [...CONFIG.teams.pro, ...CONFIG.teams.college];
-        
-        allTeams.forEach(t => {
-            const idString = `${t.sport}/${t.league}`;
-            if (!uniqueLeagues.includes(idString)) uniqueLeagues.push(idString);
-        });
-
-        for (const leaguePath of uniqueLeagues) {
-            const cacheKey = `standings_${leaguePath.replace('/', '_')}`;
-            const url = `https://site.api.espn.com/apis/v2/sports/${leaguePath}/standings`;
-            try {
-                const data = await StorageEngine.fetch(cacheKey, url, CONFIG.api.standingsInterval);
-                if (data) standingsCache[leaguePath] = data;
-            } catch (e) {
-                console.error(`[Standings Fetch Fault] ${leaguePath}:`, e);
-            }
-        }
-    },
-
-    getRecord(teamId, leaguePath) {
-        let record = '';
-        const data = standingsCache[leaguePath];
-        if (!data) return '';
-        
-        function search(obj) {
-            if (record) return; 
-            if (!obj || typeof obj !== 'object') return;
-            if (obj.team && String(obj.team.id) === String(teamId)) {
-                const stats = obj.stats || [];
-                const overall = stats.find(s => s.name === 'overall') || stats.find(s => s.type === 'overall') || stats[0];
-                if (overall) record = overall.displayValue || overall.summary || '';
-                return;
-            }
-            if (Array.isArray(obj)) { for (let item of obj) search(item); } 
-            else { for (let key in obj) search(obj[key]); }
-        }
-        
-        search(data);
-        return record;
-    },
-
     async fetchTeam(team) {
         const url = `https://site.api.espn.com/apis/site/v2/sports/${team.sport}/${team.league}/teams/${team.id}/schedule`;
-        return await StorageEngine.fetch(`sports_${team.domId}`, url, CONFIG.api.sportsIdleInterval);
+        const ttl = (sportsIntervalTimer && sportsIntervalTimer._repeat === CONFIG.api.sportsLiveInterval) ? CONFIG.api.sportsLiveInterval : CONFIG.api.sportsIdleInterval;
+        return await StorageEngine.fetch(`sports_${team.domId}`, url, ttl);
     },
 
     mutateDom(domId, renderData) {
@@ -243,13 +199,11 @@ const SportsPipeline = {
             name: team.name, record: '', opp: '', score: '--', status: '', isLive: false, isPast: false, logoHref: '', broadcast: '', prevResult: ''
         };
 
-        const leaguePath = `${team.sport}/${team.league}`;
-        payload.record = this.getRecord(team.id, leaguePath);
-
         const events = data?.events || [];
         if (events.length === 0) {
             payload.opp = 'NO DATA';
-            return this.mutateDom(team.domId, payload);
+            this.mutateDom(team.domId, payload);
+            return payload.isLive;
         }
 
         const now = new Date();
@@ -260,7 +214,8 @@ const SportsPipeline = {
         const target = live || next || past[0];
         if (!target) {
             payload.opp = 'HIBERNATION';
-            return this.mutateDom(team.domId, payload);
+            this.mutateDom(team.domId, payload);
+            return payload.isLive;
         }
 
         const comp = target.competitions[0];
@@ -269,12 +224,16 @@ const SportsPipeline = {
         
         if (!myTeam || !opp) {
             payload.opp = 'DATA ANOMALY';
-            return this.mutateDom(team.domId, payload);
+            this.mutateDom(team.domId, payload);
+            return payload.isLive;
         }
+
+        payload.record = myTeam.records?.[0]?.summary || '';
 
         if (target.status.type.state === 'post' && (now - new Date(target.date)) > 864000000) {
             payload.opp = `OFFSEASON`;
-            return this.mutateDom(team.domId, payload);
+            this.mutateDom(team.domId, payload);
+            return payload.isLive;
         }
 
         payload.isLive = target.status.type.state === 'in';
@@ -289,7 +248,7 @@ const SportsPipeline = {
             
             if (lastMyTeam && lastOpp && lastMyTeam.winner !== undefined) {
                 const resStr = lastMyTeam.winner ? 'W' : 'L';
-                payload.prevResult = `PREV: ${resStr} ${lastMyTeam.score}-${lastOpp.score}`;
+                payload.prevResult = `PREV: ${resStr} ${lastMyTeam.score || 0}-${lastOpp.score || 0}`;
             }
         }
 
@@ -298,38 +257,44 @@ const SportsPipeline = {
         payload.status = payload.isLive ? target.status.type.shortDetail : new Date(target.date).toLocaleDateString([], {month:'short', day:'numeric'});
 
         this.mutateDom(team.domId, payload);
+        return payload.isLive;
     },
 
     async sync() {
+        let anyGameLive = false;
+
         const processGroup = async (teams) => {
             for (const t of teams) {
                 try {
                     const d = await this.fetchTeam(t);
-                    this.processTeamData(t, d);
+                    const isLive = this.processTeamData(t, d);
+                    if (isLive) anyGameLive = true;
                 } catch (e) {
                     console.error(`[Sports Pipeline Fault] ${t.name}:`, e);
                     this.mutateDom(t.domId, { name: t.name, record: '', opp: 'PIPELINE FAULT', score: '--', status: '', isLive: false, isPast: false, logoHref: '', broadcast: '', prevResult: '' });
                 }
             }
         };
+
         await processGroup(CONFIG.teams.pro);
         await processGroup(CONFIG.teams.college);
+
+        const targetInterval = anyGameLive ? CONFIG.api.sportsLiveInterval : CONFIG.api.sportsIdleInterval;
+        
+        if (!sportsIntervalTimer || sportsIntervalTimer._repeat !== targetInterval) {
+            if (sportsIntervalTimer) clearInterval(sportsIntervalTimer);
+            sportsIntervalTimer = setInterval(() => this.sync(), targetInterval);
+            sportsIntervalTimer._repeat = targetInterval;
+        }
     }
 };
 
-async function boot() {
+function boot() {
     startClock();
     WeatherPipeline.sync();
-    
-    // Strict block to populate cache sequentially before allowing module render
-    await SportsPipeline.fetchAllStandings();
     SportsPipeline.sync();
     
     setInterval(() => WeatherPipeline.sync(), CONFIG.api.weatherInterval);
-    setInterval(() => SportsPipeline.fetchAllStandings(), CONFIG.api.standingsInterval);
-    
-    if (sportsIntervalTimer) clearInterval(sportsIntervalTimer);
-    sportsIntervalTimer = setInterval(() => SportsPipeline.sync(), CONFIG.api.sportsLiveInterval);
 }
 
 document.addEventListener('DOMContentLoaded', boot);
