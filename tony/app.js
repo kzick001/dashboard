@@ -139,6 +139,17 @@ const WeatherPipeline = {
 };
 
 const SportsPipeline = {
+    // Aggressive primitive extraction to kill [object Object] artifacts
+    safeString(val) {
+        if (val === null || val === undefined) return null;
+        if (typeof val === 'string' || typeof val === 'number') return String(val);
+        if (typeof val === 'object') {
+            const extracted = val.displayValue ?? val.value ?? val.summary ?? val.name;
+            return extracted ? String(extracted) : null;
+        }
+        return null;
+    },
+
     async fetchTeam(team) {
         const url = `https://site.api.espn.com/apis/site/v2/sports/${team.sport}/${team.league}/teams/${team.id}/schedule`;
         const ttl = (sportsIntervalTimer && sportsIntervalTimer._repeat === CONFIG.api.sportsLiveInterval) ? CONFIG.api.sportsLiveInterval : CONFIG.api.sportsIdleInterval;
@@ -152,7 +163,6 @@ const SportsPipeline = {
             if (!res.ok) throw new Error("HTTP " + res.status);
             const rawData = await res.json();
 
-            // Aggressive Payload Trimmer & Primitive Coercion Enforcer
             const trimmedEvents = (rawData?.events || []).map(e => {
                 const comp = e?.competitions?.[0];
                 return {
@@ -169,9 +179,9 @@ const SportsPipeline = {
                         competitors: (comp?.competitors || []).map(c => ({
                             homeAway: c?.homeAway,
                             winner: c?.winner,
-                            // Strict Primitive Evaluation to kill [object Object] artifacts
-                            score: c?.score?.displayValue ?? c?.score?.value ?? c?.score ?? null,
-                            records: [{ summary: c?.records?.[0]?.summary }],
+                            // Forced coercion applied to score and records to prevent object caching
+                            score: this.safeString(c?.score),
+                            records: [{ summary: this.safeString(c?.records?.[0]?.summary) }],
                             team: {
                                 id: c?.team?.id,
                                 abbreviation: c?.team?.abbreviation,
@@ -325,7 +335,6 @@ const SportsPipeline = {
         let anyGameLive = false;
         const allTeams = [...CONFIG.teams.pro, ...CONFIG.teams.college];
 
-        // Strict sequential fetch loop to bypass HTTP 429 blocks
         for (const t of allTeams) {
             try {
                 const d = await this.fetchTeam(t);
@@ -348,7 +357,6 @@ const SportsPipeline = {
 };
 
 function boot() {
-    // Aggressive garbage collection to free Pi memory on reload
     Object.keys(localStorage).forEach(key => {
         if (key.startsWith('tony_v')) {
             localStorage.removeItem(key);
