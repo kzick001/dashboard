@@ -152,6 +152,7 @@ const SportsPipeline = {
             if (!res.ok) throw new Error("HTTP " + res.status);
             const rawData = await res.json();
 
+            // Aggressive Payload Trimmer & Primitive Coercion Enforcer
             const trimmedEvents = (rawData?.events || []).map(e => {
                 const comp = e?.competitions?.[0];
                 return {
@@ -168,7 +169,8 @@ const SportsPipeline = {
                         competitors: (comp?.competitors || []).map(c => ({
                             homeAway: c?.homeAway,
                             winner: c?.winner,
-                            score: c?.score,
+                            // Strict Primitive Evaluation to kill [object Object] artifacts
+                            score: c?.score?.displayValue ?? c?.score?.value ?? c?.score ?? null,
                             records: [{ summary: c?.records?.[0]?.summary }],
                             team: {
                                 id: c?.team?.id,
@@ -323,6 +325,7 @@ const SportsPipeline = {
         let anyGameLive = false;
         const allTeams = [...CONFIG.teams.pro, ...CONFIG.teams.college];
 
+        // Strict sequential fetch loop to bypass HTTP 429 blocks
         for (const t of allTeams) {
             try {
                 const d = await this.fetchTeam(t);
@@ -345,8 +348,9 @@ const SportsPipeline = {
 };
 
 function boot() {
+    // Aggressive garbage collection to free Pi memory on reload
     Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('tony_v02') || key.startsWith('tony_v03')) {
+        if (key.startsWith('tony_v')) {
             localStorage.removeItem(key);
         }
     });
