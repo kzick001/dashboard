@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmark Forge // Cupertino 2050</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --glass-border: rgba(255, 255, 255, 0.05);
+            --glass-bg: rgba(20, 20, 20, 0.4);
+            --spring: cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            --accent: #ffffff;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Smart Glass Tile Component */
+        .smart-glass {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 2rem;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.4s var(--spring), box-shadow 0.4s var(--spring);
+        }
+
+        .smart-glass::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.08), transparent 40%);
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0;
+            transition: opacity 0.5s var(--spring);
+        }
+
+        .smart-glass:hover::before {
+            opacity: 1;
+        }
+
+        .smart-glass > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Form elements */
+        textarea {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: 1rem;
+            resize: none;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Matrix Override System */
+        .matrix-mode {
+            --bg-color: #050505;
+            --text-color: #0f0;
+            --glass-border: rgba(0, 255, 0, 0.2);
+            --glass-bg: rgba(0, 20, 0, 0.6);
+            --accent: #0f0;
+        }
+
+        .matrix-mode .smart-glass::before {
+            background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0,255,0,0.15), transparent 40%);
+        }
+
+        .matrix-mode textarea {
+            color: #0f0;
+            background: rgba(0, 15, 0, 0.8);
+        }
+
+        #matrix-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .matrix-mode #matrix-canvas {
+            opacity: 0.3;
+        }
+
+        /* Drag over state */
+        .drag-over {
+            transform: scale(0.98);
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .matrix-mode .drag-over {
+            background: rgba(0, 255, 0, 0.1);
+        }
+        
+        .action-btn {
+            transition: all 0.3s var(--spring);
+        }
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex flex-col antialiased">
+
+    <canvas id="matrix-canvas"></canvas>
+
+    <header class="flex justify-between items-center mb-12 px-4">
+        <div>
+            <h1 class="text-xl font-medium tracking-tight">Kzick Dashboard <span class="text-white/30 ml-2">// BOOKMARK FORGE</span></h1>
+        </div>
+        <button id="matrix-toggle" class="text-xs font-mono uppercase tracking-widest px-4 py-2 rounded-full border border-white/10 hover:bg-white/10 transition-colors">
+            Init Matrix
+        </button>
+    </header>
+
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto w-full h-full pb-8">
+        
+        <!-- Input Dropzone -->
+        <div id="dropzone" class="smart-glass lg:col-span-1 p-8 flex flex-col items-center justify-center text-center cursor-pointer min-h-[400px]">
+            <div class="mb-6 pointer-events-none">
+                <svg class="w-16 h-16 mx-auto stroke-[1.2] stroke-current text-white/50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M14 2V8H20" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 18V12" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M9 15L12 12L15 15" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h2 class="text-lg font-medium mb-2 pointer-events-none">Drop HTML File Here</h2>
+            <p class="text-sm text-white/40 pointer-events-none">Client-side DOM parsing. Zero external requests.</p>
+            <input type="file" id="file-input" class="hidden" accept=".html,.htm" />
+        </div>
+
+        <!-- Output Display -->
+        <div class="smart-glass lg:col-span-2 p-6 flex flex-col h-[600px] lg:h-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-sm font-mono tracking-widest text-white/50">OUTPUT_BUFFER</h2>
+                <button id="copy-btn" class="action-btn text-xs font-medium bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg pointer-events-none opacity-50">
+                    Copy to Clipboard
+                </button>
+            </div>
+            <textarea id="output" class="flex-1 w-full p-4 text-sm text-white/80" readonly placeholder="Parsed output will render here..."></textarea>
+        </div>
+    </main>
+
+    <script>
+        // --- 1. SMART GLASS PHYSICS ENGINE ---
+        document.addEventListener('mousemove', (e) => {
+            document.querySelectorAll('.smart-glass').forEach(card => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+        });
+
+        // --- 2. THE MATRIX OVERRIDE ---
+        const matrixToggle = document.getElementById('matrix-toggle');
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        let matrixInterval;
+
+        matrixToggle.addEventListener('click', () => {
+            document.body.classList.toggle('matrix-mode');
+            if (document.body.classList.contains('matrix-mode')) {
+                matrixToggle.innerText = 'Kill Matrix';
+                initMatrix();
+            } else {
+                matrixToggle.innerText = 'Init Matrix';
+                clearInterval(matrixInterval);
+            }
+        });
+
+        function initMatrix() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789'.split('');
+            const fontSize = 14;
+            const columns = canvas.width / fontSize;
+            const drops = Array.from({length: columns}).fill(1);
+
+            ctx.font = fontSize + 'px monospace';
+
+            matrixInterval = setInterval(() => {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#0f0';
+                for (let i = 0; i < drops.length; i++) {
+                    const text = chars[Math.floor(Math.random() * chars.length)];
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    drops[i]++;
+                }
+            }, 33); // Throttled ~30fps
+        }
+
+        window.addEventListener('resize', () => {
+            if (document.body.classList.contains('matrix-mode')) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        });
+
+        // --- 3. DOM EXTRACTION ENGINE (ZERO-BLOAT) ---
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('file-input');
+        const outputArea = document.getElementById('output');
+        const copyBtn = document.getElementById('copy-btn');
+
+        // File Interaction Routing
+        dropzone.addEventListener('click', () => fileInput.click());
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, () => dropzone.classList.add('drag-over'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, () => dropzone.classList.remove('drag-over'), false);
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length) processFile(files[0]);
+        });
+
+        fileInput.addEventListener('change', function() {
+            if (this.files.length) processFile(this.files[0]);
+        });
+
+        // The Engine
+        function processFile(file) {
+            if (file.type !== 'text/html' && !file.name.endsWith('.html')) {
+                outputArea.value = 'ERROR: Non-HTML file detected. Awaiting valid payload.';
+                return;
+            }
+
+            outputArea.value = 'Forging payload...';
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const htmlContent = e.target.result;
+                    const parsedData = extractBookmarks(htmlContent);
+                    
+                    outputArea.value = parsedData;
+                    
+                    // Activate Copy Button
+                    copyBtn.classList.remove('pointer-events-none', 'opacity-50');
+                    copyBtn.classList.add('opacity-100');
+                } catch (error) {
+                    outputArea.value = 'FATAL EXCEPTION: Failed to parse DOM structure.\n' + error.message;
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function extractBookmarks(htmlString) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlString, 'text/html');
+            const links = doc.querySelectorAll('a');
+            const folders = {};
+
+            links.forEach(link => {
+                let path = [];
+                let current = link.parentElement;
+
+                // Traverse upward to reconstruct nested folder tree
+                while (current) {
+                    if (current.tagName === 'DL') {
+                        let h3 = null;
+                        
+                        // Netscape bookmark standard checks
+                        if (current.previousElementSibling && current.previousElementSibling.tagName === 'H3') {
+                            h3 = current.previousElementSibling;
+                        } else if (current.parentElement && current.parentElement.tagName === 'DT') {
+                            h3 = current.parentElement.querySelector(':scope > H3');
+                        }
+
+                        if (h3) {
+                            path.unshift(h3.textContent.trim());
+                        }
+                    }
+                    current = current.parentElement;
+                }
+
+                const folderPath = path.length > 0 ? path.join(' / ') : 'Root Directory';
+
+                if (!folders[folderPath]) folders[folderPath] = [];
+                
+                folders[folderPath].push({
+                    title: link.textContent.trim() || 'Untitled Node',
+                    url: link.getAttribute('href') || 'No URL attached'
+                });
+            });
+
+            // Format Plain Text
+            let output = "=== KZICK SECURE BOOKMARK EXTRACT ===\n";
+            output += "Generated: " + new Date().toISOString() + "\n";
+            output += "=====================================\n\n";
+
+            for (const [folder, items] of Object.entries(folders)) {
+                output += `[ ${folder} ]\n`;
+                items.forEach(item => {
+                    output += `  • ${item.title}\n`;
+                    output += `    ${item.url}\n\n`;
+                });
+                output += `-------------------------------------\n\n`;
+            }
+
+            return output;
+        }
+
+        // Copy Protocol
+        copyBtn.addEventListener('click', () => {
+            outputArea.select();
+            document.execCommand('copy');
+            
+            const originalText = copyBtn.innerText;
+            copyBtn.innerText = 'Copied to Clipboard';
+            copyBtn.classList.add('bg-white/30');
+            
+            setTimeout(() => {
+                copyBtn.innerText = originalText;
+                copyBtn.classList.remove('bg-white/30');
+            }, 2000);
+        });
+
+    </script>
+</body>
+</html>
