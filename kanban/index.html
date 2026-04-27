@@ -8,9 +8,10 @@
 </head>
 <body class="bg-gray-100 text-gray-800 p-8 font-sans">
 
-  <div class="max-w-4xl mx-auto mb-8 flex gap-4">
+  <div class="max-w-4xl mx-auto mb-8 flex gap-4 items-center">
     <input type="text" id="taskInput" placeholder="New task..." class="flex-1 p-2 border rounded shadow-sm">
     <button onclick="addTask()" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">Add Task</button>
+    <span id="sync-status" class="text-sm text-gray-500 w-24 text-right"></span>
   </div>
 
   <div class="max-w-4xl mx-auto grid grid-cols-3 gap-6">
@@ -34,32 +35,57 @@
   </div>
 
   <script>
-    const API_URL = "YOUR_WORKER_URL_HERE";
-    const API_KEY = "kanban-auth-token-9988";
+    // Fixed URL missing the https:// protocol
+    const API_URL = "https://kanban.askozicki.workers.dev";
+    
+    // Auth Fix: Ask for key once per session instead of hardcoding
+    let API_KEY = sessionStorage.getItem("kanban_key");
+    if (!API_KEY) {
+      API_KEY = prompt("Enter Kanban API Key:");
+      if (API_KEY) sessionStorage.setItem("kanban_key", API_KEY);
+    }
     
     let tasks = [];
 
+    // XSS Fix: Sanitizer function to prevent malicious code injection
+    const escapeHTML = str => str.replace(/[&<>'"]/g, 
+      tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag] || tag)
+    );
+
     // Network: Load from Worker
     async function loadTasks() {
+      const syncUI = document.getElementById("sync-status");
+      syncUI.innerText = "Loading...";
       try {
         const res = await fetch(API_URL, {
           headers: { "x-api-key": API_KEY }
         });
         if (res.ok) {
-          tasks = await res.json();
+          const data = await res.json();
+          // Init Fix: Fallback to empty array if data is corrupted
+          tasks = Array.isArray(data) ? data : []; 
+          syncUI.innerText = "";
           render();
         } else {
+          syncUI.innerText = "Auth Error";
           console.error("Failed to load", res.status);
         }
       } catch (e) {
+        syncUI.innerText = "Offline";
         console.error("Network error", e);
       }
     }
 
     // Network: Save to Worker
     async function saveTasks() {
+      const syncUI = document.getElementById("sync-status");
+      syncUI.innerText = "Saving...";
+      
+      // Rollback Fix: Deep copy current state in case the network fails
+      const backup = JSON.parse(JSON.stringify(tasks)); 
+      
       try {
-        await fetch(API_URL, {
+        const res = await fetch(API_URL, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -67,8 +93,17 @@
           },
           body: JSON.stringify(tasks)
         });
+        
+        if (!res.ok) throw new Error("Server rejected save");
+        
+        syncUI.innerText = "Saved";
+        setTimeout(() => { if (syncUI.innerText === "Saved") syncUI.innerText = ""; }, 2000);
       } catch (e) {
         console.error("Network error saving", e);
+        syncUI.innerText = "Save Failed";
+        tasks = backup; // Revert state
+        render();       // Revert UI
+        alert("Network error: Changes not saved. Board reverted.");
       }
     }
 
@@ -78,7 +113,8 @@
       const text = input.value.trim();
       if (!text) return;
 
-      tasks.push({ id: Date.now(), text: text, status: "todo" });
+      // UUID Fix: Use crypto API instead of Date.now()
+      tasks.push({ id: crypto.randomUUID(), text: text, status: "todo" });
       input.value = "";
       
       render();
@@ -125,19 +161,20 @@
         const div = document.createElement("div");
         div.className = "p-3 border rounded bg-gray-50 text-sm";
         
-        let content = `<p class="mb-2">${task.text}</p><div class="flex justify-between gap-2">`;
+        // XSS Fix applied here via escapeHTML()
+        let content = `<p class="mb-2">${escapeHTML(task.text)}</p><div class="flex justify-between gap-2">`;
 
         if (task.status === "todo") {
           const btnClass = isWipFull ? "opacity-50 cursor-not-allowed bg-gray-400" : "bg-blue-100 text-blue-700 hover:bg-blue-200";
-          content += `<button ${isWipFull ? 'disabled' : ''} onclick="moveTask(${task.id}, 'doing')" class="px-2 py-1 rounded w-full text-center ${btnClass}">Move to Doing &rarr;</button>`;
+          content += `<button ${isWipFull ? 'disabled' : ''} onclick="moveTask('${task.id}', 'doing')" class="px-2 py-1 rounded w-full text-center ${btnClass}">Move to Doing &rarr;</button>`;
         } 
         else if (task.status === "doing") {
-          content += `<button onclick="moveTask(${task.id}, 'todo')" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">&larr; Back</button>`;
-          content += `<button onclick="moveTask(${task.id}, 'done')" class="px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200">Done &rarr;</button>`;
+          content += `<button onclick="moveTask('${task.id}', 'todo')" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">&larr; Back</button>`;
+          content += `<button onclick="moveTask('${task.id}', 'done')" class="px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200">Done &rarr;</button>`;
         } 
         else if (task.status === "done") {
-          content += `<button onclick="moveTask(${task.id}, 'doing')" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">&larr; Doing</button>`;
-          content += `<button onclick="deleteTask(${task.id})" class="px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200">Delete</button>`;
+          content += `<button onclick="moveTask('${task.id}', 'doing')" class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">&larr; Doing</button>`;
+          content += `<button onclick="deleteTask('${task.id}')" class="px-2 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200">Delete</button>`;
         }
 
         content += `</div>`;
