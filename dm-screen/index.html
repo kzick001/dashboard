@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black text-gray-200 antialiased selection:bg-white/20">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KZICK // DM DASHBOARD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* CUPERTINO 2050 TOLERANCES */
+        :root {
+            --spring: cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        
+        /* SMART GLASS COMPONENT */
+        .smart-glass {
+            background: rgba(10, 10, 10, 0.6);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s var(--ease-out);
+        }
+
+        /* NATIVE ACCORDION RESET */
+        details > summary {
+            list-style: none;
+            cursor: pointer;
+        }
+        details > summary::-webkit-details-marker { display: none; }
+        
+        /* SPRING PHYSICS FOR VIEWS */
+        .view-section {
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        .view-section.active {
+            display: block;
+            animation: springIn 0.5s var(--spring) forwards;
+        }
+
+        @keyframes springIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* MATRIX OVERRIDE */
+        .matrix-mode {
+            --tw-text-opacity: 1;
+            color: rgb(0 255 0 / var(--tw-text-opacity)) !important;
+            background-color: #000 !important;
+        }
+        .matrix-mode .smart-glass {
+            border-color: rgba(0, 255, 0, 0.2);
+            background: rgba(0, 20, 0, 0.8);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.1);
+        }
+
+        /* CUSTOM SCROLLBAR */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col">
+
+    <header class="h-16 border-b border-white/5 flex items-center justify-between px-6 shrink-0 z-50">
+        <div class="flex items-center gap-6">
+            <h1 class="text-xs font-bold tracking-[0.2em] text-white/50 uppercase">Kzick Forge // OS</h1>
+            <nav id="main-nav" class="flex gap-2 bg-white/5 p-1 rounded-full border border-white/5">
+                <button data-tab="notes" class="nav-btn px-4 py-1.5 rounded-full text-sm font-medium transition-all text-white bg-white/10">Notes</button>
+                <button data-tab="rooms" class="nav-btn px-4 py-1.5 rounded-full text-sm font-medium transition-all text-gray-500 hover:text-white">Rooms</button>
+                <button data-tab="players" class="nav-btn px-4 py-1.5 rounded-full text-sm font-medium transition-all text-gray-500 hover:text-white">Players</button>
+                <button data-tab="loot" class="nav-btn px-4 py-1.5 rounded-full text-sm font-medium transition-all text-gray-500 hover:text-white">Loot Engine</button>
+            </nav>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="btn-matrix" class="text-[10px] tracking-widest text-gray-500 hover:text-[#0f0] transition-colors uppercase">Matrix Mode</button>
+            <button id="btn-sync" class="bg-white text-black px-4 py-1.5 rounded-full text-xs font-bold tracking-wider hover:bg-gray-200 transition-colors uppercase">Push To Cloud</button>
+        </div>
+    </header>
+
+    <section id="view-notes" class="view-section active h-full p-6">
+        <div class="smart-glass w-full h-full p-6 flex flex-col gap-4">
+            <h2 class="text-xs font-medium tracking-widest text-white/50 uppercase">Session Pipeline / Prepping Session 6</h2>
+            <textarea id="data-notes" class="w-full h-full bg-transparent border-none outline-none resize-none text-base leading-relaxed text-gray-300 placeholder-white/20" placeholder="Inject session notes here..."></textarea>
+        </div>
+    </section>
+
+    <section id="view-rooms" class="view-section h-full p-6">
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-4 smart-glass p-4 overflow-y-auto" id="rooms-list">
+                </div>
+            <div class="col-span-8 smart-glass p-8 overflow-y-auto flex flex-col gap-6" id="rooms-detail">
+                <div class="text-sm text-white/30 tracking-widest uppercase">Select a room to view tolerances</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="view-players" class="view-section h-full p-6">
+        <div class="grid grid-cols-12 gap-6 h-full">
+            <div class="col-span-3 smart-glass p-4 overflow-y-auto flex flex-col gap-2" id="players-list">
+                </div>
+            <div class="col-span-9 smart-glass p-8 overflow-y-auto flex flex-col gap-6" id="players-detail">
+                <div class="text-sm text-white/30 tracking-widest uppercase">Select an asset to view telemetry</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="view-loot" class="view-section h-full p-6 flex flex-col items-center justify-center relative">
+        <button id="btn-edit-loot" class="absolute top-6 right-6 text-[10px] tracking-widest text-white/30 hover:text-white uppercase transition-opacity">Edit Matrix JSON</button>
+        
+        <div class="w-full max-w-2xl flex flex-col items-center gap-8">
+            <div class="flex gap-2 bg-white/5 p-1 rounded-full border border-white/5" id="loot-tiers">
+                <button data-tier="bronze" class="tier-btn px-6 py-2 rounded-full text-sm font-medium text-white bg-white/10">Bronze</button>
+                <button data-tier="silver" class="tier-btn px-6 py-2 rounded-full text-sm font-medium text-gray-500 hover:text-white">Silver</button>
+                <button data-tier="gold" class="tier-btn px-6 py-2 rounded-full text-sm font-medium text-gray-500 hover:text-white">Gold</button>
+                <button data-tier="platinum" class="tier-btn px-6 py-2 rounded-full text-sm font-medium text-gray-500 hover:text-white">Platinum</button>
+                <button data-tier="personal" class="tier-btn px-6 py-2 rounded-full text-sm font-medium text-gray-500 hover:text-white">Personal</button>
+            </div>
+            
+            <div id="personal-nav" class="flex gap-2 hidden opacity-0 transition-opacity">
+                </div>
+
+            <input type="number" id="loot-input" min="1" max="100" class="w-48 h-32 text-center text-6xl font-bold bg-transparent border-b-2 border-white/10 outline-none focus:border-white transition-colors text-white" placeholder="00">
+            
+            <div id="loot-result" class="h-24 flex flex-col items-center justify-center text-center opacity-0 transition-opacity">
+                <p id="loot-item-name" class="text-xl font-medium"></p>
+                <button id="loot-claim-btn" class="mt-4 text-[10px] bg-white/10 hover:bg-white text-white hover:text-black px-4 py-1 rounded-full uppercase tracking-widest hidden transition-colors">Mark Claimed</button>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        /**
+         * DEFAULT DATA SCHEMAS (Injecting payload from Session 5/6)
+         */
+        const DEFAULT_DATA = {
+            notes: "CURRENTLY PREPPING: Session 6.\nLOCATION: Golden Carrion (Room 16)\n\nRECAP: Chuck looted charred Influencer bros. Tilly got violently exfoliated by Margie. Chuck pulped an Esthetician's head like a Gallagher show. Tilly melted a guy with an Acid Orb. Margie swapped places with a Big Macticore, killing it and pinning its mobility scooter horn on. \n\nSTATUS: Horn is blaring. Dead Macticore on table. ARMs are in 19a. Chuck's shoes are melting.",
+            rooms: [
+                { id: "rm_16", name: "16: The Golden Carrion", readAloud: "The overwhelming stench of boiled hot dog water and congealed fryer grease washes over you. A sprawling buffet with a trough of gray cubes...", mechanics: "Sneeze Guard: Class-2 Evocation Laser Grid (1d6 radiant). Gray Cubes: Restore 1d4 HP, DC 13 Con Save or get The Meat Sweats (Poisoned).", monsters: "3x Assistant Regional Manticores (CR 3 - Hover 10ft, 1 attack/turn). 5x Scooter Manticores. 10x Minimum Wage Ghouls.", treasure: "Silver-Tier Employee Badge on Lead Manticore." },
+                { id: "rm_12", name: "12: Orientation Seminar", readAloud: "Sickly sweet smell of cheap vanilla diffusers. A projector loops a dizzying slideshow of gold coins and pyramid graphs. Bros in fleece vests stare at you.", mechanics: "Projector Trap: DC 13 Wis save or Charmed/Hypnotized. Breaking bulb: 15 HP, blinds everyone for 1 round (DC 13 Dex).", monsters: "3x Diamond-Tier Influencers (Doppelgangers CR 1). Volatile Inventory (50% chance to detonate Pink Slop on fire/lightning damage).", treasure: "The Blazer of False Confidence (+1 Cha, Disadv Stealth)." },
+                { id: "rm_15", name: "15: The Panera Saferoom", readAloud: "Perfectly regulated 72-degree climate. Aggressively inoffensive acoustic guitar music. A gnomish woman with a brass bionic arm wipes the counter.", mechanics: "SAFE ZONE. No combat. Long Rest costs 50gp for a hotel room. Food costs gp.", monsters: "Oksana, The Babka (Invulnerable).", treasure: "Sourdough Bread Bowl (10gp) cures Meat Sweats. Day-Old Baguette (25gp) acts as +1 Club." },
+                { id: "rm_18", name: "18: The Cube Press", readAloud: "Blistering heat, burning hair, unseasoned boiling meat. A massive hydraulic press stamps out gray cubes.", mechanics: "Grease Slick: DC 12 Dex or Prone. Flammable floor disables Troll Regen.", monsters: "Gordon Slamsey (Reskinned Troll CR 5). Chad the Shift Lead (Goblin Boss CR 1). 3x Vape-Cloud Line Cooks.", treasure: "Kiss the Cook Apron (Fire Resist, Grapplers must kiss you)." }
+            ],
+            players: [
+                { id: "pc_chuck", name: "Chuck (Fighter)", stats: "HP: 28 | AC: 16 | Passive Per: 12", lore: "Variant Human. Shoeless due to large feet. Refuses to be a cog in the machine.", inventory: "- Saboteur's Armor (Once per LR drop to 1 HP by screaming grievance)\n- Pack of the Fanny (Attracts aggro)\n- Bootleg Jordans (Melted to skin)\n- Push, Don't Pull Sign\n- OSHA-Compliant Spa Crocs" },
+                { id: "pc_hendrick", name: "Hendrick (Warlock)", stats: "HP: 24 | AC: 12 | Passive Per: 11", lore: "Standard Human. Propane Fiend Patron. Misses two-step dancing with his wife.", inventory: "- The Sacred Tank (Blue fire, explodes if pierced)\n- Voided Receipt (Confusion spell)\n- Unsubscribe Button\n- Diamond Tier Day Pass" },
+                { id: "pc_tilly", name: "Tilly (Wizard)", stats: "HP: 20 | AC: 12 | Passive Per: 11", lore: "Forest Gnome. Traumatized by Suffer-A-Mole. Loves setting things on fire.", inventory: "- Jessie James (Crocheted Raccoon)\n- Charred Arcade Tickets\n- Not My Job Visor (+1 AC if ally took damage)\n- 3x Vials of Alpha-Liquid (Pink Napalm)" },
+                { id: "pc_aelar", name: "Aelar (Fighter)", stats: "HP: 28 | AC: 20 | Passive Per: 12", lore: "High Elf. Wields Ymmat the Rapier. Haughty and dignified corporate bootlicker.", inventory: "- Plaque of the Month (+2 Shield, shouts 'Synergy!')\n- Modem of Agony (Deafening)\n- Mallet of Second Opinions (Removes charm)\n- Showstopper Party-Popper" }
+            ],
+            loot: {
+                bronze: [{ min: 1, max: 100, name: "Bronze 'Front of House' Box (Lanyard of Micromanagement)", isUnique: false, isGone: false }],
+                silver: [{ min: 1, max: 100, name: "Silver 'Middle Management' Box (Wand of Terrible Investment Advice)", isUnique: false, isGone: false }],
+                gold: [{ min: 1, max: 100, name: "Gold 'Severance Package' Box (Clipboard of Write-Ups)", isUnique: false, isGone: false }],
+                platinum: [{ min: 1, max: 100, name: "Platinum 'Premium Member' Box (Keycard of Superiority)", isUnique: false, isGone: false }],
+                personal: { pc_chuck: [{min: 1, max: 100, name: "Basic Decor", isUnique: false, isGone: false}] }
+            }
+        };
+
+        /**
+         * STATE PIPELINE & RECONCILIATION
+         */
+        let db = JSON.parse(sessionStorage.getItem('kzick_dnd_db'));
+        if (!db) {
+            db = DEFAULT_DATA;
+            sessionStorage.setItem('kzick_dnd_db', JSON.stringify(db));
+        }
+
+        const saveState = () => {
+            sessionStorage.setItem('kzick_dnd_db', JSON.stringify(db));
+        };
+
+        const pushToCloud = () => {
+            const btn = document.getElementById('btn-sync');
+            btn.innerText = "SYNCING...";
+            // Stub for actual Cloudflare Worker fetch
+            setTimeout(() => {
+                btn.innerText = "PUSH TO CLOUD";
+                btn.classList.add('bg-green-400');
+                setTimeout(() => btn.classList.remove('bg-green-400'), 1000);
+            }, 800);
+        };
+
+        /**
+         * DOM ROUTING & NAVIGATION
+         */
+        document.getElementById('main-nav').addEventListener('click', (e) => {
+            if (!e.target.dataset.tab) return;
+            // Update buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-white', 'bg-white/10');
+                btn.classList.add('text-gray-500');
+            });
+            e.target.classList.remove('text-gray-500');
+            e.target.classList.add('text-white', 'bg-white/10');
+            
+            // Switch Views
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById(`view-${e.target.dataset.tab}`).classList.add('active');
+        });
+
+        // Matrix Mode Toggle
+        document.getElementById('btn-matrix').addEventListener('click', () => {
+            document.documentElement.classList.toggle('matrix-mode');
+        });
+
+        // Cloud Sync Bind
+        document.getElementById('btn-sync').addEventListener('click', pushToCloud);
+
+        /**
+         * TAB 1: NOTES LOGIC
+         */
+        const notesArea = document.getElementById('data-notes');
+        notesArea.value = db.notes;
+        notesArea.addEventListener('input', (e) => {
+            db.notes = e.target.value;
+            saveState();
+        });
+
+        /**
+         * RENDER UTILS (Master/Detail)
+         */
+        const renderList = (containerId, dataArray, clickHandler) => {
+            const container = document.getElementById(containerId);
+            container.innerHTML = dataArray.map(item => `
+                <div data-id="${item.id}" class="list-item p-3 mb-2 rounded-xl cursor-pointer transition-colors text-sm text-gray-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10">
+                    ${item.name}
+                </div>
+            `).join('');
+            
+            container.addEventListener('click', (e) => {
+                const row = e.target.closest('.list-item');
+                if (!row) return;
+                // UI Highlight
+                container.querySelectorAll('.list-item').forEach(el => el.classList.remove('bg-white/10', 'text-white', 'border-white/10'));
+                row.classList.add('bg-white/10', 'text-white', 'border-white/10');
+                // Trigger Detail
+                const itemData = dataArray.find(d => d.id === row.dataset.id);
+                clickHandler(itemData);
+            });
+        };
+
+        /**
+         * TAB 2: ROOMS LOGIC
+         */
+        renderList('rooms-list', db.rooms, (room) => {
+            document.getElementById('rooms-detail').innerHTML = `
+                <div class="flex justify-between items-start">
+                    <h2 class="text-xl font-bold tracking-wider">${room.name}</h2>
+                </div>
+                <div class="flex flex-col gap-4">
+                    <details class="bg-white/5 border border-white/5 rounded-xl p-4 open:bg-white/10 transition-colors" open>
+                        <summary class="text-xs tracking-widest uppercase text-white/50 mb-2 hover:text-white">Read Aloud</summary>
+                        <textarea class="w-full bg-transparent border-none outline-none resize-y text-gray-300 text-sm leading-relaxed min-h-[80px]" oninput="updateRoom('${room.id}', 'readAloud', this.value)">${room.readAloud}</textarea>
+                    </details>
+                    <details class="bg-white/5 border border-white/5 rounded-xl p-4 open:bg-white/10 transition-colors">
+                        <summary class="text-xs tracking-widest uppercase text-white/50 mb-2 hover:text-white">Mechanics & Hazards</summary>
+                        <textarea class="w-full bg-transparent border-none outline-none resize-y text-gray-300 text-sm leading-relaxed min-h-[80px]" oninput="updateRoom('${room.id}', 'mechanics', this.value)">${room.mechanics}</textarea>
+                    </details>
+                    <details class="bg-white/5 border border-white/5 rounded-xl p-4 open:bg-white/10 transition-colors">
+                        <summary class="text-xs tracking-widest uppercase text-white/50 mb-2 hover:text-white">Monsters & NPCs</summary>
+                        <textarea class="w-full bg-transparent border-none outline-none resize-y text-gray-300 text-sm leading-relaxed min-h-[80px]" oninput="updateRoom('${room.id}', 'monsters', this.value)">${room.monsters}</textarea>
+                    </details>
+                    <details class="bg-white/5 border border-white/5 rounded-xl p-4 open:bg-white/10 transition-colors">
+                        <summary class="text-xs tracking-widest uppercase text-white/50 mb-2 hover:text-white">Loot & Rewards</summary>
+                        <textarea class="w-full bg-transparent border-none outline-none resize-y text-gray-300 text-sm leading-relaxed min-h-[80px]" oninput="updateRoom('${room.id}', 'treasure', this.value)">${room.treasure}</textarea>
+                    </details>
+                </div>
+            `;
+        });
+
+        window.updateRoom = (id, key, val) => {
+            const r = db.rooms.find(x => x.id === id);
+            if(r) r[key] = val;
+            saveState();
+        };
+
+        /**
+         * TAB 3: PLAYERS LOGIC
+         */
+        renderList('players-list', db.players, (pc) => {
+            document.getElementById('players-detail').innerHTML = `
+                <h2 class="text-xl font-bold tracking-wider">${pc.name}</h2>
+                <input type="text" class="w-full bg-transparent border-b border-white/10 outline-none text-gray-400 font-mono text-sm py-2" value="${pc.stats}" oninput="updatePC('${pc.id}', 'stats', this.value)">
+                
+                <details class="bg-white/5 border border-white/5 rounded-xl p-4 mt-4 open:bg-white/10 transition-colors" open>
+                    <summary class="text-xs tracking-widest uppercase text-white/50 mb-2 hover:text-white">Inventory & Curses</summary>
+                    <textarea class="w-full bg-transparent border-none outline-none resize-y text-gray-300 text-sm leading-relaxed min-h-[150px]" oninput="updatePC('${pc.id}', 'inventory', this.value)">${pc.inventory}</textarea>
+                </details>
+            `;
+        });
+
+        window.updatePC = (id, key, val) => {
+            const p = db.players.find(x => x.id === id);
+            if(p) p[key] = val;
+            saveState();
+        };
+
+        /**
+         * TAB 4: LOOT ENGINE LOGIC
+         */
+        let activeTier = 'bronze';
+        let activePcLootId = 'pc_chuck';
+        
+        // Populate Personal Pills
+        const pNav = document.getElementById('personal-nav');
+        pNav.innerHTML = db.players.map((p, i) => `
+            <button data-pcid="${p.id}" class="pc-btn px-4 py-1 rounded-full text-xs font-medium border border-white/10 ${i===0 ? 'bg-white/20 text-white' : 'text-gray-500 hover:text-white'}">${p.name.split(' ')[0]}</button>
+        `).join('');
+
+        // Tier Selection
+        document.getElementById('loot-tiers').addEventListener('click', (e) => {
+            if (!e.target.dataset.tier) return;
+            activeTier = e.target.dataset.tier;
+            
+            document.querySelectorAll('.tier-btn').forEach(btn => {
+                btn.classList.remove('text-white', 'bg-white/10');
+                btn.classList.add('text-gray-500');
+            });
+            e.target.classList.remove('text-gray-500');
+            e.target.classList.add('text-white', 'bg-white/10');
+
+            if(activeTier === 'personal') {
+                pNav.classList.remove('hidden');
+                setTimeout(() => pNav.classList.remove('opacity-0'), 50);
+            } else {
+                pNav.classList.add('opacity-0');
+                setTimeout(() => pNav.classList.add('hidden'), 300);
+            }
+            document.getElementById('loot-input').value = '';
+            document.getElementById('loot-result').classList.add('opacity-0');
+        });
+
+        // PC Selection
+        pNav.addEventListener('click', (e) => {
+            if (!e.target.dataset.pcid) return;
+            activePcLootId = e.target.dataset.pcid;
+            document.querySelectorAll('.pc-btn').forEach(btn => {
+                btn.classList.remove('bg-white/20', 'text-white');
+                btn.classList.add('text-gray-500');
+            });
+            e.target.classList.remove('text-gray-500');
+            e.target.classList.add('bg-white/20', 'text-white');
+        });
+
+        // Lookup Engine
+        const rollInput = document.getElementById('loot-input');
+        const resBox = document.getElementById('loot-result');
+        const resName = document.getElementById('loot-item-name');
+        const claimBtn = document.getElementById('loot-claim-btn');
+        let currentItemRef = null;
+
+        rollInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const val = parseInt(e.target.value);
+                if(isNaN(val)) return;
+
+                const table = activeTier === 'personal' ? db.loot.personal[activePcLootId] : db.loot[activeTier];
+                if(!table) return;
+
+                currentItemRef = table.find(item => item.min <= val && item.max >= val);
+                
+                if(!currentItemRef) {
+                    resName.innerText = "NO ITEM IN RANGE.";
+                    resName.className = "text-xl font-medium text-gray-500";
+                    claimBtn.classList.add('hidden');
+                } else if (currentItemRef.isGone) {
+                    resName.innerText = "[ DEPLETED ] " + currentItemRef.name;
+                    resName.className = "text-xl font-medium text-red-500 line-through";
+                    claimBtn.classList.add('hidden');
+                } else {
+                    resName.innerText = currentItemRef.name;
+                    resName.className = "text-xl font-medium text-white";
+                    if(currentItemRef.isUnique) {
+                        claimBtn.classList.remove('hidden');
+                    } else {
+                        claimBtn.classList.add('hidden');
+                    }
+                }
+                
+                resBox.classList.remove('opacity-0');
+            }
+        });
+
+        claimBtn.addEventListener('click', () => {
+            if(currentItemRef) {
+                currentItemRef.isGone = true;
+                saveState();
+                resName.classList.add('line-through', 'text-red-500');
+                claimBtn.classList.add('hidden');
+                pushToCloud();
+            }
+        });
+
+    </script>
+</body>
+</html>
