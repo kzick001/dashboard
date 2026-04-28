@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black text-gray-200 antialiased">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KZICK FORGE // DATA SANITIZER</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root { --spring: cubic-bezier(0.175, 0.885, 0.32, 1.1); }
+        body { font-family: 'Inter', system-ui, sans-serif; }
+        .smart-glass {
+            background: rgba(10, 10, 10, 0.6);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1.5rem;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col">
+
+    <header class="h-16 border-b border-white/5 flex items-center justify-between px-6 shrink-0">
+        <div class="flex items-center gap-6">
+            <h1 class="text-xs font-bold tracking-[0.2em] text-[#0f0] uppercase">Kzick Data Forge // Bulk Importer</h1>
+            <select id="parse-mode" class="bg-white/10 text-white text-sm px-4 py-1.5 rounded-full border border-white/10 outline-none">
+                <option value="rooms">Target: Room Descriptions</option>
+                <option value="loot">Target: Loot Tables</option>
+            </select>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="btn-parse" class="text-[10px] tracking-widest text-gray-400 hover:text-white transition-colors uppercase border border-white/10 px-4 py-1.5 rounded-full">Run Parser</button>
+            <button id="btn-push" class="bg-white text-black px-4 py-1.5 rounded-full text-xs font-bold tracking-wider hover:bg-gray-200 transition-colors uppercase">Push To Cloud</button>
+        </div>
+    </header>
+
+    <main class="flex-1 grid grid-cols-2 gap-6 p-6 overflow-hidden">
+        
+        <div class="smart-glass flex flex-col h-full overflow-hidden">
+            <div class="p-3 border-b border-white/5 bg-white/5 text-[10px] text-white/50 tracking-widest uppercase">The Hopper (Paste Raw Text)</div>
+            <textarea id="raw-hopper" class="w-full flex-1 bg-transparent border-none outline-none p-6 text-sm text-gray-400 resize-none font-mono" placeholder="Paste campaign doc here..."></textarea>
+        </div>
+
+        <div class="smart-glass flex flex-col h-full overflow-hidden border-[#0f0]/20">
+            <div class="p-3 border-b border-[#0f0]/20 bg-[#0f0]/5 text-[10px] text-[#0f0]/70 tracking-widest uppercase">The Matrix (JSON Payload Override)</div>
+            <textarea id="json-matrix" class="w-full flex-1 bg-transparent border-none outline-none p-6 text-sm text-[#0f0] resize-none font-mono whitespace-pre" spellcheck="false" placeholder="[]"></textarea>
+        </div>
+
+    </main>
+
+    <script>
+        const btnParse = document.getElementById('btn-parse');
+        const btnPush = document.getElementById('btn-push');
+        const hopper = document.getElementById('raw-hopper');
+        const matrix = document.getElementById('json-matrix');
+        const parseMode = document.getElementById('parse-mode');
+
+        // Regex Architecture for Room Extraction
+        const parseRooms = (text) => {
+            const rooms = [];
+            // Split by "ROOM" followed by numbers
+            const blocks = text.split(/(?=ROOM \d+[a-z]?.*?:)/g);
+            
+            blocks.forEach(block => {
+                if(!block.trim().startsWith('ROOM')) return;
+                
+                const room = { id: "", name: "", readAloud: "", mechanics: "", monsters: "", treasure: "" };
+                
+                // Get Name & ID
+                const nameMatch = block.match(/^(ROOM \d+[a-z]?.*?:.*)/m);
+                if (nameMatch) {
+                    room.name = nameMatch[1].trim();
+                    const idMatch = room.name.match(/ROOM (\d+[a-z]?)/);
+                    if (idMatch) room.id = "rm_" + idMatch[1];
+                }
+
+                // Section Extraction Functions (Non-greedy multiline)
+                const extract = (regex) => {
+                    const m = block.match(regex);
+                    return m ? m[1].trim() : "";
+                };
+
+                room.readAloud = extract(/VISUALS & READ-ALOUD\n([\s\S]*?)(?=DM NOTES|ENCOUNTER SCALING|ENEMIES & NPCS|AI TOOLTIP|LOOT & REWARDS|$)/i);
+                room.mechanics = extract(/DM NOTES & MECHANICS\n([\s\S]*?)(?=ENCOUNTER SCALING|ENEMIES & NPCS|AI TOOLTIP|LOOT & REWARDS|$)/i);
+                room.monsters = extract(/ENEMIES & NPCS.*?\n([\s\S]*?)(?=AI TOOLTIP|NEW ACHIEVEMENT|LOOT & REWARDS|$)/i);
+                
+                const t1 = extract(/LOOT & REWARDS\n([\s\S]*?)$/i);
+                const t2 = extract(/NEW ACHIEVEMENT!\n([\s\S]*?)(?=LOOT & REWARDS|$)/i);
+                const t3 = extract(/AI TOOLTIP\n([\s\S]*?)(?=NEW ACHIEVEMENT|LOOT & REWARDS|$)/i);
+                room.treasure = [t3, t2, t1].filter(Boolean).join('\n\n');
+
+                if(room.id) rooms.push(room);
+            });
+            return rooms;
+        };
+
+        // Execution Hook
+        btnParse.addEventListener('click', () => {
+            const raw = hopper.value;
+            if (!raw) return;
+
+            let output = [];
+            if (parseMode.value === 'rooms') {
+                output = parseRooms(raw);
+            } else {
+                // Loot logic placeholder - requires manual JSON shaping due to doc variations
+                output = [{ note: "Loot parsing active. Paste raw JSON here." }]; 
+            }
+            
+            matrix.value = JSON.stringify(output, null, 2);
+        });
+
+        // Cloudflare Sync Hook (LIVE PIPELINE)
+        btnPush.addEventListener('click', async () => {
+            try {
+                const payload = JSON.parse(matrix.value);
+                const endpoint = parseMode.value === 'rooms' ? '/api/campaign/rooms' : '/api/campaign/loot';
+                
+                // Live Pipeline Variables
+                const WORKER_URL = 'https://dmscreen.askozicki.workers.dev' + endpoint; 
+                const PASSPHRASE = 'doughnut_holes';
+
+                btnPush.innerText = "UPLOADING...";
+                
+                // Executing Live Push
+                const response = await fetch(WORKER_URL, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'X-Campaign-Auth': PASSPHRASE 
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if(!response.ok) {
+                    const errorData = await response.text();
+                    throw new Error(`Cloudflare rejected the payload. Status: ${response.status}. Details: ${errorData}`);
+                }
+
+                // Success Tolerance
+                btnPush.innerText = "SUCCESS";
+                btnPush.classList.replace('text-black', 'text-white');
+                btnPush.classList.replace('bg-white', 'bg-green-500');
+                
+                setTimeout(() => {
+                    btnPush.innerText = "PUSH TO CLOUD";
+                    btnPush.classList.replace('bg-green-500', 'bg-white');
+                    btnPush.classList.replace('text-white', 'text-black');
+                }, 2000);
+
+            } catch (err) {
+                // Failure Tolerance
+                alert("PIPELINE ERROR: " + err.message);
+                console.error(err);
+                
+                btnPush.innerText = "FAILED";
+                btnPush.classList.replace('text-black', 'text-white');
+                btnPush.classList.replace('bg-white', 'bg-red-500');
+                
+                setTimeout(() => {
+                    btnPush.innerText = "PUSH TO CLOUD";
+                    btnPush.classList.replace('bg-red-500', 'bg-white');
+                    btnPush.classList.replace('text-white', 'text-black');
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
