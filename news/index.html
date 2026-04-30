@@ -2,15 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>News Engine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tinder 4 News</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
   <style>
     :root { 
       --bg: #f4f4f5; 
       --card: #ffffff; 
       --text: #18181b; 
-      --brand: #3b82f6; 
+      --brand: #3b82f6;
+      --like: #10b981;
+      --dislike: #ef4444; 
     }
+    * { box-sizing: border-box; }
     body { 
       font-family: system-ui, -apple-system, sans-serif; 
       background: var(--bg); 
@@ -21,14 +25,21 @@
       flex-direction: column; 
       height: 100vh; 
       overflow: hidden; 
+      touch-action: none; /* Prevents browser pull-to-refresh */
     }
     header { 
-      text-align: center; 
-      padding: 1rem; 
-      font-weight: bold; 
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.5rem; 
+      font-weight: 800; 
+      font-size: 1.2rem;
       background: var(--card); 
       box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
       z-index: 10; 
+    }
+    .header-btn {
+      background: none; border: none; font-size: 1.5rem; cursor: pointer;
     }
     main { 
       flex: 1; 
@@ -37,99 +48,124 @@
       align-items: center; 
       padding: 1rem; 
       position: relative; 
+      perspective: 1000px;
     }
     .card { 
       background: var(--card); 
-      border-radius: 12px; 
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+      border-radius: 16px; 
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15); 
       max-width: 400px; 
       width: 100%; 
       height: 70vh; 
       display: flex; 
       flex-direction: column; 
       overflow: hidden; 
-      animation: popIn 0.3s ease-out;
+      position: absolute;
+      will-change: transform;
+      cursor: grab;
     }
-    @keyframes popIn {
-      0% { transform: scale(0.95); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
+    .card:active { cursor: grabbing; }
+    
+    #card-top { z-index: 2; }
+    #card-next { 
+      z-index: 1; 
+      transform: scale(0.95) translateY(20px); 
+      opacity: 0.8;
+      transition: all 0.3s ease;
     }
+
     .card-img { 
       width: 100%; 
-      height: 220px; 
+      height: 40%; 
       background: #e4e4e7; 
       object-fit: cover; 
+      pointer-events: none;
     }
     .card-content { 
       padding: 1.5rem; 
       flex: 1; 
-      overflow-y: auto; 
+      overflow-y: hidden;
+      pointer-events: none;
     }
     .source { 
       font-size: 0.8rem; 
       color: var(--brand); 
-      font-weight: bold; 
+      font-weight: 800; 
       text-transform: uppercase; 
       margin-bottom: 0.5rem; 
+      letter-spacing: 0.5px;
     }
     .title { 
-      font-size: 1.25rem; 
-      font-weight: bold; 
-      margin: 0 0 1rem 0; 
-      line-height: 1.4; 
+      font-size: 1.3rem; 
+      font-weight: 800; 
+      margin: 0 0 0.75rem 0; 
+      line-height: 1.3; 
     }
     .desc { 
       font-size: 1rem; 
       color: #52525b; 
       line-height: 1.5; 
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
+    
     .controls { 
       display: flex; 
-      justify-content: space-around; 
-      padding: 1.5rem; 
-      background: var(--bg); 
+      justify-content: center; 
+      gap: 1.5rem;
+      padding: 1rem 1.5rem 2rem; 
+      background: transparent;
+      z-index: 10;
     }
-    button { 
-      font-size: 2rem; 
-      background: none; 
+    .control-btn { 
+      font-size: 1.8rem; 
+      background: var(--card); 
       border: none; 
       cursor: pointer; 
-      transition: transform 0.1s; 
+      transition: transform 0.15s, box-shadow 0.15s; 
       width: 65px; 
       height: 65px; 
       border-radius: 50%; 
       display: flex; 
       align-items: center; 
       justify-content: center; 
-      background: var(--card); 
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
     }
-    button:active { 
-      transform: scale(0.9); 
-    }
-    .empty-state { 
-      text-align: center; 
-      padding: 2rem; 
-      color: #71717a; 
-    }
+    .control-btn:active { transform: scale(0.9); }
+    #btn-dislike { color: var(--dislike); }
+    #btn-like { color: var(--like); font-size: 2.2rem; }
+    
+    .empty-state { text-align: center; padding: 2rem; color: #71717a; width: 100%; position: absolute;}
+    
     .debug-panel {
-      position: absolute;
-      top: 60px;
-      right: 10px;
-      background: rgba(24, 24, 27, 0.9);
-      color: #10b981;
-      padding: 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      font-size: 0.8rem;
-      z-index: 100;
-      pointer-events: none;
-      min-width: 120px;
+      position: absolute; top: 70px; right: 10px; background: rgba(24, 24, 27, 0.85); color: #10b981;
+      padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.75rem; z-index: 100;
+      pointer-events: none; min-width: 140px; backdrop-filter: blur(4px);
     }
+
+    /* Settings Modal */
+    #settings-modal {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999;
+      justify-content: center; align-items: center; padding: 1rem;
+    }
+    .modal-content {
+      background: var(--card); padding: 2rem; border-radius: 12px; width: 100%; max-width: 400px;
+    }
+    .modal-content h2 { margin-top: 0; }
+    textarea { width: 100%; height: 100px; margin: 1rem 0; padding: 0.5rem; font-family: monospace; border-radius: 6px; border: 1px solid #d4d4d8;}
+    .modal-actions { display: flex; gap: 1rem; justify-content: flex-end; }
+    .btn { padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
+    .btn-primary { background: var(--brand); color: white; }
+    .btn-secondary { background: #e4e4e7; color: var(--text); }
   </style>
 </head>
 <body>
-  <header>News Engine</header>
+  <header>
+    <span>Tinder 4 News</span>
+    <button class="header-btn" id="btn-settings" title="Settings">⚙️</button>
+  </header>
   
   <div id="debug-panel" class="debug-panel">Brain empty...</div>
 
@@ -138,55 +174,61 @@
   </main>
   
   <div class="controls">
-    <button id="btn-dislike" title="Dislike">❌</button>
-    <button id="btn-skip" title="Skip">⏭️</button>
-    <button id="btn-like" title="Like">💚</button>
+    <button class="control-btn" id="btn-dislike" title="Dislike">❌</button>
+    <button class="control-btn" id="btn-skip" title="Skip" style="width: 50px; height: 50px; font-size: 1.2rem;">⏭️</button>
+    <button class="control-btn" id="btn-like" title="Like">💚</button>
+  </div>
+
+  <div id="settings-modal">
+    <div class="modal-content">
+      <h2>Algorithm Settings</h2>
+      <p style="font-size: 0.9rem; color: #52525b;">Export your brain or import a new one.</p>
+      <textarea id="import-data" placeholder='{"tech": 5, "wired": 10}'></textarea>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="btn-close-settings">Close</button>
+        <button class="btn btn-primary" id="btn-export">Copy Export</button>
+        <button class="btn btn-primary" id="btn-import">Import</button>
+      </div>
+    </div>
   </div>
 
   <script type="module">
-    // Using a broad query to pull from the 'everything' firehose instead of static top headlines
+    // Constants
     const API_URL = 'https://newsapi.askozicki.workers.dev/?q=tech+OR+startup+OR+world+OR+science&language=en&page=';
-    
-    // Pragmatic list of words to ignore so the algorithm focuses on nouns/verbs
     const STOP_WORDS = new Set(['the','a','an','and','or','but','is','are','was','were','to','of','in','for','with','on','at','by','this','that','it','as','be','from','news','breaking','update','has','have','will','not','out','how','why','what']);
+    const COLD_START_THRESHOLD = 20;
+    const DECAY_INTERVAL = 100;
+    const SOURCE_MULTIPLIER = 3;
 
+    // State
     const state = {
       queue: [],
       profile: JSON.parse(localStorage.getItem('news_profile')) || {},
-      page: 1,
+      page: parseInt(localStorage.getItem('news_page')) || 1,
+      interactions: parseInt(localStorage.getItem('news_interactions')) || 0,
       isLoading: false
     };
 
     const $ = (sel) => document.querySelector(sel);
+    const esc = s => (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-    function renderDebug() {
-      const entries = Object.entries(state.profile)
-        .sort((a, b) => b[1] - a[1]) // Sort highest to lowest
-        .slice(0, 5); // Grab top 5
-      
-      const panel = $('#debug-panel');
-      if (entries.length === 0) {
-        panel.innerHTML = 'Awaiting data...';
-        return;
-      }
-      
-      panel.innerHTML = '<strong>Top Affinities:</strong><br/>' + 
-        entries.map(([word, score]) => `${word}: ${score}`).join('<br/>');
-    }
+    // --- Algorithm & Data Pipeline ---
 
-    // Cleans strings, strips punctuation, removes stop words
     function tokenize(text) {
       if (!text) return [];
-      return text.toLowerCase()
-                 .replace(/[^\w\s]/g, '')
-                 .split(/\s+/)
-                 .filter(word => word.length > 2 && !STOP_WORDS.has(word));
+      return text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(word => word.length > 2 && !STOP_WORDS.has(word));
     }
 
-    // Calculates article affinity based on local profile weights
     function scoreArticle(article) {
+      if (state.interactions < COLD_START_THRESHOLD) return 0; // Chronological until threshold met
+      
       const tokens = [...tokenize(article.title), ...tokenize(article.description)];
-      return tokens.reduce((score, token) => score + (state.profile[token] || 0), 0);
+      const sourceName = article.source?.name ? tokenize(article.source.name).join('') : '';
+      
+      let score = tokens.reduce((sum, token) => sum + (state.profile[token] || 0), 0);
+      if (sourceName) score += (state.profile[sourceName] || 0) * SOURCE_MULTIPLIER;
+      
+      return score;
     }
 
     async function fetchArticles() {
@@ -198,71 +240,82 @@
         const data = await res.json();
         
         if (data.articles && data.articles.length > 0) {
-          // Filter out deleted articles
           const validArticles = data.articles.filter(a => a.title && !a.title.includes('[Removed]'));
           state.queue.push(...validArticles);
           
-          // Sort queue so highest scoring articles appear next (Cached Score Fix)
           state.queue.forEach(a => { if (a._score === undefined) a._score = scoreArticle(a); });
           state.queue.sort((a, b) => b._score - a._score);
           
           state.page++;
+          localStorage.setItem('news_page', state.page); // Session Persistence
         }
       } catch (err) {
         console.error('Fetch error:', err);
       } finally {
         state.isLoading = false;
-        // If we just loaded the first batch, render immediately
-        if (state.queue.length > 0 && !$('#current-card')) {
-          renderCard();
-        }
+        if (state.queue.length > 0 && !$('#card-top')) renderCards();
       }
     }
 
-    // Adjust word weights up or down and save locally
-    function updateProfile(tokens, modifier) {
+    function decayProfile() {
+      setTimeout(() => { // Prevents UI locking
+        Object.keys(state.profile).forEach(key => {
+          state.profile[key] = Math.round(state.profile[key] * 0.9);
+          if (state.profile[key] === 0) delete state.profile[key];
+        });
+        localStorage.setItem('news_profile', JSON.stringify(state.profile));
+        renderDebug();
+      }, 0);
+    }
+
+    function updateProfile(tokens, source, modifier) {
       tokens.forEach(token => {
         state.profile[token] = (state.profile[token] || 0) + modifier;
       });
-      // Non-blocking save to prevent UI stutter
+      if (source) {
+        const cleanSource = tokenize(source).join('');
+        if (cleanSource) state.profile[cleanSource] = (state.profile[cleanSource] || 0) + (modifier * SOURCE_MULTIPLIER);
+      }
       setTimeout(() => localStorage.setItem('news_profile', JSON.stringify(state.profile)), 0);
-      renderDebug(); // Update the visual brain UI
+      renderDebug(); 
     }
 
     function handleAction(type) {
       if (state.queue.length === 0) return;
       
+      state.interactions++;
+      localStorage.setItem('news_interactions', state.interactions);
+
       const current = state.queue.shift();
       const tokens = [...tokenize(current.title), ...tokenize(current.description)];
+      const source = current.source?.name || '';
 
-      if (type === 'LIKE') updateProfile(tokens, 1);
-      if (type === 'DISLIKE') updateProfile(tokens, -1);
-      // SKIP does nothing to the profile matrix
-
-      renderCard();
+      if (type === 'LIKE') updateProfile(tokens, source, 1);
+      if (type === 'DISLIKE') updateProfile(tokens, source, -1);
       
-      // Background fetch if queue is running low
+      if (state.interactions % DECAY_INTERVAL === 0) decayProfile();
+
+      renderCards();
       if (state.queue.length < 5) fetchArticles();
     }
 
-    function renderCard() {
-      const container = $('#feed-container');
-      
-      if (state.queue.length === 0) {
-        container.innerHTML = `<div class="empty-state">Fetching more articles...</div>`;
+    // --- UI & Interactions ---
+
+    function renderDebug() {
+      const panel = $('#debug-panel');
+      if (state.interactions < COLD_START_THRESHOLD) {
+        panel.innerHTML = `Warming up... (${state.interactions}/${COLD_START_THRESHOLD})`;
         return;
       }
+      const entries = Object.entries(state.profile).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      panel.innerHTML = `<strong>Brain:</strong><br/>` + entries.map(([w, s]) => `${w}: ${s}`).join('<br/>');
+    }
 
-      const article = state.queue[0];
+    function buildCardHTML(article, id) {
       const imgSrc = article.urlToImage || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="220"><rect width="400" height="220" fill="%23e4e4e7"/></svg>';
-
-      // XSS Sanitizer
-      const esc = s => (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-
-      // Inject the DOM
-      container.innerHTML = `
-        <div class="card" id="current-card">
-          <img src="${esc(imgSrc)}" class="card-img" alt="Header image" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'400\\' height=\\'220\\'><rect width=\\'400\\' height=\\'220\\' fill=\\'%23e4e4e7\\'/></svg>'">
+      return `
+        <div class="card" id="${id}">
+          <img src="${esc(imgSrc)}" class="card-img" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'400\\' height=\\'220\\'><rect width=\\'400\\' height=\\'220\\' fill=\\'%23e4e4e7\\'/></svg>'">
           <div class="card-content">
             <div class="source">${esc(article.source?.name || 'Unknown Source')}</div>
             <h2 class="title">${esc(article.title)}</h2>
@@ -272,10 +325,141 @@
       `;
     }
 
-    // Bind Controls
-    $('#btn-like').addEventListener('click', () => handleAction('LIKE'));
-    $('#btn-dislike').addEventListener('click', () => handleAction('DISLIKE'));
-    $('#btn-skip').addEventListener('click', () => handleAction('SKIP'));
+    function renderCards() {
+      const container = $('#feed-container');
+      
+      if (state.queue.length === 0) {
+        container.innerHTML = `<div class="empty-state">Fetching more articles...</div>`;
+        return;
+      }
+
+      // Render Top and Next card
+      let html = '';
+      if (state.queue[1]) html += buildCardHTML(state.queue[1], 'card-next');
+      if (state.queue[0]) html += buildCardHTML(state.queue[0], 'card-top');
+      container.innerHTML = html;
+
+      initTouchMechanics();
+    }
+
+    // Read Article (Ghost Card Fix)
+    window.readArticle = function(url) {
+      window.open(url, '_blank');
+      const topCard = $('#card-top');
+      if (topCard) {
+        topCard.style.transition = 'transform 0.3s ease-out';
+        topCard.style.transform = 'translateX(150%) rotate(15deg)';
+      }
+      setTimeout(() => handleAction('LIKE'), 300);
+    };
+
+    function initTouchMechanics() {
+      const topCard = $('#card-top');
+      if (!topCard) return;
+
+      let startX = 0, currentX = 0, isDragging = false, isTicking = false, startTime = 0;
+
+      topCard.addEventListener('pointerdown', (e) => {
+        isDragging = true;
+        startX = e.clientX;
+        startTime = Date.now();
+        topCard.style.transition = 'none'; // Disable transition for 1:1 finger tracking
+        topCard.setPointerCapture(e.pointerId);
+      });
+
+      topCard.addEventListener('pointermove', (e) => {
+        if (!isDragging) return;
+        currentX = e.clientX;
+        const deltaX = currentX - startX;
+
+        // Hardware accelerated dragging (Render Thrash Fix)
+        if (!isTicking) {
+          window.requestAnimationFrame(() => {
+            topCard.style.transform = `translateX(${deltaX}px) rotate(${deltaX * 0.05}deg)`;
+            isTicking = false;
+          });
+          isTicking = true;
+        }
+      });
+
+      const handleEnd = (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        
+        const deltaX = currentX - startX;
+        const timeElapsed = Date.now() - startTime;
+        topCard.style.transition = 'transform 0.3s ease-out';
+
+        // Treat as a click if they barely moved
+        if (Math.abs(deltaX) < 10 && timeElapsed < 300) {
+          topCard.style.transform = 'none';
+          window.readArticle(state.queue[0].url);
+          return;
+        }
+
+        // Swipe evaluation
+        if (deltaX > 120) {
+          topCard.style.transform = `translateX(${window.innerWidth}px) rotate(30deg)`;
+          setTimeout(() => handleAction('LIKE'), 300);
+        } else if (deltaX < -120) {
+          topCard.style.transform = `translateX(-${window.innerWidth}px) rotate(-30deg)`;
+          setTimeout(() => handleAction('DISLIKE'), 300);
+        } else {
+          topCard.style.transform = 'none'; // Snap back
+        }
+      };
+
+      topCard.addEventListener('pointerup', handleEnd);
+      topCard.addEventListener('pointercancel', handleEnd);
+    }
+
+    // --- Bindings ---
+
+    $('#btn-like').addEventListener('click', () => {
+      const card = $('#card-top');
+      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateX(150%) rotate(15deg)'; }
+      setTimeout(() => handleAction('LIKE'), 250);
+    });
+    
+    $('#btn-dislike').addEventListener('click', () => {
+      const card = $('#card-top');
+      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateX(-150%) rotate(-15deg)'; }
+      setTimeout(() => handleAction('DISLIKE'), 250);
+    });
+    
+    $('#btn-skip').addEventListener('click', () => {
+      const card = $('#card-top');
+      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateY(150%)'; }
+      setTimeout(() => handleAction('SKIP'), 250);
+    });
+
+    // Settings Modal Bindings
+    const modal = $('#settings-modal');
+    $('#btn-settings').addEventListener('click', () => {
+      $('#import-data').value = JSON.stringify(state.profile, null, 2);
+      modal.style.display = 'flex';
+    });
+    $('#btn-close-settings').addEventListener('click', () => modal.style.display = 'none');
+    
+    $('#btn-export').addEventListener('click', () => {
+      navigator.clipboard.writeText(JSON.stringify(state.profile));
+      alert('Algorithm copied to clipboard!');
+    });
+    
+    $('#btn-import').addEventListener('click', () => {
+      try {
+        const newData = JSON.parse($('#import-data').value);
+        if (typeof newData === 'object' && newData !== null) {
+          state.profile = newData;
+          localStorage.setItem('news_profile', JSON.stringify(state.profile));
+          renderDebug();
+          modal.style.display = 'none';
+          alert('Algorithm updated successfully.');
+        }
+      } catch (e) {
+        alert('Invalid JSON format.');
+      }
+    });
 
     // Kickoff
     renderDebug();
