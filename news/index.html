@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>News Engine</title>
+  <style>
+    :root { 
+      --bg: #f4f4f5; 
+      --card: #ffffff; 
+      --text: #18181b; 
+      --brand: #3b82f6; 
+    }
+    body { 
+      font-family: system-ui, -apple-system, sans-serif; 
+      background: var(--bg); 
+      color: var(--text); 
+      margin: 0; 
+      padding: 0; 
+      display: flex; 
+      flex-direction: column; 
+      height: 100vh; 
+      overflow: hidden; 
+    }
+    header { 
+      text-align: center; 
+      padding: 1rem; 
+      font-weight: bold; 
+      background: var(--card); 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+      z-index: 10; 
+    }
+    main { 
+      flex: 1; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      padding: 1rem; 
+      position: relative; 
+    }
+    .card { 
+      background: var(--card); 
+      border-radius: 12px; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+      max-width: 400px; 
+      width: 100%; 
+      height: 70vh; 
+      display: flex; 
+      flex-direction: column; 
+      overflow: hidden; 
+      animation: popIn 0.3s ease-out;
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.95); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .card-img { 
+      width: 100%; 
+      height: 220px; 
+      background: #e4e4e7; 
+      object-fit: cover; 
+    }
+    .card-content { 
+      padding: 1.5rem; 
+      flex: 1; 
+      overflow-y: auto; 
+    }
+    .source { 
+      font-size: 0.8rem; 
+      color: var(--brand); 
+      font-weight: bold; 
+      text-transform: uppercase; 
+      margin-bottom: 0.5rem; 
+    }
+    .title { 
+      font-size: 1.25rem; 
+      font-weight: bold; 
+      margin: 0 0 1rem 0; 
+      line-height: 1.4; 
+    }
+    .desc { 
+      font-size: 1rem; 
+      color: #52525b; 
+      line-height: 1.5; 
+    }
+    .controls { 
+      display: flex; 
+      justify-content: space-around; 
+      padding: 1.5rem; 
+      background: var(--bg); 
+    }
+    button { 
+      font-size: 2rem; 
+      background: none; 
+      border: none; 
+      cursor: pointer; 
+      transition: transform 0.1s; 
+      width: 65px; 
+      height: 65px; 
+      border-radius: 50%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      background: var(--card); 
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+    }
+    button:active { 
+      transform: scale(0.9); 
+    }
+    .empty-state { 
+      text-align: center; 
+      padding: 2rem; 
+      color: #71717a; 
+    }
+  </style>
+</head>
+<body>
+  <header>News Engine</header>
+  
+  <main id="feed-container">
+    <div class="empty-state">Initializing algorithm...</div>
+  </main>
+  
+  <div class="controls">
+    <button id="btn-dislike" title="Dislike">❌</button>
+    <button id="btn-skip" title="Skip">⏭️</button>
+    <button id="btn-like" title="Like">💚</button>
+  </div>
+
+  <script type="module">
+    const API_URL = 'https://newsapi.askozicki.workers.dev/?country=us&page=';
+    
+    // Pragmatic list of words to ignore so the algorithm focuses on nouns/verbs
+    const STOP_WORDS = new Set(['the','a','an','and','or','but','is','are','was','were','to','of','in','for','with','on','at','by','this','that','it','as','be','from','news','breaking','update','has','have','will','not','out','how','why','what']);
+
+    const state = {
+      queue: [],
+      profile: JSON.parse(localStorage.getItem('news_profile')) || {},
+      page: 1,
+      isLoading: false
+    };
+
+    const $ = (sel) => document.querySelector(sel);
+
+    // Cleans strings, strips punctuation, removes stop words
+    function tokenize(text) {
+      if (!text) return [];
+      return text.toLowerCase()
+                 .replace(/[^\w\s]/g, '')
+                 .split(/\s+/)
+                 .filter(word => word.length > 2 && !STOP_WORDS.has(word));
+    }
+
+    // Calculates article affinity based on local profile weights
+    function scoreArticle(article) {
+      const tokens = [...tokenize(article.title), ...tokenize(article.description)];
+      return tokens.reduce((score, token) => score + (state.profile[token] || 0), 0);
+    }
+
+    async function fetchArticles() {
+      if (state.isLoading) return;
+      state.isLoading = true;
+      
+      try {
+        const res = await fetch(API_URL + state.page);
+        const data = await res.json();
+        
+        if (data.articles && data.articles.length > 0) {
+          // Filter out deleted articles
+          const validArticles = data.articles.filter(a => a.title && !a.title.includes('[Removed]'));
+          state.queue.push(...validArticles);
+          
+          // Sort queue so highest scoring articles appear next (Cached Score Fix)
+          state.queue.forEach(a => { if (a._score === undefined) a._score = scoreArticle(a); });
+          state.queue.sort((a, b) => b._score - a._score);
+          
+          state.page++;
+        }
+      } catch (err) {
+        console.error('Fetch error:', err);
+      } finally {
+        state.isLoading = false;
+        // If we just loaded the first batch, render immediately
+        if (state.queue.length > 0 && !$('#current-card')) {
+          renderCard();
+        }
+      }
+    }
+
+    // Adjust word weights up or down and save locally
+    function updateProfile(tokens, modifier) {
+      tokens.forEach(token => {
+        state.profile[token] = (state.profile[token] || 0) + modifier;
+      });
+      // Non-blocking save to prevent UI stutter
+      setTimeout(() => localStorage.setItem('news_profile', JSON.stringify(state.profile)), 0);
+      console.log('Profile Updated:', state.profile); 
+    }
+
+    function handleAction(type) {
+      if (state.queue.length === 0) return;
+      
+      const current = state.queue.shift();
+      const tokens = [...tokenize(current.title), ...tokenize(current.description)];
+
+      if (type === 'LIKE') updateProfile(tokens, 1);
+      if (type === 'DISLIKE') updateProfile(tokens, -1);
+      // SKIP does nothing to the profile matrix
+
+      renderCard();
+      
+      // Background fetch if queue is running low
+      if (state.queue.length < 5) fetchArticles();
+    }
+
+    function renderCard() {
+      const container = $('#feed-container');
+      
+      if (state.queue.length === 0) {
+        container.innerHTML = `<div class="empty-state">Fetching more articles...</div>`;
+        return;
+      }
+
+      const article = state.queue[0];
+      const imgSrc = article.urlToImage || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="220"><rect width="400" height="220" fill="%23e4e4e7"/></svg>';
+
+      // XSS Sanitizer
+      const esc = s => (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+      // Inject the DOM
+      container.innerHTML = `
+        <div class="card" id="current-card">
+          <img src="${esc(imgSrc)}" class="card-img" alt="Header image" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'400\\' height=\\'220\\'><rect width=\\'400\\' height=\\'220\\' fill=\\'%23e4e4e7\\'/></svg>'">
+          <div class="card-content">
+            <div class="source">${esc(article.source?.name || 'Unknown Source')}</div>
+            <h2 class="title">${esc(article.title)}</h2>
+            <p class="desc">${esc(article.description || '')}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    // Bind Controls
+    $('#btn-like').addEventListener('click', () => handleAction('LIKE'));
+    $('#btn-dislike').addEventListener('click', () => handleAction('DISLIKE'));
+    $('#btn-skip').addEventListener('click', () => handleAction('SKIP'));
+
+    // Kickoff
+    fetchArticles();
+  </script>
+</body>
+</html>
