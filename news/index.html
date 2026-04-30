@@ -114,6 +114,7 @@
       position: absolute;
       will-change: transform;
       cursor: grab;
+      /* Only transition layout properties, not background, for instant theme swapping */
       transition: box-shadow 0.3s ease; 
     }
     .card:active { cursor: grabbing; }
@@ -386,7 +387,7 @@
         const tx = db.transaction('profileStore', 'readwrite');
         tx.objectStore('profileStore').put(state.profile, 'userProfile');
       } catch (err) {
-        // Handle blocked environments gracefully
+        // Fallback to in-memory state only if strictly blocked
       }
     }
 
@@ -413,6 +414,13 @@
       try {
         const res = await fetch(API_URL + state.page);
         const data = await res.json();
+        
+        // Error handling for API limits or worker issues
+        if (data.status === 'error') {
+          $('#feed-container').innerHTML = `<div class="empty-state" style="color: var(--dislike);">API Error: ${data.message}</div>`;
+          return;
+        }
+
         if (data.articles && data.articles.length > 0) {
           const validArticles = data.articles.filter(a => a.title && !a.title.includes('[Removed]'));
           state.queue.push(...validArticles);
@@ -424,9 +432,15 @@
           state.queue.sort((a, b) => b._score - a._score);
           state.page++;
           localStorage.setItem('news_page', state.page);
+        } else if (state.queue.length === 0) {
+           $('#feed-container').innerHTML = `<div class="empty-state">No articles found. Try clearing your local storage or checking your proxy.</div>`;
         }
-      } catch (err) { console.error('Fetch error:', err); } 
-      finally {
+      } catch (err) { 
+        console.error('Fetch error:', err); 
+        if (state.queue.length === 0) {
+          $('#feed-container').innerHTML = `<div class="empty-state" style="color: var(--dislike);">Network Error: Could not reach the Cloudflare Worker.</div>`;
+        }
+      } finally {
         state.isLoading = false;
         if (state.queue.length > 0 && !$('#card-top')) renderCards();
       }
@@ -513,7 +527,6 @@
       
       if (strongWords.length === 0) return escaped;
       
-      // Auditor Fix: Correct Regex Word Boundary Syntax
       const regex = new RegExp(`\\b(${strongWords.join('|')})\\b`, 'gi');
       return escaped.replace(regex, '<span class="signal-highlight">$&</span>');
     }
@@ -531,8 +544,6 @@
 
     function buildCardHTML(article, id) {
       const imgSrc = article.urlToImage || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="220"><rect width="400" height="220" fill="rgba(0,0,0,0.1)"/></svg>';
-      
-      // Auditor Fix: XSS Link Sanitization
       const safeUrl = (article.url || '').startsWith('http') ? esc(article.url) : '#';
 
       return `
@@ -554,7 +565,7 @@
     function renderCards() {
       const container = $('#feed-container');
       if (state.queue.length === 0) {
-        container.innerHTML = `<div class="empty-state">Finding the signal...</div>`;
+        // Fallback handled in fetchArticles
         return;
       }
 
