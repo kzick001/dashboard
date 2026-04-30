@@ -3,22 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Tinder 4 News</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
+  <title>Signal News</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>">
   <style>
+    /* Cupertino 2050 - Light Theme (Default) */
     :root { 
-      --bg: #f4f4f5; 
-      --card: #ffffff; 
-      --text: #18181b; 
+      --bg-color: #f1f5f9;
+      --mesh-1: hsla(215, 100%, 90%, 1);
+      --mesh-2: hsla(280, 100%, 90%, 1);
+      --mesh-3: hsla(150, 100%, 90%, 1);
+      --card-bg: rgba(255, 255, 255, 0.65);
+      --card-border: rgba(255, 255, 255, 0.8);
+      --text-main: #0f172a;
+      --text-muted: #475569;
       --brand: #3b82f6;
       --like: #10b981;
       --dislike: #ef4444; 
+      --undo: #f59e0b;
+      --highlight-bg: rgba(16, 185, 129, 0.2);
+      --highlight-text: #047857;
+      --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+      --modal-bg: rgba(255, 255, 255, 0.75);
     }
+
+    /* Cupertino 2050 - Dark Theme */
+    [data-theme="dark"] {
+      --bg-color: #020617;
+      --mesh-1: hsla(220, 80%, 15%, 1);
+      --mesh-2: hsla(280, 70%, 15%, 1);
+      --mesh-3: hsla(320, 60%, 15%, 1);
+      --card-bg: rgba(15, 23, 42, 0.65);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --highlight-bg: rgba(16, 185, 129, 0.2);
+      --highlight-text: #34d399;
+      --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+      --modal-bg: rgba(15, 23, 42, 0.85);
+    }
+
     * { box-sizing: border-box; }
+    
     body { 
-      font-family: system-ui, -apple-system, sans-serif; 
-      background: var(--bg); 
-      color: var(--text); 
+      font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+      background-color: var(--bg-color);
+      background-image: 
+        radial-gradient(at 0% 0%, var(--mesh-1) 0px, transparent 50%), 
+        radial-gradient(at 100% 0%, var(--mesh-2) 0px, transparent 50%), 
+        radial-gradient(at 50% 100%, var(--mesh-3) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--text-main); 
       margin: 0; 
       padding: 0; 
       display: flex; 
@@ -26,19 +61,32 @@
       height: 100vh; 
       overflow: hidden; 
       touch-action: none;
+      transition: background-color 0.4s ease;
     }
+
+    /* Glass Header */
     header { 
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 1rem 1.5rem; 
-      font-weight: 800; 
-      font-size: 1.2rem;
-      background: var(--card); 
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+      font-weight: 700; 
+      font-size: 1.25rem;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid var(--card-border);
       z-index: 10; 
     }
-    .header-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+    
+    .header-actions { display: flex; gap: 1rem; }
+    .header-btn { 
+      background: none; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      padding: 0;
+    }
+    .header-btn svg { fill: var(--text-main); width: 22px; height: 22px; transition: opacity 0.2s; }
+    .header-btn:active svg { opacity: 0.5; }
+
     main { 
       flex: 1; 
       display: flex; 
@@ -48,152 +96,209 @@
       position: relative; 
       perspective: 1000px;
     }
+
+    /* Card UI Polish */
     .card { 
-      background: var(--card); 
-      border-radius: 16px; 
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15); 
-      max-width: 400px; 
+      background: var(--card-bg); 
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border-radius: 24px; 
+      border: 1px solid var(--card-border);
+      box-shadow: var(--glass-shadow); 
+      max-width: 380px; 
       width: 100%; 
-      height: 70vh; 
+      height: 68vh; 
       display: flex; 
       flex-direction: column; 
       overflow: hidden; 
       position: absolute;
       will-change: transform;
       cursor: grab;
+      transition: box-shadow 0.3s ease; 
     }
     .card:active { cursor: grabbing; }
     
     #card-top { z-index: 2; }
     #card-next { 
       z-index: 1; 
-      transform: scale(0.95) translateY(20px); 
+      transform: scale(0.92) translateY(25px); 
       opacity: 0.8;
-      transition: all 0.3s ease;
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), opacity 0.4s;
     }
 
     .card-img { 
       width: 100%; 
       height: 40%; 
-      background: #e4e4e7; 
+      background: rgba(0,0,0,0.1); 
       object-fit: cover; 
       pointer-events: none;
     }
     .card-content { 
       padding: 1.5rem; 
       flex: 1; 
-      overflow-y: hidden;
+      display: flex;
+      flex-direction: column;
       pointer-events: none;
     }
     .source { 
-      font-size: 0.8rem; 
+      font-size: 0.75rem; 
       color: var(--brand); 
-      font-weight: 800; 
+      font-weight: 700; 
       text-transform: uppercase; 
       margin-bottom: 0.5rem; 
-      letter-spacing: 0.5px;
+      letter-spacing: 0.05em;
     }
     .title { 
-      font-size: 1.3rem; 
-      font-weight: 800; 
-      margin: 0 0 0.75rem 0; 
+      font-size: 1.25rem; 
+      font-weight: 700; 
+      margin: 0 0 0.5rem 0; 
       line-height: 1.3; 
     }
     .desc { 
-      font-size: 1rem; 
-      color: #52525b; 
+      font-size: 0.95rem; 
+      color: var(--text-muted); 
       line-height: 1.5; 
       display: -webkit-box;
-      -webkit-line-clamp: 4;
+      -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      flex: 1;
     }
     
-    .controls { 
-      display: flex; 
-      justify-content: center; 
-      gap: 1.5rem;
-      padding: 1rem 1.5rem 2rem; 
-      background: transparent;
-      z-index: 10;
-    }
-    .control-btn { 
-      font-size: 1.8rem; 
-      background: var(--card); 
-      border: none; 
-      cursor: pointer; 
-      transition: transform 0.15s, box-shadow 0.15s; 
-      width: 65px; 
-      height: 65px; 
-      border-radius: 50%; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
-    }
-    .control-btn:active { transform: scale(0.9); }
-    #btn-dislike { color: var(--dislike); }
-    #btn-like { color: var(--like); font-size: 2.2rem; }
-    
-    .empty-state { text-align: center; padding: 2rem; color: #71717a; width: 100%; position: absolute;}
-    
-    .debug-panel {
-      position: absolute; top: 70px; right: 10px; background: rgba(24, 24, 27, 0.85); color: #10b981;
-      padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.75rem; z-index: 100;
-      pointer-events: none; min-width: 140px; backdrop-filter: blur(4px);
+    .signal-highlight {
+      background: var(--highlight-bg);
+      color: var(--highlight-text);
+      font-weight: 600;
+      padding: 0 3px;
+      border-radius: 4px;
     }
 
-    /* Settings Modal */
-    #settings-modal {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999;
-      justify-content: center; align-items: center; padding: 1rem;
+    .read-btn-container { margin-top: auto; padding-top: 1rem; pointer-events: auto; }
+    .read-btn {
+      display: block; width: 100%; padding: 0.85rem; text-align: center;
+      background: var(--brand); color: white; border-radius: 12px;
+      text-decoration: none; font-weight: 600; font-size: 0.95rem;
+      transition: transform 0.1s, opacity 0.2s;
     }
+    .read-btn:active { transform: scale(0.98); opacity: 0.9; }
+
+    /* Controls Polish */
+    .controls { 
+      display: flex; justify-content: center; align-items: center; gap: 1.2rem;
+      padding: 0 1.5rem 2rem; background: transparent; z-index: 10;
+    }
+    .control-btn { 
+      background: var(--card-bg); border: 1px solid var(--card-border); 
+      backdrop-filter: blur(10px); cursor: pointer; 
+      transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s; 
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+      box-shadow: var(--glass-shadow); 
+    }
+    .control-btn:active { transform: scale(0.85); }
+    
+    #btn-undo { width: 50px; height: 50px; }
+    #btn-undo svg { fill: var(--undo); width: 22px; height: 22px;}
+    
+    #btn-dislike { width: 65px; height: 65px; }
+    #btn-dislike svg { stroke: var(--dislike); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; width: 28px; height: 28px;}
+    
+    #btn-skip { width: 55px; height: 55px; }
+    #btn-skip svg { fill: var(--text-muted); width: 22px; height: 22px;}
+    
+    #btn-like { width: 75px; height: 75px; }
+    #btn-like svg { fill: var(--like); width: 34px; height: 34px;}
+
+    /* Debug Panel */
+    .debug-panel {
+      position: absolute; top: 75px; right: 10px; 
+      background: rgba(15, 23, 42, 0.7); color: #34d399;
+      padding: 1rem; border-radius: 12px; font-family: monospace; font-size: 0.75rem; z-index: 100;
+      pointer-events: none; min-width: 140px; 
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .debug-panel.visible { opacity: 1; }
+
+    .empty-state { text-align: center; padding: 2rem; color: var(--text-muted); width: 100%; position: absolute; font-weight: 600;}
+
+    /* Modals */
+    .modal {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 999;
+      justify-content: center; align-items: center; padding: 1.5rem;
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .modal.show { opacity: 1; }
+    
     .modal-content {
-      background: var(--card); padding: 2rem; border-radius: 12px; width: 100%; max-width: 400px;
+      background: var(--modal-bg); padding: 2rem; border-radius: 24px; width: 100%; max-width: 380px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(20px) saturate(180%);
     }
-    .modal-content h2 { margin-top: 0; margin-bottom: 0.5rem;}
+    .modal-content h2 { margin-top: 0; margin-bottom: 0.5rem; color: var(--text-main);}
+    
     .sync-id-display {
-      background: #e4e4e7; padding: 0.75rem; border-radius: 6px; text-align: center;
-      font-family: monospace; font-size: 1.2rem; font-weight: bold; margin: 1rem 0; letter-spacing: 2px;
+      background: rgba(0,0,0,0.05); padding: 0.85rem; border-radius: 12px; text-align: center;
+      font-family: monospace; font-size: 1.25rem; font-weight: 700; margin: 1.2rem 0; letter-spacing: 3px;
+      border: 1px solid var(--card-border); color: var(--text-main);
     }
+    
     .modal-actions { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem; }
-    .btn { padding: 0.75rem; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; font-size: 1rem; transition: opacity 0.2s; }
-    .btn:active { opacity: 0.8; }
-    .btn-cloud { background: var(--brand); color: white; }
-    .btn-danger { background: var(--dislike); color: white; }
-    .btn-secondary { background: #e4e4e7; color: var(--text); margin-top: 1rem; }
+    .btn { padding: 0.85rem; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; font-size: 1rem; transition: transform 0.1s, opacity 0.2s; }
+    .btn:active { transform: scale(0.97); }
+    .btn-cloud { background: var(--text-main); color: var(--bg-color); }
+    .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--dislike); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .btn-secondary { background: transparent; color: var(--text-muted); }
   </style>
 </head>
 <body>
   <header>
-    <span>Tinder 4 News</span>
-    <button class="header-btn" id="btn-settings" title="Settings">⚙️</button>
+    <span>Signal News</span>
+    <div class="header-actions">
+      <button class="header-btn" id="btn-theme" title="Toggle Theme">
+        <svg id="theme-icon" viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.39 1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.39 1.03.39 1.41 0l1.06-1.06z"/></svg>
+      </button>
+      <button class="header-btn" id="btn-settings" title="Cloud Settings">
+        <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+      </button>
+    </div>
   </header>
   
   <div id="debug-panel" class="debug-panel">Brain empty...</div>
 
   <main id="feed-container">
-    <div class="empty-state">Initializing algorithm...</div>
+    <div class="empty-state">Finding the signal...</div>
   </main>
   
   <div class="controls">
-    <button class="control-btn" id="btn-dislike" title="Dislike">❌</button>
-    <button class="control-btn" id="btn-skip" title="Skip" style="width: 50px; height: 50px; font-size: 1.2rem;">⏭️</button>
-    <button class="control-btn" id="btn-like" title="Like">💚</button>
+    <button class="control-btn" id="btn-undo" title="Undo Last Swipe">
+      <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
+    </button>
+    <button class="control-btn" id="btn-dislike" title="Dislike">
+      <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <button class="control-btn" id="btn-skip" title="Skip">
+      <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+    </button>
+    <button class="control-btn" id="btn-like" title="Like">
+      <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+    </button>
   </div>
 
-  <div id="settings-modal">
+  <div id="settings-modal" class="modal">
     <div class="modal-content">
-      <h2>Hybrid Brain Sync</h2>
-      <p style="font-size: 0.9rem; color: #52525b; margin:0;">Your unique Sync ID across devices:</p>
+      <h2>Cloud Sync</h2>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin:0;">Link devices using your Sync ID.</p>
       
       <div class="sync-id-display" id="sync-id-label">--------</div>
       
       <div class="modal-actions">
-        <button class="btn btn-cloud" id="btn-push">☁️ Push to Cloud</button>
-        <button class="btn btn-cloud" id="btn-pull">☁️ Pull from Cloud</button>
-        <button class="btn btn-danger" id="btn-delete">🚨 Delete Cloud Data</button>
-        <button class="btn btn-secondary" id="btn-close-settings">Close</button>
+        <button class="btn btn-cloud" id="btn-push">↑ Push Algorithm to Cloud</button>
+        <button class="btn btn-cloud" id="btn-pull">↓ Pull Algorithm from Cloud</button>
+        <button class="btn btn-danger" id="btn-delete">Delete Cloud Data</button>
+        <button class="btn btn-secondary" id="btn-close-settings">Done</button>
       </div>
     </div>
   </div>
@@ -207,127 +312,129 @@
     const DECAY_INTERVAL = 100;
     const SOURCE_MULTIPLIER = 3;
 
-    // Local State
+    // State
     const state = {
       queue: [],
       profile: {},
       page: parseInt(localStorage.getItem('news_page')) || 1,
       interactions: parseInt(localStorage.getItem('news_interactions')) || 0,
-      syncId: localStorage.getItem('news_sync_id') || crypto.randomUUID?.().slice(0,8) || Math.random().toString(36).slice(2, 10),
+      syncId: localStorage.getItem('news_sync_id') || crypto.randomUUID?.().slice(0,8).toUpperCase() || Math.random().toString(36).slice(2, 10).toUpperCase(),
       isLoading: false,
-      cardRenderTime: Date.now()
+      cardRenderTime: Date.now(),
+      undoStack: null
     };
     
-    // Persist Sync ID immediately
     localStorage.setItem('news_sync_id', state.syncId);
 
     const $ = (sel) => document.querySelector(sel);
     const esc = s => (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-    // --- IndexedDB Wrapper ---
+    // --- Theme Engine ---
+    const themeIconPathLight = "M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.39 1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.39 1.03.39 1.41 0l1.06-1.06z";
+    const themeIconPathDark = "M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4C12.92 3.04 12.46 3 12 3z";
+    
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.body.setAttribute('data-theme', 'dark');
+        $('#theme-icon path').setAttribute('d', themeIconPathDark);
+      }
+    }
+
+    $('#btn-theme').addEventListener('click', () => {
+      const isDark = document.body.getAttribute('data-theme') === 'dark';
+      if (isDark) {
+        document.body.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+        $('#theme-icon path').setAttribute('d', themeIconPathLight);
+      } else {
+        document.body.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+        $('#theme-icon path').setAttribute('d', themeIconPathDark);
+      }
+    });
+
+    // --- IndexedDB ---
     let db;
     function initDB() {
       return new Promise((resolve) => {
-        const req = indexedDB.open('NewsEngineDB', 1);
-        
-        req.onupgradeneeded = e => {
-          db = e.target.result;
-          if(!db.objectStoreNames.contains('profileStore')) {
-            db.createObjectStore('profileStore');
-          }
-        };
-        
-        req.onsuccess = e => {
-          db = e.target.result;
-          const tx = db.transaction('profileStore', 'readonly');
-          const store = tx.objectStore('profileStore');
-          const getReq = store.get('userProfile');
-          
-          getReq.onsuccess = () => {
-            state.profile = getReq.result || {};
-            resolve();
+        try {
+          const req = window.indexedDB.open('NewsEngineDB', 1);
+          req.onupgradeneeded = e => {
+            db = e.target.result;
+            if(!db.objectStoreNames.contains('profileStore')) db.createObjectStore('profileStore');
           };
-          getReq.onerror = () => resolve(); 
-        };
-        
-        req.onerror = () => {
-          console.warn("IndexedDB failed. Falling back to memory.");
-          resolve(); 
-        };
+          req.onsuccess = e => {
+            db = e.target.result;
+            const tx = db.transaction('profileStore', 'readonly');
+            const getReq = tx.objectStore('profileStore').get('userProfile');
+            getReq.onsuccess = () => { state.profile = getReq.result || {}; resolve(); };
+            getReq.onerror = () => resolve(); 
+          };
+          req.onerror = () => resolve(); 
+        } catch (err) {
+          console.warn('IndexedDB blocked by client environment:', err);
+          resolve();
+        }
       });
     }
 
     function saveLocal() {
       if (!db) return;
-      const tx = db.transaction('profileStore', 'readwrite');
-      const store = tx.objectStore('profileStore');
-      store.put(state.profile, 'userProfile');
+      try {
+        const tx = db.transaction('profileStore', 'readwrite');
+        tx.objectStore('profileStore').put(state.profile, 'userProfile');
+      } catch (err) {
+        // Handle blocked environments gracefully
+      }
     }
 
-    // --- Algorithm v1.4 (N-Grams & Hybrid Scoring) ---
-
+    // --- Algorithm ---
     function tokenize(text) {
       if (!text) return [];
       const unigrams = text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(word => word.length > 2 && !STOP_WORDS.has(word));
-      
-      // Generate Bigrams for contextual awareness
       const nGrams = [...unigrams];
-      for(let i = 0; i < unigrams.length - 1; i++) {
-        nGrams.push(unigrams[i] + ' ' + unigrams[i+1]);
-      }
+      for(let i = 0; i < unigrams.length - 1; i++) nGrams.push(unigrams[i] + ' ' + unigrams[i+1]);
       return nGrams;
     }
 
     function scoreArticle(article) {
       const tokens = [...tokenize(article.title), ...tokenize(article.description)];
       const sourceName = article.source?.name ? tokenize(article.source.name).join('') : '';
-      
       let score = tokens.reduce((sum, token) => sum + (state.profile[token] || 0), 0);
       if (sourceName) score += (state.profile[sourceName] || 0) * SOURCE_MULTIPLIER;
-      
       return score;
     }
 
     async function fetchArticles() {
       if (state.isLoading) return;
       state.isLoading = true;
-      
       try {
         const res = await fetch(API_URL + state.page);
         const data = await res.json();
-        
         if (data.articles && data.articles.length > 0) {
           const validArticles = data.articles.filter(a => a.title && !a.title.includes('[Removed]'));
           state.queue.push(...validArticles);
-          
           state.queue.forEach(a => { 
             if (a._score === undefined) {
-              // Epsilon-Greedy Filter Bubble Buster
-              if (state.interactions > COLD_START_THRESHOLD && Math.random() < 0.10) {
-                a._score = 9999; 
-              } else {
-                a._score = scoreArticle(a); 
-              }
+              a._score = (state.interactions > COLD_START_THRESHOLD && Math.random() < 0.10) ? 9999 : scoreArticle(a); 
             }
           });
           state.queue.sort((a, b) => b._score - a._score);
-          
           state.page++;
           localStorage.setItem('news_page', state.page);
         }
-      } catch (err) {
-        console.error('Fetch error:', err);
-      } finally {
+      } catch (err) { console.error('Fetch error:', err); } 
+      finally {
         state.isLoading = false;
         if (state.queue.length > 0 && !$('#card-top')) renderCards();
       }
     }
 
-    // Auditor Fix: Asynchronous Decay Pattern
     function decayProfile() {
       const keys = Object.keys(state.profile);
       let i = 0;
-      
       function chunk() {
         const end = Math.min(i + 50, keys.length);
         for(; i < end; i++) {
@@ -335,21 +442,14 @@
           state.profile[key] = Math.round(state.profile[key] * 0.9);
           if (state.profile[key] === 0) delete state.profile[key];
         }
-        
-        if (i < keys.length) {
-          setTimeout(chunk, 0); // Yield to main thread
-        } else {
-          saveLocal();
-          renderDebug();
-        }
+        if (i < keys.length) setTimeout(chunk, 0); 
+        else { saveLocal(); renderDebug(); }
       }
       setTimeout(chunk, 0);
     }
 
     function updateProfile(tokens, source, modifier) {
-      tokens.forEach(token => {
-        state.profile[token] = (state.profile[token] || 0) + modifier;
-      });
+      tokens.forEach(t => state.profile[t] = (state.profile[t] || 0) + modifier);
       if (source) {
         const cleanSource = tokenize(source).join('');
         if (cleanSource) state.profile[cleanSource] = (state.profile[cleanSource] || 0) + (modifier * SOURCE_MULTIPLIER);
@@ -361,51 +461,91 @@
     function handleAction(type) {
       if (state.queue.length === 0) return;
       
-      state.interactions++;
-      localStorage.setItem('news_interactions', state.interactions);
-
       const current = state.queue.shift();
       const tokens = [...tokenize(current.title), ...tokenize(current.description)];
       const source = current.source?.name || '';
       const dwellTime = Date.now() - state.cardRenderTime;
+      
+      let modifierApplied = 0;
 
-      if (type === 'LIKE') updateProfile(tokens, source, 1);
-      if (type === 'DISLIKE') updateProfile(tokens, source, -1);
+      if (type === 'LIKE') modifierApplied = 1;
+      else if (type === 'DISLIKE') modifierApplied = -1;
+      else if (type === 'SKIP' && dwellTime > 4000) modifierApplied = 0.5;
+
+      if (modifierApplied !== 0) updateProfile(tokens, source, modifierApplied);
       
-      // Implicit Feedback (Soft Like)
-      if (type === 'SKIP' && dwellTime > 4000) {
-        updateProfile(tokens, source, 0.5);
-      }
+      state.undoStack = { article: current, tokens, source, modifierApplied };
+
+      state.interactions++;
+      localStorage.setItem('news_interactions', state.interactions);
       
-      if (state.interactions > 0 && state.interactions % DECAY_INTERVAL === 0) {
-        decayProfile();
-      }
+      if (state.interactions > 0 && state.interactions % DECAY_INTERVAL === 0) decayProfile();
 
       renderCards();
       if (state.queue.length < 5) fetchArticles();
     }
 
+    function undoAction() {
+      if (!state.undoStack) return;
+      
+      if (state.undoStack.modifierApplied !== 0) {
+        updateProfile(state.undoStack.tokens, state.undoStack.source, -state.undoStack.modifierApplied);
+      }
+      
+      state.queue.unshift(state.undoStack.article);
+      state.undoStack = null; 
+      state.interactions = Math.max(0, state.interactions - 1);
+      localStorage.setItem('news_interactions', state.interactions);
+      
+      renderCards();
+    }
+
     // --- UI & Rendering ---
+    
+    function highlightText(text) {
+      if (!text) return '';
+      const escaped = esc(text);
+      if (state.interactions < COLD_START_THRESHOLD) return escaped; 
+      
+      const strongWords = Object.keys(state.profile)
+                                .filter(k => state.profile[k] >= 3 && !k.includes(' ')) 
+                                .sort((a,b) => b.length - a.length); 
+      
+      if (strongWords.length === 0) return escaped;
+      
+      // Auditor Fix: Correct Regex Word Boundary Syntax
+      const regex = new RegExp(`\\b(${strongWords.join('|')})\\b`, 'gi');
+      return escaped.replace(regex, '<span class="signal-highlight">$&</span>');
+    }
 
     function renderDebug() {
       const panel = $('#debug-panel');
       if (state.interactions < COLD_START_THRESHOLD) {
-        panel.innerHTML = `Warming up... (${state.interactions}/${COLD_START_THRESHOLD})`;
+        panel.innerHTML = `Calibrating... (${state.interactions}/${COLD_START_THRESHOLD})`;
         return;
       }
       const entries = Object.entries(state.profile).sort((a, b) => b[1] - a[1]).slice(0, 5);
-      panel.innerHTML = `<strong>Brain:</strong><br/>` + entries.map(([w, s]) => `${w}: ${s}`).join('<br/>');
+      panel.innerHTML = `<strong>Signal:</strong><br/>` + entries.map(([w, s]) => `${w}: ${s}`).join('<br/>');
+      panel.classList.add('visible'); 
     }
 
     function buildCardHTML(article, id) {
-      const imgSrc = article.urlToImage || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="220"><rect width="400" height="220" fill="%23e4e4e7"/></svg>';
+      const imgSrc = article.urlToImage || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="220"><rect width="400" height="220" fill="rgba(0,0,0,0.1)"/></svg>';
+      
+      // Auditor Fix: XSS Link Sanitization
+      const safeUrl = (article.url || '').startsWith('http') ? esc(article.url) : '#';
+
       return `
         <div class="card" id="${id}">
-          <img src="${esc(imgSrc)}" class="card-img" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'400\\' height=\\'220\\'><rect width=\\'400\\' height=\\'220\\' fill=\\'%23e4e4e7\\'/></svg>'">
+          <img src="${esc(imgSrc)}" class="card-img" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'400\\' height=\\'220\\'><rect width=\\'400\\' height=\\'220\\' fill=\\'rgba(0,0,0,0.1)\\'/></svg>'">
           <div class="card-content">
             <div class="source">${esc(article.source?.name || 'Unknown Source')}</div>
-            <h2 class="title">${esc(article.title)}</h2>
-            <p class="desc">${esc(article.description || '')}</p>
+            <h2 class="title">${highlightText(article.title)}</h2>
+            <p class="desc">${highlightText(article.description)}</p>
+            
+            <div class="read-btn-container">
+              <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="read-btn" onclick="readArticle(event)">Read Full Article ↗</a>
+            </div>
           </div>
         </div>
       `;
@@ -414,7 +554,7 @@
     function renderCards() {
       const container = $('#feed-container');
       if (state.queue.length === 0) {
-        container.innerHTML = `<div class="empty-state">Fetching more articles...</div>`;
+        container.innerHTML = `<div class="empty-state">Finding the signal...</div>`;
         return;
       }
 
@@ -423,33 +563,31 @@
       if (state.queue[0]) html += buildCardHTML(state.queue[0], 'card-top');
       container.innerHTML = html;
 
-      state.cardRenderTime = Date.now(); // Reset dwell timer
+      state.cardRenderTime = Date.now(); 
       initTouchMechanics();
     }
 
-    // Auditor Fix: Spatial UI Desync
-    window.readArticle = function(url) {
-      window.open(url, '_blank');
+    window.readArticle = function(e) {
       const topCard = $('#card-top');
       if (topCard) {
-        topCard.style.transition = 'transform 0.3s ease-out';
+        topCard.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
         topCard.style.transform = 'translateX(150%) rotate(15deg)';
       }
       setTimeout(() => handleAction('LIKE'), 300);
     };
 
-    // Auditor Fix: Render Thrashing
     function initTouchMechanics() {
       const topCard = $('#card-top');
       if (!topCard) return;
 
-      let startX = 0, currentX = 0, isDragging = false, isTicking = false, startTime = 0;
+      let startX = 0, currentX = 0, isDragging = false, isTicking = false;
 
       topCard.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.read-btn-container')) return; 
+        
         isDragging = true;
         startX = e.clientX;
-        startTime = Date.now();
-        topCard.style.transition = 'none'; 
+        topCard.style.transition = 'box-shadow 0.3s ease'; 
         topCard.setPointerCapture(e.pointerId);
       });
 
@@ -460,7 +598,7 @@
 
         if (!isTicking) {
           window.requestAnimationFrame(() => {
-            topCard.style.transform = `translateX(${deltaX}px) rotate(${deltaX * 0.05}deg)`;
+            topCard.style.transform = `translateX(${deltaX}px) rotate(${deltaX * 0.04}deg)`;
             isTicking = false;
           });
           isTicking = true;
@@ -470,21 +608,13 @@
       const handleEnd = (e) => {
         if (!isDragging) return;
         isDragging = false;
-        
         const deltaX = currentX - startX;
-        const timeElapsed = Date.now() - startTime;
-        topCard.style.transition = 'transform 0.3s ease-out';
+        topCard.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), box-shadow 0.3s ease';
 
-        if (Math.abs(deltaX) < 10 && timeElapsed < 300) {
-          topCard.style.transform = 'none';
-          window.readArticle(state.queue[0].url);
-          return;
-        }
-
-        if (deltaX > 120) {
+        if (deltaX > 110) {
           topCard.style.transform = `translateX(${window.innerWidth}px) rotate(30deg)`;
           setTimeout(() => handleAction('LIKE'), 300);
-        } else if (deltaX < -120) {
+        } else if (deltaX < -110) {
           topCard.style.transform = `translateX(-${window.innerWidth}px) rotate(-30deg)`;
           setTimeout(() => handleAction('DISLIKE'), 300);
         } else {
@@ -496,23 +626,24 @@
       topCard.addEventListener('pointercancel', handleEnd);
     }
 
-    // --- Controls & Sync Bindings ---
+    // --- Controls & Cloud Bindings ---
+    $('#btn-undo').addEventListener('click', undoAction);
 
     $('#btn-like').addEventListener('click', () => {
       const card = $('#card-top');
-      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateX(150%) rotate(15deg)'; }
+      if(card) { card.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1)'; card.style.transform = 'translateX(150%) rotate(15deg)'; }
       setTimeout(() => handleAction('LIKE'), 250);
     });
     
     $('#btn-dislike').addEventListener('click', () => {
       const card = $('#card-top');
-      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateX(-150%) rotate(-15deg)'; }
+      if(card) { card.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1)'; card.style.transform = 'translateX(-150%) rotate(-15deg)'; }
       setTimeout(() => handleAction('DISLIKE'), 250);
     });
     
     $('#btn-skip').addEventListener('click', () => {
       const card = $('#card-top');
-      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateY(150%)'; }
+      if(card) { card.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1)'; card.style.transform = 'translateY(150%)'; }
       setTimeout(() => handleAction('SKIP'), 250);
     });
 
@@ -520,56 +651,66 @@
     $('#btn-settings').addEventListener('click', () => {
       $('#sync-id-label').innerText = state.syncId;
       modal.style.display = 'flex';
+      modal.offsetHeight;
+      modal.classList.add('show');
     });
-    $('#btn-close-settings').addEventListener('click', () => modal.style.display = 'none');
     
-    // Cloudflare KV Sync Actions
+    function closeModal() {
+      modal.classList.remove('show');
+      setTimeout(() => modal.style.display = 'none', 200);
+    }
+    $('#btn-close-settings').addEventListener('click', closeModal);
+    
     $('#btn-push').addEventListener('click', async () => {
       const btn = $('#btn-push');
+      const originalText = btn.innerText;
       btn.innerText = 'Pushing...';
       try {
         await fetch(WORKER_URL + 'sync?id=' + state.syncId, { method: 'POST', body: JSON.stringify(state.profile) });
-        alert('Algorithm pushed to cloud successfully!');
+        alert('Algorithm successfully pushed to the cloud.');
       } catch (e) { alert('Failed to push to cloud.'); }
-      btn.innerText = '☁️ Push to Cloud';
+      btn.innerText = originalText;
     });
     
     $('#btn-pull').addEventListener('click', async () => {
       const btn = $('#btn-pull');
+      const originalText = btn.innerText;
       btn.innerText = 'Pulling...';
       try {
         const res = await fetch(WORKER_URL + 'sync?id=' + state.syncId);
         const data = await res.json();
         if (data && typeof data === 'object') {
           state.profile = data;
+          state.undoStack = null; 
           saveLocal();
           renderDebug();
-          alert('Algorithm downloaded and local database overwritten.');
+          alert('Algorithm synchronized. Database overwritten.');
+          closeModal();
         }
       } catch (e) { alert('Failed to pull from cloud (Is it empty?).'); }
-      btn.innerText = '☁️ Pull from Cloud';
+      btn.innerText = originalText;
     });
 
     $('#btn-delete').addEventListener('click', async () => {
-      if (confirm('Are you sure you want to nuke your cloud backup? This cannot be undone.')) {
+      if (confirm('Are you sure you want to delete your cloud backup? This does not delete local data.')) {
         const btn = $('#btn-delete');
         btn.innerText = 'Deleting...';
         try {
           await fetch(WORKER_URL + 'sync?id=' + state.syncId, { method: 'DELETE' });
-          alert('Cloud data deleted successfully.');
+          alert('Cloud data deleted.');
         } catch (e) { alert('Failed to delete cloud data.'); }
-        btn.innerText = '🚨 Delete Cloud Data';
+        btn.innerText = 'Delete Cloud Data';
       }
     });
 
-    // --- App Initialization ---
+    // Init
     async function initApp() {
+      initTheme();
       await initDB();
       renderDebug();
       fetchArticles();
     }
     initApp();
-
   </script>
 </body>
 </html>
