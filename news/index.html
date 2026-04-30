@@ -25,7 +25,7 @@
       flex-direction: column; 
       height: 100vh; 
       overflow: hidden; 
-      touch-action: none; /* Prevents browser pull-to-refresh */
+      touch-action: none;
     }
     header { 
       display: flex;
@@ -38,9 +38,7 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
       z-index: 10; 
     }
-    .header-btn {
-      background: none; border: none; font-size: 1.5rem; cursor: pointer;
-    }
+    .header-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
     main { 
       flex: 1; 
       display: flex; 
@@ -153,12 +151,17 @@
     .modal-content {
       background: var(--card); padding: 2rem; border-radius: 12px; width: 100%; max-width: 400px;
     }
-    .modal-content h2 { margin-top: 0; }
-    textarea { width: 100%; height: 100px; margin: 1rem 0; padding: 0.5rem; font-family: monospace; border-radius: 6px; border: 1px solid #d4d4d8;}
-    .modal-actions { display: flex; gap: 1rem; justify-content: flex-end; }
-    .btn { padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
-    .btn-primary { background: var(--brand); color: white; }
-    .btn-secondary { background: #e4e4e7; color: var(--text); }
+    .modal-content h2 { margin-top: 0; margin-bottom: 0.5rem;}
+    .sync-id-display {
+      background: #e4e4e7; padding: 0.75rem; border-radius: 6px; text-align: center;
+      font-family: monospace; font-size: 1.2rem; font-weight: bold; margin: 1rem 0; letter-spacing: 2px;
+    }
+    .modal-actions { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem; }
+    .btn { padding: 0.75rem; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; font-size: 1rem; transition: opacity 0.2s; }
+    .btn:active { opacity: 0.8; }
+    .btn-cloud { background: var(--brand); color: white; }
+    .btn-danger { background: var(--dislike); color: white; }
+    .btn-secondary { background: #e4e4e7; color: var(--text); margin-top: 1rem; }
   </style>
 </head>
 <body>
@@ -181,47 +184,101 @@
 
   <div id="settings-modal">
     <div class="modal-content">
-      <h2>Algorithm Settings</h2>
-      <p style="font-size: 0.9rem; color: #52525b;">Export your brain or import a new one.</p>
-      <textarea id="import-data" placeholder='{"tech": 5, "wired": 10}'></textarea>
+      <h2>Hybrid Brain Sync</h2>
+      <p style="font-size: 0.9rem; color: #52525b; margin:0;">Your unique Sync ID across devices:</p>
+      
+      <div class="sync-id-display" id="sync-id-label">--------</div>
+      
       <div class="modal-actions">
+        <button class="btn btn-cloud" id="btn-push">☁️ Push to Cloud</button>
+        <button class="btn btn-cloud" id="btn-pull">☁️ Pull from Cloud</button>
+        <button class="btn btn-danger" id="btn-delete">🚨 Delete Cloud Data</button>
         <button class="btn btn-secondary" id="btn-close-settings">Close</button>
-        <button class="btn btn-primary" id="btn-export">Copy Export</button>
-        <button class="btn btn-primary" id="btn-import">Import</button>
       </div>
     </div>
   </div>
 
   <script type="module">
     // Constants
-    const API_URL = 'https://newsapi.askozicki.workers.dev/?q=tech+OR+startup+OR+world+OR+science&language=en&page=';
+    const WORKER_URL = 'https://newsapi.askozicki.workers.dev/';
+    const API_URL = WORKER_URL + '?q=tech+OR+startup+OR+world+OR+science&language=en&page=';
     const STOP_WORDS = new Set(['the','a','an','and','or','but','is','are','was','were','to','of','in','for','with','on','at','by','this','that','it','as','be','from','news','breaking','update','has','have','will','not','out','how','why','what']);
     const COLD_START_THRESHOLD = 20;
     const DECAY_INTERVAL = 100;
     const SOURCE_MULTIPLIER = 3;
 
-    // State
+    // Local State
     const state = {
       queue: [],
-      profile: JSON.parse(localStorage.getItem('news_profile')) || {},
+      profile: {},
       page: parseInt(localStorage.getItem('news_page')) || 1,
       interactions: parseInt(localStorage.getItem('news_interactions')) || 0,
-      isLoading: false
+      syncId: localStorage.getItem('news_sync_id') || crypto.randomUUID?.().slice(0,8) || Math.random().toString(36).slice(2, 10),
+      isLoading: false,
+      cardRenderTime: Date.now()
     };
+    
+    // Persist Sync ID immediately
+    localStorage.setItem('news_sync_id', state.syncId);
 
     const $ = (sel) => document.querySelector(sel);
     const esc = s => (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-    // --- Algorithm & Data Pipeline ---
+    // --- IndexedDB Wrapper ---
+    let db;
+    function initDB() {
+      return new Promise((resolve) => {
+        const req = indexedDB.open('NewsEngineDB', 1);
+        
+        req.onupgradeneeded = e => {
+          db = e.target.result;
+          if(!db.objectStoreNames.contains('profileStore')) {
+            db.createObjectStore('profileStore');
+          }
+        };
+        
+        req.onsuccess = e => {
+          db = e.target.result;
+          const tx = db.transaction('profileStore', 'readonly');
+          const store = tx.objectStore('profileStore');
+          const getReq = store.get('userProfile');
+          
+          getReq.onsuccess = () => {
+            state.profile = getReq.result || {};
+            resolve();
+          };
+          getReq.onerror = () => resolve(); 
+        };
+        
+        req.onerror = () => {
+          console.warn("IndexedDB failed. Falling back to memory.");
+          resolve(); 
+        };
+      });
+    }
+
+    function saveLocal() {
+      if (!db) return;
+      const tx = db.transaction('profileStore', 'readwrite');
+      const store = tx.objectStore('profileStore');
+      store.put(state.profile, 'userProfile');
+    }
+
+    // --- Algorithm v1.4 (N-Grams & Hybrid Scoring) ---
 
     function tokenize(text) {
       if (!text) return [];
-      return text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(word => word.length > 2 && !STOP_WORDS.has(word));
+      const unigrams = text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(word => word.length > 2 && !STOP_WORDS.has(word));
+      
+      // Generate Bigrams for contextual awareness
+      const nGrams = [...unigrams];
+      for(let i = 0; i < unigrams.length - 1; i++) {
+        nGrams.push(unigrams[i] + ' ' + unigrams[i+1]);
+      }
+      return nGrams;
     }
 
     function scoreArticle(article) {
-      if (state.interactions < COLD_START_THRESHOLD) return 0; // Chronological until threshold met
-      
       const tokens = [...tokenize(article.title), ...tokenize(article.description)];
       const sourceName = article.source?.name ? tokenize(article.source.name).join('') : '';
       
@@ -243,11 +300,20 @@
           const validArticles = data.articles.filter(a => a.title && !a.title.includes('[Removed]'));
           state.queue.push(...validArticles);
           
-          state.queue.forEach(a => { if (a._score === undefined) a._score = scoreArticle(a); });
+          state.queue.forEach(a => { 
+            if (a._score === undefined) {
+              // Epsilon-Greedy Filter Bubble Buster
+              if (state.interactions > COLD_START_THRESHOLD && Math.random() < 0.10) {
+                a._score = 9999; 
+              } else {
+                a._score = scoreArticle(a); 
+              }
+            }
+          });
           state.queue.sort((a, b) => b._score - a._score);
           
           state.page++;
-          localStorage.setItem('news_page', state.page); // Session Persistence
+          localStorage.setItem('news_page', state.page);
         }
       } catch (err) {
         console.error('Fetch error:', err);
@@ -257,15 +323,27 @@
       }
     }
 
+    // Auditor Fix: Asynchronous Decay Pattern
     function decayProfile() {
-      setTimeout(() => { // Prevents UI locking
-        Object.keys(state.profile).forEach(key => {
+      const keys = Object.keys(state.profile);
+      let i = 0;
+      
+      function chunk() {
+        const end = Math.min(i + 50, keys.length);
+        for(; i < end; i++) {
+          const key = keys[i];
           state.profile[key] = Math.round(state.profile[key] * 0.9);
           if (state.profile[key] === 0) delete state.profile[key];
-        });
-        localStorage.setItem('news_profile', JSON.stringify(state.profile));
-        renderDebug();
-      }, 0);
+        }
+        
+        if (i < keys.length) {
+          setTimeout(chunk, 0); // Yield to main thread
+        } else {
+          saveLocal();
+          renderDebug();
+        }
+      }
+      setTimeout(chunk, 0);
     }
 
     function updateProfile(tokens, source, modifier) {
@@ -276,7 +354,7 @@
         const cleanSource = tokenize(source).join('');
         if (cleanSource) state.profile[cleanSource] = (state.profile[cleanSource] || 0) + (modifier * SOURCE_MULTIPLIER);
       }
-      setTimeout(() => localStorage.setItem('news_profile', JSON.stringify(state.profile)), 0);
+      saveLocal();
       renderDebug(); 
     }
 
@@ -289,17 +367,25 @@
       const current = state.queue.shift();
       const tokens = [...tokenize(current.title), ...tokenize(current.description)];
       const source = current.source?.name || '';
+      const dwellTime = Date.now() - state.cardRenderTime;
 
       if (type === 'LIKE') updateProfile(tokens, source, 1);
       if (type === 'DISLIKE') updateProfile(tokens, source, -1);
       
-      if (state.interactions % DECAY_INTERVAL === 0) decayProfile();
+      // Implicit Feedback (Soft Like)
+      if (type === 'SKIP' && dwellTime > 4000) {
+        updateProfile(tokens, source, 0.5);
+      }
+      
+      if (state.interactions > 0 && state.interactions % DECAY_INTERVAL === 0) {
+        decayProfile();
+      }
 
       renderCards();
       if (state.queue.length < 5) fetchArticles();
     }
 
-    // --- UI & Interactions ---
+    // --- UI & Rendering ---
 
     function renderDebug() {
       const panel = $('#debug-panel');
@@ -327,22 +413,21 @@
 
     function renderCards() {
       const container = $('#feed-container');
-      
       if (state.queue.length === 0) {
         container.innerHTML = `<div class="empty-state">Fetching more articles...</div>`;
         return;
       }
 
-      // Render Top and Next card
       let html = '';
       if (state.queue[1]) html += buildCardHTML(state.queue[1], 'card-next');
       if (state.queue[0]) html += buildCardHTML(state.queue[0], 'card-top');
       container.innerHTML = html;
 
+      state.cardRenderTime = Date.now(); // Reset dwell timer
       initTouchMechanics();
     }
 
-    // Read Article (Ghost Card Fix)
+    // Auditor Fix: Spatial UI Desync
     window.readArticle = function(url) {
       window.open(url, '_blank');
       const topCard = $('#card-top');
@@ -353,6 +438,7 @@
       setTimeout(() => handleAction('LIKE'), 300);
     };
 
+    // Auditor Fix: Render Thrashing
     function initTouchMechanics() {
       const topCard = $('#card-top');
       if (!topCard) return;
@@ -363,7 +449,7 @@
         isDragging = true;
         startX = e.clientX;
         startTime = Date.now();
-        topCard.style.transition = 'none'; // Disable transition for 1:1 finger tracking
+        topCard.style.transition = 'none'; 
         topCard.setPointerCapture(e.pointerId);
       });
 
@@ -372,7 +458,6 @@
         currentX = e.clientX;
         const deltaX = currentX - startX;
 
-        // Hardware accelerated dragging (Render Thrash Fix)
         if (!isTicking) {
           window.requestAnimationFrame(() => {
             topCard.style.transform = `translateX(${deltaX}px) rotate(${deltaX * 0.05}deg)`;
@@ -390,14 +475,12 @@
         const timeElapsed = Date.now() - startTime;
         topCard.style.transition = 'transform 0.3s ease-out';
 
-        // Treat as a click if they barely moved
         if (Math.abs(deltaX) < 10 && timeElapsed < 300) {
           topCard.style.transform = 'none';
           window.readArticle(state.queue[0].url);
           return;
         }
 
-        // Swipe evaluation
         if (deltaX > 120) {
           topCard.style.transform = `translateX(${window.innerWidth}px) rotate(30deg)`;
           setTimeout(() => handleAction('LIKE'), 300);
@@ -405,7 +488,7 @@
           topCard.style.transform = `translateX(-${window.innerWidth}px) rotate(-30deg)`;
           setTimeout(() => handleAction('DISLIKE'), 300);
         } else {
-          topCard.style.transform = 'none'; // Snap back
+          topCard.style.transform = 'none'; 
         }
       };
 
@@ -413,7 +496,7 @@
       topCard.addEventListener('pointercancel', handleEnd);
     }
 
-    // --- Bindings ---
+    // --- Controls & Sync Bindings ---
 
     $('#btn-like').addEventListener('click', () => {
       const card = $('#card-top');
@@ -433,37 +516,60 @@
       setTimeout(() => handleAction('SKIP'), 250);
     });
 
-    // Settings Modal Bindings
     const modal = $('#settings-modal');
     $('#btn-settings').addEventListener('click', () => {
-      $('#import-data').value = JSON.stringify(state.profile, null, 2);
+      $('#sync-id-label').innerText = state.syncId;
       modal.style.display = 'flex';
     });
     $('#btn-close-settings').addEventListener('click', () => modal.style.display = 'none');
     
-    $('#btn-export').addEventListener('click', () => {
-      navigator.clipboard.writeText(JSON.stringify(state.profile));
-      alert('Algorithm copied to clipboard!');
+    // Cloudflare KV Sync Actions
+    $('#btn-push').addEventListener('click', async () => {
+      const btn = $('#btn-push');
+      btn.innerText = 'Pushing...';
+      try {
+        await fetch(WORKER_URL + 'sync?id=' + state.syncId, { method: 'POST', body: JSON.stringify(state.profile) });
+        alert('Algorithm pushed to cloud successfully!');
+      } catch (e) { alert('Failed to push to cloud.'); }
+      btn.innerText = '☁️ Push to Cloud';
     });
     
-    $('#btn-import').addEventListener('click', () => {
+    $('#btn-pull').addEventListener('click', async () => {
+      const btn = $('#btn-pull');
+      btn.innerText = 'Pulling...';
       try {
-        const newData = JSON.parse($('#import-data').value);
-        if (typeof newData === 'object' && newData !== null) {
-          state.profile = newData;
-          localStorage.setItem('news_profile', JSON.stringify(state.profile));
+        const res = await fetch(WORKER_URL + 'sync?id=' + state.syncId);
+        const data = await res.json();
+        if (data && typeof data === 'object') {
+          state.profile = data;
+          saveLocal();
           renderDebug();
-          modal.style.display = 'none';
-          alert('Algorithm updated successfully.');
+          alert('Algorithm downloaded and local database overwritten.');
         }
-      } catch (e) {
-        alert('Invalid JSON format.');
+      } catch (e) { alert('Failed to pull from cloud (Is it empty?).'); }
+      btn.innerText = '☁️ Pull from Cloud';
+    });
+
+    $('#btn-delete').addEventListener('click', async () => {
+      if (confirm('Are you sure you want to nuke your cloud backup? This cannot be undone.')) {
+        const btn = $('#btn-delete');
+        btn.innerText = 'Deleting...';
+        try {
+          await fetch(WORKER_URL + 'sync?id=' + state.syncId, { method: 'DELETE' });
+          alert('Cloud data deleted successfully.');
+        } catch (e) { alert('Failed to delete cloud data.'); }
+        btn.innerText = '🚨 Delete Cloud Data';
       }
     });
 
-    // Kickoff
-    renderDebug();
-    fetchArticles();
+    // --- App Initialization ---
+    async function initApp() {
+      await initDB();
+      renderDebug();
+      fetchArticles();
+    }
+    initApp();
+
   </script>
 </body>
 </html>
