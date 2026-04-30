@@ -112,11 +112,27 @@
       padding: 2rem; 
       color: #71717a; 
     }
+    .debug-panel {
+      position: absolute;
+      top: 60px;
+      right: 10px;
+      background: rgba(24, 24, 27, 0.9);
+      color: #10b981;
+      padding: 1rem;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      z-index: 100;
+      pointer-events: none;
+      min-width: 120px;
+    }
   </style>
 </head>
 <body>
   <header>News Engine</header>
   
+  <div id="debug-panel" class="debug-panel">Brain empty...</div>
+
   <main id="feed-container">
     <div class="empty-state">Initializing algorithm...</div>
   </main>
@@ -128,7 +144,8 @@
   </div>
 
   <script type="module">
-    const API_URL = 'https://newsapi.askozicki.workers.dev/?country=us&page=';
+    // Using a broad query to pull from the 'everything' firehose instead of static top headlines
+    const API_URL = 'https://newsapi.askozicki.workers.dev/?q=tech+OR+startup+OR+world+OR+science&language=en&page=';
     
     // Pragmatic list of words to ignore so the algorithm focuses on nouns/verbs
     const STOP_WORDS = new Set(['the','a','an','and','or','but','is','are','was','were','to','of','in','for','with','on','at','by','this','that','it','as','be','from','news','breaking','update','has','have','will','not','out','how','why','what']);
@@ -141,6 +158,21 @@
     };
 
     const $ = (sel) => document.querySelector(sel);
+
+    function renderDebug() {
+      const entries = Object.entries(state.profile)
+        .sort((a, b) => b[1] - a[1]) // Sort highest to lowest
+        .slice(0, 5); // Grab top 5
+      
+      const panel = $('#debug-panel');
+      if (entries.length === 0) {
+        panel.innerHTML = 'Awaiting data...';
+        return;
+      }
+      
+      panel.innerHTML = '<strong>Top Affinities:</strong><br/>' + 
+        entries.map(([word, score]) => `${word}: ${score}`).join('<br/>');
+    }
 
     // Cleans strings, strips punctuation, removes stop words
     function tokenize(text) {
@@ -194,7 +226,7 @@
       });
       // Non-blocking save to prevent UI stutter
       setTimeout(() => localStorage.setItem('news_profile', JSON.stringify(state.profile)), 0);
-      console.log('Profile Updated:', state.profile); 
+      renderDebug(); // Update the visual brain UI
     }
 
     function handleAction(type) {
@@ -246,6 +278,7 @@
     $('#btn-skip').addEventListener('click', () => handleAction('SKIP'));
 
     // Kickoff
+    renderDebug();
     fetchArticles();
   </script>
 </body>
