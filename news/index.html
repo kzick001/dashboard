@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Signal News v1.5.1</title>
+  <title>Signal News v1.5.2</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
   <style>
     :root { 
@@ -262,7 +262,6 @@
       profile: Object.create(null),
       digest: [],
       mutedSources: [],
-      page: parseInt(localStorage.getItem('news_page')) || 1,
       interactions: parseInt(localStorage.getItem('news_interactions')) || 0,
       isLoading: false,
       isAnimating: false
@@ -329,11 +328,11 @@
     function tokenize(text) {
       if (!text) return [];
       const words = text.toLowerCase()
-        .replace(/'s\b/g, '') // Strip possessives
+        .replace(/'s\b/g, '') 
         .replace(/[^\w\s]/g, '') 
         .split(/\s+/)
         .filter(w => w.length > 2 && !CONSTANTS.STOP_WORDS.has(w))
-        .map(w => w.endsWith('s') ? w.slice(0, -1) : w); // Basic Stemming
+        .map(w => w.endsWith('s') ? w.slice(0, -1) : w); 
         
       const bigrams = [];
       for(let i = 0; i < words.length - 1; i++) {
@@ -380,7 +379,7 @@
       
       const query = queryTopics.map(t => `"${t}"`).map(encodeURIComponent).join('+OR+');
       const pageSize = 40;
-      const url = `https://newsapi.askozicki.workers.dev/?q=${query}&language=en&pageSize=${pageSize}&page=${state.page}`;
+      const url = `https://newsapi.askozicki.workers.dev/?q=${query}&language=en&pageSize=${pageSize}&page=1`;
       
       try {
         const res = await fetch(url);
@@ -396,9 +395,6 @@
           
           state.queue.forEach(a => { if (a._score === undefined) a._score = scoreArticle(a); });
           state.queue.sort((a, b) => b._score - a._score);
-          
-          state.page++;
-          localStorage.setItem('news_page', state.page);
         }
       } catch (err) {
         console.error('Fetch error:', err);
