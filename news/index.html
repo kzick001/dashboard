@@ -3,90 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Signal News</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>">
+  <title>Signal News v1.5</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
   <style>
-    /* Cupertino 2050 - Light Theme (Default) */
     :root { 
-      --bg-color: #f1f5f9;
-      --mesh-1: hsla(215, 100%, 90%, 1);
-      --mesh-2: hsla(280, 100%, 90%, 1);
-      --mesh-3: hsla(150, 100%, 90%, 1);
-      --card-bg: rgba(255, 255, 255, 0.65);
-      --card-border: rgba(255, 255, 255, 0.8);
-      --text-main: #0f172a;
-      --text-muted: #475569;
+      --bg: #f4f4f5; 
+      --card: #ffffff; 
+      --text: #18181b; 
       --brand: #3b82f6;
       --like: #10b981;
       --dislike: #ef4444; 
-      --undo: #f59e0b;
-      --highlight-bg: rgba(16, 185, 129, 0.2);
-      --highlight-text: #047857;
-      --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-      --modal-bg: rgba(255, 255, 255, 0.75);
+      --skip: #71717a;
     }
-
-    /* Cupertino 2050 - Dark Theme */
-    [data-theme="dark"] {
-      --bg-color: #020617;
-      --mesh-1: hsla(220, 80%, 15%, 1);
-      --mesh-2: hsla(280, 70%, 15%, 1);
-      --mesh-3: hsla(320, 60%, 15%, 1);
-      --card-bg: rgba(15, 23, 42, 0.65);
-      --card-border: rgba(255, 255, 255, 0.1);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --highlight-bg: rgba(16, 185, 129, 0.2);
-      --highlight-text: #34d399;
-      --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-      --modal-bg: rgba(15, 23, 42, 0.85);
-    }
-
     * { box-sizing: border-box; }
-    
     body { 
-      font-family: 'Inter', system-ui, -apple-system, sans-serif; 
-      background-color: var(--bg-color);
-      background-image: 
-        radial-gradient(at 0% 0%, var(--mesh-1) 0px, transparent 50%), 
-        radial-gradient(at 100% 0%, var(--mesh-2) 0px, transparent 50%), 
-        radial-gradient(at 50% 100%, var(--mesh-3) 0px, transparent 50%);
-      background-attachment: fixed;
-      color: var(--text-main); 
+      font-family: system-ui, -apple-system, sans-serif; 
+      background: var(--bg); 
+      color: var(--text); 
       margin: 0; 
       padding: 0; 
       display: flex; 
       flex-direction: column; 
       height: 100vh; 
       overflow: hidden; 
-      touch-action: none;
-      transition: background-color 0.4s ease;
+      touch-action: none; 
     }
-
-    /* Glass Header */
     header { 
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 1rem 1.5rem; 
-      font-weight: 700; 
-      font-size: 1.25rem;
-      background: var(--card-bg);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border-bottom: 1px solid var(--card-border);
+      font-weight: 800; 
+      font-size: 1.2rem;
+      background: var(--card); 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
       z-index: 10; 
     }
+    .header-actions { display: flex; gap: 0.5rem; }
+    .header-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; transition: transform 0.1s;}
+    .header-btn:active { transform: scale(0.9); }
     
-    .header-actions { display: flex; gap: 1rem; }
-    .header-btn { 
-      background: none; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
-      padding: 0;
-    }
-    .header-btn svg { fill: var(--text-main); width: 22px; height: 22px; transition: opacity 0.2s; }
-    .header-btn:active svg { opacity: 0.5; }
-
     main { 
       flex: 1; 
       display: flex; 
@@ -96,350 +52,335 @@
       position: relative; 
       perspective: 1000px;
     }
-
-    /* Card UI Polish */
     .card { 
-      background: var(--card-bg); 
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
-      border-radius: 24px; 
-      border: 1px solid var(--card-border);
-      box-shadow: var(--glass-shadow); 
-      max-width: 380px; 
+      background: var(--card); 
+      border-radius: 16px; 
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15); 
+      max-width: 400px; 
       width: 100%; 
-      height: 68vh; 
+      height: 70vh; 
       display: flex; 
       flex-direction: column; 
       overflow: hidden; 
       position: absolute;
       will-change: transform;
       cursor: grab;
-      /* Only transition layout properties, not background, for instant theme swapping */
-      transition: box-shadow 0.3s ease; 
     }
     .card:active { cursor: grabbing; }
     
     #card-top { z-index: 2; }
     #card-next { 
       z-index: 1; 
-      transform: scale(0.92) translateY(25px); 
+      transform: scale(0.95) translateY(20px); 
       opacity: 0.8;
-      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), opacity 0.4s;
+      transition: all 0.3s ease;
     }
 
     .card-img { 
       width: 100%; 
       height: 40%; 
-      background: rgba(0,0,0,0.1); 
+      background: #e4e4e7; 
       object-fit: cover; 
       pointer-events: none;
     }
     .card-content { 
       padding: 1.5rem; 
       flex: 1; 
-      display: flex;
-      flex-direction: column;
+      overflow-y: hidden;
       pointer-events: none;
+      position: relative;
     }
     .source { 
-      font-size: 0.75rem; 
+      font-size: 0.8rem; 
       color: var(--brand); 
-      font-weight: 700; 
+      font-weight: 800; 
       text-transform: uppercase; 
       margin-bottom: 0.5rem; 
-      letter-spacing: 0.05em;
+      letter-spacing: 0.5px;
     }
     .title { 
-      font-size: 1.25rem; 
-      font-weight: 700; 
-      margin: 0 0 0.5rem 0; 
+      font-size: 1.3rem; 
+      font-weight: 800; 
+      margin: 0 0 0.75rem 0; 
       line-height: 1.3; 
     }
     .desc { 
-      font-size: 0.95rem; 
-      color: var(--text-muted); 
+      font-size: 1rem; 
+      color: #52525b; 
       line-height: 1.5; 
       display: -webkit-box;
-      -webkit-line-clamp: 3;
+      -webkit-line-clamp: 4;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      flex: 1;
     }
+
+    /* Mute Switch */
+    .mute-btn {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: rgba(24, 24, 27, 0.6);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 28px; height: 28px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      z-index: 10;
+      pointer-events: auto;
+      backdrop-filter: blur(4px);
+    }
+    .mute-btn:hover { background: rgba(239, 68, 68, 0.9); }
+
+    /* Visual Stamps */
+    .stamp {
+      position: absolute;
+      padding: 0.5rem 1rem;
+      border: 4px solid;
+      border-radius: 8px;
+      font-size: 2rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      opacity: 0;
+      z-index: 10;
+      pointer-events: none;
+      transition: opacity 0.1s;
+    }
+    .stamp-like { top: 40px; left: 20px; color: var(--like); border-color: var(--like); transform: rotate(-15deg); }
+    .stamp-dislike { top: 40px; right: 20px; color: var(--dislike); border-color: var(--dislike); transform: rotate(15deg); }
+    .stamp-skip { top: 40%; left: 50%; transform: translate(-50%, -50%); color: var(--skip); border-color: var(--skip); }
+    .stamp-save { bottom: 40px; left: 50%; transform: translate(-50%, 0) rotate(-5deg); color: var(--brand); border-color: var(--brand); }
     
-    .signal-highlight {
-      background: var(--highlight-bg);
-      color: var(--highlight-text);
-      font-weight: 600;
-      padding: 0 3px;
-      border-radius: 4px;
-    }
-
-    .read-btn-container { margin-top: auto; padding-top: 1rem; pointer-events: auto; }
-    .read-btn {
-      display: block; width: 100%; padding: 0.85rem; text-align: center;
-      background: var(--brand); color: white; border-radius: 12px;
-      text-decoration: none; font-weight: 600; font-size: 0.95rem;
-      transition: transform 0.1s, opacity 0.2s;
-    }
-    .read-btn:active { transform: scale(0.98); opacity: 0.9; }
-
-    /* Controls Polish */
     .controls { 
-      display: flex; justify-content: center; align-items: center; gap: 1.2rem;
-      padding: 0 1.5rem 2rem; background: transparent; z-index: 10;
+      display: flex; 
+      justify-content: center; 
+      gap: 1.5rem;
+      padding: 1rem 1.5rem 2rem; 
+      background: transparent;
+      z-index: 10;
     }
     .control-btn { 
-      background: var(--card-bg); border: 1px solid var(--card-border); 
-      backdrop-filter: blur(10px); cursor: pointer; 
-      transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s; 
-      border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-      box-shadow: var(--glass-shadow); 
+      font-size: 1.8rem; 
+      background: var(--card); 
+      border: none; 
+      cursor: pointer; 
+      transition: transform 0.15s, box-shadow 0.15s; 
+      width: 65px; 
+      height: 65px; 
+      border-radius: 50%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
     }
-    .control-btn:active { transform: scale(0.85); }
+    .control-btn:active { transform: scale(0.9); }
+    #btn-dislike { color: var(--dislike); }
+    #btn-like { color: var(--like); font-size: 2.2rem; }
     
-    #btn-undo { width: 50px; height: 50px; }
-    #btn-undo svg { fill: var(--undo); width: 22px; height: 22px;}
+    .empty-state { text-align: center; padding: 2rem; color: #71717a; width: 100%; position: absolute;}
     
-    #btn-dislike { width: 65px; height: 65px; }
-    #btn-dislike svg { stroke: var(--dislike); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; width: 28px; height: 28px;}
-    
-    #btn-skip { width: 55px; height: 55px; }
-    #btn-skip svg { fill: var(--text-muted); width: 22px; height: 22px;}
-    
-    #btn-like { width: 75px; height: 75px; }
-    #btn-like svg { fill: var(--like); width: 34px; height: 34px;}
-
-    /* Debug Panel */
     .debug-panel {
-      position: absolute; top: 75px; right: 10px; 
-      background: rgba(15, 23, 42, 0.7); color: #34d399;
-      padding: 1rem; border-radius: 12px; font-family: monospace; font-size: 0.75rem; z-index: 100;
-      pointer-events: none; min-width: 140px; 
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.1);
-      opacity: 0; transition: opacity 0.3s;
+      position: absolute; top: 70px; right: 10px; background: rgba(24, 24, 27, 0.85); color: #10b981;
+      padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.75rem; z-index: 100;
+      pointer-events: none; min-width: 140px; backdrop-filter: blur(4px);
     }
-    .debug-panel.visible { opacity: 1; }
 
-    .empty-state { text-align: center; padding: 2rem; color: var(--text-muted); width: 100%; position: absolute; font-weight: 600;}
-
-    /* Modals */
-    .modal {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 999;
-      justify-content: center; align-items: center; padding: 1.5rem;
-      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-      opacity: 0; transition: opacity 0.2s;
+    #settings-modal {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 999;
+      justify-content: center; align-items: center; padding: 1rem;
     }
-    .modal.show { opacity: 1; }
-    
     .modal-content {
-      background: var(--modal-bg); padding: 2rem; border-radius: 24px; width: 100%; max-width: 380px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-      border: 1px solid var(--card-border);
-      backdrop-filter: blur(20px) saturate(180%);
+      background: var(--card); padding: 2rem; border-radius: 12px; width: 100%; max-width: 400px;
     }
-    .modal-content h2 { margin-top: 0; margin-bottom: 0.5rem; color: var(--text-main);}
-    
-    .sync-id-display {
-      background: rgba(0,0,0,0.05); padding: 0.85rem; border-radius: 12px; text-align: center;
-      font-family: monospace; font-size: 1.25rem; font-weight: 700; margin: 1.2rem 0; letter-spacing: 3px;
-      border: 1px solid var(--card-border); color: var(--text-main);
-    }
-    
-    .modal-actions { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem; }
-    .btn { padding: 0.85rem; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; font-size: 1rem; transition: transform 0.1s, opacity 0.2s; }
-    .btn:active { transform: scale(0.97); }
-    .btn-cloud { background: var(--text-main); color: var(--bg-color); }
-    .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--dislike); border: 1px solid rgba(239, 68, 68, 0.3); }
-    .btn-secondary { background: transparent; color: var(--text-muted); }
+    .modal-content h2 { margin-top: 0; }
+    textarea { width: 100%; height: 100px; margin: 1rem 0; padding: 0.5rem; font-family: monospace; border-radius: 6px; border: 1px solid #d4d4d8;}
+    .modal-actions { display: flex; gap: 1rem; justify-content: flex-end; }
+    .btn { padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
+    .btn-primary { background: var(--brand); color: white; }
+    .btn-secondary { background: #e4e4e7; color: var(--text); }
   </style>
 </head>
 <body>
   <header>
     <span>Signal News</span>
     <div class="header-actions">
-      <button class="header-btn" id="btn-theme" title="Toggle Theme">
-        <svg id="theme-icon" viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.39 1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.39 1.03.39 1.41 0l1.06-1.06z"/></svg>
-      </button>
-      <button class="header-btn" id="btn-settings" title="Cloud Settings">
-        <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
-      </button>
+      <button class="header-btn" id="btn-digest" title="Export Digest">📚</button>
+      <button class="header-btn" id="btn-settings" title="Settings">⚙️</button>
     </div>
   </header>
   
-  <div id="debug-panel" class="debug-panel">Brain empty...</div>
+  <div id="debug-panel" class="debug-panel">Booting NLP...</div>
 
   <main id="feed-container">
-    <div class="empty-state">Finding the signal...</div>
+    <div class="empty-state">Initializing algorithm...</div>
   </main>
   
   <div class="controls">
-    <button class="control-btn" id="btn-undo" title="Undo Last Swipe">
-      <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
-    </button>
-    <button class="control-btn" id="btn-dislike" title="Dislike">
-      <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
-    </button>
-    <button class="control-btn" id="btn-skip" title="Skip">
-      <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-    </button>
-    <button class="control-btn" id="btn-like" title="Like">
-      <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-    </button>
+    <button class="control-btn" id="btn-dislike" title="Dislike (Down)">❌</button>
+    <button class="control-btn" id="btn-skip" title="Skip (Left)" style="width: 50px; height: 50px; font-size: 1.2rem;">⏭️</button>
+    <button class="control-btn" id="btn-like" title="Like (Right)">💚</button>
   </div>
 
-  <div id="settings-modal" class="modal">
+  <div id="settings-modal">
     <div class="modal-content">
-      <h2>Cloud Sync</h2>
-      <p style="font-size: 0.9rem; color: var(--text-muted); margin:0;">Link devices using your Sync ID.</p>
-      
-      <div class="sync-id-display" id="sync-id-label">--------</div>
-      
+      <h2>Sync & Settings</h2>
+      <p style="font-size: 0.9rem; color: #52525b;">Export your bundled Brain & Mute List.</p>
+      <textarea id="import-data"></textarea>
       <div class="modal-actions">
-        <button class="btn btn-cloud" id="btn-push">↑ Push Algorithm to Cloud</button>
-        <button class="btn btn-cloud" id="btn-pull">↓ Pull Algorithm from Cloud</button>
-        <button class="btn btn-danger" id="btn-delete">Delete Cloud Data</button>
-        <button class="btn btn-secondary" id="btn-close-settings">Done</button>
+        <button class="btn btn-secondary" id="btn-close-settings">Close</button>
+        <button class="btn btn-primary" id="btn-export">Copy Payload</button>
+        <button class="btn btn-primary" id="btn-import">Import</button>
       </div>
     </div>
   </div>
 
   <script type="module">
-    // Constants
-    const WORKER_URL = 'https://newsapi.askozicki.workers.dev/';
-    const API_URL = WORKER_URL + '?q=tech+OR+startup+OR+world+OR+science&language=en&page=';
-    const STOP_WORDS = new Set(['the','a','an','and','or','but','is','are','was','were','to','of','in','for','with','on','at','by','this','that','it','as','be','from','news','breaking','update','has','have','will','not','out','how','why','what']);
-    const COLD_START_THRESHOLD = 20;
-    const DECAY_INTERVAL = 100;
-    const SOURCE_MULTIPLIER = 3;
-
-    // State
-    const state = {
-      queue: [],
-      profile: {},
-      page: parseInt(localStorage.getItem('news_page')) || 1,
-      interactions: parseInt(localStorage.getItem('news_interactions')) || 0,
-      syncId: localStorage.getItem('news_sync_id') || crypto.randomUUID?.().slice(0,8).toUpperCase() || Math.random().toString(36).slice(2, 10).toUpperCase(),
-      isLoading: false,
-      cardRenderTime: Date.now(),
-      undoStack: null
+    // --- Constants & Blueprints ---
+    const CONSTANTS = {
+      TOPICS: ['artificial intelligence', 'startups', 'global economy', 'scientific research', 'world politics', 'climate tech', 'neuroscience'],
+      STOP_WORDS: new Set(['the','a','an','and','or','but','is','are','was','were','to','of','in','for','with','on','at','by','this','that','it','as','be','from','news','breaking','update','has','have','will','not','out','how','why','what','your','you','their','they','we','our','he','she','his','hers']),
+      SLOP_LIST: ['here is why', 'you need to know', 'shocking', 'one trick', 'destroys', 'slams', "won't believe", 'what happens next'],
+      COLD_START_THRESHOLD: 20,
+      DECAY_INTERVAL: 100,
+      SOURCE_MULTIPLIER: 3,
+      POINTS: { SAVE: 3, READ: 2, LIKE: 1, DWELL_SKIP: 0.5, DISLIKE: -1.5, SKIP: 0 }
     };
-    
-    localStorage.setItem('news_sync_id', state.syncId);
 
     const $ = (sel) => document.querySelector(sel);
     const esc = s => (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-    // --- Theme Engine ---
-    const themeIconPathLight = "M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.39 1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.39 1.03.39 1.41 0l1.06-1.06z";
-    const themeIconPathDark = "M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4C12.92 3.04 12.46 3 12 3z";
-    
-    function initTheme() {
-      const savedTheme = localStorage.getItem('theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-        document.body.setAttribute('data-theme', 'dark');
-        $('#theme-icon path').setAttribute('d', themeIconPathDark);
-      }
-    }
-
-    $('#btn-theme').addEventListener('click', () => {
-      const isDark = document.body.getAttribute('data-theme') === 'dark';
-      if (isDark) {
-        document.body.removeAttribute('data-theme');
-        localStorage.setItem('theme', 'light');
-        $('#theme-icon path').setAttribute('d', themeIconPathLight);
-      } else {
-        document.body.setAttribute('data-theme', 'dark');
-        localStorage.setItem('theme', 'dark');
-        $('#theme-icon path').setAttribute('d', themeIconPathDark);
-      }
-    });
-
-    // --- IndexedDB ---
+    // --- State & IndexedDB Architecture ---
     let db;
-    function initDB() {
+    const state = {
+      queue: [],
+      profile: Object.create(null),
+      digest: [],
+      mutedSources: [],
+      page: parseInt(localStorage.getItem('news_page')) || 1,
+      interactions: parseInt(localStorage.getItem('news_interactions')) || 0,
+      isLoading: false,
+      isAnimating: false
+    };
+
+    async function initDB() {
       return new Promise((resolve) => {
-        try {
-          const req = window.indexedDB.open('NewsEngineDB', 1);
-          req.onupgradeneeded = e => {
-            db = e.target.result;
-            if(!db.objectStoreNames.contains('profileStore')) db.createObjectStore('profileStore');
-          };
-          req.onsuccess = e => {
-            db = e.target.result;
-            const tx = db.transaction('profileStore', 'readonly');
-            const getReq = tx.objectStore('profileStore').get('userProfile');
-            getReq.onsuccess = () => { state.profile = getReq.result || {}; resolve(); };
-            getReq.onerror = () => resolve(); 
-          };
-          req.onerror = () => resolve(); 
-        } catch (err) {
-          console.warn('IndexedDB blocked by client environment:', err);
+        const req = indexedDB.open('SignalNews', 2);
+        req.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains('profileStore')) database.createObjectStore('profileStore');
+          if (!database.objectStoreNames.contains('savedStore')) database.createObjectStore('savedStore', { keyPath: 'url' });
+          if (!database.objectStoreNames.contains('mutedStore')) database.createObjectStore('mutedStore', { keyPath: 'name' });
+        };
+        req.onsuccess = async (e) => {
+          db = e.target.result;
+          await loadStateFromDB();
           resolve();
-        }
+        };
+        req.onerror = () => {
+          console.warn("IndexedDB blocked. Falling back to memory limits.");
+          resolve();
+        };
       });
     }
 
-    function saveLocal() {
+    async function loadStateFromDB() {
       if (!db) return;
-      try {
-        const tx = db.transaction('profileStore', 'readwrite');
-        tx.objectStore('profileStore').put(state.profile, 'userProfile');
-      } catch (err) {
-        // Fallback to in-memory state only if strictly blocked
-      }
+      
+      const getReq = (store, key) => new Promise(res => {
+        try {
+          const r = db.transaction(store).objectStore(store).get(key);
+          r.onsuccess = () => res(r.result); r.onerror = () => res(null);
+        } catch(e) { res(null); }
+      });
+      
+      const getAllReq = (store) => new Promise(res => {
+        try {
+          const r = db.transaction(store).objectStore(store).getAll();
+          r.onsuccess = () => res(r.result); r.onerror = () => res([]);
+        } catch(e) { res([]); }
+      });
+
+      state.profile = Object.assign(Object.create(null), await getReq('profileStore', 'user_profile') || {});
+      state.digest = await getAllReq('savedStore') || [];
+      const muted = await getAllReq('mutedStore') || [];
+      state.mutedSources = muted.map(m => m.name);
     }
 
-    // --- Algorithm ---
+    function idbPut(store, val, key) {
+      if (!db) return;
+      try {
+        const tx = db.transaction(store, 'readwrite');
+        key ? tx.objectStore(store).put(val, key) : tx.objectStore(store).put(val);
+      } catch(e) {}
+    }
+
+    function idbClear(store) {
+      if (!db) return;
+      try { db.transaction(store, 'readwrite').objectStore(store).clear(); } catch(e){}
+    }
+
+    // --- NLP Pipeline Upgrades ---
     function tokenize(text) {
       if (!text) return [];
-      const unigrams = text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(word => word.length > 2 && !STOP_WORDS.has(word));
-      const nGrams = [...unigrams];
-      for(let i = 0; i < unigrams.length - 1; i++) nGrams.push(unigrams[i] + ' ' + unigrams[i+1]);
-      return nGrams;
+      const words = text.toLowerCase()
+        .replace(/'s\b/g, '') // Strip possessives
+        .replace(/[^\w\s]/g, '') 
+        .split(/\s+/)
+        .filter(w => w.length > 2 && !CONSTANTS.STOP_WORDS.has(w))
+        .map(w => w.endsWith('s') ? w.slice(0, -1) : w); // Basic Stemming
+        
+      const bigrams = [];
+      for(let i = 0; i < words.length - 1; i++) {
+        bigrams.push(`${words[i]}_${words[i+1]}`);
+      }
+      return [...words, ...bigrams];
     }
 
     function scoreArticle(article) {
-      const tokens = [...tokenize(article.title), ...tokenize(article.description)];
-      const sourceName = article.source?.name ? tokenize(article.source.name).join('') : '';
-      let score = tokens.reduce((sum, token) => sum + (state.profile[token] || 0), 0);
-      if (sourceName) score += (state.profile[sourceName] || 0) * SOURCE_MULTIPLIER;
+      let score = 0;
+      if (state.interactions >= CONSTANTS.COLD_START_THRESHOLD) {
+        const tokens = [...tokenize(article.title), ...tokenize(article.description)];
+        const sourceName = article.source?.name ? tokenize(article.source.name).join('') : '';
+        score = tokens.reduce((sum, token) => sum + (state.profile[token] || 0), 0);
+        if (sourceName) score += (state.profile[sourceName] || 0) * CONSTANTS.SOURCE_MULTIPLIER;
+      }
+      
+      // Heuristic Penalties
+      if (article.title) {
+        if (article.title.trim().endsWith('?')) score -= 5;
+        const titleLower = article.title.toLowerCase().replace(/[^\w\s]/g, '');
+        CONSTANTS.SLOP_LIST.forEach(slop => {
+          if (titleLower.includes(slop.replace(/[^\w\s]/g, ''))) score -= 15;
+        });
+      }
       return score;
     }
 
+    // --- Dynamic Fetching ---
     async function fetchArticles() {
       if (state.isLoading) return;
       state.isLoading = true;
+      
+      const query = encodeURIComponent(CONSTANTS.TOPICS[Math.floor(Math.random() * CONSTANTS.TOPICS.length)]);
+      const url = `https://newsapi.askozicki.workers.dev/?q=${query}&language=en&page=${state.page}`;
+      
       try {
-        const res = await fetch(API_URL + state.page);
+        const res = await fetch(url);
         const data = await res.json();
         
-        // Error handling for API limits or worker issues
-        if (data.status === 'error') {
-          $('#feed-container').innerHTML = `<div class="empty-state" style="color: var(--dislike);">API Error: ${data.message}</div>`;
-          return;
-        }
-
         if (data.articles && data.articles.length > 0) {
-          const validArticles = data.articles.filter(a => a.title && !a.title.includes('[Removed]'));
+          const validArticles = data.articles.filter(a => 
+            a.title && !a.title.includes('[Removed]') && !state.mutedSources.includes(a.source?.name)
+          );
           state.queue.push(...validArticles);
-          state.queue.forEach(a => { 
-            if (a._score === undefined) {
-              a._score = (state.interactions > COLD_START_THRESHOLD && Math.random() < 0.10) ? 9999 : scoreArticle(a); 
-            }
-          });
+          
+          state.queue.forEach(a => { if (a._score === undefined) a._score = scoreArticle(a); });
           state.queue.sort((a, b) => b._score - a._score);
+          
           state.page++;
           localStorage.setItem('news_page', state.page);
-        } else if (state.queue.length === 0) {
-           $('#feed-container').innerHTML = `<div class="empty-state">No articles found. Try clearing your local storage or checking your proxy.</div>`;
         }
-      } catch (err) { 
-        console.error('Fetch error:', err); 
-        if (state.queue.length === 0) {
-          $('#feed-container').innerHTML = `<div class="empty-state" style="color: var(--dislike);">Network Error: Could not reach the Cloudflare Worker.</div>`;
-        }
+      } catch (err) {
+        console.error('Fetch error:', err);
       } finally {
         state.isLoading = false;
         if (state.queue.length > 0 && !$('#card-top')) renderCards();
@@ -450,113 +391,116 @@
       const keys = Object.keys(state.profile);
       let i = 0;
       function chunk() {
-        const end = Math.min(i + 50, keys.length);
+        const end = Math.min(i + 150, keys.length);
         for(; i < end; i++) {
           const key = keys[i];
           state.profile[key] = Math.round(state.profile[key] * 0.9);
           if (state.profile[key] === 0) delete state.profile[key];
         }
-        if (i < keys.length) setTimeout(chunk, 0); 
-        else { saveLocal(); renderDebug(); }
+        if (i < keys.length) window.requestAnimationFrame(chunk);
+        else { idbPut('profileStore', state.profile, 'user_profile'); renderDebug(); }
       }
-      setTimeout(chunk, 0);
+      window.requestAnimationFrame(chunk);
     }
 
     function updateProfile(tokens, source, modifier) {
-      tokens.forEach(t => state.profile[t] = (state.profile[t] || 0) + modifier);
+      if (modifier === 0) return;
+      tokens.forEach(token => { state.profile[token] = (state.profile[token] || 0) + modifier; });
       if (source) {
         const cleanSource = tokenize(source).join('');
-        if (cleanSource) state.profile[cleanSource] = (state.profile[cleanSource] || 0) + (modifier * SOURCE_MULTIPLIER);
+        if (cleanSource) state.profile[cleanSource] = (state.profile[cleanSource] || 0) + (modifier * CONSTANTS.SOURCE_MULTIPLIER);
       }
-      saveLocal();
+      setTimeout(() => idbPut('profileStore', state.profile, 'user_profile'), 0);
       renderDebug(); 
     }
 
     function handleAction(type) {
       if (state.queue.length === 0) return;
       
+      state.interactions++;
+      localStorage.setItem('news_interactions', state.interactions);
+
       const current = state.queue.shift();
       const tokens = [...tokenize(current.title), ...tokenize(current.description)];
       const source = current.source?.name || '';
-      const dwellTime = Date.now() - state.cardRenderTime;
-      
-      let modifierApplied = 0;
 
-      if (type === 'LIKE') modifierApplied = 1;
-      else if (type === 'DISLIKE') modifierApplied = -1;
-      else if (type === 'SKIP' && dwellTime > 4000) modifierApplied = 0.5;
+      const pts = CONSTANTS.POINTS[type];
+      updateProfile(tokens, source, pts);
 
-      if (modifierApplied !== 0) updateProfile(tokens, source, modifierApplied);
+      if (type === 'SAVE' || type === 'READ') {
+        state.digest.push(current);
+        idbPut('savedStore', current);
+      }
       
-      state.undoStack = { article: current, tokens, source, modifierApplied };
-
-      state.interactions++;
-      localStorage.setItem('news_interactions', state.interactions);
-      
-      if (state.interactions > 0 && state.interactions % DECAY_INTERVAL === 0) decayProfile();
+      if (state.interactions % CONSTANTS.DECAY_INTERVAL === 0) decayProfile();
 
       renderCards();
       if (state.queue.length < 5) fetchArticles();
     }
 
-    function undoAction() {
-      if (!state.undoStack) return;
-      
-      if (state.undoStack.modifierApplied !== 0) {
-        updateProfile(state.undoStack.tokens, state.undoStack.source, -state.undoStack.modifierApplied);
-      }
-      
-      state.queue.unshift(state.undoStack.article);
-      state.undoStack = null; 
-      state.interactions = Math.max(0, state.interactions - 1);
-      localStorage.setItem('news_interactions', state.interactions);
-      
-      renderCards();
-    }
-
-    // --- UI & Rendering ---
-    
-    function highlightText(text) {
-      if (!text) return '';
-      const escaped = esc(text);
-      if (state.interactions < COLD_START_THRESHOLD) return escaped; 
-      
-      const strongWords = Object.keys(state.profile)
-                                .filter(k => state.profile[k] >= 3 && !k.includes(' ')) 
-                                .sort((a,b) => b.length - a.length); 
-      
-      if (strongWords.length === 0) return escaped;
-      
-      const regex = new RegExp(`\\b(${strongWords.join('|')})\\b`, 'gi');
-      return escaped.replace(regex, '<span class="signal-highlight">$&</span>');
-    }
-
+    // --- UI & Ergonomics ---
     function renderDebug() {
       const panel = $('#debug-panel');
-      if (state.interactions < COLD_START_THRESHOLD) {
-        panel.innerHTML = `Calibrating... (${state.interactions}/${COLD_START_THRESHOLD})`;
+      if (state.interactions < CONSTANTS.COLD_START_THRESHOLD) {
+        panel.innerHTML = `Training... (${state.interactions}/${CONSTANTS.COLD_START_THRESHOLD})`;
         return;
       }
       const entries = Object.entries(state.profile).sort((a, b) => b[1] - a[1]).slice(0, 5);
-      panel.innerHTML = `<strong>Signal:</strong><br/>` + entries.map(([w, s]) => `${w}: ${s}`).join('<br/>');
-      panel.classList.add('visible'); 
+      panel.innerHTML = `<strong>Brain Engine:</strong><br/>` + entries.map(([w, s]) => `${w}: ${s}`).join('<br/>');
     }
 
-    function buildCardHTML(article, id) {
-      const imgSrc = article.urlToImage || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="220"><rect width="400" height="220" fill="rgba(0,0,0,0.1)"/></svg>';
-      const safeUrl = (article.url || '').startsWith('http') ? esc(article.url) : '#';
+    window.muteSource = function(sourceName, e) {
+      e.stopPropagation(); e.preventDefault();
+      if (window.confirm(`Are you sure you want to permanently mute ${sourceName}?`)) {
+        state.mutedSources.push(sourceName);
+        idbPut('mutedStore', { name: sourceName });
+        
+        const topCard = $('#card-top');
+        if (topCard) {
+            state.isAnimating = true;
+            topCard.style.transition = 'transform 0.3s ease-out';
+            topCard.style.transform = `translate(-${window.innerWidth}px, 0) rotate(-30deg)`;
+            setTimeout(() => {
+                handleAction('SKIP');
+                state.isAnimating = false;
+            }, 300);
+        } else {
+            handleAction('SKIP');
+        }
+      }
+    };
 
+    window.readArticle = function(url) {
+      if (state.isAnimating) return;
+      window.open(url, '_blank');
+      const topCard = $('#card-top');
+      if (topCard) {
+        state.isAnimating = true;
+        topCard.style.transition = 'transform 0.3s ease-out';
+        topCard.style.transform = 'translateY(-150%) scale(0.8)';
+        setTimeout(() => {
+          handleAction('READ');
+          state.isAnimating = false;
+        }, 300);
+      }
+    };
+
+    function buildCardHTML(article, id) {
+      const imgSrc = article.urlToImage || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="220"><rect width="400" height="220" fill="%23e4e4e7"/></svg>';
+      const sourceName = article.source?.name || 'Unknown';
       return `
         <div class="card" id="${id}">
-          <img src="${esc(imgSrc)}" class="card-img" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'400\\' height=\\'220\\'><rect width=\\'400\\' height=\\'220\\' fill=\\'rgba(0,0,0,0.1)\\'/></svg>'">
+          <div class="stamp stamp-like">LIKE</div>
+          <div class="stamp stamp-dislike">DISLIKE</div>
+          <div class="stamp stamp-skip">SKIP</div>
+          <div class="stamp stamp-save">SAVED</div>
+          
+          <img src="${esc(imgSrc)}" class="card-img" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'400\\' height=\\'220\\'><rect width=\\'400\\' height=\\'220\\' fill=\\'%23e4e4e7\\'/></svg>'">
+          <button class="mute-btn" data-source="${esc(sourceName)}" onclick="muteSource(this.dataset.source, event)" title="Mute Source">⊘</button>
           <div class="card-content">
-            <div class="source">${esc(article.source?.name || 'Unknown Source')}</div>
-            <h2 class="title">${highlightText(article.title)}</h2>
-            <p class="desc">${highlightText(article.description)}</p>
-            
-            <div class="read-btn-container">
-              <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="read-btn" onclick="readArticle(event)">Read Full Article ↗</a>
-            </div>
+            <div class="source">${esc(sourceName)}</div>
+            <h2 class="title">${esc(article.title)}</h2>
+            <p class="desc">${esc(article.description || '')}</p>
           </div>
         </div>
       `;
@@ -565,7 +509,7 @@
     function renderCards() {
       const container = $('#feed-container');
       if (state.queue.length === 0) {
-        // Fallback handled in fetchArticles
+        container.innerHTML = `<div class="empty-state">Fetching global digest...</div>`;
         return;
       }
 
@@ -574,62 +518,96 @@
       if (state.queue[0]) html += buildCardHTML(state.queue[0], 'card-top');
       container.innerHTML = html;
 
-      state.cardRenderTime = Date.now(); 
       initTouchMechanics();
     }
-
-    window.readArticle = function(e) {
-      const topCard = $('#card-top');
-      if (topCard) {
-        topCard.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-        topCard.style.transform = 'translateX(150%) rotate(15deg)';
-      }
-      setTimeout(() => handleAction('LIKE'), 300);
-    };
 
     function initTouchMechanics() {
       const topCard = $('#card-top');
       if (!topCard) return;
 
-      let startX = 0, currentX = 0, isDragging = false, isTicking = false;
+      let startX = 0, startY = 0, currentX = 0, currentY = 0;
+      let isDragging = false, isTicking = false, startTime = 0;
+      
+      const stampLike = topCard.querySelector('.stamp-like');
+      const stampDislike = topCard.querySelector('.stamp-dislike');
+      const stampSkip = topCard.querySelector('.stamp-skip');
+      const stampSave = topCard.querySelector('.stamp-save');
 
       topCard.addEventListener('pointerdown', (e) => {
-        if (e.target.closest('.read-btn-container')) return; 
-        
+        if (state.isAnimating || e.target.classList.contains('mute-btn')) return;
         isDragging = true;
-        startX = e.clientX;
-        topCard.style.transition = 'box-shadow 0.3s ease'; 
+        startX = e.clientX; startY = e.clientY;
+        startTime = Date.now();
+        topCard.style.transition = 'none'; 
         topCard.setPointerCapture(e.pointerId);
       });
 
       topCard.addEventListener('pointermove', (e) => {
         if (!isDragging) return;
-        currentX = e.clientX;
+        currentX = e.clientX; currentY = e.clientY;
         const deltaX = currentX - startX;
+        const deltaY = currentY - startY;
 
         if (!isTicking) {
           window.requestAnimationFrame(() => {
-            topCard.style.transform = `translateX(${deltaX}px) rotate(${deltaX * 0.04}deg)`;
+            topCard.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${deltaX * 0.05}deg)`;
+            
+            // Visual Stamp Logic (Opacity Collision Mitigated)
+            const isX = Math.abs(deltaX) > Math.abs(deltaY);
+            stampLike.style.opacity = 0; stampDislike.style.opacity = 0; 
+            stampSkip.style.opacity = 0; stampSave.style.opacity = 0;
+
+            if (isX) {
+                if (deltaX > 20) stampLike.style.opacity = Math.min(deltaX / 100, 1);
+                else if (deltaX < -20) stampSkip.style.opacity = Math.min(Math.abs(deltaX) / 100, 1);
+            } else {
+                if (deltaY < -20) stampSave.style.opacity = Math.min(Math.abs(deltaY) / 100, 1);
+                else if (deltaY > 20) stampDislike.style.opacity = Math.min(deltaY / 100, 1);
+            }
             isTicking = false;
           });
           isTicking = true;
         }
       });
 
-      const handleEnd = (e) => {
+      const handleEnd = () => {
         if (!isDragging) return;
         isDragging = false;
+        state.isAnimating = true;
+        
         const deltaX = currentX - startX;
-        topCard.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), box-shadow 0.3s ease';
+        const deltaY = currentY - startY;
+        const timeElapsed = Date.now() - startTime;
+        topCard.style.transition = 'transform 0.3s ease-out';
 
-        if (deltaX > 110) {
+        stampLike.style.opacity = 0; stampDislike.style.opacity = 0; 
+        stampSkip.style.opacity = 0; stampSave.style.opacity = 0;
+
+        // Micro-interaction read
+        if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10 && timeElapsed < 300) {
+          topCard.style.transform = 'none';
+          state.isAnimating = false;
+          window.readArticle(state.queue[0].url);
+          return;
+        }
+
+        const isX = Math.abs(deltaX) > Math.abs(deltaY);
+        
+        if (isX && deltaX > 100) {
           topCard.style.transform = `translateX(${window.innerWidth}px) rotate(30deg)`;
-          setTimeout(() => handleAction('LIKE'), 300);
-        } else if (deltaX < -110) {
+          setTimeout(() => { handleAction('LIKE'); state.isAnimating = false; }, 300);
+        } else if (isX && deltaX < -100) {
           topCard.style.transform = `translateX(-${window.innerWidth}px) rotate(-30deg)`;
-          setTimeout(() => handleAction('DISLIKE'), 300);
+          setTimeout(() => { handleAction('SKIP'); state.isAnimating = false; }, 300);
+        } else if (!isX && deltaY < -100) {
+          topCard.style.transform = `translateY(-${window.innerHeight}px) scale(0.8)`;
+          setTimeout(() => { handleAction('SAVE'); state.isAnimating = false; }, 300);
+        } else if (!isX && deltaY > 100) {
+          topCard.style.transform = `translateY(${window.innerHeight}px) scale(0.8)`;
+          setTimeout(() => { handleAction('DISLIKE'); state.isAnimating = false; }, 300);
         } else {
-          topCard.style.transform = 'none'; 
+          topCard.style.transform = 'none'; // Snap back
+          state.isAnimating = false;
         }
       };
 
@@ -637,91 +615,110 @@
       topCard.addEventListener('pointercancel', handleEnd);
     }
 
-    // --- Controls & Cloud Bindings ---
-    $('#btn-undo').addEventListener('click', undoAction);
+    // --- Desktop Ergonomics (Keyboard Mapping) ---
+    window.addEventListener('keydown', (e) => {
+      if (state.isAnimating || state.queue.length === 0) return;
+      const topCard = $('#card-top');
+      if (!topCard) return;
 
-    $('#btn-like').addEventListener('click', () => {
-      const card = $('#card-top');
-      if(card) { card.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1)'; card.style.transform = 'translateX(150%) rotate(15deg)'; }
-      setTimeout(() => handleAction('LIKE'), 250);
-    });
-    
-    $('#btn-dislike').addEventListener('click', () => {
-      const card = $('#card-top');
-      if(card) { card.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1)'; card.style.transform = 'translateX(-150%) rotate(-15deg)'; }
-      setTimeout(() => handleAction('DISLIKE'), 250);
-    });
-    
-    $('#btn-skip').addEventListener('click', () => {
-      const card = $('#card-top');
-      if(card) { card.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1)'; card.style.transform = 'translateY(150%)'; }
-      setTimeout(() => handleAction('SKIP'), 250);
-    });
+      const swipe = (x, y, rotation, action) => {
+        state.isAnimating = true;
+        topCard.style.transition = 'transform 0.3s ease-out';
+        topCard.style.transform = `translate(${x}px, ${y}px) rotate(${rotation}deg)`;
+        setTimeout(() => {
+          handleAction(action);
+          state.isAnimating = false;
+        }, 300);
+      };
 
-    const modal = $('#settings-modal');
-    $('#btn-settings').addEventListener('click', () => {
-      $('#sync-id-label').innerText = state.syncId;
-      modal.style.display = 'flex';
-      modal.offsetHeight;
-      modal.classList.add('show');
-    });
-    
-    function closeModal() {
-      modal.classList.remove('show');
-      setTimeout(() => modal.style.display = 'none', 200);
-    }
-    $('#btn-close-settings').addEventListener('click', closeModal);
-    
-    $('#btn-push').addEventListener('click', async () => {
-      const btn = $('#btn-push');
-      const originalText = btn.innerText;
-      btn.innerText = 'Pushing...';
-      try {
-        await fetch(WORKER_URL + 'sync?id=' + state.syncId, { method: 'POST', body: JSON.stringify(state.profile) });
-        alert('Algorithm successfully pushed to the cloud.');
-      } catch (e) { alert('Failed to push to cloud.'); }
-      btn.innerText = originalText;
-    });
-    
-    $('#btn-pull').addEventListener('click', async () => {
-      const btn = $('#btn-pull');
-      const originalText = btn.innerText;
-      btn.innerText = 'Pulling...';
-      try {
-        const res = await fetch(WORKER_URL + 'sync?id=' + state.syncId);
-        const data = await res.json();
-        if (data && typeof data === 'object') {
-          state.profile = data;
-          state.undoStack = null; 
-          saveLocal();
-          renderDebug();
-          alert('Algorithm synchronized. Database overwritten.');
-          closeModal();
-        }
-      } catch (e) { alert('Failed to pull from cloud (Is it empty?).'); }
-      btn.innerText = originalText;
-    });
-
-    $('#btn-delete').addEventListener('click', async () => {
-      if (confirm('Are you sure you want to delete your cloud backup? This does not delete local data.')) {
-        const btn = $('#btn-delete');
-        btn.innerText = 'Deleting...';
-        try {
-          await fetch(WORKER_URL + 'sync?id=' + state.syncId, { method: 'DELETE' });
-          alert('Cloud data deleted.');
-        } catch (e) { alert('Failed to delete cloud data.'); }
-        btn.innerText = 'Delete Cloud Data';
+      switch(e.key) {
+        case 'ArrowRight': swipe(window.innerWidth, 0, 30, 'LIKE'); break;
+        case 'ArrowLeft': swipe(-window.innerWidth, 0, -30, 'SKIP'); break;
+        case 'ArrowDown': swipe(0, window.innerHeight, 0, 'DISLIKE'); break;
+        case 'ArrowUp': swipe(0, -window.innerHeight, 0, 'SAVE'); break;
+        case 'Enter': window.readArticle(state.queue[0].url); break;
       }
     });
 
-    // Init
-    async function initApp() {
-      initTheme();
+    // --- Button Bindings ---
+    $('#btn-like').addEventListener('click', () => {
+      if(state.isAnimating) return; state.isAnimating = true;
+      const card = $('#card-top');
+      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateX(150%) rotate(15deg)'; }
+      setTimeout(() => { handleAction('LIKE'); state.isAnimating = false; }, 250);
+    });
+    
+    $('#btn-dislike').addEventListener('click', () => {
+      if(state.isAnimating) return; state.isAnimating = true;
+      const card = $('#card-top');
+      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateY(150%)'; }
+      setTimeout(() => { handleAction('DISLIKE'); state.isAnimating = false; }, 250);
+    });
+    
+    $('#btn-skip').addEventListener('click', () => {
+      if(state.isAnimating) return; state.isAnimating = true;
+      const card = $('#card-top');
+      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateX(-150%) rotate(-15deg)'; }
+      setTimeout(() => { handleAction('SKIP'); state.isAnimating = false; }, 250);
+    });
+
+    // --- Gemini Digest Handshake ---
+    $('#btn-digest').addEventListener('click', () => {
+      if (state.digest.length === 0) {
+        alert("Your digest queue is empty. Swipe UP on articles to save them!");
+        return;
+      }
+      
+      const markdown = `Act as an expert research assistant. Read the following article headlines and their associated links. Synthesize the key themes and summarize the most important developments:\n\n${state.digest.map(a => `* [${a.title}](${a.url})`).join('\n')}`;
+      
+      navigator.clipboard.writeText(markdown).then(() => {
+        if (window.confirm(`Copied ${state.digest.length} saved articles to clipboard! Ready to clear your Digest queue?`)) {
+          state.digest = [];
+          idbClear('savedStore');
+        }
+      });
+    });
+
+    // --- Sync / Settings Modal ---
+    const modal = $('#settings-modal');
+    $('#btn-settings').addEventListener('click', () => {
+      const payload = { profile: state.profile, muted: state.mutedSources };
+      $('#import-data').value = JSON.stringify(payload, null, 2);
+      modal.style.display = 'flex';
+    });
+    $('#btn-close-settings').addEventListener('click', () => modal.style.display = 'none');
+    
+    $('#btn-export').addEventListener('click', () => {
+      navigator.clipboard.writeText($('#import-data').value);
+      alert('Cloud payload copied to clipboard!');
+    });
+    
+    $('#btn-import').addEventListener('click', () => {
+      try {
+        const newData = JSON.parse($('#import-data').value);
+        if (newData.profile && Array.isArray(newData.muted)) {
+          state.profile = newData.profile;
+          state.mutedSources = newData.muted;
+          
+          idbPut('profileStore', state.profile, 'user_profile');
+          idbClear('mutedStore');
+          state.mutedSources.forEach(m => idbPut('mutedStore', { name: m }));
+          
+          renderDebug();
+          modal.style.display = 'none';
+          alert('Sync successful. Profile & Mute List updated.');
+        } else throw new Error("Invalid format");
+      } catch (e) {
+        alert('Invalid JSON payload structure.');
+      }
+    });
+
+    // Kickoff
+    (async function init() {
       await initDB();
       renderDebug();
       fetchArticles();
-    }
-    initApp();
+    })();
   </script>
 </body>
 </html>
