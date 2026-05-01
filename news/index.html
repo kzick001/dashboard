@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Signal News v1.5.2</title>
+  <title>Signal News v1.5.3</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
   <style>
     :root { 
@@ -12,7 +12,8 @@
       --text: #18181b; 
       --brand: #3b82f6;
       --like: #10b981;
-      --dislike: #ef4444; 
+      --dislike: #f97316; /* Changed to Orange */
+      --super-dislike: #9f1239; /* Deep Crimson */
       --skip: #71717a;
     }
     * { box-sizing: border-box; }
@@ -24,7 +25,7 @@
       padding: 0; 
       display: flex; 
       flex-direction: column; 
-      height: 100vh; 
+      height: 100dvh; 
       overflow: hidden; 
       touch-action: none; 
     }
@@ -32,7 +33,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1rem 1.5rem; 
+      padding: calc(1rem + env(safe-area-inset-top)) 1.5rem 1rem; 
       font-weight: 800; 
       font-size: 1.2rem;
       background: var(--card); 
@@ -58,7 +59,8 @@
       box-shadow: 0 8px 24px rgba(0,0,0,0.15); 
       max-width: 400px; 
       width: 100%; 
-      height: 70vh; 
+      height: 65dvh; 
+      max-height: 650px;
       display: flex; 
       flex-direction: column; 
       overflow: hidden; 
@@ -114,7 +116,6 @@
       overflow: hidden;
     }
 
-    /* Mute Switch */
     .mute-btn {
       position: absolute;
       top: 10px; right: 10px;
@@ -147,13 +148,13 @@
     }
     .stamp-like { top: 40px; left: 20px; color: var(--like); border-color: var(--like); transform: rotate(-15deg); }
     .stamp-dislike { top: 40px; right: 20px; color: var(--dislike); border-color: var(--dislike); transform: rotate(15deg); }
-    .stamp-skip { top: 40%; left: 50%; transform: translate(-50%, -50%); color: var(--skip); border-color: var(--skip); }
+    .stamp-super-dislike { top: 40px; right: 20px; color: var(--super-dislike); border-color: var(--super-dislike); transform: rotate(15deg); font-size: 1.5rem; }
     .stamp-save { bottom: 40px; left: 50%; transform: translate(-50%, 0) rotate(-5deg); color: var(--brand); border-color: var(--brand); }
     
     .controls { 
       display: flex; 
       justify-content: center; 
-      gap: 1.5rem;
+      gap: 1.25rem;
       padding: 1rem 1.5rem 2rem; 
       background: transparent;
       z-index: 10;
@@ -164,8 +165,8 @@
       border: none; 
       cursor: pointer; 
       transition: transform 0.15s, box-shadow 0.15s; 
-      width: 65px; 
-      height: 65px; 
+      width: 60px; 
+      height: 60px; 
       border-radius: 50%; 
       display: flex; 
       align-items: center; 
@@ -173,7 +174,9 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
     }
     .control-btn:active { transform: scale(0.9); }
+    #btn-undo { font-size: 1.5rem; width: 50px; height: 50px; color: #52525b; margin-top: 5px; }
     #btn-dislike { color: var(--dislike); }
+    #btn-skip { width: 50px; height: 50px; font-size: 1.2rem; margin-top: 5px; }
     #btn-like { color: var(--like); font-size: 2.2rem; }
     
     .empty-state { text-align: center; padding: 2rem; color: #71717a; width: 100%; position: absolute;}
@@ -214,8 +217,9 @@
   </main>
   
   <div class="controls">
-    <button class="control-btn" id="btn-dislike" title="Dislike (Down)">❌</button>
-    <button class="control-btn" id="btn-skip" title="Skip (Left)" style="width: 50px; height: 50px; font-size: 1.2rem;">⏭️</button>
+    <button class="control-btn" id="btn-undo" title="Undo">↩️</button>
+    <button class="control-btn" id="btn-dislike" title="Dislike (Left)">❌</button>
+    <button class="control-btn" id="btn-skip" title="Neutral Skip">⏭️</button>
     <button class="control-btn" id="btn-like" title="Like (Right)">💚</button>
   </div>
 
@@ -246,10 +250,10 @@
       },
       STOP_WORDS: new Set(['the','a','an','and','or','but','is','are','was','were','to','of','in','for','with','on','at','by','this','that','it','as','be','from','news','breaking','update','has','have','will','not','out','how','why','what','your','you','their','they','we','our','he','she','his','hers']),
       SLOP_LIST: ['here is why', 'you need to know', 'shocking', 'one trick', 'destroys', 'slams', "won't believe", 'what happens next'],
-      COLD_START_THRESHOLD: 20,
+      COLD_START_THRESHOLD: 100,
       DECAY_INTERVAL: 100,
       SOURCE_MULTIPLIER: 3,
-      POINTS: { SAVE: 3, READ: 2, LIKE: 1, DWELL_SKIP: 0.5, DISLIKE: -1.5, SKIP: 0 }
+      POINTS: { SAVE: 3, READ: 2, LIKE: 1, SKIP: 0, DISLIKE: -1.5, SUPER_DISLIKE: -5 }
     };
 
     const $ = (sel) => document.querySelector(sel);
@@ -259,6 +263,7 @@
     let db;
     const state = {
       queue: [],
+      history: [], // Powers the new Undo functionality
       profile: Object.create(null),
       digest: [],
       mutedSources: [],
@@ -290,19 +295,11 @@
 
     async function loadStateFromDB() {
       if (!db) return;
-      
       const getReq = (store, key) => new Promise(res => {
-        try {
-          const r = db.transaction(store).objectStore(store).get(key);
-          r.onsuccess = () => res(r.result); r.onerror = () => res(null);
-        } catch(e) { res(null); }
+        try { const r = db.transaction(store).objectStore(store).get(key); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch(e) { res(null); }
       });
-      
       const getAllReq = (store) => new Promise(res => {
-        try {
-          const r = db.transaction(store).objectStore(store).getAll();
-          r.onsuccess = () => res(r.result); r.onerror = () => res([]);
-        } catch(e) { res([]); }
+        try { const r = db.transaction(store).objectStore(store).getAll(); r.onsuccess = () => res(r.result); r.onerror = () => res([]); } catch(e) { res([]); }
       });
 
       state.profile = Object.assign(Object.create(null), await getReq('profileStore', 'user_profile') || {});
@@ -313,10 +310,12 @@
 
     function idbPut(store, val, key) {
       if (!db) return;
-      try {
-        const tx = db.transaction(store, 'readwrite');
-        key ? tx.objectStore(store).put(val, key) : tx.objectStore(store).put(val);
-      } catch(e) {}
+      try { const tx = db.transaction(store, 'readwrite'); key ? tx.objectStore(store).put(val, key) : tx.objectStore(store).put(val); } catch(e) {}
+    }
+
+    function idbDelete(store, key) {
+      if (!db) return;
+      try { db.transaction(store, 'readwrite').objectStore(store).delete(key); } catch(e) {}
     }
 
     function idbClear(store) {
@@ -327,17 +326,9 @@
     // --- NLP Pipeline Upgrades ---
     function tokenize(text) {
       if (!text) return [];
-      const words = text.toLowerCase()
-        .replace(/'s\b/g, '') 
-        .replace(/[^\w\s]/g, '') 
-        .split(/\s+/)
-        .filter(w => w.length > 2 && !CONSTANTS.STOP_WORDS.has(w))
-        .map(w => w.endsWith('s') ? w.slice(0, -1) : w); 
-        
+      const words = text.toLowerCase().replace(/'s\b/g, '').replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2 && !CONSTANTS.STOP_WORDS.has(w)).map(w => w.endsWith('s') ? w.slice(0, -1) : w); 
       const bigrams = [];
-      for(let i = 0; i < words.length - 1; i++) {
-        bigrams.push(`${words[i]}_${words[i+1]}`);
-      }
+      for(let i = 0; i < words.length - 1; i++) { bigrams.push(`${words[i]}_${words[i+1]}`); }
       return [...words, ...bigrams];
     }
 
@@ -349,14 +340,10 @@
         score = tokens.reduce((sum, token) => sum + (state.profile[token] || 0), 0);
         if (sourceName) score += (state.profile[sourceName] || 0) * CONSTANTS.SOURCE_MULTIPLIER;
       }
-      
-      // Heuristic Penalties
       if (article.title) {
         if (article.title.trim().endsWith('?')) score -= 5;
         const titleLower = article.title.toLowerCase().replace(/[^\w\s]/g, '');
-        CONSTANTS.SLOP_LIST.forEach(slop => {
-          if (titleLower.includes(slop.replace(/[^\w\s]/g, ''))) score -= 15;
-        });
+        CONSTANTS.SLOP_LIST.forEach(slop => { if (titleLower.includes(slop.replace(/[^\w\s]/g, ''))) score -= 15; });
       }
       return score;
     }
@@ -392,18 +379,12 @@
             a.title && !a.title.includes('[Removed]') && !state.mutedSources.includes(a.source?.name)
           );
           state.queue.push(...validArticles);
-          
           state.queue.forEach(a => { if (a._score === undefined) a._score = scoreArticle(a); });
           state.queue.sort((a, b) => b._score - a._score);
         }
       } catch (err) {
-        console.error('Fetch error:', err);
         if (state.queue.length === 0) {
-          $('#feed-container').innerHTML = `
-            <div class="empty-state" style="color: var(--dislike)">
-              ⚠️ Network or API Error:<br><br>${err.message}
-              <br><br><button class="btn btn-secondary" onclick="window.retryFetch()">Retry</button>
-            </div>`;
+          $('#feed-container').innerHTML = `<div class="empty-state" style="color: var(--dislike)">⚠️ Network Error:<br><br>${err.message}<br><br><button class="btn btn-secondary" onclick="window.retryFetch()">Retry</button></div>`;
         }
       } finally {
         state.isLoading = false;
@@ -429,10 +410,16 @@
 
     function updateProfile(tokens, source, modifier) {
       if (modifier === 0) return;
-      tokens.forEach(token => { state.profile[token] = (state.profile[token] || 0) + modifier; });
+      tokens.forEach(token => { 
+        state.profile[token] = (state.profile[token] || 0) + modifier; 
+        if (state.profile[token] === 0) delete state.profile[token]; // Keeps dict clean
+      });
       if (source) {
         const cleanSource = tokenize(source).join('');
-        if (cleanSource) state.profile[cleanSource] = (state.profile[cleanSource] || 0) + (modifier * CONSTANTS.SOURCE_MULTIPLIER);
+        if (cleanSource) {
+            state.profile[cleanSource] = (state.profile[cleanSource] || 0) + (modifier * CONSTANTS.SOURCE_MULTIPLIER);
+            if (state.profile[cleanSource] === 0) delete state.profile[cleanSource];
+        }
       }
       setTimeout(() => idbPut('profileStore', state.profile, 'user_profile'), 0);
       renderDebug(); 
@@ -440,13 +427,16 @@
 
     function handleAction(type) {
       if (state.queue.length === 0) return;
-      
       state.interactions++;
       localStorage.setItem('news_interactions', state.interactions);
 
       const current = state.queue.shift();
       const tokens = [...tokenize(current.title), ...tokenize(current.description)];
       const source = current.source?.name || '';
+
+      // Save to History for Undo functionality
+      state.history.push({ article: current, action: type, tokens, source });
+      if (state.history.length > 20) state.history.shift();
 
       const pts = CONSTANTS.POINTS[type];
       updateProfile(tokens, source, pts);
@@ -461,6 +451,48 @@
       renderCards();
       if (state.queue.length < 5) fetchArticles();
     }
+
+    window.undoAction = function() {
+      if (state.history.length === 0 || state.isAnimating) return;
+      state.isAnimating = true;
+
+      const last = state.history.pop();
+      
+      // Reverse profile math
+      const pts = CONSTANTS.POINTS[last.action];
+      updateProfile(last.tokens, last.source, -pts);
+
+      // Remove from Digest/DB if it was saved
+      if (last.action === 'SAVE' || last.action === 'READ') {
+        state.digest = state.digest.filter(a => a.url !== last.article.url);
+        idbDelete('savedStore', last.article.url);
+      }
+
+      state.interactions--;
+      localStorage.setItem('news_interactions', state.interactions);
+      state.queue.unshift(last.article);
+
+      renderCards();
+      
+      // Reverse Animate Card In
+      const topCard = $('#card-top');
+      if (topCard) {
+        topCard.style.transition = 'none';
+        topCard.style.transform = 'scale(0.8) translateY(-100px)';
+        topCard.style.opacity = '0';
+        
+        // Force reflow
+        void topCard.offsetHeight; 
+        
+        topCard.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+        topCard.style.transform = 'none';
+        topCard.style.opacity = '1';
+        
+        setTimeout(() => { state.isAnimating = false; }, 300);
+      } else {
+        state.isAnimating = false;
+      }
+    };
 
     // --- UI & Ergonomics ---
     function renderDebug() {
@@ -484,11 +516,9 @@
         if (topCard) {
             state.isAnimating = true;
             topCard.style.transition = 'transform 0.3s ease-out';
-            topCard.style.transform = `translate(-${window.innerWidth}px, 0) rotate(-30deg)`;
-            setTimeout(() => {
-                handleAction('SKIP');
-                state.isAnimating = false;
-            }, 300);
+            topCard.style.transform = `scale(0.5)`;
+            topCard.style.opacity = '0';
+            setTimeout(() => { handleAction('SKIP'); state.isAnimating = false; }, 300);
         } else {
             handleAction('SKIP');
         }
@@ -503,10 +533,7 @@
         state.isAnimating = true;
         topCard.style.transition = 'transform 0.3s ease-out';
         topCard.style.transform = 'translateY(-150%) scale(0.8)';
-        setTimeout(() => {
-          handleAction('READ');
-          state.isAnimating = false;
-        }, 300);
+        setTimeout(() => { handleAction('READ'); state.isAnimating = false; }, 300);
       }
     };
 
@@ -517,7 +544,7 @@
         <div class="card" id="${id}">
           <div class="stamp stamp-like">LIKE</div>
           <div class="stamp stamp-dislike">DISLIKE</div>
-          <div class="stamp stamp-skip">SKIP</div>
+          <div class="stamp stamp-super-dislike">SUPER DISLIKE</div>
           <div class="stamp stamp-save">SAVED</div>
           
           <img src="${esc(imgSrc)}" class="card-img" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'400\\' height=\\'220\\'><rect width=\\'400\\' height=\\'220\\' fill=\\'%23e4e4e7\\'/></svg>'">
@@ -537,12 +564,10 @@
         container.innerHTML = `<div class="empty-state">Fetching global digest...</div>`;
         return;
       }
-
       let html = '';
       if (state.queue[1]) html += buildCardHTML(state.queue[1], 'card-next');
       if (state.queue[0]) html += buildCardHTML(state.queue[0], 'card-top');
       container.innerHTML = html;
-
       initTouchMechanics();
     }
 
@@ -555,7 +580,7 @@
       
       const stampLike = topCard.querySelector('.stamp-like');
       const stampDislike = topCard.querySelector('.stamp-dislike');
-      const stampSkip = topCard.querySelector('.stamp-skip');
+      const stampSuperDislike = topCard.querySelector('.stamp-super-dislike');
       const stampSave = topCard.querySelector('.stamp-save');
 
       topCard.addEventListener('pointerdown', (e) => {
@@ -577,17 +602,16 @@
           window.requestAnimationFrame(() => {
             topCard.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${deltaX * 0.05}deg)`;
             
-            // Visual Stamp Logic (Opacity Collision Mitigated)
             const isX = Math.abs(deltaX) > Math.abs(deltaY);
             stampLike.style.opacity = 0; stampDislike.style.opacity = 0; 
-            stampSkip.style.opacity = 0; stampSave.style.opacity = 0;
+            stampSuperDislike.style.opacity = 0; stampSave.style.opacity = 0;
 
             if (isX) {
                 if (deltaX > 20) stampLike.style.opacity = Math.min(deltaX / 100, 1);
-                else if (deltaX < -20) stampSkip.style.opacity = Math.min(Math.abs(deltaX) / 100, 1);
+                else if (deltaX < -20) stampDislike.style.opacity = Math.min(Math.abs(deltaX) / 100, 1);
             } else {
                 if (deltaY < -20) stampSave.style.opacity = Math.min(Math.abs(deltaY) / 100, 1);
-                else if (deltaY > 20) stampDislike.style.opacity = Math.min(deltaY / 100, 1);
+                else if (deltaY > 20) stampSuperDislike.style.opacity = Math.min(deltaY / 100, 1);
             }
             isTicking = false;
           });
@@ -606,9 +630,8 @@
         topCard.style.transition = 'transform 0.3s ease-out';
 
         stampLike.style.opacity = 0; stampDislike.style.opacity = 0; 
-        stampSkip.style.opacity = 0; stampSave.style.opacity = 0;
+        stampSuperDislike.style.opacity = 0; stampSave.style.opacity = 0;
 
-        // Micro-interaction read
         if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10 && timeElapsed < 300) {
           topCard.style.transform = 'none';
           state.isAnimating = false;
@@ -623,15 +646,15 @@
           setTimeout(() => { handleAction('LIKE'); state.isAnimating = false; }, 300);
         } else if (isX && deltaX < -100) {
           topCard.style.transform = `translateX(-${window.innerWidth}px) rotate(-30deg)`;
-          setTimeout(() => { handleAction('SKIP'); state.isAnimating = false; }, 300);
+          setTimeout(() => { handleAction('DISLIKE'); state.isAnimating = false; }, 300);
         } else if (!isX && deltaY < -100) {
           topCard.style.transform = `translateY(-${window.innerHeight}px) scale(0.8)`;
           setTimeout(() => { handleAction('SAVE'); state.isAnimating = false; }, 300);
         } else if (!isX && deltaY > 100) {
           topCard.style.transform = `translateY(${window.innerHeight}px) scale(0.8)`;
-          setTimeout(() => { handleAction('DISLIKE'); state.isAnimating = false; }, 300);
+          setTimeout(() => { handleAction('SUPER_DISLIKE'); state.isAnimating = false; }, 300);
         } else {
-          topCard.style.transform = 'none'; // Snap back
+          topCard.style.transform = 'none'; 
           state.isAnimating = false;
         }
       };
@@ -642,7 +665,7 @@
 
     // --- Desktop Ergonomics (Keyboard Mapping) ---
     window.addEventListener('keydown', (e) => {
-      if (state.isAnimating || state.queue.length === 0) return;
+      if (state.isAnimating || state.queue.length === 0 || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
       const topCard = $('#card-top');
       if (!topCard) return;
 
@@ -650,23 +673,33 @@
         state.isAnimating = true;
         topCard.style.transition = 'transform 0.3s ease-out';
         topCard.style.transform = `translate(${x}px, ${y}px) rotate(${rotation}deg)`;
-        setTimeout(() => {
-          handleAction(action);
-          state.isAnimating = false;
-        }, 300);
+        setTimeout(() => { handleAction(action); state.isAnimating = false; }, 300);
       };
 
       switch(e.key) {
         case 'ArrowRight': swipe(window.innerWidth, 0, 30, 'LIKE'); break;
-        case 'ArrowLeft': swipe(-window.innerWidth, 0, -30, 'SKIP'); break;
-        case 'ArrowDown': swipe(0, window.innerHeight, 0, 'DISLIKE'); break;
+        case 'ArrowLeft': swipe(-window.innerWidth, 0, -30, 'DISLIKE'); break;
+        case 'ArrowDown': swipe(0, window.innerHeight, 0, 'SUPER_DISLIKE'); break;
         case 'ArrowUp': swipe(0, -window.innerHeight, 0, 'SAVE'); break;
+        case ' ': 
+          e.preventDefault();
+          state.isAnimating = true;
+          topCard.style.transition = 'transform 0.3s ease-out';
+          topCard.style.transform = 'translateY(150%) scale(0.8)';
+          setTimeout(() => { handleAction('SKIP'); state.isAnimating = false; }, 300);
+          break;
+        case 'Backspace':
+        case 'z':
+          if (e.ctrlKey || e.metaKey || e.key === 'Backspace') window.undoAction();
+          break;
         case 'Enter': window.readArticle(state.queue[0].url); break;
         case 'd': $('#btn-digest').click(); break;
       }
     });
 
     // --- Button Bindings ---
+    $('#btn-undo').addEventListener('click', () => { window.undoAction(); });
+
     $('#btn-like').addEventListener('click', () => {
       if(state.isAnimating) return; state.isAnimating = true;
       const card = $('#card-top');
@@ -677,14 +710,14 @@
     $('#btn-dislike').addEventListener('click', () => {
       if(state.isAnimating) return; state.isAnimating = true;
       const card = $('#card-top');
-      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateY(150%)'; }
+      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateX(-150%) rotate(-15deg)'; }
       setTimeout(() => { handleAction('DISLIKE'); state.isAnimating = false; }, 250);
     });
     
     $('#btn-skip').addEventListener('click', () => {
       if(state.isAnimating) return; state.isAnimating = true;
       const card = $('#card-top');
-      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateX(-150%) rotate(-15deg)'; }
+      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateY(150%) scale(0.8)'; }
       setTimeout(() => { handleAction('SKIP'); state.isAnimating = false; }, 250);
     });
 
@@ -694,9 +727,7 @@
         alert("Your digest queue is empty. Swipe UP on articles to save them!");
         return;
       }
-      
       const markdown = `Act as an expert research assistant. Read the following article headlines and their associated links. Synthesize the key themes and summarize the most important developments:\n\n${state.digest.map(a => `* [${a.title}](${a.url})`).join('\n')}`;
-      
       navigator.clipboard.writeText(markdown).then(() => {
         if (window.confirm(`Copied ${state.digest.length} saved articles to clipboard! Ready to clear your Digest queue?`)) {
           state.digest = [];
@@ -723,11 +754,7 @@
       syncStatus.innerText = 'Pushing payload to Cloud...';
       try {
         const payload = { profile: state.profile, muted: state.mutedSources };
-        const res = await fetch(SYNC_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
-          body: JSON.stringify(payload)
-        });
+        const res = await fetch(SYNC_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Device-Id': deviceId }, body: JSON.stringify(payload) });
         if(!res.ok) throw new Error('Worker rejected payload.');
         syncStatus.innerText = `Success! Saved to Cloud KV.`;
       } catch (e) {
@@ -738,13 +765,11 @@
     $('#btn-cloud-pull').addEventListener('click', async () => {
       const promptId = window.prompt("Enter the Device ID to sync from:", deviceId);
       if (!promptId) return;
-
       syncStatus.innerText = 'Pulling payload from Cloud...';
       try {
         const res = await fetch(`${SYNC_URL}?device=${promptId}`);
         if(!res.ok) throw new Error('Worker could not find payload.');
         const newData = await res.json();
-
         if (newData.profile && Array.isArray(newData.muted)) {
           state.profile = newData.profile;
           state.mutedSources = newData.muted;
@@ -755,9 +780,7 @@
           syncStatus.innerText = 'Success! Local DB updated.';
           setTimeout(() => modal.style.display = 'none', 1000);
         } else throw new Error("Invalid payload format received.");
-      } catch (e) {
-        syncStatus.innerText = `Import Failed: ${e.message}`;
-      }
+      } catch (e) { syncStatus.innerText = `Import Failed: ${e.message}`; }
     });
 
     // Kickoff
