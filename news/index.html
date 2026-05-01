@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Signal News v1.5</title>
+  <title>Signal News v1.5.1</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
   <style>
     :root { 
@@ -192,7 +192,6 @@
       background: var(--card); padding: 2rem; border-radius: 12px; width: 100%; max-width: 400px;
     }
     .modal-content h2 { margin-top: 0; }
-    textarea { width: 100%; height: 100px; margin: 1rem 0; padding: 0.5rem; font-family: monospace; border-radius: 6px; border: 1px solid #d4d4d8;}
     .modal-actions { display: flex; gap: 1rem; justify-content: flex-end; }
     .btn { padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
     .btn-primary { background: var(--brand); color: white; }
@@ -222,13 +221,13 @@
 
   <div id="settings-modal">
     <div class="modal-content">
-      <h2>Sync & Settings</h2>
-      <p style="font-size: 0.9rem; color: #52525b;">Export your bundled Brain & Mute List.</p>
-      <textarea id="import-data"></textarea>
-      <div class="modal-actions">
+      <h2>Cloud Sync (KV Worker)</h2>
+      <p style="font-size: 0.9rem; color: #52525b;">Sync your Brain & Mute List across devices.</p>
+      <div id="sync-status" style="margin: 1rem 0; font-family: monospace; font-size: 0.85rem; color: var(--brand);">Ready.</div>
+      <div class="modal-actions" style="flex-direction: column; gap: 0.75rem;">
+        <button class="btn btn-primary" id="btn-cloud-push">⬆️ Push to Cloud</button>
+        <button class="btn btn-primary" id="btn-cloud-pull">⬇️ Import from Cloud</button>
         <button class="btn btn-secondary" id="btn-close-settings">Close</button>
-        <button class="btn btn-primary" id="btn-export">Copy Payload</button>
-        <button class="btn btn-primary" id="btn-import">Import</button>
       </div>
     </div>
   </div>
@@ -236,7 +235,15 @@
   <script type="module">
     // --- Constants & Blueprints ---
     const CONSTANTS = {
-      TOPICS: ['artificial intelligence', 'startups', 'global economy', 'scientific research', 'world politics', 'climate tech', 'neuroscience'],
+      TOPICS: {
+        TECHNOLOGY_SCIENCE: ['artificial intelligence', 'cybersecurity', 'space exploration', 'quantum computing', 'neuroscience', 'climate tech', 'consumer electronics'],
+        BUSINESS_FINANCE: ['global economy', 'venture capital', 'supply chain', 'cryptocurrency', 'real estate markets', 'mergers and acquisitions', 'personal finance'],
+        WORLD_POLITICS: ['geopolitics', 'international relations', 'elections', 'foreign policy', 'human rights', 'global conflict', 'supreme court'],
+        HEALTH_MEDICINE: ['biotech', 'public health', 'mental health', 'nutrition', 'pharmaceuticals', 'medical research', 'epidemiology'],
+        LAW_CRIME: ['cybercrime', 'corporate fraud', 'criminal justice', 'law enforcement', 'civil rights', 'international law'],
+        CULTURE_ARTS: ['pop culture', 'film industry', 'modern art', 'music festivals', 'fashion trends', 'literature', 'gaming industry'],
+        LIFESTYLE_SPORTS: ['culinary arts', 'travel', 'architecture', 'extreme sports', 'olympics', 'education', 'psychology']
+      },
       STOP_WORDS: new Set(['the','a','an','and','or','but','is','are','was','were','to','of','in','for','with','on','at','by','this','that','it','as','be','from','news','breaking','update','has','have','will','not','out','how','why','what','your','you','their','they','we','our','he','she','his','hers']),
       SLOP_LIST: ['here is why', 'you need to know', 'shocking', 'one trick', 'destroys', 'slams', "won't believe", 'what happens next'],
       COLD_START_THRESHOLD: 20,
@@ -356,16 +363,30 @@
     }
 
     // --- Dynamic Fetching ---
+    window.retryFetch = function() {
+      $('#feed-container').innerHTML = `<div class="empty-state">Re-establishing connection...</div>`;
+      fetchArticles();
+    };
+
     async function fetchArticles() {
       if (state.isLoading) return;
       state.isLoading = true;
       
-      const query = encodeURIComponent(CONSTANTS.TOPICS[Math.floor(Math.random() * CONSTANTS.TOPICS.length)]);
-      const url = `https://newsapi.askozicki.workers.dev/?q=${query}&language=en&page=${state.page}`;
+      const queryTopics = [];
+      Object.values(CONSTANTS.TOPICS).forEach(categoryList => {
+        const randomIndex = Math.floor(Math.random() * categoryList.length);
+        queryTopics.push(categoryList[randomIndex]);
+      });
+      
+      const query = queryTopics.map(t => `"${t}"`).map(encodeURIComponent).join('+OR+');
+      const pageSize = 40;
+      const url = `https://newsapi.askozicki.workers.dev/?q=${query}&language=en&pageSize=${pageSize}&page=${state.page}`;
       
       try {
         const res = await fetch(url);
         const data = await res.json();
+        
+        if (data.status === 'error') throw new Error(data.message || 'API rejected request.');
         
         if (data.articles && data.articles.length > 0) {
           const validArticles = data.articles.filter(a => 
@@ -381,6 +402,13 @@
         }
       } catch (err) {
         console.error('Fetch error:', err);
+        if (state.queue.length === 0) {
+          $('#feed-container').innerHTML = `
+            <div class="empty-state" style="color: var(--dislike)">
+              ⚠️ Network or API Error:<br><br>${err.message}
+              <br><br><button class="btn btn-secondary" onclick="window.retryFetch()">Retry</button>
+            </div>`;
+        }
       } finally {
         state.isLoading = false;
         if (state.queue.length > 0 && !$('#card-top')) renderCards();
@@ -454,6 +482,7 @@
       if (window.confirm(`Are you sure you want to permanently mute ${sourceName}?`)) {
         state.mutedSources.push(sourceName);
         idbPut('mutedStore', { name: sourceName });
+        state.queue = state.queue.filter(a => a.source?.name !== sourceName);
         
         const topCard = $('#card-top');
         if (topCard) {
@@ -471,8 +500,8 @@
     };
 
     window.readArticle = function(url) {
-      if (state.isAnimating) return;
-      window.open(url, '_blank');
+      if (state.isAnimating || !url || !url.startsWith('http')) return;
+      window.open(url, '_blank', 'noopener,noreferrer');
       const topCard = $('#card-top');
       if (topCard) {
         state.isAnimating = true;
@@ -637,6 +666,7 @@
         case 'ArrowDown': swipe(0, window.innerHeight, 0, 'DISLIKE'); break;
         case 'ArrowUp': swipe(0, -window.innerHeight, 0, 'SAVE'); break;
         case 'Enter': window.readArticle(state.queue[0].url); break;
+        case 'd': $('#btn-digest').click(); break;
       }
     });
 
@@ -681,35 +711,56 @@
 
     // --- Sync / Settings Modal ---
     const modal = $('#settings-modal');
+    const syncStatus = $('#sync-status');
+    const deviceId = localStorage.getItem('news_device_id') || ('dev_' + Math.random().toString(36).substr(2, 9));
+    localStorage.setItem('news_device_id', deviceId);
+
     $('#btn-settings').addEventListener('click', () => {
-      const payload = { profile: state.profile, muted: state.mutedSources };
-      $('#import-data').value = JSON.stringify(payload, null, 2);
+      syncStatus.innerText = `Device ID: ${deviceId}\nReady to sync.`;
       modal.style.display = 'flex';
     });
     $('#btn-close-settings').addEventListener('click', () => modal.style.display = 'none');
-    
-    $('#btn-export').addEventListener('click', () => {
-      navigator.clipboard.writeText($('#import-data').value);
-      alert('Cloud payload copied to clipboard!');
-    });
-    
-    $('#btn-import').addEventListener('click', () => {
+
+    const SYNC_URL = 'https://newsapi.askozicki.workers.dev/sync';
+
+    $('#btn-cloud-push').addEventListener('click', async () => {
+      syncStatus.innerText = 'Pushing payload to Cloud...';
       try {
-        const newData = JSON.parse($('#import-data').value);
+        const payload = { profile: state.profile, muted: state.mutedSources };
+        const res = await fetch(SYNC_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Device-Id': deviceId },
+          body: JSON.stringify(payload)
+        });
+        if(!res.ok) throw new Error('Worker rejected payload.');
+        syncStatus.innerText = `Success! Saved to Cloud KV.`;
+      } catch (e) {
+        syncStatus.innerText = `Sync Failed: ${e.message}\n(Have you wired up the /sync route in your Worker?)`;
+      }
+    });
+
+    $('#btn-cloud-pull').addEventListener('click', async () => {
+      const promptId = window.prompt("Enter the Device ID to sync from:", deviceId);
+      if (!promptId) return;
+
+      syncStatus.innerText = 'Pulling payload from Cloud...';
+      try {
+        const res = await fetch(`${SYNC_URL}?device=${promptId}`);
+        if(!res.ok) throw new Error('Worker could not find payload.');
+        const newData = await res.json();
+
         if (newData.profile && Array.isArray(newData.muted)) {
           state.profile = newData.profile;
           state.mutedSources = newData.muted;
-          
           idbPut('profileStore', state.profile, 'user_profile');
           idbClear('mutedStore');
           state.mutedSources.forEach(m => idbPut('mutedStore', { name: m }));
-          
           renderDebug();
-          modal.style.display = 'none';
-          alert('Sync successful. Profile & Mute List updated.');
-        } else throw new Error("Invalid format");
+          syncStatus.innerText = 'Success! Local DB updated.';
+          setTimeout(() => modal.style.display = 'none', 1000);
+        } else throw new Error("Invalid payload format received.");
       } catch (e) {
-        alert('Invalid JSON payload structure.');
+        syncStatus.innerText = `Import Failed: ${e.message}`;
       }
     });
 
