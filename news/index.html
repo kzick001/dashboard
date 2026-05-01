@@ -764,7 +764,7 @@
         return;
       }
       
-      const markdown = `Act as an expert research assistant. Read the following article headlines and their associated links. Synthesize the key themes and summarize the most important developments:\n\n${state.digest.map(a => `* [${a.title}](${a.url})`).join('\n')}`;
+      const markdown = `Act as a sharp, cynical executive editor. Read the provided headlines and links. Synthesize the key themes into a high-signal, engaging briefing that reads like a premium newsletter, not a dry technical manual. For each major theme, provide the following: 1. The Core Story: Summarize the development in a punchy, narrative paragraph. Define any jargon or niche concepts inline using plain English. 2. The Macro Context: Explain in one sentence why this matters long-term. 3. The Spin Check: Identify the narrative angle. Strip away the emotional adjectives and state the bare facts. Flag unverified assertions and note what crucial perspective is missing. Keep the tone authoritative and slightly irreverent. Prioritize readability. Eliminate corporate fluff and bureaucratic phrasing.\n\n${state.digest.map(a => `* [${a.title}](${a.url})`).join('\n')}`;
       
       navigator.clipboard.writeText(markdown).then(() => {
         if (window.confirm(`Copied ${state.digest.length} saved articles to clipboard! Ready to clear your Digest queue?`)) {
