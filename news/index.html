@@ -12,7 +12,7 @@
       --text: #18181b; 
       --brand: #3b82f6;
       --like: #10b981;
-      --dislike: #f97316; /* Changed to Orange */
+      --dislike: #f97316; /* Orange */
       --super-dislike: #9f1239; /* Deep Crimson */
       --skip: #71717a;
     }
@@ -116,6 +116,7 @@
       overflow: hidden;
     }
 
+    /* Mute Switch */
     .mute-btn {
       position: absolute;
       top: 10px; right: 10px;
@@ -217,9 +218,9 @@
   </main>
   
   <div class="controls">
-    <button class="control-btn" id="btn-undo" title="Undo">↩️</button>
+    <button class="control-btn" id="btn-undo" title="Undo (Backspace/Z)">↩️</button>
     <button class="control-btn" id="btn-dislike" title="Dislike (Left)">❌</button>
-    <button class="control-btn" id="btn-skip" title="Neutral Skip">⏭️</button>
+    <button class="control-btn" id="btn-skip" title="Neutral Skip (Space)">⏭️</button>
     <button class="control-btn" id="btn-like" title="Like (Right)">💚</button>
   </div>
 
@@ -250,7 +251,7 @@
       },
       STOP_WORDS: new Set(['the','a','an','and','or','but','is','are','was','were','to','of','in','for','with','on','at','by','this','that','it','as','be','from','news','breaking','update','has','have','will','not','out','how','why','what','your','you','their','they','we','our','he','she','his','hers']),
       SLOP_LIST: ['here is why', 'you need to know', 'shocking', 'one trick', 'destroys', 'slams', "won't believe", 'what happens next'],
-      COLD_START_THRESHOLD: 100,
+      COLD_START_THRESHOLD: 100, // Expanded for true baseline mapping
       DECAY_INTERVAL: 100,
       SOURCE_MULTIPLIER: 3,
       POINTS: { SAVE: 3, READ: 2, LIKE: 1, SKIP: 0, DISLIKE: -1.5, SUPER_DISLIKE: -5 }
@@ -263,7 +264,7 @@
     let db;
     const state = {
       queue: [],
-      history: [], // Powers the new Undo functionality
+      history: [], // Powers the Undo functionality
       profile: Object.create(null),
       digest: [],
       mutedSources: [],
@@ -326,9 +327,17 @@
     // --- NLP Pipeline Upgrades ---
     function tokenize(text) {
       if (!text) return [];
-      const words = text.toLowerCase().replace(/'s\b/g, '').replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2 && !CONSTANTS.STOP_WORDS.has(w)).map(w => w.endsWith('s') ? w.slice(0, -1) : w); 
+      const words = text.toLowerCase()
+        .replace(/'s\b/g, '') 
+        .replace(/[^\w\s]/g, '') 
+        .split(/\s+/)
+        .filter(w => w.length > 2 && !CONSTANTS.STOP_WORDS.has(w))
+        .map(w => w.endsWith('s') ? w.slice(0, -1) : w); 
+        
       const bigrams = [];
-      for(let i = 0; i < words.length - 1; i++) { bigrams.push(`${words[i]}_${words[i+1]}`); }
+      for(let i = 0; i < words.length - 1; i++) {
+        bigrams.push(`${words[i]}_${words[i+1]}`);
+      }
       return [...words, ...bigrams];
     }
 
@@ -340,10 +349,14 @@
         score = tokens.reduce((sum, token) => sum + (state.profile[token] || 0), 0);
         if (sourceName) score += (state.profile[sourceName] || 0) * CONSTANTS.SOURCE_MULTIPLIER;
       }
+      
+      // Heuristic Penalties
       if (article.title) {
         if (article.title.trim().endsWith('?')) score -= 5;
         const titleLower = article.title.toLowerCase().replace(/[^\w\s]/g, '');
-        CONSTANTS.SLOP_LIST.forEach(slop => { if (titleLower.includes(slop.replace(/[^\w\s]/g, ''))) score -= 15; });
+        CONSTANTS.SLOP_LIST.forEach(slop => {
+          if (titleLower.includes(slop.replace(/[^\w\s]/g, ''))) score -= 15;
+        });
       }
       return score;
     }
@@ -366,6 +379,7 @@
       
       const query = queryTopics.map(t => `"${t}"`).map(encodeURIComponent).join('+OR+');
       const pageSize = 40;
+      // Hardcoded to page=1 to completely avoid the 100-result developer tier limitation
       const url = `https://newsapi.askozicki.workers.dev/?q=${query}&language=en&pageSize=${pageSize}&page=1`;
       
       try {
@@ -379,12 +393,18 @@
             a.title && !a.title.includes('[Removed]') && !state.mutedSources.includes(a.source?.name)
           );
           state.queue.push(...validArticles);
+          
           state.queue.forEach(a => { if (a._score === undefined) a._score = scoreArticle(a); });
           state.queue.sort((a, b) => b._score - a._score);
         }
       } catch (err) {
+        console.error('Fetch error:', err);
         if (state.queue.length === 0) {
-          $('#feed-container').innerHTML = `<div class="empty-state" style="color: var(--dislike)">⚠️ Network Error:<br><br>${err.message}<br><br><button class="btn btn-secondary" onclick="window.retryFetch()">Retry</button></div>`;
+          $('#feed-container').innerHTML = `
+            <div class="empty-state" style="color: var(--dislike)">
+              ⚠️ Network or API Error:<br><br>${err.message}
+              <br><br><button class="btn btn-secondary" onclick="window.retryFetch()">Retry</button>
+            </div>`;
         }
       } finally {
         state.isLoading = false;
@@ -412,7 +432,7 @@
       if (modifier === 0) return;
       tokens.forEach(token => { 
         state.profile[token] = (state.profile[token] || 0) + modifier; 
-        if (state.profile[token] === 0) delete state.profile[token]; // Keeps dict clean
+        if (state.profile[token] === 0) delete state.profile[token]; // Prevents zero-value bloat
       });
       if (source) {
         const cleanSource = tokenize(source).join('');
@@ -427,6 +447,7 @@
 
     function handleAction(type) {
       if (state.queue.length === 0) return;
+      
       state.interactions++;
       localStorage.setItem('news_interactions', state.interactions);
 
@@ -481,7 +502,7 @@
         topCard.style.transform = 'scale(0.8) translateY(-100px)';
         topCard.style.opacity = '0';
         
-        // Force reflow
+        // Force browser reflow to reset animation
         void topCard.offsetHeight; 
         
         topCard.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
@@ -518,7 +539,10 @@
             topCard.style.transition = 'transform 0.3s ease-out';
             topCard.style.transform = `scale(0.5)`;
             topCard.style.opacity = '0';
-            setTimeout(() => { handleAction('SKIP'); state.isAnimating = false; }, 300);
+            setTimeout(() => {
+                handleAction('SKIP');
+                state.isAnimating = false;
+            }, 300);
         } else {
             handleAction('SKIP');
         }
@@ -533,7 +557,10 @@
         state.isAnimating = true;
         topCard.style.transition = 'transform 0.3s ease-out';
         topCard.style.transform = 'translateY(-150%) scale(0.8)';
-        setTimeout(() => { handleAction('READ'); state.isAnimating = false; }, 300);
+        setTimeout(() => {
+          handleAction('READ');
+          state.isAnimating = false;
+        }, 300);
       }
     };
 
@@ -564,10 +591,12 @@
         container.innerHTML = `<div class="empty-state">Fetching global digest...</div>`;
         return;
       }
+
       let html = '';
       if (state.queue[1]) html += buildCardHTML(state.queue[1], 'card-next');
       if (state.queue[0]) html += buildCardHTML(state.queue[0], 'card-top');
       container.innerHTML = html;
+
       initTouchMechanics();
     }
 
@@ -602,6 +631,7 @@
           window.requestAnimationFrame(() => {
             topCard.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${deltaX * 0.05}deg)`;
             
+            // Visual Stamp Logic (Opacity Collision Mitigated)
             const isX = Math.abs(deltaX) > Math.abs(deltaY);
             stampLike.style.opacity = 0; stampDislike.style.opacity = 0; 
             stampSuperDislike.style.opacity = 0; stampSave.style.opacity = 0;
@@ -632,6 +662,7 @@
         stampLike.style.opacity = 0; stampDislike.style.opacity = 0; 
         stampSuperDislike.style.opacity = 0; stampSave.style.opacity = 0;
 
+        // Micro-interaction read
         if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10 && timeElapsed < 300) {
           topCard.style.transform = 'none';
           state.isAnimating = false;
@@ -654,7 +685,7 @@
           topCard.style.transform = `translateY(${window.innerHeight}px) scale(0.8)`;
           setTimeout(() => { handleAction('SUPER_DISLIKE'); state.isAnimating = false; }, 300);
         } else {
-          topCard.style.transform = 'none'; 
+          topCard.style.transform = 'none'; // Snap back
           state.isAnimating = false;
         }
       };
@@ -665,6 +696,7 @@
 
     // --- Desktop Ergonomics (Keyboard Mapping) ---
     window.addEventListener('keydown', (e) => {
+      // Ignore keystrokes if typing in modal or animating
       if (state.isAnimating || state.queue.length === 0 || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
       const topCard = $('#card-top');
       if (!topCard) return;
@@ -673,7 +705,10 @@
         state.isAnimating = true;
         topCard.style.transition = 'transform 0.3s ease-out';
         topCard.style.transform = `translate(${x}px, ${y}px) rotate(${rotation}deg)`;
-        setTimeout(() => { handleAction(action); state.isAnimating = false; }, 300);
+        setTimeout(() => {
+          handleAction(action);
+          state.isAnimating = false;
+        }, 300);
       };
 
       switch(e.key) {
@@ -690,7 +725,8 @@
           break;
         case 'Backspace':
         case 'z':
-          if (e.ctrlKey || e.metaKey || e.key === 'Backspace') window.undoAction();
+          // Support Ctrl+Z or standalone Z/Backspace
+          if (e.ctrlKey || e.metaKey || e.key === 'Backspace' || e.key === 'z') window.undoAction();
           break;
         case 'Enter': window.readArticle(state.queue[0].url); break;
         case 'd': $('#btn-digest').click(); break;
@@ -727,7 +763,9 @@
         alert("Your digest queue is empty. Swipe UP on articles to save them!");
         return;
       }
+      
       const markdown = `Act as an expert research assistant. Read the following article headlines and their associated links. Synthesize the key themes and summarize the most important developments:\n\n${state.digest.map(a => `* [${a.title}](${a.url})`).join('\n')}`;
+      
       navigator.clipboard.writeText(markdown).then(() => {
         if (window.confirm(`Copied ${state.digest.length} saved articles to clipboard! Ready to clear your Digest queue?`)) {
           state.digest = [];
@@ -754,33 +792,45 @@
       syncStatus.innerText = 'Pushing payload to Cloud...';
       try {
         const payload = { profile: state.profile, muted: state.mutedSources };
-        const res = await fetch(SYNC_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Device-Id': deviceId }, body: JSON.stringify(payload) });
+        // Passing ID securely via URL param to match the Worker's existing CORS policy
+        const res = await fetch(`${SYNC_URL}?id=${deviceId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
         if(!res.ok) throw new Error('Worker rejected payload.');
         syncStatus.innerText = `Success! Saved to Cloud KV.`;
       } catch (e) {
-        syncStatus.innerText = `Sync Failed: ${e.message}\n(Have you wired up the /sync route in your Worker?)`;
+        syncStatus.innerText = `Sync Failed: ${e.message}\n(Double check your network/worker connection)`;
       }
     });
 
     $('#btn-cloud-pull').addEventListener('click', async () => {
       const promptId = window.prompt("Enter the Device ID to sync from:", deviceId);
       if (!promptId) return;
+
       syncStatus.innerText = 'Pulling payload from Cloud...';
       try {
-        const res = await fetch(`${SYNC_URL}?device=${promptId}`);
+        // Match the ?id= parameter your Worker already uses
+        const res = await fetch(`${SYNC_URL}?id=${promptId}`);
         if(!res.ok) throw new Error('Worker could not find payload.');
         const newData = await res.json();
+
         if (newData.profile && Array.isArray(newData.muted)) {
           state.profile = newData.profile;
           state.mutedSources = newData.muted;
+          
           idbPut('profileStore', state.profile, 'user_profile');
           idbClear('mutedStore');
           state.mutedSources.forEach(m => idbPut('mutedStore', { name: m }));
+          
           renderDebug();
           syncStatus.innerText = 'Success! Local DB updated.';
           setTimeout(() => modal.style.display = 'none', 1000);
         } else throw new Error("Invalid payload format received.");
-      } catch (e) { syncStatus.innerText = `Import Failed: ${e.message}`; }
+      } catch (e) {
+        syncStatus.innerText = `Import Failed: ${e.message}`;
+      }
     });
 
     // Kickoff
