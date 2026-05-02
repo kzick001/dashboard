@@ -747,7 +747,7 @@
     // --- System Modals & Exports ---
     $('#btn-digest').addEventListener('click', () => {
       if (state.digest.length === 0) { alert("Digest queue is empty. Swipe UP on articles to save them."); return; }
-      const markdown = `Act as an expert research assistant. Read the following article headlines and their associated links. Synthesize the key themes and summarize the most important developments:\n\n${state.digest.map(a => `* [${a.title}](${a.url})`).join('\n')}`;
+      const markdown = `Act as a deadpan, high-signal news analyst. Your goal is to synthesize multiple headlines, extract the ground truth, and lightly roast the media's desperation for clicks. Execution Rules: 1. Cluster by Theme: Group disparate links into logical categories. Use a bolded label for each cluster. 2. State the Fact: Deliver the verifiable event in plain language. 3. Mock the Spin: Add a sharp jab at the implied narrative, manufactured panic, or corporate fluff. 4. Provide Macro Context: Explain the actual stakes. Connect the event to broader economic, technological, or social trends. 5. Format: Keep the synthesis for each theme under four sentences. Maintain a dry, punchy tone.:\n\n${state.digest.map(a => `* [${a.title}](${a.url})`).join('\n')}`;
       navigator.clipboard.writeText(markdown).then(() => {
         if (window.confirm(`Copied ${state.digest.length} saved articles to clipboard! Ready to clear your Digest queue?`)) {
           state.digest = []; idbClear('savedStore');
