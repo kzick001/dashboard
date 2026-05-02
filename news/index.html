@@ -55,7 +55,7 @@
     svg { width: 100%; height: 100%; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
     .icon-sm { width: 22px; height: 22px; }
     .icon-md { width: 28px; height: 28px; }
-    .icon-lg { width: 36px; height: 36px; }
+    .icon-lg { width: 32px; height: 32px; }
 
     header { 
       display: flex;
@@ -194,16 +194,16 @@
   
   <div class="controls">
     <button class="control-btn btn-sm" id="btn-undo" title="Undo (Backspace)">
-      <svg class="icon-sm"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg>
+      <svg class="icon-sm"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.6L3 13"></path></svg>
     </button>
     <button class="control-btn btn-md" id="btn-dislike" title="Dislike (Left)">
-      <svg class="icon-md"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      <svg class="icon-md"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path></svg>
     </button>
     <button class="control-btn btn-lg" id="btn-like" title="Like (Right)">
-      <svg class="icon-lg" style="fill: var(--like); stroke: none;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+      <svg class="icon-lg" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
     </button>
     <button class="control-btn btn-sm" id="btn-skip" title="Neutral Skip (Space)">
-      <svg class="icon-sm"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+      <svg class="icon-sm"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>
     </button>
   </div>
 
@@ -253,19 +253,21 @@
     // --- State & IndexedDB Architecture ---
     let db;
     const state = {
-      queue: [], history: [], profile: Object.create(null), digest: [], mutedSources: [],
+      queue: [], history: [], profile: Object.create(null), digest: [], mutedSources: [], seen: new Set(),
       interactions: parseInt(localStorage.getItem('news_interactions')) || 0,
+      page: 1, // Dynamic page state (1 or 2)
       isLoading: false, isAnimating: false
     };
 
     async function initDB() {
       return new Promise((resolve) => {
-        const req = indexedDB.open('SignalNews', 2);
+        const req = indexedDB.open('SignalNews', 3);
         req.onupgradeneeded = (e) => {
           const database = e.target.result;
           if (!database.objectStoreNames.contains('profileStore')) database.createObjectStore('profileStore');
           if (!database.objectStoreNames.contains('savedStore')) database.createObjectStore('savedStore', { keyPath: 'url' });
           if (!database.objectStoreNames.contains('mutedStore')) database.createObjectStore('mutedStore', { keyPath: 'name' });
+          if (!database.objectStoreNames.contains('seenStore')) database.createObjectStore('seenStore', { keyPath: 'url' });
         };
         req.onsuccess = async (e) => { db = e.target.result; await loadStateFromDB(); resolve(); };
         req.onerror = () => resolve();
@@ -281,6 +283,9 @@
       state.digest = await getAllReq('savedStore') || [];
       const muted = await getAllReq('mutedStore') || [];
       state.mutedSources = muted.map(m => m.name);
+      
+      const seenArr = await getAllReq('seenStore') || [];
+      state.seen = new Set(seenArr.map(s => s.url));
     }
 
     function idbPut(store, val, key) { if (!db) return; try { const tx = db.transaction(store, 'readwrite'); key ? tx.objectStore(store).put(val, key) : tx.objectStore(store).put(val); } catch(e) {} }
@@ -294,37 +299,43 @@
         if(!res.ok) return;
         const cloudData = await res.json();
         
-        // Only overwrite local if Cloud has MORE interactions (newer state)
         if (cloudData.interactions > state.interactions && cloudData.profile && Array.isArray(cloudData.muted)) {
           state.profile = cloudData.profile;
           state.mutedSources = cloudData.muted;
           state.interactions = cloudData.interactions;
           
-          try { localStorage.setItem('news_interactions', state.interactions); } catch(e) { console.warn('Storage locked'); }
+          try { localStorage.setItem('news_interactions', state.interactions); } catch(e) {}
           idbPut('profileStore', state.profile, 'user_profile');
           idbClear('mutedStore');
           state.mutedSources.forEach(m => idbPut('mutedStore', { name: m }));
+          
+          if (cloudData.seen && Array.isArray(cloudData.seen)) {
+            cloudData.seen.forEach(url => {
+              if (!state.seen.has(url)) {
+                state.seen.add(url);
+                idbPut('seenStore', { url });
+              }
+            });
+          }
         }
       } catch (e) { console.warn("Silent pull skipped."); }
     }
 
     async function silentPush() {
-      if (!navigator.onLine) return; // Abort if airplane mode
+      if (!navigator.onLine) return;
       try {
-        const payload = { profile: state.profile, muted: state.mutedSources, interactions: state.interactions };
+        const recentSeen = Array.from(state.seen).slice(-500);
+        const payload = { profile: state.profile, muted: state.mutedSources, interactions: state.interactions, seen: recentSeen };
         await fetch(`${SYNC_URL}?id=${MASTER_KEY}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
-          keepalive: true // Guarantees execution during backgrounding/tab closure
+          keepalive: true
         });
       } catch (e) { console.warn("Silent push failed."); }
     }
 
-    // Bind Auto-Push to App Backgrounding
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') silentPush();
-    });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') silentPush(); });
 
     // --- NLP Pipeline Upgrades ---
     function tokenize(text) {
@@ -368,7 +379,8 @@
       });
       
       const query = queryTopics.map(t => `"${t}"`).map(encodeURIComponent).join('+OR+');
-      const url = `https://newsapi.askozicki.workers.dev/?q=${query}&language=en&pageSize=40&page=1`;
+      const pageSize = 40;
+      const url = `https://newsapi.askozicki.workers.dev/?q=${query}&language=en&pageSize=${pageSize}&page=${state.page}`;
       
       try {
         const res = await fetch(url);
@@ -377,10 +389,20 @@
         if (data.status === 'error') throw new Error(data.message || 'API rejected request.');
         
         if (data.articles && data.articles.length > 0) {
-          const validArticles = data.articles.filter(a => a.title && !a.title.includes('[Removed]') && !state.mutedSources.includes(a.source?.name));
+          // Auditor Fix: Filter out "Ghost" Articles upstream with a.url
+          const validArticles = data.articles.filter(a => 
+            a.title && 
+            a.url &&
+            !a.title.includes('[Removed]') && 
+            !state.mutedSources.includes(a.source?.name) &&
+            !state.seen.has(a.url) 
+          );
           state.queue.push(...validArticles);
           state.queue.forEach(a => { if (a._score === undefined) a._score = scoreArticle(a); });
           state.queue.sort((a, b) => b._score - a._score);
+          
+          // 2-Page Pivot: Toggle between 1 and 2 to double algorithmic depth safely
+          state.page = state.page === 1 ? 2 : 1; 
         }
       } catch (err) {
         if (state.queue.length === 0) {
@@ -388,7 +410,12 @@
         }
       } finally {
         state.isLoading = false;
-        if (state.queue.length > 0 && !$('#card-top')) renderCards();
+        // Auditor Fix: Graceful Feed Exhaustion UI
+        if (state.queue.length > 0 && !$('#card-top')) {
+          renderCards();
+        } else if (state.queue.length === 0) {
+          $('#feed-container').innerHTML = `<div class="empty-state">No new articles found right now.<br><br><button class="btn btn-secondary" onclick="window.retryFetch()" style="margin: 1.5rem auto;">Check Again</button></div>`;
+        }
       }
     }
 
@@ -428,11 +455,16 @@
       if (state.queue.length === 0) return;
       
       state.interactions++;
-      try { localStorage.setItem('news_interactions', state.interactions); } catch(e) { console.warn('Storage locked'); }
+      try { localStorage.setItem('news_interactions', state.interactions); } catch(e) {}
 
       const current = state.queue.shift();
       const tokens = [...tokenize(current.title), ...tokenize(current.description)];
       const source = current.source?.name || '';
+
+      if (current.url) {
+        state.seen.add(current.url);
+        idbPut('seenStore', { url: current.url });
+      }
 
       state.history.push({ article: current, action: type, tokens, source });
       if (state.history.length > 20) state.history.shift();
@@ -465,7 +497,8 @@
       }
 
       state.interactions--;
-      try { localStorage.setItem('news_interactions', state.interactions); } catch(e) { console.warn('Storage locked'); }
+      try { localStorage.setItem('news_interactions', state.interactions); } catch(e) {}
+      
       state.queue.unshift(last.article);
       renderCards();
       
@@ -500,7 +533,7 @@
         state.mutedSources.push(sourceName);
         idbPut('mutedStore', { name: sourceName });
         
-        // Filter queue, but bypass handleAction() to avoid shifting the wrong card
+        // Auditor Fix: Decouple mute filtering from handleAction('SKIP')
         state.queue = state.queue.filter(a => a.source?.name !== sourceName);
         
         const topCard = $('#card-top');
@@ -534,8 +567,9 @@
     };
 
     function buildCardHTML(article, id) {
-      const imgSrc = article.urlToImage || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="220"><rect width="400" height="220" fill="%23e4e4e7"/></svg>';
+      const imgSrc = article.urlToImage || 'data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22220%22%3E%3Crect width=%22400%22 height=%22220%22 fill=%22%23e4e4e7%22/%3E%3C/svg%3E';
       const sourceName = article.source?.name || 'Unknown';
+      // Auditor Fix: SVG onerror escaping using URL encoding %22
       return `
         <div class="card" id="${id}">
           <div class="stamp stamp-like">LIKE</div>
@@ -543,7 +577,7 @@
           <div class="stamp stamp-super-dislike">SUPER DISLIKE</div>
           <div class="stamp stamp-save">SAVED</div>
           
-          <img src="${esc(imgSrc)}" class="card-img" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'400\\' height=\\'220\\'><rect width=\\'400\\' height=\\'220\\' fill=\\'%23e4e4e7\\'/></svg>'">
+          <img src="${esc(imgSrc)}" class="card-img" onerror="this.src='data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22220%22%3E%3Crect width=%22400%22 height=%22220%22 fill=%22%23e4e4e7%22/%3E%3C/svg%3E'">
           <button class="mute-btn" data-source="${esc(sourceName)}" onclick="muteSource(this.dataset.source, event)" title="Mute Source">
             <svg class="icon-sm"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
           </button>
@@ -580,176 +614,3 @@
       const stampDislike = topCard.querySelector('.stamp-dislike');
       const stampSuperDislike = topCard.querySelector('.stamp-super-dislike');
       const stampSave = topCard.querySelector('.stamp-save');
-
-      topCard.addEventListener('pointerdown', (e) => {
-        if (state.isAnimating || e.target.closest('.mute-btn')) return;
-        isDragging = true;
-        startX = e.clientX; startY = e.clientY;
-        startTime = Date.now();
-        topCard.style.transition = 'none'; 
-        topCard.setPointerCapture(e.pointerId);
-      });
-
-      topCard.addEventListener('pointermove', (e) => {
-        if (!isDragging) return;
-        currentX = e.clientX; currentY = e.clientY;
-        const deltaX = currentX - startX;
-        const deltaY = currentY - startY;
-
-        if (!isTicking) {
-          window.requestAnimationFrame(() => {
-            topCard.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${deltaX * 0.05}deg)`;
-            
-            const isX = Math.abs(deltaX) > Math.abs(deltaY);
-            stampLike.style.opacity = 0; stampDislike.style.opacity = 0; 
-            stampSuperDislike.style.opacity = 0; stampSave.style.opacity = 0;
-
-            if (isX) {
-                if (deltaX > 20) stampLike.style.opacity = Math.min(deltaX / 100, 1);
-                else if (deltaX < -20) stampDislike.style.opacity = Math.min(Math.abs(deltaX) / 100, 1);
-            } else {
-                if (deltaY < -20) stampSave.style.opacity = Math.min(Math.abs(deltaY) / 100, 1);
-                else if (deltaY > 20) stampSuperDislike.style.opacity = Math.min(deltaY / 100, 1);
-            }
-            isTicking = false;
-          });
-          isTicking = true;
-        }
-      });
-
-      const handleEnd = () => {
-        if (!isDragging) return;
-        isDragging = false;
-        state.isAnimating = true;
-        
-        const deltaX = currentX - startX;
-        const deltaY = currentY - startY;
-        const timeElapsed = Date.now() - startTime;
-        topCard.style.transition = 'transform 0.3s ease-out';
-
-        stampLike.style.opacity = 0; stampDislike.style.opacity = 0; 
-        stampSuperDislike.style.opacity = 0; stampSave.style.opacity = 0;
-
-        if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10 && timeElapsed < 300) {
-          topCard.style.transform = 'none';
-          state.isAnimating = false;
-          window.readArticle(state.queue[0].url);
-          return;
-        }
-
-        const isX = Math.abs(deltaX) > Math.abs(deltaY);
-        
-        if (isX && deltaX > 100) {
-          topCard.style.transform = `translateX(${window.innerWidth}px) rotate(30deg)`;
-          setTimeout(() => { handleAction('LIKE'); state.isAnimating = false; }, 300);
-        } else if (isX && deltaX < -100) {
-          topCard.style.transform = `translateX(-${window.innerWidth}px) rotate(-30deg)`;
-          setTimeout(() => { handleAction('DISLIKE'); state.isAnimating = false; }, 300);
-        } else if (!isX && deltaY < -100) {
-          topCard.style.transform = `translateY(-${window.innerHeight}px) scale(0.8)`;
-          setTimeout(() => { handleAction('SAVE'); state.isAnimating = false; }, 300);
-        } else if (!isX && deltaY > 100) {
-          topCard.style.transform = `translateY(${window.innerHeight}px) scale(0.8)`;
-          setTimeout(() => { handleAction('SUPER_DISLIKE'); state.isAnimating = false; }, 300);
-        } else {
-          topCard.style.transform = 'none'; 
-          state.isAnimating = false;
-        }
-      };
-
-      topCard.addEventListener('pointerup', handleEnd);
-      topCard.addEventListener('pointercancel', handleEnd);
-    }
-
-    // --- Button / Keyboard Bindings ---
-    window.addEventListener('keydown', (e) => {
-      if (state.isAnimating || state.queue.length === 0 || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
-      const topCard = $('#card-top');
-      if (!topCard) return;
-
-      const swipe = (x, y, rotation, action) => {
-        state.isAnimating = true;
-        topCard.style.transition = 'transform 0.3s ease-out';
-        topCard.style.transform = `translate(${x}px, ${y}px) rotate(${rotation}deg)`;
-        setTimeout(() => { handleAction(action); state.isAnimating = false; }, 300);
-      };
-
-      switch(e.key) {
-        case 'ArrowRight': swipe(window.innerWidth, 0, 30, 'LIKE'); break;
-        case 'ArrowLeft': swipe(-window.innerWidth, 0, -30, 'DISLIKE'); break;
-        case 'ArrowDown': swipe(0, window.innerHeight, 0, 'SUPER_DISLIKE'); break;
-        case 'ArrowUp': swipe(0, -window.innerHeight, 0, 'SAVE'); break;
-        case ' ': 
-          e.preventDefault();
-          state.isAnimating = true;
-          topCard.style.transition = 'transform 0.3s ease-out';
-          topCard.style.transform = 'translateY(150%) scale(0.8)';
-          setTimeout(() => { handleAction('SKIP'); state.isAnimating = false; }, 300);
-          break;
-        case 'Backspace':
-        case 'z':
-          if (e.ctrlKey || e.metaKey || e.key === 'Backspace' || e.key === 'z') window.undoAction();
-          break;
-        case 'Enter': window.readArticle(state.queue[0].url); break;
-        case 'd': $('#btn-digest').click(); break;
-      }
-    });
-
-    $('#btn-undo').addEventListener('click', () => { window.undoAction(); });
-    $('#btn-like').addEventListener('click', () => {
-      if(state.isAnimating) return; state.isAnimating = true;
-      const card = $('#card-top');
-      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateX(150%) rotate(15deg)'; }
-      setTimeout(() => { handleAction('LIKE'); state.isAnimating = false; }, 250);
-    });
-    $('#btn-dislike').addEventListener('click', () => {
-      if(state.isAnimating) return; state.isAnimating = true;
-      const card = $('#card-top');
-      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateX(-150%) rotate(-15deg)'; }
-      setTimeout(() => { handleAction('DISLIKE'); state.isAnimating = false; }, 250);
-    });
-    $('#btn-skip').addEventListener('click', () => {
-      if(state.isAnimating) return; state.isAnimating = true;
-      const card = $('#card-top');
-      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateY(150%) scale(0.8)'; }
-      setTimeout(() => { handleAction('SKIP'); state.isAnimating = false; }, 250);
-    });
-
-    // --- System Modals & Exports ---
-    $('#btn-digest').addEventListener('click', () => {
-      if (state.digest.length === 0) { alert("Digest queue is empty. Swipe UP on articles to save them."); return; }
-      const markdown = `Act as an expert research assistant. Read the following article headlines and their associated links. Synthesize the key themes and summarize the most important developments:\n\n${state.digest.map(a => `* [${a.title}](${a.url})`).join('\n')}`;
-      navigator.clipboard.writeText(markdown).then(() => {
-        if (window.confirm(`Copied ${state.digest.length} saved articles to clipboard! Ready to clear your Digest queue?`)) {
-          state.digest = []; idbClear('savedStore');
-        }
-      }).catch(err => {
-        alert("Clipboard access denied. Please check your browser permissions.");
-      });
-    });
-
-    const modal = $('#settings-modal');
-    $('#btn-settings').addEventListener('click', () => {
-      renderProfileViewer();
-      modal.style.display = 'flex';
-    });
-    $('#btn-close-settings').addEventListener('click', () => modal.style.display = 'none');
-
-    $('#btn-copy-brain').addEventListener('click', () => {
-      navigator.clipboard.writeText(JSON.stringify({ profile: state.profile, muted: state.mutedSources })).then(() => {
-        alert("Raw algorithm weights copied to clipboard.");
-      }).catch(err => {
-        alert("Clipboard access denied.");
-      });
-    });
-
-    // --- Boot Sequence ---
-    (async function init() {
-      await initDB();
-      // Silently pull cloud data. If it has more interactions, overwrite local data to stay synced.
-      await silentPull(); 
-      fetchArticles();
-    })();
-  </script>
-</body>
-</html>
