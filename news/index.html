@@ -8,7 +8,7 @@
   <title>Signal</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
   
-  <link rel="manifest" href='data:application/manifest+json,{"name":"Signal News","short_name":"Signal","display":"standalone","background_color":"#f4f4f5","theme_color":"#f4f4f5","icons":[{"src":"data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📰</text></svg>","sizes":"192x192","type":"image/svg+xml"}]}'>
+  <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiU2lnbmFsIE5ld3MiLCJzaG9ydF9uYW1lIjoiU2lnbmFsIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiI2Y0ZjRmNSIsInRoZW1lX2NvbG9yIjoiI2Y0ZjRmNSIsImljb25zIjpbeyJzcmMiOiJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUI0Yld4dWN6MGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TUM5emRtY2lJSFpwWlhOQ2IzZzlJakFnTUNBeE1EQWdNVEF3SWo0OGRHVjRkQ0I1UFNJdU9XVnRJakJtYjI1MExYTnBlbVU5SWprd0lqandubk93UEM5MFpYaDBQand2YzNaZ1BnPT0iLCJzaXplcyI6IjE5MngxOTIiLCJ0eXBlIjoiaW1hZ2Uvc3ZnK3htbCJ9XX0=">
 
   <style>
     :root { 
@@ -255,7 +255,7 @@
     const state = {
       queue: [], history: [], profile: Object.create(null), digest: [], mutedSources: [], seen: new Set(),
       interactions: parseInt(localStorage.getItem('news_interactions')) || 0,
-      page: 1, // Dynamic page state (1 or 2)
+      page: 1,
       isLoading: false, isAnimating: false
     };
 
@@ -389,7 +389,6 @@
         if (data.status === 'error') throw new Error(data.message || 'API rejected request.');
         
         if (data.articles && data.articles.length > 0) {
-          // Auditor Fix: Filter out "Ghost" Articles upstream with a.url
           const validArticles = data.articles.filter(a => 
             a.title && 
             a.url &&
@@ -401,7 +400,6 @@
           state.queue.forEach(a => { if (a._score === undefined) a._score = scoreArticle(a); });
           state.queue.sort((a, b) => b._score - a._score);
           
-          // 2-Page Pivot: Toggle between 1 and 2 to double algorithmic depth safely
           state.page = state.page === 1 ? 2 : 1; 
         }
       } catch (err) {
@@ -410,7 +408,6 @@
         }
       } finally {
         state.isLoading = false;
-        // Auditor Fix: Graceful Feed Exhaustion UI
         if (state.queue.length > 0 && !$('#card-top')) {
           renderCards();
         } else if (state.queue.length === 0) {
@@ -533,7 +530,6 @@
         state.mutedSources.push(sourceName);
         idbPut('mutedStore', { name: sourceName });
         
-        // Auditor Fix: Decouple mute filtering from handleAction('SKIP')
         state.queue = state.queue.filter(a => a.source?.name !== sourceName);
         
         const topCard = $('#card-top');
@@ -569,7 +565,6 @@
     function buildCardHTML(article, id) {
       const imgSrc = article.urlToImage || 'data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22220%22%3E%3Crect width=%22400%22 height=%22220%22 fill=%22%23e4e4e7%22/%3E%3C/svg%3E';
       const sourceName = article.source?.name || 'Unknown';
-      // Auditor Fix: SVG onerror escaping using URL encoding %22
       return `
         <div class="card" id="${id}">
           <div class="stamp stamp-like">LIKE</div>
@@ -614,3 +609,175 @@
       const stampDislike = topCard.querySelector('.stamp-dislike');
       const stampSuperDislike = topCard.querySelector('.stamp-super-dislike');
       const stampSave = topCard.querySelector('.stamp-save');
+
+      topCard.addEventListener('pointerdown', (e) => {
+        if (state.isAnimating || e.target.closest('.mute-btn')) return;
+        isDragging = true;
+        startX = e.clientX; startY = e.clientY;
+        startTime = Date.now();
+        topCard.style.transition = 'none'; 
+        topCard.setPointerCapture(e.pointerId);
+      });
+
+      topCard.addEventListener('pointermove', (e) => {
+        if (!isDragging) return;
+        currentX = e.clientX; currentY = e.clientY;
+        const deltaX = currentX - startX;
+        const deltaY = currentY - startY;
+
+        if (!isTicking) {
+          window.requestAnimationFrame(() => {
+            topCard.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${deltaX * 0.05}deg)`;
+            
+            const isX = Math.abs(deltaX) > Math.abs(deltaY);
+            stampLike.style.opacity = 0; stampDislike.style.opacity = 0; 
+            stampSuperDislike.style.opacity = 0; stampSave.style.opacity = 0;
+
+            if (isX) {
+                if (deltaX > 20) stampLike.style.opacity = Math.min(deltaX / 100, 1);
+                else if (deltaX < -20) stampDislike.style.opacity = Math.min(Math.abs(deltaX) / 100, 1);
+            } else {
+                if (deltaY < -20) stampSave.style.opacity = Math.min(Math.abs(deltaY) / 100, 1);
+                else if (deltaY > 20) stampSuperDislike.style.opacity = Math.min(deltaY / 100, 1);
+            }
+            isTicking = false;
+          });
+          isTicking = true;
+        }
+      });
+
+      const handleEnd = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        state.isAnimating = true;
+        
+        const deltaX = currentX - startX;
+        const deltaY = currentY - startY;
+        const timeElapsed = Date.now() - startTime;
+        topCard.style.transition = 'transform 0.3s ease-out';
+
+        stampLike.style.opacity = 0; stampDislike.style.opacity = 0; 
+        stampSuperDislike.style.opacity = 0; stampSave.style.opacity = 0;
+
+        if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10 && timeElapsed < 300) {
+          topCard.style.transform = 'none';
+          state.isAnimating = false;
+          window.readArticle(state.queue[0].url);
+          return;
+        }
+
+        const isX = Math.abs(deltaX) > Math.abs(deltaY);
+        
+        if (isX && deltaX > 100) {
+          topCard.style.transform = `translateX(${window.innerWidth}px) rotate(30deg)`;
+          setTimeout(() => { handleAction('LIKE'); state.isAnimating = false; }, 300);
+        } else if (isX && deltaX < -100) {
+          topCard.style.transform = `translateX(-${window.innerWidth}px) rotate(-30deg)`;
+          setTimeout(() => { handleAction('DISLIKE'); state.isAnimating = false; }, 300);
+        } else if (!isX && deltaY < -100) {
+          topCard.style.transform = `translateY(-${window.innerHeight}px) scale(0.8)`;
+          setTimeout(() => { handleAction('SAVE'); state.isAnimating = false; }, 300);
+        } else if (!isX && deltaY > 100) {
+          topCard.style.transform = `translateY(${window.innerHeight}px) scale(0.8)`;
+          setTimeout(() => { handleAction('SUPER_DISLIKE'); state.isAnimating = false; }, 300);
+        } else {
+          topCard.style.transform = 'none'; 
+          state.isAnimating = false;
+        }
+      };
+
+      topCard.addEventListener('pointerup', handleEnd);
+      topCard.addEventListener('pointercancel', handleEnd);
+    }
+
+    // --- Button / Keyboard Bindings ---
+    window.addEventListener('keydown', (e) => {
+      if (state.isAnimating || state.queue.length === 0 || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+      const topCard = $('#card-top');
+      if (!topCard) return;
+
+      const swipe = (x, y, rotation, action) => {
+        state.isAnimating = true;
+        topCard.style.transition = 'transform 0.3s ease-out';
+        topCard.style.transform = `translate(${x}px, ${y}px) rotate(${rotation}deg)`;
+        setTimeout(() => { handleAction(action); state.isAnimating = false; }, 300);
+      };
+
+      switch(e.key) {
+        case 'ArrowRight': swipe(window.innerWidth, 0, 30, 'LIKE'); break;
+        case 'ArrowLeft': swipe(-window.innerWidth, 0, -30, 'DISLIKE'); break;
+        case 'ArrowDown': swipe(0, window.innerHeight, 0, 'SUPER_DISLIKE'); break;
+        case 'ArrowUp': swipe(0, -window.innerHeight, 0, 'SAVE'); break;
+        case ' ': 
+          e.preventDefault();
+          state.isAnimating = true;
+          topCard.style.transition = 'transform 0.3s ease-out';
+          topCard.style.transform = 'translateY(150%) scale(0.8)';
+          setTimeout(() => { handleAction('SKIP'); state.isAnimating = false; }, 300);
+          break;
+        case 'Backspace':
+        case 'z':
+          if (e.ctrlKey || e.metaKey || e.key === 'Backspace' || e.key === 'z') window.undoAction();
+          break;
+        case 'Enter': window.readArticle(state.queue[0].url); break;
+        case 'd': $('#btn-digest').click(); break;
+      }
+    });
+
+    $('#btn-undo').addEventListener('click', () => { window.undoAction(); });
+    $('#btn-like').addEventListener('click', () => {
+      if(state.isAnimating) return; state.isAnimating = true;
+      const card = $('#card-top');
+      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateX(150%) rotate(15deg)'; }
+      setTimeout(() => { handleAction('LIKE'); state.isAnimating = false; }, 250);
+    });
+    $('#btn-dislike').addEventListener('click', () => {
+      if(state.isAnimating) return; state.isAnimating = true;
+      const card = $('#card-top');
+      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateX(-150%) rotate(-15deg)'; }
+      setTimeout(() => { handleAction('DISLIKE'); state.isAnimating = false; }, 250);
+    });
+    $('#btn-skip').addEventListener('click', () => {
+      if(state.isAnimating) return; state.isAnimating = true;
+      const card = $('#card-top');
+      if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateY(150%) scale(0.8)'; }
+      setTimeout(() => { handleAction('SKIP'); state.isAnimating = false; }, 250);
+    });
+
+    // --- System Modals & Exports ---
+    $('#btn-digest').addEventListener('click', () => {
+      if (state.digest.length === 0) { alert("Digest queue is empty. Swipe UP on articles to save them."); return; }
+      const markdown = `Act as an expert research assistant. Read the following article headlines and their associated links. Synthesize the key themes and summarize the most important developments:\n\n${state.digest.map(a => `* [${a.title}](${a.url})`).join('\n')}`;
+      navigator.clipboard.writeText(markdown).then(() => {
+        if (window.confirm(`Copied ${state.digest.length} saved articles to clipboard! Ready to clear your Digest queue?`)) {
+          state.digest = []; idbClear('savedStore');
+        }
+      }).catch(err => {
+        alert("Clipboard access denied. Please check your browser permissions.");
+      });
+    });
+
+    const modal = $('#settings-modal');
+    $('#btn-settings').addEventListener('click', () => {
+      renderProfileViewer();
+      modal.style.display = 'flex';
+    });
+    $('#btn-close-settings').addEventListener('click', () => modal.style.display = 'none');
+
+    $('#btn-copy-brain').addEventListener('click', () => {
+      navigator.clipboard.writeText(JSON.stringify({ profile: state.profile, muted: state.mutedSources })).then(() => {
+        alert("Raw algorithm weights copied to clipboard.");
+      }).catch(err => {
+        alert("Clipboard access denied.");
+      });
+    });
+
+    // --- Boot Sequence ---
+    (async function init() {
+      await initDB();
+      await silentPull(); 
+      fetchArticles();
+    })();
+  </script>
+</body>
+</html>
