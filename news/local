@@ -1,1 +1,829 @@
-local.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Signal</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
+  
+  <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiU2lnbmFsIE5ld3MiLCJzaG9ydF9uYW1lIjoiU2lnbmFsIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiI2Y0ZjRmNSIsInRoZW1lX2NvbG9yIjoiI2Y0ZjRmNSIsImljb25zIjpbeyJzcmMiOiJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUI0Yld4dWN6MGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TUM5emRtY2lJSFpwWlhOQ2IzZzlJakFnTUNBeE1EQWdNVEF3SWo0OGRHVjRkQ0I1UFNJdU9XVnRJakJtYjI1MExYTnBlbVU5SWprd0lqandubk93UEM5MFpYaDBQand2YzNaZ1BnPT0iLCJzaXplcyI6IjE5MngxOTIiLCJ0eXBlIjoiaW1hZ2Uvc3ZnK3htbCJ9XX0=">
+
+  <script src="https://unpkg.com/compromise" defer></script>
+
+  <style>
+    :root { 
+      --bg: #f4f4f5; 
+      --card: #ffffff; 
+      --text: #18181b; 
+      --brand: #3b82f6;
+      --like: #10b981;
+      --dislike: #f97316; 
+      --super-dislike: #9f1239; 
+      --skip: #71717a;
+      --border: #e4e4e7;
+    }
+    
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #09090b;
+        --card: #18181b;
+        --text: #f4f4f5;
+        --skip: #a1a1aa;
+        --border: #27272a;
+      }
+      .card-img { background: var(--border) !important; }
+      .desc { color: #a1a1aa !important; }
+      .mute-btn { background: rgba(255,255,255,0.1) !important; color: #fff !important; }
+    }
+
+    * { box-sizing: border-box; }
+    body { 
+      font-family: system-ui, -apple-system, sans-serif; 
+      background: var(--bg); 
+      color: var(--text); 
+      margin: 0; 
+      padding: 0; 
+      display: flex; 
+      flex-direction: column; 
+      height: 100dvh; 
+      overflow: hidden; 
+      touch-action: none; 
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    svg { width: 100%; height: 100%; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .icon-sm { width: 22px; height: 22px; }
+    .icon-md { width: 28px; height: 28px; }
+    .icon-lg { width: 32px; height: 32px; }
+
+    header { 
+      display: flex; justify-content: space-between; align-items: center;
+      padding: calc(1rem + env(safe-area-inset-top)) 1.5rem 1rem; 
+      font-weight: 800; font-size: 1.3rem; background: var(--card); 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10; letter-spacing: -0.5px;
+    }
+    .header-actions { display: flex; gap: 1rem; align-items: center;}
+    .header-btn { background: none; border: none; color: var(--text); cursor: pointer; transition: transform 0.1s; padding: 0;}
+    .header-btn:active { transform: scale(0.9); }
+    
+    main { 
+      flex: 1; display: flex; justify-content: center; align-items: center; 
+      padding: 1rem; position: relative; perspective: 1000px;
+    }
+    .card { 
+      background: var(--card); border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); 
+      max-width: 400px; width: 100%; height: 65dvh; max-height: 650px;
+      display: flex; flex-direction: column; overflow: hidden; position: absolute;
+      will-change: transform; cursor: grab; border: 1px solid var(--border);
+      user-select: none; -webkit-user-select: none;
+    }
+    .card:active { cursor: grabbing; }
+    
+    #card-top { z-index: 2; }
+    #card-next { z-index: 1; transform: scale(0.95) translateY(20px); opacity: 0.8; transition: all 0.3s ease; }
+
+    .card-img { width: 100%; height: 40%; background: #e4e4e7; object-fit: cover; pointer-events: none; }
+    .card-content { padding: 1.5rem; flex: 1; overflow-y: hidden; pointer-events: none; position: relative; }
+    
+    .source { font-size: 0.8rem; color: var(--brand); font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px; }
+    .title { font-size: 1.35rem; font-weight: 800; margin: 0 0 0.75rem 0; line-height: 1.25; overflow-wrap: break-word; word-break: break-word; }
+    .desc { font-size: 1rem; color: #52525b; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+
+    .mute-btn {
+      position: absolute; top: 12px; right: 12px; background: rgba(24, 24, 27, 0.4); color: white;
+      border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; z-index: 10;
+      pointer-events: auto; backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 6px;
+    }
+    .mute-btn:hover { background: rgba(239, 68, 68, 0.9); }
+
+    .stamp {
+      position: absolute; padding: 0.5rem 1rem; border: 4px solid; border-radius: 8px;
+      font-size: 2rem; font-weight: 900; text-transform: uppercase; opacity: 0;
+      z-index: 10; pointer-events: none; transition: opacity 0.1s; letter-spacing: 1px;
+    }
+    .stamp-like { top: 40px; left: 20px; color: var(--like); border-color: var(--like); transform: rotate(-15deg); }
+    .stamp-dislike { top: 40px; right: 20px; color: var(--dislike); border-color: var(--dislike); transform: rotate(15deg); }
+    .stamp-super-dislike { top: 40px; right: 20px; color: var(--super-dislike); border-color: var(--super-dislike); transform: rotate(15deg); font-size: 1.5rem; }
+    .stamp-save { bottom: 40px; left: 50%; transform: translate(-50%, 0) rotate(-5deg); color: var(--brand); border-color: var(--brand); }
+    
+    .controls { 
+      display: flex; justify-content: center; align-items: center; gap: 1.5rem;
+      padding: 0.5rem 1.5rem calc(2rem + env(safe-area-inset-bottom)); 
+      background: transparent; z-index: 10;
+    }
+    .control-btn { 
+      background: var(--card); border: 1px solid var(--border); cursor: pointer; 
+      transition: transform 0.15s, box-shadow 0.15s; border-radius: 50%; 
+      display: flex; align-items: center; justify-content: center; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08); color: var(--text);
+    }
+    .control-btn:active { transform: scale(0.9); }
+    
+    .btn-md { width: 55px; height: 55px; }
+    .btn-lg { width: 70px; height: 70px; }
+    .btn-sm { width: 45px; height: 45px; color: var(--skip); }
+    
+    #btn-dislike { color: var(--dislike); }
+    #btn-like { color: var(--like); }
+    
+    .empty-state { text-align: center; padding: 2rem; color: var(--skip); width: 100%; position: absolute; font-weight: 500;}
+
+    /* Settings Modal */
+    #settings-modal {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999;
+      justify-content: center; align-items: flex-end; padding: 1rem; backdrop-filter: blur(4px);
+    }
+    .modal-content {
+      background: var(--card); padding: 1.5rem; border-radius: 20px; width: 100%; max-width: 450px;
+      border: 1px solid var(--border); box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+      transform: translateY(100%); animation: slideUp 0.3s forwards ease-out; max-height: 90vh; display: flex; flex-direction: column;
+    }
+    @keyframes slideUp { to { transform: translateY(0); } }
+    
+    .modal-content h2 { margin: 0 0 0.25rem 0; font-size: 1.4rem;}
+    
+    .niche-input-group { display: flex; gap: 0.5rem; margin-top: 1rem; }
+    .niche-input-group input { flex: 1; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: inherit;}
+    
+    .profile-viewer {
+      margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+      background: var(--bg); padding: 1rem; border-radius: 12px;
+      overflow-y: auto; overscroll-behavior: contain; font-family: monospace; font-size: 0.8rem; color: var(--brand);
+      border: 1px solid var(--border); flex: 1; min-height: 100px;
+    }
+    .profile-col h4 { margin: 0 0 0.5rem 0; color: var(--text); font-size: 0.85rem; font-family: system-ui, sans-serif;}
+    
+    .modal-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
+    .btn { flex: 1; padding: 0.75rem; border-radius: 10px; border: none; cursor: pointer; font-weight: 700; font-size: 0.9rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem;}
+    .btn-primary { background: var(--brand); color: white; }
+    .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+
+    /* Import UI */
+    #import-area { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    #import-input { width: 100%; height: 60px; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: monospace; font-size: 0.75rem; resize: none; }
+
+    /* Holographic HUD Tutorial */
+    .tutorial-overlay {
+      position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px); color: white; touch-action: none;
+      transition: opacity 0.3s ease;
+    }
+    .phantom-card {
+      width: 320px; height: 50vh; max-height: 500px; border: 2px dashed rgba(255,255,255,0.4);
+      border-radius: 20px; position: relative; display: flex; align-items: center; justify-content: center;
+    }
+    .tut-icon { position: absolute; opacity: 0; animation-duration: 2.5s; animation-iteration-count: infinite; animation-timing-function: ease-in-out; }
+    .tut-icon.right { color: var(--like); right: -50px; animation-name: glideRight; }
+    .tut-icon.left { color: var(--dislike); left: -50px; animation-name: glideLeft; }
+    .tut-icon.up { color: var(--brand); top: -50px; animation-name: glideUp; }
+    .tut-icon.down { color: var(--super-dislike); bottom: -50px; animation-name: glideDown; }
+
+    @keyframes glideRight { 0% { transform: translateX(0) scale(0.8); opacity: 0; } 20% { opacity: 1; } 80% { transform: translateX(80px) scale(1.2); opacity: 0; } 100% { opacity: 0; } }
+    @keyframes glideLeft { 0% { transform: translateX(0) scale(0.8); opacity: 0; } 20% { opacity: 1; } 80% { transform: translateX(-80px) scale(1.2); opacity: 0; } 100% { opacity: 0; } }
+    @keyframes glideUp { 0% { transform: translateY(0) scale(0.8); opacity: 0; } 20% { opacity: 1; } 80% { transform: translateY(-80px) scale(1.2); opacity: 0; } 100% { opacity: 0; } }
+    @keyframes glideDown { 0% { transform: translateY(0) scale(0.8); opacity: 0; } 20% { opacity: 1; } 80% { transform: translateY(80px) scale(1.2); opacity: 0; } 100% { opacity: 0; } }
+
+    .tut-text { position: absolute; bottom: 12vh; font-weight: 600; font-size: 1.1rem; letter-spacing: 1px; animation: pulse 2s infinite; text-align: center; }
+    @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+  </style>
+</head>
+<body>
+
+  <div id="tutorial-overlay" class="tutorial-overlay">
+    <div class="phantom-card">
+      <svg class="icon-lg tut-icon right"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+      <svg class="icon-md tut-icon left"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path></svg>
+      <svg class="icon-md tut-icon up"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+      <svg class="icon-md tut-icon down"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+    </div>
+    <div class="tut-text">Tap anywhere to begin</div>
+  </div>
+
+  <header>
+    <span>Signal Local</span>
+    <div class="header-actions">
+      <button class="header-btn icon-sm" id="btn-digest" title="Export Digest">
+        <svg><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+      </button>
+      <button class="header-btn icon-sm" id="btn-settings" title="Settings">
+        <svg><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </header>
+  
+  <main id="feed-container">
+    <div class="empty-state">Initializing Engine...</div>
+  </main>
+  
+  <div class="controls">
+    <button class="control-btn btn-sm" id="btn-undo" title="Undo (Backspace)">
+      <svg class="icon-sm"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.6L3 13"></path></svg>
+    </button>
+    <button class="control-btn btn-md" id="btn-dislike" title="Dislike (Left)">
+      <svg class="icon-md"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path></svg>
+    </button>
+    <button class="control-btn btn-lg" id="btn-like" title="Like (Right)">
+      <svg class="icon-lg" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+    </button>
+    <button class="control-btn btn-sm" id="btn-skip" title="Neutral Skip (Space)">
+      <svg class="icon-sm"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>
+    </button>
+  </div>
+
+  <div id="settings-modal">
+    <div class="modal-content">
+      <h2>Algorithm Hub</h2>
+      <p style="font-size: 0.85rem; color: var(--skip); margin: 0;">Local Dual-Brain Engine (v1.0)</p>
+      
+      <div class="niche-input-group">
+        <input type="text" id="niche-input" placeholder="Inject a new topic (e.g. F1 Racing)">
+        <button class="btn btn-primary" id="btn-add-niche" style="flex: 0 0 auto;">Add</button>
+      </div>
+
+      <div id="profile-viewer" class="profile-viewer">
+        <div class="profile-col" id="col-topics"><h4>Top Topics</h4><div class="list"></div></div>
+        <div class="profile-col" id="col-sources"><h4>Top Sources</h4><div class="list"></div></div>
+      </div>
+      
+      <div id="import-area">
+        <textarea id="import-input" placeholder="Paste exported JSON Matrix here to sync data..."></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="btn-import-brain">Import</button>
+        <button class="btn btn-primary" id="btn-copy-brain">Export Matrix</button>
+        <button class="btn btn-secondary" id="btn-close-settings">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // --- V1.0 Local Constants ---
+    const CONSTANTS = {
+      TOPICS: {
+        TECHNOLOGY_SCIENCE: ['artificial intelligence', 'cybersecurity', 'space exploration', 'quantum computing', 'neuroscience', 'climate tech', 'consumer electronics'],
+        BUSINESS_FINANCE: ['global economy', 'venture capital', 'supply chain', 'cryptocurrency', 'real estate markets', 'mergers and acquisitions', 'personal finance'],
+        WORLD_POLITICS: ['geopolitics', 'international relations', 'elections', 'foreign policy', 'human rights', 'global conflict', 'supreme court'],
+        HEALTH_MEDICINE: ['biotech', 'public health', 'mental health', 'nutrition', 'pharmaceuticals', 'medical research', 'epidemiology'],
+        LAW_CRIME: ['cybercrime', 'corporate fraud', 'criminal justice', 'law enforcement', 'civil rights', 'international law'],
+        CULTURE_ARTS: ['pop culture', 'film industry', 'modern art', 'music festivals', 'fashion trends', 'literature', 'gaming industry'],
+        LIFESTYLE_SPORTS: ['culinary arts', 'travel', 'architecture', 'extreme sports', 'olympics', 'education', 'psychology']
+      },
+      DEFAULT_NICHES: [
+        'Minnesota', 'Twin Cities', 'Minneapolis', 'Positive news', 'Good news',
+        'Vanilla Web Technologies', 'Prompt Engineering', 'Minnesota Twins'
+      ],
+      STOP_WORDS: new Set(['the','a','an','and','or','but','is','are','was','were','to','of','in','for','with','on','at','by','this','that','it','as','be','from','news','breaking','update','has','have','will','not','out','how','why','what','your','you','their','they','we','our','he','she','his','hers']),
+      SLOP_LIST: ['here is why', 'you need to know', 'shocking', 'one trick', 'destroys', 'slams', "won't believe", 'what happens next'],
+      COLD_START_THRESHOLD: 100,
+      DECAY_INTERVAL: 100,
+      SOURCE_MULTIPLIER: 1.5,
+      MAX_WEIGHT: 20,
+      MIN_WEIGHT: -20,
+      POINTS: { SAVE: 3, READ: 2, LIKE: 1, SKIP: 0, DISLIKE: -1.5, SUPER_DISLIKE: -5 }
+    };
+
+    const $ = (sel) => document.querySelector(sel);
+    const esc = s => (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+    // --- State & IndexedDB Architecture ---
+    let db;
+    const state = {
+      queue: [], history: [], profile: { topics: {}, sources: {} }, digest: [], mutedSources: [], seen: new Set(),
+      interactions: parseInt(localStorage.getItem('news_interactions')) || 0,
+      niches: JSON.parse(localStorage.getItem('signal_niches')) || [...CONSTANTS.DEFAULT_NICHES],
+      page: 1,
+      isLoading: false, isAnimating: false
+    };
+
+    async function initDB() {
+      return new Promise((resolve) => {
+        const req = indexedDB.open('SignalNews', 4); 
+        req.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains('profileStore')) database.createObjectStore('profileStore');
+          if (!database.objectStoreNames.contains('savedStore')) database.createObjectStore('savedStore', { keyPath: 'url' });
+          if (!database.objectStoreNames.contains('mutedStore')) database.createObjectStore('mutedStore', { keyPath: 'name' });
+          if (!database.objectStoreNames.contains('seenStore')) database.createObjectStore('seenStore', { keyPath: 'url' });
+        };
+        req.onsuccess = async (e) => { db = e.target.result; await loadStateFromDB(); resolve(); };
+        req.onerror = () => resolve();
+      });
+    }
+
+    async function loadStateFromDB() {
+      if (!db) return;
+      const getReq = (store, key) => new Promise(res => { try { const r = db.transaction(store).objectStore(store).get(key); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch(e) { res(null); } });
+      const getAllReq = (store) => new Promise(res => { try { const r = db.transaction(store).objectStore(store).getAll(); r.onsuccess = () => res(r.result); r.onerror = () => res([]); } catch(e) { res([]); } });
+
+      const rawProfile = await getReq('profileStore', 'user_profile') || {};
+      
+      if (!rawProfile.topics || !rawProfile.sources) {
+        const newProfile = { topics: {}, sources: {} };
+        
+        for (let key in rawProfile) {
+          if (key === 'topics' || key === 'sources') continue;
+          if (!isNaN(key)) continue;
+          const val = rawProfile[key];
+          if (typeof val === 'number') {
+            if (key.includes('com') || key.includes('news') || key.includes('bbc') || key.includes('npr')) {
+              newProfile.sources[key] = Math.max(CONSTANTS.MIN_WEIGHT, Math.min(CONSTANTS.MAX_WEIGHT, val));
+            } else {
+              newProfile.topics[key] = Math.max(CONSTANTS.MIN_WEIGHT, Math.min(CONSTANTS.MAX_WEIGHT, val));
+            }
+          }
+        }
+        
+        state.niches.forEach(niche => {
+          const tokens = tokenize(niche);
+          tokens.forEach(t => newProfile.topics[t] = 15);
+        });
+
+        state.profile = newProfile;
+        idbPut('profileStore', state.profile, 'user_profile');
+      } else {
+        state.profile = rawProfile;
+      }
+
+      state.digest = await getAllReq('savedStore') || [];
+      const muted = await getAllReq('mutedStore') || [];
+      state.mutedSources = muted.map(m => m.name);
+      
+      const seenArr = await getAllReq('seenStore') || [];
+      state.seen = new Set(seenArr.map(s => s.url));
+    }
+
+    function idbPut(store, val, key) { if (!db) return; try { const tx = db.transaction(store, 'readwrite'); key ? tx.objectStore(store).put(val, key) : tx.objectStore(store).put(val); } catch(e) {} }
+    function idbDelete(store, key) { if (!db) return; try { db.transaction(store, 'readwrite').objectStore(store).delete(key); } catch(e) {} }
+    function idbClear(store) { if (!db) return; try { db.transaction(store, 'readwrite').objectStore(store).clear(); } catch(e){} }
+
+    // --- Semantic NLP Pipeline ---
+    function tokenize(text) {
+      if (!text) return [];
+      if (typeof nlp === 'undefined') {
+        return text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2 && !CONSTANTS.STOP_WORDS.has(w));
+      }
+      
+      const doc = nlp(text);
+      const entities = [...doc.topics().out('array'), ...doc.nouns().out('array')];
+      
+      const cleaned = entities.map(w => w.toLowerCase().replace(/[^\w\s]/g, '').trim())
+                              .filter(w => w.length > 2 && !CONSTANTS.STOP_WORDS.has(w) && isNaN(w)); 
+      
+      return [...new Set(cleaned)]; 
+    }
+
+    function scoreArticle(article) {
+      let score = 0;
+      if (state.interactions >= CONSTANTS.COLD_START_THRESHOLD || Object.keys(state.profile.topics).length > 0) {
+        const tokens = [...tokenize(article.title), ...tokenize(article.description)];
+        const cleanSource = article.source?.name ? article.source.name.toLowerCase().replace(/[^\w\s]/g, '').trim() : '';
+        
+        score += tokens.reduce((sum, token) => sum + (state.profile.topics[token] || 0), 0);
+        
+        if (cleanSource) {
+            score += (state.profile.sources[cleanSource] || 0);
+        }
+      }
+      
+      if (article.title) {
+        if (article.title.trim().endsWith('?')) score -= 5;
+        const titleLower = article.title.toLowerCase().replace(/[^\w\s]/g, '');
+        CONSTANTS.SLOP_LIST.forEach(slop => { if (titleLower.includes(slop.replace(/[^\w\s]/g, ''))) score -= 15; });
+      }
+      
+      return Math.max(-100, Math.min(100, score)); 
+    }
+
+    // --- Dynamic Fetching ---
+    window.retryFetch = function() {
+      $('#feed-container').innerHTML = `<div class="empty-state">Re-establishing connection...</div>`;
+      fetchArticles();
+    };
+
+    async function fetchArticles() {
+      if (state.isLoading) return;
+      state.isLoading = true;
+      
+      const allCategories = Object.values(CONSTANTS.TOPICS);
+      const shuffledCategories = allCategories.sort(() => 0.5 - Math.random()).slice(0, 6);
+      const queryTopics = shuffledCategories.map(cat => cat[Math.floor(Math.random() * cat.length)]);
+      
+      if (state.niches.length > 0) {
+        const randomNiche = state.niches[Math.floor(Math.random() * state.niches.length)];
+        queryTopics.push(randomNiche);
+      }
+      
+      const query = queryTopics.map(t => `"${t}"`).map(encodeURIComponent).join('+OR+');
+      const url = `https://newsapi.askozicki.workers.dev/?q=${query}&language=en&pageSize=40&page=${state.page}`;
+      
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.status === 'error') throw new Error(data.message || 'API rejected request.');
+        
+        if (data.articles && data.articles.length > 0) {
+          const validArticles = data.articles.filter(a => 
+            a.title && a.url && !a.title.includes('[Removed]') && 
+            !state.mutedSources.includes(a.source?.name) && !state.seen.has(a.url) 
+          );
+          state.queue.push(...validArticles);
+          state.queue.forEach(a => { if (a._score === undefined) a._score = scoreArticle(a); });
+          state.queue.sort((a, b) => b._score - a._score);
+          
+          state.page = state.page === 1 ? 2 : 1; 
+        }
+      } catch (err) {
+        if (state.queue.length === 0) {
+          $('#feed-container').innerHTML = `<div class="empty-state" style="color: var(--dislike)">Network Error:<br><br>${err.message}<br><br><button class="btn btn-secondary" onclick="window.retryFetch()">Retry</button></div>`;
+        }
+      } finally {
+        state.isLoading = false;
+        if (state.queue.length > 0 && !$('#card-top')) {
+          renderCards();
+        } else if (state.queue.length === 0) {
+          $('#feed-container').innerHTML = `<div class="empty-state">No new articles found right now.<br><br><button class="btn btn-secondary" onclick="window.retryFetch()" style="margin: 1.5rem auto;">Check Again</button></div>`;
+        }
+      }
+    }
+
+    // --- Algorithms ---
+    function decayProfile() {
+      const termFreq = {};
+      const qLen = state.queue.length;
+      if (qLen > 0) {
+        state.queue.forEach(a => {
+          const tokens = [...tokenize(a.title), ...tokenize(a.description)];
+          tokens.forEach(t => termFreq[t] = (termFreq[t] || 0) + 1);
+        });
+      }
+
+      for (let key in state.profile.topics) {
+        let val = state.profile.topics[key];
+        let multiplier = (qLen > 0 && termFreq[key] && (termFreq[key] / qLen) > 0.6) ? 0.8 : 0.9;
+        state.profile.topics[key] = Math.round(val * multiplier * 10) / 10;
+        if (Math.abs(state.profile.topics[key]) < 0.5) delete state.profile.topics[key];
+      }
+
+      for (let key in state.profile.sources) {
+        let val = state.profile.sources[key];
+        state.profile.sources[key] = Math.round(val * 0.9 * 10) / 10;
+        if (Math.abs(state.profile.sources[key]) < 0.5) delete state.profile.sources[key];
+      }
+
+      idbPut('profileStore', state.profile, 'user_profile');
+      renderProfileViewer();
+    }
+
+    function updateProfile(tokens, source, modifier) {
+      if (modifier === 0) return;
+      
+      tokens.forEach(token => { 
+        let current = state.profile.topics[token] || 0;
+        state.profile.topics[token] = Math.max(CONSTANTS.MIN_WEIGHT, Math.min(CONSTANTS.MAX_WEIGHT, current + modifier));
+        if (state.profile.topics[token] === 0) delete state.profile.topics[token];
+      });
+      
+      if (source) {
+        const cleanSource = source.toLowerCase().replace(/[^\w\s]/g, '').trim();
+        if (cleanSource) {
+            let current = state.profile.sources[cleanSource] || 0;
+            state.profile.sources[cleanSource] = Math.max(CONSTANTS.MIN_WEIGHT, Math.min(CONSTANTS.MAX_WEIGHT, current + (modifier * CONSTANTS.SOURCE_MULTIPLIER)));
+            if (state.profile.sources[cleanSource] === 0) delete state.profile.sources[cleanSource];
+        }
+      }
+      setTimeout(() => idbPut('profileStore', state.profile, 'user_profile'), 0);
+    }
+
+    function handleAction(type) {
+      if (state.queue.length === 0) return;
+      
+      state.interactions++;
+      try { localStorage.setItem('news_interactions', state.interactions); } catch(e) {}
+
+      const current = state.queue.shift();
+      const tokens = [...tokenize(current.title), ...tokenize(current.description)];
+      const source = current.source?.name || '';
+
+      if (current.url) {
+        state.seen.add(current.url);
+        idbPut('seenStore', { url: current.url });
+      }
+
+      state.history.push({ article: current, action: type, tokens, source });
+      if (state.history.length > 20) state.history.shift();
+
+      const pts = CONSTANTS.POINTS[type];
+      updateProfile(tokens, source, pts);
+
+      if (type === 'SAVE' || type === 'READ') {
+        state.digest.push(current);
+        idbPut('savedStore', current);
+      }
+      
+      if (state.interactions % CONSTANTS.DECAY_INTERVAL === 0) decayProfile();
+
+      renderCards();
+      if (state.queue.length < 5) fetchArticles();
+    }
+
+    window.undoAction = function() {
+      if (state.history.length === 0 || state.isAnimating) return;
+      state.isAnimating = true;
+
+      const last = state.history.pop();
+      const pts = CONSTANTS.POINTS[last.action];
+      updateProfile(last.tokens, last.source, -pts);
+
+      if (last.action === 'SAVE' || last.action === 'READ') {
+        state.digest = state.digest.filter(a => a.url !== last.article.url);
+        idbDelete('savedStore', last.article.url);
+      }
+
+      state.interactions--;
+      try { localStorage.setItem('news_interactions', state.interactions); } catch(e) {}
+      
+      state.queue.unshift(last.article);
+      renderCards();
+      
+      const topCard = $('#card-top');
+      if (topCard) {
+        topCard.style.transition = 'none';
+        topCard.style.transform = 'scale(0.8) translateY(-100px)';
+        topCard.style.opacity = '0';
+        void topCard.offsetHeight; 
+        topCard.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
+        topCard.style.transform = 'none';
+        topCard.style.opacity = '1';
+        setTimeout(() => { state.isAnimating = false; }, 300);
+      } else { state.isAnimating = false; }
+    };
+
+    // --- UI & Ergonomics ---
+    function renderProfileViewer() {
+      const colTopics = $('#col-topics .list');
+      const colSources = $('#col-sources .list');
+      if (!colTopics || !colSources) return;
+      
+      if (state.interactions < CONSTANTS.COLD_START_THRESHOLD && Object.keys(state.profile.topics).length === 0) {
+        colTopics.innerHTML = "Calibrating..."; colSources.innerHTML = ""; return;
+      }
+      
+      const topTopics = Object.entries(state.profile.topics).sort((a, b) => b[1] - a[1]).slice(0, 50);
+      const topSources = Object.entries(state.profile.sources).sort((a, b) => b[1] - a[1]).slice(0, 50);
+      
+      colTopics.innerHTML = topTopics.map(([w, s]) => `<div>${w}: ${s}</div>`).join('');
+      colSources.innerHTML = topSources.map(([w, s]) => `<div>${w}: ${s}</div>`).join('');
+    }
+
+    window.muteSource = function(sourceName, e) {
+      e.stopPropagation(); e.preventDefault();
+      if (window.confirm(`Mute ${sourceName} permanently?`)) {
+        state.mutedSources.push(sourceName);
+        idbPut('mutedStore', { name: sourceName });
+        state.queue = state.queue.filter(a => a.source?.name !== sourceName);
+        
+        const topCard = $('#card-top');
+        if (topCard) {
+            state.isAnimating = true;
+            topCard.style.transition = 'transform 0.3s ease-out';
+            topCard.style.transform = `scale(0.5)`;
+            topCard.style.opacity = '0';
+            setTimeout(() => { renderCards(); if (state.queue.length < 5) fetchArticles(); state.isAnimating = false; }, 300);
+        } else { renderCards(); if (state.queue.length < 5) fetchArticles(); }
+      }
+    };
+
+    window.readArticle = function(url) {
+      if (state.isAnimating || !url || !url.startsWith('http')) return;
+      window.open(url, '_blank', 'noopener,noreferrer');
+      const topCard = $('#card-top');
+      if (topCard) {
+        state.isAnimating = true;
+        topCard.style.transition = 'transform 0.3s ease-out';
+        topCard.style.transform = 'translateY(-150%) scale(0.8)';
+        setTimeout(() => { handleAction('READ'); state.isAnimating = false; }, 300);
+      }
+    };
+
+    function buildCardHTML(article, id) {
+      const imgSrc = article.urlToImage || 'data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22220%22%3E%3Crect width=%22400%22 height=%22220%22 fill=%22%23e4e4e7%22/%3E%3C/svg%3E';
+      const sourceName = article.source?.name || 'Unknown';
+      return `
+        <div class="card" id="${id}">
+          <div class="stamp stamp-like">LIKE</div>
+          <div class="stamp stamp-dislike">DISLIKE</div>
+          <div class="stamp stamp-super-dislike">SUPER DISLIKE</div>
+          <div class="stamp stamp-save">SAVED</div>
+          
+          <img src="${esc(imgSrc)}" class="card-img" onerror="this.src='data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22220%22%3E%3Crect width=%22400%22 height=%22220%22 fill=%22%23e4e4e7%22/%3E%3C/svg%3E'">
+          <button class="mute-btn" data-source="${esc(sourceName)}" onclick="muteSource(this.dataset.source, event)" title="Mute Source">
+            <svg class="icon-sm"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+          </button>
+          <div class="card-content">
+            <div class="source">${esc(sourceName)}</div>
+            <h2 class="title">${esc(article.title)}</h2>
+            <p class="desc">${esc(article.description || '')}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCards() {
+      const container = $('#feed-container');
+      if (state.queue.length === 0) { container.innerHTML = `<div class="empty-state">Assembling feed...</div>`; return; }
+      let html = '';
+      if (state.queue[1]) html += buildCardHTML(state.queue[1], 'card-next');
+      if (state.queue[0]) html += buildCardHTML(state.queue[0], 'card-top');
+      container.innerHTML = html;
+      initTouchMechanics();
+    }
+
+    function initTouchMechanics() {
+      const topCard = $('#card-top');
+      if (!topCard) return;
+
+      let startX = 0, startY = 0, currentX = 0, currentY = 0;
+      let isDragging = false, isTicking = false, startTime = 0;
+      
+      const stampLike = topCard.querySelector('.stamp-like');
+      const stampDislike = topCard.querySelector('.stamp-dislike');
+      const stampSuperDislike = topCard.querySelector('.stamp-super-dislike');
+      const stampSave = topCard.querySelector('.stamp-save');
+
+      topCard.addEventListener('pointerdown', (e) => {
+        if (state.isAnimating || e.target.closest('.mute-btn')) return;
+        isDragging = true; startX = e.clientX; startY = e.clientY; startTime = Date.now();
+        topCard.style.transition = 'none'; topCard.setPointerCapture(e.pointerId);
+      });
+
+      topCard.addEventListener('pointermove', (e) => {
+        if (!isDragging) return;
+        currentX = e.clientX; currentY = e.clientY;
+        const deltaX = currentX - startX; const deltaY = currentY - startY;
+
+        if (!isTicking) {
+          window.requestAnimationFrame(() => {
+            topCard.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${deltaX * 0.05}deg)`;
+            const isX = Math.abs(deltaX) > Math.abs(deltaY);
+            stampLike.style.opacity = 0; stampDislike.style.opacity = 0; stampSuperDislike.style.opacity = 0; stampSave.style.opacity = 0;
+            if (isX) {
+                if (deltaX > 20) stampLike.style.opacity = Math.min(deltaX / 100, 1);
+                else if (deltaX < -20) stampDislike.style.opacity = Math.min(Math.abs(deltaX) / 100, 1);
+            } else {
+                if (deltaY < -20) stampSave.style.opacity = Math.min(Math.abs(deltaY) / 100, 1);
+                else if (deltaY > 20) stampSuperDislike.style.opacity = Math.min(deltaY / 100, 1);
+            }
+            isTicking = false;
+          });
+          isTicking = true;
+        }
+      });
+
+      const handleEnd = () => {
+        if (!isDragging) return;
+        isDragging = false; state.isAnimating = true;
+        const deltaX = currentX - startX; const deltaY = currentY - startY; const timeElapsed = Date.now() - startTime;
+        topCard.style.transition = 'transform 0.3s ease-out';
+        stampLike.style.opacity = 0; stampDislike.style.opacity = 0; stampSuperDislike.style.opacity = 0; stampSave.style.opacity = 0;
+
+        if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10 && timeElapsed < 300) {
+          topCard.style.transform = 'none'; state.isAnimating = false; window.readArticle(state.queue[0].url); return;
+        }
+
+        const isX = Math.abs(deltaX) > Math.abs(deltaY);
+        if (isX && deltaX > 100) {
+          topCard.style.transform = `translateX(${window.innerWidth}px) rotate(30deg)`;
+          setTimeout(() => { handleAction('LIKE'); state.isAnimating = false; }, 300);
+        } else if (isX && deltaX < -100) {
+          topCard.style.transform = `translateX(-${window.innerWidth}px) rotate(-30deg)`;
+          setTimeout(() => { handleAction('DISLIKE'); state.isAnimating = false; }, 300);
+        } else if (!isX && deltaY < -100) {
+          topCard.style.transform = `translateY(-${window.innerHeight}px) scale(0.8)`;
+          setTimeout(() => { handleAction('SAVE'); state.isAnimating = false; }, 300);
+        } else if (!isX && deltaY > 100) {
+          topCard.style.transform = `translateY(${window.innerHeight}px) scale(0.8)`;
+          setTimeout(() => { handleAction('SUPER_DISLIKE'); state.isAnimating = false; }, 300);
+        } else {
+          topCard.style.transform = 'none'; state.isAnimating = false;
+        }
+      };
+      topCard.addEventListener('pointerup', handleEnd); topCard.addEventListener('pointercancel', handleEnd);
+    }
+
+    // --- Key Binds & Buttons ---
+    window.addEventListener('keydown', (e) => {
+      if (state.isAnimating || state.queue.length === 0 || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+      const topCard = $('#card-top'); if (!topCard) return;
+      const swipe = (x, y, r, act) => {
+        state.isAnimating = true; topCard.style.transition = 'transform 0.3s ease-out';
+        topCard.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg)`;
+        setTimeout(() => { handleAction(act); state.isAnimating = false; }, 300);
+      };
+      switch(e.key) {
+        case 'ArrowRight': swipe(window.innerWidth, 0, 30, 'LIKE'); break;
+        case 'ArrowLeft': swipe(-window.innerWidth, 0, -30, 'DISLIKE'); break;
+        case 'ArrowDown': swipe(0, window.innerHeight, 0, 'SUPER_DISLIKE'); break;
+        case 'ArrowUp': swipe(0, -window.innerHeight, 0, 'SAVE'); break;
+        case ' ': e.preventDefault(); swipe(0, window.innerHeight*1.5, 0, 'SKIP'); break;
+        case 'Backspace': case 'z': if (e.ctrlKey || e.metaKey || e.key === 'Backspace' || e.key === 'z') window.undoAction(); break;
+        case 'Enter': window.readArticle(state.queue[0].url); break;
+        case 'd': $('#btn-digest').click(); break;
+      }
+    });
+
+    $('#btn-undo').addEventListener('click', () => { window.undoAction(); });
+    $('#btn-like').addEventListener('click', () => { if(state.isAnimating) return; state.isAnimating = true; const card = $('#card-top'); if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateX(150%) rotate(15deg)'; } setTimeout(() => { handleAction('LIKE'); state.isAnimating = false; }, 250); });
+    $('#btn-dislike').addEventListener('click', () => { if(state.isAnimating) return; state.isAnimating = true; const card = $('#card-top'); if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateX(-150%) rotate(-15deg)'; } setTimeout(() => { handleAction('DISLIKE'); state.isAnimating = false; }, 250); });
+    $('#btn-skip').addEventListener('click', () => { if(state.isAnimating) return; state.isAnimating = true; const card = $('#card-top'); if(card) { card.style.transition = 'transform 0.3s'; card.style.transform = 'translateY(150%) scale(0.8)'; } setTimeout(() => { handleAction('SKIP'); state.isAnimating = false; }, 250); });
+
+    // --- System Modals & Exports ---
+    $('#btn-digest').addEventListener('click', () => {
+      if (state.digest.length === 0) { alert("Digest queue is empty. Swipe UP on articles to save them."); return; }
+      const markdown = `Act as an expert research assistant. Read the following article headlines and their associated links. Synthesize the key themes and summarize the most important developments:\n\n${state.digest.map(a => `* [${a.title}](${a.url})`).join('\n')}`;
+      navigator.clipboard.writeText(markdown).then(() => {
+        if (window.confirm(`Copied ${state.digest.length} saved articles to clipboard! Ready to clear your Digest queue?`)) { state.digest = []; idbClear('savedStore'); }
+      }).catch(err => { alert("Clipboard access denied. Please check your browser permissions."); });
+    });
+
+    const modal = $('#settings-modal');
+    $('#btn-settings').addEventListener('click', () => { renderProfileViewer(); modal.style.display = 'flex'; });
+    $('#btn-close-settings').addEventListener('click', () => modal.style.display = 'none');
+
+    // Matrix Export
+    $('#btn-copy-brain').addEventListener('click', () => {
+      navigator.clipboard.writeText(JSON.stringify({ profile: state.profile, muted: state.mutedSources })).then(() => {
+        alert("Dual-Brain Matrix copied to clipboard.");
+      }).catch(err => { alert("Clipboard access denied."); });
+    });
+
+    // Matrix Import
+    $('#btn-import-brain').addEventListener('click', () => {
+      const val = $('#import-input').value.trim();
+      if (!val) { alert("Please paste a Matrix JSON string to import."); return; }
+      
+      try {
+        const parsed = JSON.parse(val);
+        if (parsed.profile && typeof parsed.profile === 'object' && parsed.profile.topics && parsed.profile.sources) {
+          state.profile = parsed.profile;
+          idbPut('profileStore', state.profile, 'user_profile');
+        } else {
+          throw new Error("Missing Dual-Brain format.");
+        }
+        if (parsed.muted && Array.isArray(parsed.muted)) {
+          state.mutedSources = parsed.muted;
+          idbClear('mutedStore');
+          state.mutedSources.forEach(m => idbPut('mutedStore', { name: m }));
+        }
+        $('#import-input').value = '';
+        renderProfileViewer();
+        alert("Matrix imported successfully! Your algorithm has been updated.");
+      } catch (err) {
+        alert("Invalid JSON format or Missing Dual-Brain format. Please ensure you copied the entire exported string.");
+      }
+    });
+
+    // Custom Niche Injector
+    $('#niche-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') $('#btn-add-niche').click();
+    });
+
+    $('#btn-add-niche').addEventListener('click', () => {
+      const val = $('#niche-input').value.replace(/["']/g, '').trim();
+      if (val) {
+        state.niches.push(val);
+        try { localStorage.setItem('signal_niches', JSON.stringify(state.niches)); } catch(e){}
+        const tokens = tokenize(val);
+        tokens.forEach(t => state.profile.topics[t] = 15);
+        idbPut('profileStore', state.profile, 'user_profile');
+        $('#niche-input').value = '';
+        renderProfileViewer();
+        alert(`Successfully injected "${val}" into the Salt & Pepper engine.`);
+      }
+    });
+
+    // --- Boot Sequence & Tutorial Check ---
+    (async function init() {
+      const tutOverlay = $('#tutorial-overlay');
+      if (localStorage.getItem('signal_tutorial_seen')) {
+        if (tutOverlay) tutOverlay.remove();
+      } else {
+        if (tutOverlay) {
+          tutOverlay.addEventListener('pointerdown', () => {
+            try { localStorage.setItem('signal_tutorial_seen', 'true'); } catch (e) {}
+            tutOverlay.style.opacity = '0';
+            setTimeout(() => tutOverlay.remove(), 300);
+          }, { once: true });
+        }
+      }
+
+      await initDB();
+      fetchArticles();
+    })();
+  </script>
+</body>
+</html>
