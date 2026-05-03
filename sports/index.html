@@ -1,1 +1,359 @@
-sports test page
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dev Sports v1.0</title>
+    <style>
+        /* Cupertino 2050 Design System */
+        :root {
+            --bg-color: #000000;
+            --text-primary: #F5F5F7;
+            --text-secondary: #86868B;
+            --text-tertiary: #515154;
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent-live: #FF3B30;
+            --accent-live-glow: rgba(255, 59, 48, 0.15);
+            --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-stack);
+            -webkit-font-smoothing: antialiased;
+            padding: 32px;
+            overflow-x: hidden;
+        }
+
+        /* Header / App Bar */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .version {
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+            margin-left: 8px;
+            font-weight: 400;
+        }
+
+        #last-updated {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Grid Layout */
+        #sports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+            gap: 24px;
+        }
+
+        /* Card Architecture */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 24px;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            display: flex;
+            flex-direction: column;
+            min-height: 280px;
+            transition: all 0.3s ease;
+        }
+
+        .card.live {
+            border-color: rgba(255, 59, 48, 0.4);
+            box-shadow: 0 0 32px var(--accent-live-glow), inset 0 0 16px var(--accent-live-glow);
+        }
+
+        .card.final {
+            opacity: 0.6;
+        }
+
+        /* Tier 1: Header */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: auto;
+        }
+
+        .team-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .team-record {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Tier 2: Main Body */
+        .card-body {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 24px 0;
+            text-align: center;
+        }
+
+        .matchup {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Live Game Styles */
+        .scoreboard {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 24px;
+            width: 100%;
+            margin-bottom: 12px;
+        }
+
+        .score-team {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .score-abbrev {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .score-number {
+            font-size: 3rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-live);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .pulse {
+            width: 6px;
+            height: 6px;
+            background-color: var(--accent-live);
+            border-radius: 50%;
+            animation: pulse-animation 2s infinite;
+        }
+
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(255, 59, 48, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+        }
+
+        .game-context {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .game-subcontext {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Pre-Game Styles */
+        .time-display {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .network-display {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Tier 3: Footer */
+        .card-footer {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid var(--card-border);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Dev Sports<span class="version">v1.0</span></h1>
+        <div id="last-updated">Updating...</div>
+    </header>
+
+    <main id="sports-grid">
+        </main>
+
+    <script>
+        const WORKER_URL = 'https://pi-sports-edge.askozicki.workers.dev/';
+        const REFRESH_RATE_MS = 60000; // 60 seconds
+
+        // Fallback data for testing the UI before the Worker is fully updated
+        const MOCK_DATA = {
+            last_updated: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+            teams: {
+                "NFL_MIN": {
+                    sport: "NFL", team_name: "Minnesota Vikings", team_record: "7-2", status: "LIVE",
+                    previous_game: { opponent: "DET", result: "W", score: "28-10", display_date: "Oct 24" },
+                    current_game: { opponent: "GB", live_state: { home_score: "14", away_score: "21", period: "3rd QTR", clock: "10:45", context: "3rd & 4" } }
+                },
+                "MLB_MIN": {
+                    sport: "MLB", team_name: "Minnesota Twins", team_record: "18-12", status: "PRE-GAME",
+                    previous_game: { opponent: "CHW", result: "W", score: "5-2", display_date: "May 2" },
+                    current_game: { opponent: "BOS", opp_record: "15-15", display_time: "6:40 PM", display_date: "Today", network: "BSN" }
+                },
+                "NBA_MIN": {
+                    sport: "NBA", team_name: "Timberwolves", team_record: "56-26", status: "FINAL",
+                    previous_game: { opponent: "PHX", result: "W", score: "122-116", display_date: "Apr 28" },
+                    current_game: { opponent: "DEN", live_state: { home_score: "106", away_score: "99" }, display_date: "Today" }
+                }
+            }
+        };
+
+        async function fetchSportsData() {
+            try {
+                const response = await fetch(WORKER_URL);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                
+                renderDashboard(data.teams ? data : MOCK_DATA); 
+            } catch (error) {
+                console.warn('Worker fetch failed, using fallback mock data for UI testing.', error);
+                // Dynamically update the mock time so the user knows the UI loop is still alive
+                MOCK_DATA.last_updated = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + " (Offline Mode)";
+                renderDashboard(MOCK_DATA);
+            }
+        }
+
+        function renderDashboard(data) {
+            document.getElementById('last-updated').innerText = `Updated at ${data.last_updated}`;
+            const grid = document.getElementById('sports-grid');
+            let htmlString = '';
+
+            Object.values(data.teams).forEach(team => {
+                const isLive = team.status === 'LIVE';
+                const isFinal = team.status === 'FINAL';
+                // Fallback to the root team object if the new nested schema isn't deployed yet
+                const cg = team.current_game || team; 
+                const prev = team.previous_game || null;
+
+                // Tier 2 Generator
+                let bodyHtml = '';
+                if (isLive && cg.live_state) {
+                    bodyHtml = `
+                        <div class="live-badge"><div class="pulse"></div> LIVE</div>
+                        <div class="scoreboard">
+                            <div class="score-team">
+                                <span class="score-abbrev">AWAY</span>
+                                <span class="score-number">${cg.live_state.away_score}</span>
+                            </div>
+                            <div class="score-team">
+                                <span class="score-abbrev">HOME</span>
+                                <span class="score-number">${cg.live_state.home_score}</span>
+                            </div>
+                        </div>
+                        <div class="game-context">${cg.live_state.clock} • ${cg.live_state.period}</div>
+                        ${cg.live_state.context ? `<div class="game-subcontext">${cg.live_state.context}</div>` : ''}
+                    `;
+                } else if (isFinal && cg.live_state) {
+                    bodyHtml = `
+                        <div class="matchup">FINAL • vs ${cg.opponent}</div>
+                        <div class="scoreboard">
+                            <div class="score-team">
+                                <span class="score-abbrev">AWAY</span>
+                                <span class="score-number">${cg.live_state.away_score}</span>
+                            </div>
+                            <div class="score-team">
+                                <span class="score-abbrev">HOME</span>
+                                <span class="score-number">${cg.live_state.home_score}</span>
+                            </div>
+                        </div>
+                        <div class="game-subcontext">${cg.display_date || 'Today'}</div>
+                    `;
+                } else {
+                    bodyHtml = `
+                        <div class="matchup">Next vs ${cg.opponent} (${cg.opp_record || '0-0'})</div>
+                        <div class="time-display">${cg.display_time || 'TBD'}</div>
+                        <div class="network-display">${cg.display_date || 'TBD'} • ${cg.network || 'TBD'}</div>
+                    `;
+                }
+
+                // Tier 3 Generator
+                let footerHtml = '';
+                if (prev) {
+                    footerHtml = `<div class="card-footer">PREV: ${prev.result} ${prev.score} vs ${prev.opponent} (${prev.display_date})</div>`;
+                } else {
+                    footerHtml = `<div class="card-footer">PREV: Data not available</div>`;
+                }
+
+                // Compile Card
+                htmlString += `
+                    <div class="card ${isLive ? 'live' : ''} ${isFinal ? 'final' : ''}">
+                        <div class="card-header">
+                            <span class="team-name">${team.team_name}</span>
+                            <span class="team-record">${team.team_record}</span>
+                        </div>
+                        <div class="card-body">
+                            ${bodyHtml}
+                        </div>
+                        ${footerHtml}
+                    </div>
+                `;
+            });
+
+            grid.innerHTML = htmlString;
+        }
+
+        // Initialize and loop
+        fetchSportsData();
+        setInterval(fetchSportsData, REFRESH_RATE_MS);
+
+    </script>
+</body>
+</html>
