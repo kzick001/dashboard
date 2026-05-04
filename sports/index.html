@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dev Sports v1.1.1</title>
+    <title>Dev Sports v1.2.1</title>
     <style>
         /* Cupertino 2050 Design System */
         :root {
@@ -81,7 +81,7 @@
             flex-direction: column;
             min-height: 280px;
             transition: all 0.3s ease;
-            margin: 0 auto; /* Centers the card if the 1fr grid track gets wider */
+            margin: 0 auto;
             width: 100%;
         }
 
@@ -92,6 +92,33 @@
 
         .card.final {
             opacity: 0.6;
+        }
+
+        /* Offseason Shelf Architecture */
+        .card.offseason {
+            min-height: 80px;
+            flex-direction: row;
+            align-items: center;
+            opacity: 0.4;
+            padding: 16px 24px;
+            align-self: start; /* Prevents CSS grid from stretching the shelf vertically */
+        }
+        
+        .card.offseason .card-header {
+            margin-bottom: 0;
+            width: 100%;
+            align-items: center;
+        }
+
+        .card.offseason .card-body, 
+        .card.offseason .card-footer {
+            display: none; /* Hide body and footer to save space */
+        }
+
+        .card.offseason .team-logo {
+            width: 36px;
+            height: 36px;
+            opacity: 0.5;
         }
 
         /* Tier 1: Header */
@@ -149,38 +176,33 @@
         .matchup {
             font-size: 1rem;
             color: var(--text-secondary);
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            font-weight: 500;
         }
 
-        /* Live Game Styles */
+        /* Minimalist Scoreboard Styles */
         .scoreboard {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 24px;
             width: 100%;
             margin-bottom: 12px;
         }
 
-        .score-team {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .score-abbrev {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin-bottom: 4px;
-        }
-
         .score-number {
-            font-size: 3rem;
+            font-size: 3.5rem;
             font-weight: 700;
             font-variant-numeric: tabular-nums;
             line-height: 1;
+        }
+
+        .score-divider {
+            color: var(--text-tertiary);
+            margin: 0 20px;
+            font-size: 2rem;
+            font-weight: 300;
         }
 
         .live-badge {
@@ -223,7 +245,7 @@
 
         /* Pre-Game Styles */
         .time-display {
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: 600;
             margin-bottom: 4px;
         }
@@ -247,7 +269,7 @@
 <body>
 
     <header>
-        <h1>Dev Sports<span class="version">v1.1.1</span></h1>
+        <h1>Dev Sports<span class="version">v1.2.1</span></h1>
         <div id="last-updated">Updating...</div>
     </header>
 
@@ -259,7 +281,7 @@
         const REFRESH_RATE_MS = 60000; // 60 seconds
         let lastRenderedTeamsHash = "";
 
-        // Fallback data for testing the UI if the Worker is entirely offline
+        // Fallback data for testing the UI
         const MOCK_DATA = {
             last_updated: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
             teams: {
@@ -267,19 +289,15 @@
                     sport: "NFL", team_name: "Minnesota Vikings", team_record: "7-2", status: "LIVE",
                     logo_url: "https://a.espncdn.com/i/teamlogos/nfl/500/min.png",
                     previous_game: { opponent: "DET", result: "W", score: "28-10", display_date: "Oct 24" },
-                    current_game: { opponent: "GB", live_state: { home_abbrev: "GB", away_abbrev: "MIN", home_score: "14", away_score: "21", period: "3rd QTR", clock: "10:45", context: "3rd & 4" } }
+                    current_game: { opponent: "GB", live_state: { home_abbrev: "GB", away_abbrev: "MIN", home_score: "14", away_score: "21", period: "3rd QTR", clock: "10:45", context: "3rd & 4" } },
+                    _meta: { last_fetched: Date.now() }
                 },
-                "NCAAF_WIS": {
-                    sport: "NCAAF", team_name: "Wisconsin Badgers", team_record: "0-0", status: "PRE-GAME",
-                    logo_url: "https://a.espncdn.com/i/teamlogos/ncaa/500/275.png",
-                    previous_game: null,
-                    current_game: { opponent: "WMU", opp_record: "0-0", display_time: "8:00 PM", display_date: "Aug 30", network: "FS1" }
-                },
-                "NCAAMBB_WIS": {
-                    sport: "NCAAMBB", team_name: "Wisconsin Badgers", team_record: "22-14", status: "FINAL",
-                    logo_url: "https://a.espncdn.com/i/teamlogos/ncaa/500/275.png",
-                    previous_game: { opponent: "PUR", result: "W", score: "76-75", display_date: "Mar 16" },
-                    current_game: { opponent: "JMU", live_state: { home_abbrev: "JMU", away_abbrev: "WIS", home_score: "61", away_score: "72" }, display_date: "Mar 22" }
+                "MLB_MIN": {
+                    sport: "MLB", team_name: "Minnesota Twins", team_record: "Offseason", status: "PRE-GAME",
+                    logo_url: "https://a.espncdn.com/i/teamlogos/mlb/500/min.png",
+                    previous_game: { opponent: "CHW", result: "W", score: "5-2", display_date: "Oct 1" },
+                    current_game: { opponent: "TBD", opp_record: "0-0", display_time: "--:--", display_date: "TBD", network: "" },
+                    _meta: { last_fetched: Date.now(), next_game_time_ms: Date.now() + (30 * 24 * 60 * 60 * 1000) } // Next game 30 days away
                 }
             }
         };
@@ -300,10 +318,8 @@
 
         function renderDashboard(data) {
             const localSyncTime = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-            // Show both the API freshness (data) and the Pi's last successful ping (local)
             document.getElementById('last-updated').innerText = `API: ${data.last_updated} • Ping: ${localSyncTime}`;
             
-            // Prevent DOM thrashing/logo flicker if the sports data hasn't actually changed
             const currentTeamsHash = JSON.stringify(data.teams);
             if (currentTeamsHash === lastRenderedTeamsHash) return;
             lastRenderedTeamsHash = currentTeamsHash;
@@ -311,50 +327,67 @@
             const grid = document.getElementById('sports-grid');
             let htmlString = '';
 
-            Object.values(data.teams).forEach(team => {
+            const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+            const now = Date.now();
+
+            // 1. Filter out Ghost data
+            const validTeams = Object.values(data.teams).filter(team => {
+                return !(team._meta && (now - team._meta.last_fetched > TWENTY_FOUR_HOURS));
+            });
+
+            // 2. Sort by urgency (Live = 1, Pre-Game = 2, Final = 3, Offseason = 4)
+            validTeams.sort((a, b) => {
+                const getPriority = (t) => {
+                    if (t.status === 'LIVE') return 1;
+                    const days = t._meta?.next_game_time_ms ? (t._meta.next_game_time_ms - now) / 86400000 : 999;
+                    const isOff = t.status === 'PRE-GAME' && (days > 14 || !t.current_game?.opponent || t.current_game?.opponent === 'TBD');
+                    if (isOff) return 4;
+                    if (t.status === 'PRE-GAME') return 2;
+                    return 3; // FINAL
+                };
+                return getPriority(a) - getPriority(b);
+            });
+
+            // 3. Render
+            validTeams.forEach(team => {
                 const isLive = team.status === 'LIVE';
                 const isFinal = team.status === 'FINAL';
                 const cg = team.current_game || team; 
                 const prev = team.previous_game || null;
 
-                // Tier 2 Generator
+                // THE OFFSEASON CALCULATION: > 14 Days Away or Opponent is TBD
+                const daysUntilGame = team._meta?.next_game_time_ms ? (team._meta.next_game_time_ms - now) / 86400000 : 999;
+                const isOffseason = team.status === 'PRE-GAME' && (daysUntilGame > 14 || !cg.opponent || cg.opponent === 'TBD');
+
+                // Tier 2 Generator (Minimalist Scoreboard)
                 let bodyHtml = '';
                 if (isLive && cg.live_state) {
                     bodyHtml = `
                         <div class="live-badge"><div class="pulse"></div> LIVE</div>
+                        <div class="matchup">${cg.live_state.away_abbrev || 'AWAY'} @ ${cg.live_state.home_abbrev || 'HOME'}</div>
                         <div class="scoreboard">
-                            <div class="score-team">
-                                <span class="score-abbrev">${cg.live_state.away_abbrev || 'AWAY'}</span>
-                                <span class="score-number">${cg.live_state.away_score}</span>
-                            </div>
-                            <div class="score-team">
-                                <span class="score-abbrev">${cg.live_state.home_abbrev || 'HOME'}</span>
-                                <span class="score-number">${cg.live_state.home_score}</span>
-                            </div>
+                            <span class="score-number">${cg.live_state.away_score}</span>
+                            <span class="score-divider">-</span>
+                            <span class="score-number">${cg.live_state.home_score}</span>
                         </div>
                         <div class="game-context">${cg.live_state.clock} • ${cg.live_state.period}</div>
                         ${cg.live_state.context ? `<div class="game-subcontext">${cg.live_state.context}</div>` : ''}
                     `;
                 } else if (isFinal && cg.live_state) {
                     bodyHtml = `
-                        <div class="matchup">FINAL • vs ${cg.opponent}</div>
+                        <div class="matchup">FINAL • ${cg.live_state.away_abbrev || 'AWAY'} @ ${cg.live_state.home_abbrev || 'HOME'}</div>
                         <div class="scoreboard">
-                            <div class="score-team">
-                                <span class="score-abbrev">${cg.live_state.away_abbrev || 'AWAY'}</span>
-                                <span class="score-number">${cg.live_state.away_score}</span>
-                            </div>
-                            <div class="score-team">
-                                <span class="score-abbrev">${cg.live_state.home_abbrev || 'HOME'}</span>
-                                <span class="score-number">${cg.live_state.home_score}</span>
-                            </div>
+                            <span class="score-number">${cg.live_state.away_score}</span>
+                            <span class="score-divider">-</span>
+                            <span class="score-number">${cg.live_state.home_score}</span>
                         </div>
                         <div class="game-subcontext">${cg.display_date || 'Today'}</div>
                     `;
-                } else {
+                } else if (!isOffseason) {
                     bodyHtml = `
-                        <div class="matchup">${cg.opponent ? `Next vs ${cg.opponent}` : 'Offseason'}</div>
+                        <div class="matchup">Next vs ${cg.opponent}</div>
                         <div class="time-display">${cg.display_time || '--:--'}</div>
-                        <div class="network-display">${cg.display_date || 'TBD'} ${cg.network ? `• ${cg.network}` : ''}</div>
+                        <div class="network-display">${cg.display_date || 'TBD'} ${cg.network && cg.network !== 'TBD' ? `• ${cg.network}` : ''}</div>
                     `;
                 }
 
@@ -368,10 +401,10 @@
 
                 // Compile Card
                 htmlString += `
-                    <div class="card ${isLive ? 'live' : ''} ${isFinal ? 'final' : ''}">
+                    <div class="card ${isLive ? 'live' : ''} ${isFinal ? 'final' : ''} ${isOffseason ? 'offseason' : ''}">
                         <div class="card-header">
                             <div class="header-text">
-                                <span class="sport-badge">${team.sport}</span>
+                                <span class="sport-badge">${team.sport || 'SPORT'}</span>
                                 <span class="team-name">${team.team_name}</span>
                                 <span class="team-record">${team.team_record}</span>
                             </div>
