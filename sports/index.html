@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dev Sports v1.2.1</title>
+    <title>Dev Sports v1.2.3</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏟️</text></svg>">
     <style>
         /* Cupertino 2050 Design System */
         :root {
@@ -101,7 +102,7 @@
             align-items: center;
             opacity: 0.4;
             padding: 16px 24px;
-            align-self: start; /* Prevents CSS grid from stretching the shelf vertically */
+            align-self: start; 
         }
         
         .card.offseason .card-header {
@@ -112,7 +113,7 @@
 
         .card.offseason .card-body, 
         .card.offseason .card-footer {
-            display: none; /* Hide body and footer to save space */
+            display: none; 
         }
 
         .card.offseason .team-logo {
@@ -124,15 +125,20 @@
         /* Tier 1: Header */
         .card-header {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start; /* Align everything tightly to the left */
             align-items: flex-start;
+            gap: 16px; /* Create a fixed, intentional space between text and logo */
             margin-bottom: auto;
+            width: 100%; 
         }
 
+        /* Indestructible Flexbox constraints for text */
         .header-text {
             display: flex;
             flex-direction: column;
             gap: 2px;
+            min-width: 0; 
+            /* Remove flex-grow so it doesn't push the logo away */
         }
 
         .sport-badge {
@@ -148,17 +154,24 @@
             font-size: 1.1rem;
             font-weight: 700;
             letter-spacing: -0.01em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .team-record {
             font-size: 0.9rem;
             color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .team-logo {
             width: 48px;
             height: 48px;
             object-fit: contain;
+            flex-shrink: 0; /* Critical: Prevents the logo from turning into a 1px sliver */
             filter: drop-shadow(0px 4px 12px rgba(255,255,255,0.15));
         }
 
@@ -263,13 +276,16 @@
             font-size: 0.8rem;
             color: var(--text-secondary);
             text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>Dev Sports<span class="version">v1.2.1</span></h1>
+        <h1>Dev Sports<span class="version">v1.2.3</span></h1>
         <div id="last-updated">Updating...</div>
     </header>
 
@@ -291,13 +307,6 @@
                     previous_game: { opponent: "DET", result: "W", score: "28-10", display_date: "Oct 24" },
                     current_game: { opponent: "GB", live_state: { home_abbrev: "GB", away_abbrev: "MIN", home_score: "14", away_score: "21", period: "3rd QTR", clock: "10:45", context: "3rd & 4" } },
                     _meta: { last_fetched: Date.now() }
-                },
-                "MLB_MIN": {
-                    sport: "MLB", team_name: "Minnesota Twins", team_record: "Offseason", status: "PRE-GAME",
-                    logo_url: "https://a.espncdn.com/i/teamlogos/mlb/500/min.png",
-                    previous_game: { opponent: "CHW", result: "W", score: "5-2", display_date: "Oct 1" },
-                    current_game: { opponent: "TBD", opp_record: "0-0", display_time: "--:--", display_date: "TBD", network: "" },
-                    _meta: { last_fetched: Date.now(), next_game_time_ms: Date.now() + (30 * 24 * 60 * 60 * 1000) } // Next game 30 days away
                 }
             }
         };
@@ -335,7 +344,7 @@
                 return !(team._meta && (now - team._meta.last_fetched > TWENTY_FOUR_HOURS));
             });
 
-            // 2. Sort by urgency (Live = 1, Pre-Game = 2, Final = 3, Offseason = 4)
+            // 2. Sort by urgency
             validTeams.sort((a, b) => {
                 const getPriority = (t) => {
                     if (t.status === 'LIVE') return 1;
@@ -355,11 +364,9 @@
                 const cg = team.current_game || team; 
                 const prev = team.previous_game || null;
 
-                // THE OFFSEASON CALCULATION: > 14 Days Away or Opponent is TBD
                 const daysUntilGame = team._meta?.next_game_time_ms ? (team._meta.next_game_time_ms - now) / 86400000 : 999;
                 const isOffseason = team.status === 'PRE-GAME' && (daysUntilGame > 14 || !cg.opponent || cg.opponent === 'TBD');
 
-                // Tier 2 Generator (Minimalist Scoreboard)
                 let bodyHtml = '';
                 if (isLive && cg.live_state) {
                     bodyHtml = `
@@ -391,7 +398,6 @@
                     `;
                 }
 
-                // Tier 3 Generator
                 let footerHtml = '';
                 if (prev) {
                     footerHtml = `<div class="card-footer">PREV: ${prev.result} ${prev.score} vs ${prev.opponent} (${prev.display_date})</div>`;
@@ -399,7 +405,7 @@
                     footerHtml = `<div class="card-footer">PREV: Data not available</div>`;
                 }
 
-                // Compile Card
+                // Compile Card - On Error now falls back to a transparent empty pixel to preserve layout width
                 htmlString += `
                     <div class="card ${isLive ? 'live' : ''} ${isFinal ? 'final' : ''} ${isOffseason ? 'offseason' : ''}">
                         <div class="card-header">
@@ -408,7 +414,7 @@
                                 <span class="team-name">${team.team_name}</span>
                                 <span class="team-record">${team.team_record}</span>
                             </div>
-                            ${team.logo_url ? `<img src="${team.logo_url}" class="team-logo" alt="${team.team_name} logo" onerror="this.style.display='none'">` : ''}
+                            <img src="${team.logo_url || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='}" class="team-logo" alt="${team.team_name} logo" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='">
                         </div>
                         <div class="card-body">
                             ${bodyHtml}
@@ -421,7 +427,6 @@
             grid.innerHTML = htmlString;
         }
 
-        // Initialize and loop
         fetchSportsData();
         setInterval(fetchSportsData, REFRESH_RATE_MS);
 
