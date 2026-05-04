@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dev Sports v1.1</title>
+    <title>Dev Sports v1.1.1</title>
     <style>
         /* Cupertino 2050 Design System */
         :root {
@@ -81,6 +81,8 @@
             flex-direction: column;
             min-height: 280px;
             transition: all 0.3s ease;
+            margin: 0 auto; /* Centers the card if the 1fr grid track gets wider */
+            width: 100%;
         }
 
         .card.live {
@@ -92,7 +94,7 @@
             opacity: 0.6;
         }
 
-        /* Tier 1: Header (Updated for Logos) */
+        /* Tier 1: Header */
         .card-header {
             display: flex;
             justify-content: space-between;
@@ -104,6 +106,15 @@
             display: flex;
             flex-direction: column;
             gap: 2px;
+        }
+
+        .sport-badge {
+            font-size: 0.65rem;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+            margin-bottom: 2px;
         }
 
         .team-name {
@@ -121,7 +132,6 @@
             width: 48px;
             height: 48px;
             object-fit: contain;
-            /* Creates a subtle glow matching the logo's native colors */
             filter: drop-shadow(0px 4px 12px rgba(255,255,255,0.15));
         }
 
@@ -237,7 +247,7 @@
 <body>
 
     <header>
-        <h1>Dev Sports<span class="version">v1.1</span></h1>
+        <h1>Dev Sports<span class="version">v1.1.1</span></h1>
         <div id="last-updated">Updating...</div>
     </header>
 
@@ -249,27 +259,27 @@
         const REFRESH_RATE_MS = 60000; // 60 seconds
         let lastRenderedTeamsHash = "";
 
-        // Fallback data for testing the UI before the Worker is fully updated
+        // Fallback data for testing the UI if the Worker is entirely offline
         const MOCK_DATA = {
             last_updated: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
             teams: {
                 "NFL_MIN": {
-                    sport: "NFL", team_name: "Minnesota Vikings", team_record: "Rank: 2", status: "LIVE",
-                    logo_url: "https://www.thesportsdb.com/images/media/team/badge/vwpvtw1420653066.png",
+                    sport: "NFL", team_name: "Minnesota Vikings", team_record: "7-2", status: "LIVE",
+                    logo_url: "https://a.espncdn.com/i/teamlogos/nfl/500/min.png",
                     previous_game: { opponent: "DET", result: "W", score: "28-10", display_date: "Oct 24" },
-                    current_game: { opponent: "GB", live_state: { home_score: "14", away_score: "21", period: "3rd QTR", clock: "10:45", context: "3rd & 4" } }
+                    current_game: { opponent: "GB", live_state: { home_abbrev: "GB", away_abbrev: "MIN", home_score: "14", away_score: "21", period: "3rd QTR", clock: "10:45", context: "3rd & 4" } }
                 },
-                "MLB_MIN": {
-                    sport: "MLB", team_name: "Minnesota Twins", team_record: "Rank: 5", status: "PRE-GAME",
-                    logo_url: "https://www.thesportsdb.com/images/media/team/badge/yqwqtu1448812674.png",
-                    previous_game: { opponent: "CHW", result: "W", score: "5-2", display_date: "May 2" },
-                    current_game: { opponent: "BOS", opp_record: "15-15", display_time: "6:40 PM", display_date: "Today", network: "BSN" }
+                "NCAAF_WIS": {
+                    sport: "NCAAF", team_name: "Wisconsin Badgers", team_record: "0-0", status: "PRE-GAME",
+                    logo_url: "https://a.espncdn.com/i/teamlogos/ncaa/500/275.png",
+                    previous_game: null,
+                    current_game: { opponent: "WMU", opp_record: "0-0", display_time: "8:00 PM", display_date: "Aug 30", network: "FS1" }
                 },
-                "NBA_MIN": {
-                    sport: "NBA", team_name: "Minnesota Timberwolves", team_record: "Rank: 3", status: "FINAL",
-                    logo_url: "https://www.thesportsdb.com/images/media/team/badge/nt0qqu1546114144.png",
-                    previous_game: { opponent: "PHX", result: "W", score: "122-116", display_date: "Apr 28" },
-                    current_game: { opponent: "DEN", live_state: { home_score: "106", away_score: "99" }, display_date: "Today" }
+                "NCAAMBB_WIS": {
+                    sport: "NCAAMBB", team_name: "Wisconsin Badgers", team_record: "22-14", status: "FINAL",
+                    logo_url: "https://a.espncdn.com/i/teamlogos/ncaa/500/275.png",
+                    previous_game: { opponent: "PUR", result: "W", score: "76-75", display_date: "Mar 16" },
+                    current_game: { opponent: "JMU", live_state: { home_abbrev: "JMU", away_abbrev: "WIS", home_score: "61", away_score: "72" }, display_date: "Mar 22" }
                 }
             }
         };
@@ -283,14 +293,15 @@
                 renderDashboard(data.teams ? data : MOCK_DATA); 
             } catch (error) {
                 console.warn('Worker fetch failed, using fallback mock data for UI testing.', error);
-                // Dynamically update the mock time so the user knows the UI loop is still alive
                 MOCK_DATA.last_updated = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + " (Offline Mode)";
                 renderDashboard(MOCK_DATA);
             }
         }
 
         function renderDashboard(data) {
-            document.getElementById('last-updated').innerText = `Updated at ${data.last_updated}`;
+            const localSyncTime = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            // Show both the API freshness (data) and the Pi's last successful ping (local)
+            document.getElementById('last-updated').innerText = `API: ${data.last_updated} • Ping: ${localSyncTime}`;
             
             // Prevent DOM thrashing/logo flicker if the sports data hasn't actually changed
             const currentTeamsHash = JSON.stringify(data.teams);
@@ -303,7 +314,6 @@
             Object.values(data.teams).forEach(team => {
                 const isLive = team.status === 'LIVE';
                 const isFinal = team.status === 'FINAL';
-                // Fallback to the root team object if the new nested schema isn't deployed yet
                 const cg = team.current_game || team; 
                 const prev = team.previous_game || null;
 
@@ -314,11 +324,11 @@
                         <div class="live-badge"><div class="pulse"></div> LIVE</div>
                         <div class="scoreboard">
                             <div class="score-team">
-                                <span class="score-abbrev">AWAY</span>
+                                <span class="score-abbrev">${cg.live_state.away_abbrev || 'AWAY'}</span>
                                 <span class="score-number">${cg.live_state.away_score}</span>
                             </div>
                             <div class="score-team">
-                                <span class="score-abbrev">HOME</span>
+                                <span class="score-abbrev">${cg.live_state.home_abbrev || 'HOME'}</span>
                                 <span class="score-number">${cg.live_state.home_score}</span>
                             </div>
                         </div>
@@ -330,11 +340,11 @@
                         <div class="matchup">FINAL • vs ${cg.opponent}</div>
                         <div class="scoreboard">
                             <div class="score-team">
-                                <span class="score-abbrev">AWAY</span>
+                                <span class="score-abbrev">${cg.live_state.away_abbrev || 'AWAY'}</span>
                                 <span class="score-number">${cg.live_state.away_score}</span>
                             </div>
                             <div class="score-team">
-                                <span class="score-abbrev">HOME</span>
+                                <span class="score-abbrev">${cg.live_state.home_abbrev || 'HOME'}</span>
                                 <span class="score-number">${cg.live_state.home_score}</span>
                             </div>
                         </div>
@@ -356,11 +366,12 @@
                     footerHtml = `<div class="card-footer">PREV: Data not available</div>`;
                 }
 
-                // Compile Card (Updated with Logo and broken image handler)
+                // Compile Card
                 htmlString += `
                     <div class="card ${isLive ? 'live' : ''} ${isFinal ? 'final' : ''}">
                         <div class="card-header">
                             <div class="header-text">
+                                <span class="sport-badge">${team.sport}</span>
                                 <span class="team-name">${team.team_name}</span>
                                 <span class="team-record">${team.team_record}</span>
                             </div>
