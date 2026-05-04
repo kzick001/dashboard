@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dev Sports v1.0</title>
+    <title>Dev Sports v1.1</title>
     <style>
         /* Cupertino 2050 Design System */
         :root {
@@ -92,12 +92,18 @@
             opacity: 0.6;
         }
 
-        /* Tier 1: Header */
+        /* Tier 1: Header (Updated for Logos) */
         .card-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: auto;
+        }
+
+        .header-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
         }
 
         .team-name {
@@ -109,6 +115,14 @@
         .team-record {
             font-size: 0.9rem;
             color: var(--text-secondary);
+        }
+
+        .team-logo {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            /* Creates a subtle glow matching the logo's native colors */
+            filter: drop-shadow(0px 4px 12px rgba(255,255,255,0.15));
         }
 
         /* Tier 2: Main Body */
@@ -223,7 +237,7 @@
 <body>
 
     <header>
-        <h1>Dev Sports<span class="version">v1.0</span></h1>
+        <h1>Dev Sports<span class="version">v1.1</span></h1>
         <div id="last-updated">Updating...</div>
     </header>
 
@@ -233,23 +247,27 @@
     <script>
         const WORKER_URL = 'https://pi-sports-edge.askozicki.workers.dev/';
         const REFRESH_RATE_MS = 60000; // 60 seconds
+        let lastRenderedTeamsHash = "";
 
         // Fallback data for testing the UI before the Worker is fully updated
         const MOCK_DATA = {
             last_updated: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
             teams: {
                 "NFL_MIN": {
-                    sport: "NFL", team_name: "Minnesota Vikings", team_record: "7-2", status: "LIVE",
+                    sport: "NFL", team_name: "Minnesota Vikings", team_record: "Rank: 2", status: "LIVE",
+                    logo_url: "https://www.thesportsdb.com/images/media/team/badge/vwpvtw1420653066.png",
                     previous_game: { opponent: "DET", result: "W", score: "28-10", display_date: "Oct 24" },
                     current_game: { opponent: "GB", live_state: { home_score: "14", away_score: "21", period: "3rd QTR", clock: "10:45", context: "3rd & 4" } }
                 },
                 "MLB_MIN": {
-                    sport: "MLB", team_name: "Minnesota Twins", team_record: "18-12", status: "PRE-GAME",
+                    sport: "MLB", team_name: "Minnesota Twins", team_record: "Rank: 5", status: "PRE-GAME",
+                    logo_url: "https://www.thesportsdb.com/images/media/team/badge/yqwqtu1448812674.png",
                     previous_game: { opponent: "CHW", result: "W", score: "5-2", display_date: "May 2" },
                     current_game: { opponent: "BOS", opp_record: "15-15", display_time: "6:40 PM", display_date: "Today", network: "BSN" }
                 },
                 "NBA_MIN": {
-                    sport: "NBA", team_name: "Timberwolves", team_record: "56-26", status: "FINAL",
+                    sport: "NBA", team_name: "Minnesota Timberwolves", team_record: "Rank: 3", status: "FINAL",
+                    logo_url: "https://www.thesportsdb.com/images/media/team/badge/nt0qqu1546114144.png",
                     previous_game: { opponent: "PHX", result: "W", score: "122-116", display_date: "Apr 28" },
                     current_game: { opponent: "DEN", live_state: { home_score: "106", away_score: "99" }, display_date: "Today" }
                 }
@@ -273,6 +291,12 @@
 
         function renderDashboard(data) {
             document.getElementById('last-updated').innerText = `Updated at ${data.last_updated}`;
+            
+            // Prevent DOM thrashing/logo flicker if the sports data hasn't actually changed
+            const currentTeamsHash = JSON.stringify(data.teams);
+            if (currentTeamsHash === lastRenderedTeamsHash) return;
+            lastRenderedTeamsHash = currentTeamsHash;
+
             const grid = document.getElementById('sports-grid');
             let htmlString = '';
 
@@ -318,9 +342,9 @@
                     `;
                 } else {
                     bodyHtml = `
-                        <div class="matchup">Next vs ${cg.opponent} (${cg.opp_record || '0-0'})</div>
-                        <div class="time-display">${cg.display_time || 'TBD'}</div>
-                        <div class="network-display">${cg.display_date || 'TBD'} • ${cg.network || 'TBD'}</div>
+                        <div class="matchup">${cg.opponent ? `Next vs ${cg.opponent}` : 'Offseason'}</div>
+                        <div class="time-display">${cg.display_time || '--:--'}</div>
+                        <div class="network-display">${cg.display_date || 'TBD'} ${cg.network ? `• ${cg.network}` : ''}</div>
                     `;
                 }
 
@@ -332,12 +356,15 @@
                     footerHtml = `<div class="card-footer">PREV: Data not available</div>`;
                 }
 
-                // Compile Card
+                // Compile Card (Updated with Logo and broken image handler)
                 htmlString += `
                     <div class="card ${isLive ? 'live' : ''} ${isFinal ? 'final' : ''}">
                         <div class="card-header">
-                            <span class="team-name">${team.team_name}</span>
-                            <span class="team-record">${team.team_record}</span>
+                            <div class="header-text">
+                                <span class="team-name">${team.team_name}</span>
+                                <span class="team-record">${team.team_record}</span>
+                            </div>
+                            ${team.logo_url ? `<img src="${team.logo_url}" class="team-logo" alt="${team.team_name} logo" onerror="this.style.display='none'">` : ''}
                         </div>
                         <div class="card-body">
                             ${bodyHtml}
