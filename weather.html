@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kzick Weather Hub V1.4.0-alpha</title>
+    <title>Kzick Weather Hub V1.4.1</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23000000'/><text x='50' y='55' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='65' font-weight='200' fill='%23ffffff'>W</text></svg>">
     
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script>
@@ -20,11 +23,18 @@
                     },
                     animation: {
                         'breathe': 'breathe 4s ease-in-out infinite',
+                        'heartbeat': 'heartbeat 1.2s ease-in-out infinite'
                     },
                     keyframes: {
                         breathe: {
                             '0%, 100%': { opacity: '0.3', transform: 'scale(0.95)' },
                             '50%': { opacity: '1', transform: 'scale(1.1)' },
+                        },
+                        heartbeat: {
+                            '0%, 100%': { transform: 'rotate(-90deg) scale(1)' },
+                            '15%': { transform: 'rotate(-90deg) scale(1.15)' },
+                            '30%': { transform: 'rotate(-90deg) scale(1)' },
+                            '45%': { transform: 'rotate(-90deg) scale(1.15)' }
                         }
                     }
                 }
@@ -47,6 +57,11 @@
             color: #f1f5f9;
         }
 
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+        
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
@@ -61,7 +76,6 @@
             transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1), border-color 0.3s ease, background 0.3s ease;
         }
 
-        /* FLASHLIGHT EFFECT */
         .app-tile::before {
             content: '';
             position: absolute;
@@ -87,7 +101,7 @@
         
         .app-tile:hover::before { opacity: 1; }
         
-        .doom-circle { transition: stroke-dashoffset 1s cubic-bezier(0.175, 0.885, 0.32, 1.1), stroke 0.5s ease; transform: rotate(-90deg); transform-origin: 50% 50%; }
+        .doom-circle { transition: stroke-dashoffset 1s cubic-bezier(0.175, 0.885, 0.32, 1.1), stroke 0.5s ease, filter 0.5s ease; transform: rotate(-90deg); transform-origin: 50% 50%; }
 
         input[type=range] { -webkit-appearance: none; background: transparent; }
         input[type=range]::-webkit-slider-thumb {
@@ -97,8 +111,10 @@
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: rgba(255, 255, 255, 0.2); border-radius: 2px; }
         
         #radar-clip-window { touch-action: none; border-radius: 1.5rem; } 
-        #radar-drag-layer { cursor: grab; transform-origin: 50% 50%; will-change: transform; transition: transform 0.05s linear; }
-        #radar-drag-layer:active { cursor: grabbing; transition: none; }
+        
+        /* MapLibre Core Overrides */
+        .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { display: none !important; }
+        .maplibregl-canvas:focus { outline: none; }
 
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
@@ -111,7 +127,7 @@
         .drawer-closed { transform: translateX(100%); }
     </style>
 </head>
-<body class="min-h-screen p-4 md:p-8 font-sans relative flex flex-col items-center">
+<body class="min-h-screen p-4 md:p-8 font-sans relative flex flex-col items-center overflow-x-hidden">
 
     <div class="fixed top-0 w-full px-8 py-4 flex justify-between items-center z-[80] bg-black/40 backdrop-blur-2xl border-b border-white/5">
         <a href="https://kzick001.github.io/dashboard/" class="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-400 hover:text-white transition-colors group">
@@ -123,7 +139,7 @@
                 <span>SAVED</span>
                 <span class="bg-black/50 px-1.5 py-0.5 rounded text-[9px] text-slate-400 tracking-widest border border-white/5">⌘J</span>
             </button>
-            <span class="font-mono text-[9px] px-2 py-1 bg-white/5 text-slate-400 border border-white/10 rounded-full tracking-[0.2em] hidden sm:block">SYS V1.4.0-A</span>
+            <span class="font-mono text-[9px] px-2 py-1 bg-white/5 text-slate-400 border border-white/10 rounded-full tracking-[0.2em] hidden sm:block">SYS V1.4.1</span>
         </div>
     </div>
 
@@ -150,7 +166,7 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
-        <div id="saved-locations-list" class="flex-1 overflow-y-auto p-4 space-y-3">
+        <div id="saved-locations-list" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
             </div>
         <div class="p-4 border-t border-white/10 font-mono text-[10px] text-slate-500 text-center tracking-widest">
             USE ⌘1-9 FOR QUICK JUMP
@@ -257,9 +273,14 @@
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="tracking-widest">WIND</span> 
-                    <div class="flex items-center space-x-2 text-white">
-                        <svg id="ui-wind-compass" class="w-4 h-4 text-slate-400 transition-transform duration-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="1.5" d="M12 2L16 10L12 8L8 10L12 2Z"></path><path stroke-width="1.5" d="M12 22v-4"></path></svg>
-                        <span id="ui-wind" class="font-medium">--</span>
+                    <div class="flex items-center space-x-3 text-white">
+                        <div class="flex flex-col items-end mr-1">
+                            <span id="ui-wind" class="font-medium">--</span>
+                            <span id="ui-wind-dir" class="text-[9px] text-slate-400 font-mono tracking-widest text-right">--</span>
+                        </div>
+                        <div class="relative w-10 h-10 rounded-full border border-white/10 bg-[#050505] shadow-inner overflow-hidden">
+                            <canvas id="ui-wind-canvas" width="80" height="80" class="w-full h-full opacity-80"></canvas>
+                        </div>
                     </div>
                 </div>
                 <div class="flex justify-between items-center">
@@ -272,14 +293,17 @@
                 </div>
             </div>
 
-            <details class="mt-6 pt-5 border-t border-white/5 group/hourly outline-none relative z-10">
+            <details class="mt-6 pt-5 border-t border-white/5 group/hourly outline-none relative z-10" open>
                 <summary class="cursor-pointer text-[10px] font-mono text-slate-500 hover:text-white transition-colors flex justify-center w-full bg-white/5 py-3 rounded-xl border border-white/5">
-                    <span class="group-open/hourly:hidden tracking-widest">▼ HOURLY FORECAST</span>
+                    <span class="group-open/hourly:hidden tracking-widest">▼ MINUTELY & HOURLY FORECAST</span>
                     <span class="hidden group-open/hourly:block text-slate-300 tracking-widest">▲ COLLAPSE</span>
                 </summary>
-                <div class="overflow-x-auto mt-4 pb-2">
-                    <div class="flex space-x-3 min-w-max" id="hourly-container">
-                        <span class="font-mono text-xs text-slate-500">> Awaiting pipeline...</span>
+                <div class="mt-4 pb-2">
+                    <div id="minutely-spline-container"></div>
+                    <div class="overflow-x-auto custom-scrollbar pb-2">
+                        <div class="flex space-x-3 min-w-max" id="hourly-container">
+                            <span class="font-mono text-xs text-slate-500">> Awaiting pipeline...</span>
+                        </div>
                     </div>
                 </div>
             </details>
@@ -290,8 +314,8 @@
                 <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                 <h2 class="text-lg font-medium tracking-wide text-white">10-Day Forecast</h2>
             </div>
-            <div class="overflow-x-auto relative z-10 pb-4 flex-1 flex items-start">
-                <div class="flex space-x-4 min-w-max w-full" id="forecast-container">
+            <div class="overflow-y-auto relative z-10 pb-4 flex-1 h-[650px] pr-2 custom-scrollbar">
+                <div class="flex flex-col space-y-3 w-full" id="forecast-container">
                     <div class="font-mono text-xs text-slate-500 animate-pulse">> Compiling meteorological payload...</div>
                 </div>
             </div>
@@ -302,7 +326,7 @@
                 <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                 <h2 class="text-lg font-medium tracking-wide text-white">National Weather Service Alerts</h2>
             </div>
-            <div class="relative z-10 bg-black/40 border border-white/5 p-4 rounded-2xl max-h-40 overflow-y-auto shadow-inner" id="alerts-container">
+            <div class="relative z-10 bg-black/40 border border-white/5 p-4 rounded-2xl max-h-40 overflow-y-auto shadow-inner custom-scrollbar" id="alerts-container">
                 <div class="font-mono text-xs text-slate-500 animate-pulse">> Connecting to NWS point node...</div>
             </div>
         </div>
@@ -313,7 +337,7 @@
                     <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
                     <div class="flex flex-col">
                         <h2 class="text-lg font-medium tracking-wide text-white">Live Radar</h2>
-                        <span class="text-[9px] font-mono text-slate-500 tracking-[0.2em] hidden md:block">IOWA ENVIRONMENTAL MESONET</span>
+                        <span class="text-[9px] font-mono text-slate-500 tracking-[0.2em] hidden md:block">MAPLIBRE GL • IOWA ENVIRONMENTAL MESONET</span>
                     </div>
                 </div>
                 <div class="flex items-center space-x-3">
@@ -322,21 +346,15 @@
                 </div>
             </div>
 
-            <div class="relative flex-1 bg-[#111] border border-white/5 overflow-hidden z-10 shadow-inner" id="radar-clip-window">
+            <div class="relative flex-1 bg-[#111] border border-white/5 overflow-hidden z-10 shadow-inner rounded-3xl" id="radar-clip-window">
                 
+                <div class="absolute top-5 left-1/2 -translate-x-1/2 flex items-center justify-center bg-black/80 backdrop-blur-xl px-5 py-2.5 rounded-full border border-white/10 z-20 transition-opacity duration-300 pointer-events-none shadow-lg" id="radar-loader">
+                    <span class="font-mono text-[10px] text-white tracking-widest animate-pulse">BOOTING WEBGL MAP...</span>
+                </div>
+
                 <button id="radar-reset" class="absolute top-5 left-5 bg-black/60 backdrop-blur-xl border border-white/10 hover:border-white/30 text-white font-mono p-3 rounded-xl transition-colors shadow-lg z-30" title="Recenter Map">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 </button>
-
-                <div id="radar-drag-layer" class="absolute inset-0 w-full h-full">
-                    <div id="radar-base-layer" class="absolute inset-0 w-full h-full opacity-60"></div>
-                    <div id="radar-frames-layer" class="absolute inset-0 w-full h-full opacity-100 transition-opacity duration-200"></div>
-                </div>
-                
-                <div class="absolute top-5 left-1/2 -translate-x-1/2 flex items-center justify-center bg-black/80 backdrop-blur-xl px-5 py-2.5 rounded-full border border-white/10 z-20 transition-opacity duration-300 pointer-events-none shadow-lg" id="radar-loader">
-                    <span class="font-mono text-[10px] text-white tracking-widest animate-pulse">SYNCING NEXRAD...</span>
-                </div>
-
                 <div class="absolute top-5 right-5 flex flex-col space-y-2 z-30">
                     <button id="radar-zoom-in" class="w-12 h-12 bg-black/60 backdrop-blur-xl rounded-xl border border-white/10 hover:border-white/30 text-white flex items-center justify-center transition-colors shadow-lg">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
@@ -359,7 +377,7 @@
                     </div>
                 </div>
             </div>
-            <p class="text-[10px] text-slate-600 font-mono mt-4 z-10 relative text-right tracking-widest">CTRL+SCROLL TO ZOOM / DRAG TO PAN</p>
+            <p class="text-[10px] text-slate-600 font-mono mt-4 z-10 relative text-right tracking-widest">SCROLL TO ZOOM / RIGHT-CLICK & DRAG TO PITCH 3D</p>
         </div>
 
     </div>
@@ -372,7 +390,6 @@
             ],
             
             saveFavorite: function(loc) {
-                // Prevent exact name duplicates
                 if(!this.favorites.find(f => f.name === loc.name)) {
                     this.favorites.push({ name: loc.name, lat: loc.lat, lon: loc.lon });
                     localStorage.setItem('kzick_favs', JSON.stringify(this.favorites));
@@ -452,30 +469,15 @@
 
             initKeyboardShortcuts: function() {
                 document.addEventListener('keydown', (e) => {
-                    // Cmd/Ctrl + K (Spotlight)
-                    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-                        e.preventDefault();
-                        this.toggleSpotlight();
-                    }
-                    // Cmd/Ctrl + J (Drawer)
-                    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
-                        e.preventDefault();
-                        this.toggleDrawer();
-                    }
-                    // Cmd/Ctrl + 1-9 (Quick Switch)
+                    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); this.toggleSpotlight(); }
+                    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') { e.preventDefault(); this.toggleDrawer(); }
                     if ((e.metaKey || e.ctrlKey) && !isNaN(e.key) && e.key !== '0') {
                         e.preventDefault();
                         const target = StateManager.favorites[parseInt(e.key) - 1];
                         if (target) Pipeline.loadLocation(target.lat, target.lon, target.name);
                     }
-                    // ESC
-                    if (e.key === 'Escape') {
-                        this.toggleSpotlight(false);
-                        this.toggleDrawer(false);
-                    }
+                    if (e.key === 'Escape') { this.toggleSpotlight(false); this.toggleDrawer(false); }
                 });
-
-                // Overlay click to close
                 this.spotlightOverlay.addEventListener('click', (e) => {
                     if(e.target === this.spotlightOverlay) this.toggleSpotlight(false);
                 });
@@ -493,21 +495,107 @@
             });
         });
 
-        // --- 4. PIPELINE & ENGINE ---
+        // --- 4. CANVAS FX ENGINES ---
+        let windAnimId;
+        function renderWindCanvas(speed, dir) {
+            const canvas = document.getElementById('ui-wind-canvas');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if(windAnimId) cancelAnimationFrame(windAnimId);
+            
+            const particles = Array.from({length: 40}, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                l: Math.random() * 15 + 5,
+                s: (Math.random() * 0.5 + 0.2) * (speed / 3 + 1)
+            }));
+            
+            const blowingTo = (dir + 180) % 360;
+            const rad = (blowingTo - 90) * Math.PI / 180;
+            const dx = Math.cos(rad);
+            const dy = Math.sin(rad);
+
+            function draw() {
+                ctx.fillStyle = 'rgba(0,0,0,0.2)'; 
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                particles.forEach(p => {
+                    p.x += dx * p.s;
+                    p.y += dy * p.s;
+                    if(p.x < 0) p.x = canvas.width; if(p.x > canvas.width) p.x = 0;
+                    if(p.y < 0) p.y = canvas.height; if(p.y > canvas.height) p.y = 0;
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(p.x - dx * p.l, p.y - dy * p.l);
+                });
+                ctx.stroke();
+                windAnimId = requestAnimationFrame(draw);
+            }
+            draw();
+        }
+
+        function renderMinutelySpline(minutelyLine) {
+            if(!minutelyLine || !minutelyLine.intervals || minutelyLine.intervals.length < 10) return '';
+            const intervals = minutelyLine.intervals.slice(0, 60);
+            const width = 600, height = 80;
+            let pathD = `M 0,${height} `;
+            let tempD = `M 0,`;
+            
+            const temps = intervals.map(i => i.values.temperature || 0);
+            const minT = Math.min(...temps);
+            const maxT = Math.max(...temps);
+            const tRange = (maxT - minT) || 1;
+
+            intervals.forEach((interval, i) => {
+                const x = (i / (intervals.length - 1)) * width;
+                const precip = interval.values.precipitationProbability || 0;
+                const y = height - (precip / 100) * height;
+                pathD += `L ${x},${y} `;
+                
+                const ty = 70 - ((interval.values.temperature || 0) - minT) / tRange * 60;
+                tempD += i === 0 ? `${ty} ` : `L ${x},${ty} `;
+            });
+            pathD += `L ${width},${height} Z`;
+
+            return `
+            <div class="w-full bg-[#050505]/80 border border-white/5 rounded-2xl p-4 mb-4 shadow-inner relative overflow-hidden group">
+                <div class="flex justify-between font-mono text-[9px] text-slate-500 tracking-widest mb-4">
+                    <span>NOW</span>
+                    <span class="text-white/80">60-MIN PRECIP & TEMP</span>
+                    <span>+60m</span>
+                </div>
+                <svg viewBox="0 0 ${width} ${height}" class="w-full h-16 overflow-visible" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="precipGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="rgba(59, 130, 246, 0.4)" />
+                            <stop offset="100%" stop-color="rgba(59, 130, 246, 0)" />
+                        </linearGradient>
+                    </defs>
+                    <path d="${pathD}" fill="url(#precipGrad)" stroke="rgba(59,130,246,0.8)" stroke-width="2"/>
+                    <path d="${tempD}" fill="none" stroke="rgba(245,158,11,0.8)" stroke-width="2" stroke-dasharray="4 4"/>
+                </svg>
+            </div>
+            `;
+        }
+
+        // --- 5. PIPELINE & DATA ENGINE ---
         const PROXY_URL = "https://kzick-weather.askozicki.workers.dev";
 
         const AppState = {
-            // Load the first favorite by default, or fallback to St. Louis Park
             lat: StateManager.favorites[0]?.lat || 44.9483,
             lon: StateManager.favorites[0]?.lon || -93.3666,
             name: StateManager.favorites[0]?.name || "St. Louis Park, MN",
+            nwsGeoJSON: null,
             
             radarInterval: null,
             masterIntervalId_5min: null,
             radarSpeedIndex: 1, 
             radarSpeeds: [2000, 1000, 500, 250], 
             radarMaxFrames: 10,
-            radarZoom: 8 
+            radarZoom: 8,
+            mapInstance: null,
+            radarMasterOpacity: 0.85
         };
 
         const CacheEngine = (function() {
@@ -576,9 +664,6 @@
             hourly: document.getElementById('hourly-container'),
             
             radarClip: document.getElementById('radar-clip-window'),
-            radarDrag: document.getElementById('radar-drag-layer'),
-            radarBase: document.getElementById('radar-base-layer'),
-            radarFrames: document.getElementById('radar-frames-layer'),
             radarLoader: document.getElementById('radar-loader'),
             radarTime: document.getElementById('radar-time'),
             radarPlay: document.getElementById('radar-play'),
@@ -609,13 +694,15 @@
                         AppState.radarZoom = 8; 
                         
                         UI.toggleSpotlight(false);
-                        sessionStorage.clear(); // Clear session cache for clean load
+                        sessionStorage.clear();
                         bootSystems();
-                    } else { 
-                        alert("Geocoding failed. Try another city."); 
-                    }
-                } catch(e) { console.error(e); } 
-                finally { UI.spotlightInput.disabled = false; UI.spotlightInput.value = ''; }
+                    } else { alert("Geocoding failed. Try another city."); }
+                } catch(e) { 
+                    console.error(e); 
+                    alert("Network error during search. Please check your connection.");
+                } finally { 
+                    UI.spotlightInput.disabled = false; UI.spotlightInput.value = ''; 
+                }
             }
 
             async function fetchMasterTelemetry() {
@@ -627,28 +714,26 @@
                     if (data.code && data.type) throw new Error(`${data.type}: ${data.message || 'API Error'}`);
                     if (data.message) throw new Error(data.message);
 
-                    let currentLine, hourlyLine, dailyLine;
+                    let currentLine, minutelyLine, hourlyLine, dailyLine;
 
                     if (data.timelines && !Array.isArray(data.timelines)) {
-                        const minutely = data.timelines.minutely || [];
-                        const hourly = data.timelines.hourly || [];
-                        const daily = data.timelines.daily || [];
-                        currentLine = { intervals: minutely.length > 0 ? [minutely[0]] : (hourly.length > 0 ? [hourly[0]] : []) };
-                        hourlyLine = { intervals: hourly };
-                        dailyLine = { intervals: daily };
+                        currentLine = { intervals: data.timelines.minutely?.length > 0 ? [data.timelines.minutely[0]] : (data.timelines.hourly?.length > 0 ? [data.timelines.hourly[0]] : []) };
+                        minutelyLine = { intervals: data.timelines.minutely || [] };
+                        hourlyLine = { intervals: data.timelines.hourly || [] };
+                        dailyLine = { intervals: data.timelines.daily || [] };
                     } else if (data.data && Array.isArray(data.data.timelines)) {
-                        const timelines = data.data.timelines;
-                        currentLine = timelines.find(t => t.timestep === 'current' || t.timestep === 'realtime' || t.timestep === '1m') || timelines[0];
-                        hourlyLine = timelines.find(t => t.timestep === '1h');
-                        dailyLine = timelines.find(t => t.timestep === '1d');
+                        const t = data.data.timelines;
+                        currentLine = t.find(x => x.timestep === 'current' || x.timestep === '1m') || t[0];
+                        minutelyLine = t.find(x => x.timestep === '1m');
+                        hourlyLine = t.find(x => x.timestep === '1h');
+                        dailyLine = t.find(x => x.timestep === '1d');
                     } else if (Array.isArray(data.timelines)) {
-                        const timelines = data.timelines;
-                        currentLine = timelines.find(t => t.timestep === 'current' || t.timestep === 'realtime' || t.timestep === '1m') || timelines[0];
-                        hourlyLine = timelines.find(t => t.timestep === '1h');
-                        dailyLine = timelines.find(t => t.timestep === '1d');
-                    } else {
-                        throw new Error("Invalid API payload structure. Check Proxy Target URL.");
-                    }
+                        const t = data.timelines;
+                        currentLine = t.find(x => x.timestep === 'current' || x.timestep === '1m') || t[0];
+                        minutelyLine = t.find(x => x.timestep === '1m');
+                        hourlyLine = t.find(x => x.timestep === '1h');
+                        dailyLine = t.find(x => x.timestep === '1d');
+                    } else { throw new Error("Invalid API payload structure."); }
 
                     if(!currentLine || !currentLine.intervals || !currentLine.intervals[0]) {
                         throw new Error("No payload intervals found.");
@@ -657,7 +742,6 @@
                     const cur = currentLine.intervals[0].values;
                     const dailyFirst = dailyLine?.intervals[0]?.values || {};
 
-                    // Hazard Deep Dive
                     let aqiVal = cur.epaPrimaryAQI !== undefined ? cur.epaPrimaryAQI : (cur.epaIndex !== undefined ? cur.epaIndex : 1);
                     if(aqiVal <= 6 && aqiVal >= 1) { 
                         const aqiMap = {1:25, 2:75, 3:125, 4:175, 5:250, 6:400};
@@ -680,7 +764,6 @@
                     DOM.idxGrass.textContent = cur.grassIndex !== undefined ? cur.grassIndex : '--';
                     DOM.idxWeed.textContent = cur.weedIndex !== undefined ? cur.weedIndex : '--';
 
-                    // Currently Panel
                     document.getElementById('ui-current-temp').textContent = `${Math.round(cur.temperature || 0)}°`;
                     document.getElementById('ui-current-desc').textContent = `> ${getTomorrowWeatherDesc(cur.weatherCode).toUpperCase()}`;
                     document.getElementById('ui-current-icon').innerHTML = getWeatherIcon(cur.weatherCode); 
@@ -688,14 +771,13 @@
                     document.getElementById('ui-dew').textContent = `${Math.round(cur.dewPoint || 0)}°`;
                     document.getElementById('ui-uv').textContent = cur.uvIndex !== undefined ? cur.uvIndex : '--';
                     
-                    // Tactical Wind Vector
                     const wSpeed = Math.round(cur.windSpeed || 0);
                     const wGust = Math.round(cur.windGust || wSpeed);
                     const wDir = cur.windDirection || 0;
-                    document.getElementById('ui-wind').textContent = `${wSpeed} mph (Gust ${wGust})`;
-                    document.getElementById('ui-wind-compass').style.transform = `rotate(${wDir}deg)`;
+                    document.getElementById('ui-wind').textContent = `${wSpeed} mph`;
+                    document.getElementById('ui-wind-dir').textContent = `GUST ${wGust}`;
+                    renderWindCanvas(wSpeed, wDir);
 
-                    // Solar Sync
                     if(dailyFirst.sunriseTime && dailyFirst.sunsetTime) {
                         const sr = new Date(dailyFirst.sunriseTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                         const ss = new Date(dailyFirst.sunsetTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -703,15 +785,14 @@
                         document.getElementById('ui-sunset').textContent = ss;
                     }
 
-                    // Frost Risk
                     const frostBadge = document.getElementById('ui-frost-badge');
-                    if ((cur.temperature || 0) <= 36 && Math.abs((cur.temperature || 0) - (cur.dewPoint || 0)) <= 3) {
-                        frostBadge.classList.remove('hidden');
-                    } else {
-                        frostBadge.classList.add('hidden');
+                    if ((cur.temperature || 0) <= 36 && Math.abs((cur.temperature || 0) - (cur.dewPoint || 0)) <= 3) { frostBadge.classList.remove('hidden'); } 
+                    else { frostBadge.classList.add('hidden'); }
+
+                    if(minutelyLine && minutelyLine.intervals) {
+                        document.getElementById('minutely-spline-container').innerHTML = renderMinutelySpline(minutelyLine);
                     }
 
-                    // Hourly Forecast 
                     if (hourlyLine && hourlyLine.intervals) {
                         let hourlyHTML = '';
                         const hTicks = hourlyLine.intervals.slice(0, 24);
@@ -738,48 +819,54 @@
                         DOM.hourly.innerHTML = hourlyHTML;
                     }
 
-                    // 10-Day Forecast 
                     if (dailyLine && dailyLine.intervals) {
                         let forecastHTML = '';
                         const dTicks = dailyLine.intervals.slice(0, 10);
+                        const globalMax = Math.max(...dTicks.map(d => d.values.temperatureMax || 0));
+                        const globalMin = Math.min(...dTicks.map(d => d.values.temperatureMin || 0));
+                        const tempRange = (globalMax - globalMin) || 1;
+
                         dTicks.forEach((d, i) => {
                             const rawTime = d.startTime || d.time;
                             const date = rawTime ? new Date(rawTime) : new Date(Date.now() + (i * 86400000));
                             let dayName = 'UNK';
-                            if (!isNaN(date.getTime())) {
-                                dayName = i === 0 ? 'TODAY' : date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
-                            } else {
-                                const fallbackDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-                                dayName = fallbackDays[(new Date().getDay() + i) % 7];
-                            }
+                            if (!isNaN(date.getTime())) { dayName = i === 0 ? 'TODAY' : date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase(); } 
+                            else { const fallbackDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']; dayName = fallbackDays[(new Date().getDay() + i) % 7]; }
 
                             const v = d.values;
                             const precip = v.precipitationProbability || 0;
                             const wCodeDaily = v.weatherCodeMax || v.weatherCodeMin || v.weatherCode || 0;
                             const hasFrost = ((v.temperatureMin || 0) <= 36 && Math.abs((v.temperatureMin || 0) - (v.dewPoint || 0)) <= 3);
                             
+                            const dayMin = Math.round(v.temperatureMin || 0);
+                            const dayMax = Math.round(v.temperatureMax || 0);
+                            const leftOffset = Math.max(0, ((dayMin - globalMin) / tempRange) * 100);
+                            const barWidth = Math.max(5, ((dayMax - dayMin) / tempRange) * 100);
+                            
                             forecastHTML += `
-                                <details class="group/day bg-white/5 border border-white/5 rounded-2xl p-5 min-w-[220px] hover:border-white/20 hover:bg-white/10 transition-colors cursor-pointer shadow-lg">
-                                    <summary class="list-none marker:hidden outline-none flex flex-col items-center border-b border-transparent group-open/day:border-white/5 pb-2 mb-2 transition-colors">
-                                        <span class="font-mono text-xs tracking-widest text-slate-400 mb-4">${dayName}</span>
-                                        <div class="flex items-center space-x-5 mb-3">
-                                            <div class="w-12 h-12">${getWeatherIcon(wCodeDaily)}</div>
-                                            <div class="flex items-end space-x-2">
-                                                <span class="font-mono text-4xl text-white font-light tracking-tighter">${Math.round(v.temperatureMax || 0)}°</span>
-                                                <span class="font-mono text-sm text-slate-500 pb-1">${Math.round(v.temperatureMin || 0)}°</span>
+                                <details class="group/day bg-white/5 border border-white/5 rounded-2xl p-4 w-full hover:border-white/20 hover:bg-white/10 transition-colors cursor-pointer shadow-lg">
+                                    <summary class="list-none marker:hidden outline-none flex items-center justify-between transition-colors">
+                                        <span class="font-mono text-sm tracking-widest text-slate-300 w-16">${dayName}</span>
+                                        <div class="w-8 h-8">${getWeatherIcon(wCodeDaily)}</div>
+                                        
+                                        <div class="flex items-center flex-1 max-w-[200px] mx-4">
+                                            <span class="w-8 text-right font-mono text-slate-400">${dayMin}°</span>
+                                            <div class="flex-1 h-1.5 bg-black/50 rounded-full mx-3 relative overflow-hidden shadow-inner border border-white/5">
+                                                <div class="absolute h-full rounded-full bg-gradient-to-r from-blue-400 via-yellow-400 to-orange-500 shadow-[0_0_8px_rgba(251,146,60,0.5)]" 
+                                                     style="left: ${leftOffset}%; width: ${barWidth}%;">
+                                                </div>
                                             </div>
+                                            <span class="w-8 text-left font-mono text-white font-medium">${dayMax}°</span>
                                         </div>
-                                        <span class="font-mono text-[10px] text-slate-300 text-center uppercase tracking-widest leading-tight w-full mt-2 min-h-[28px]">${getTomorrowWeatherDesc(wCodeDaily)}</span>
-                                        <span class="text-[10px] font-mono text-slate-600 tracking-widest mt-3 group-open/day:hidden group-hover/day:text-white transition-colors">▼ EXPAND</span>
-                                        <span class="text-[10px] font-mono text-slate-400 tracking-widest mt-3 hidden group-open/day:block">▲ COLLAPSE</span>
+                                        <span class="text-[10px] font-mono text-slate-500 group-open/day:rotate-180 transition-transform">▼</span>
                                     </summary>
-                                    <div class="space-y-3 pt-2 text-[10px] tracking-widest font-mono text-slate-400">
-                                        <div class="flex justify-between items-center"><span>PRECIPITATION</span> <span class="${precip > 40 ? 'text-white font-bold' : 'text-slate-500'}">${precip}%</span></div>
-                                        <div class="flex justify-between items-center"><span>WIND MAX</span> <span class="${(v.windGustMax || 0) > 15 ? 'text-yellow-500' : 'text-slate-500'}">${Math.round(v.windGustMax||0)} mph</span></div>
-                                        <div class="flex justify-between items-center"><span>HUMIDITY AVG</span> <span class="text-slate-500">${Math.round(v.humidityAvg||0)}%</span></div>
-                                        <div class="flex justify-between items-center"><span>DEW POINT AVG</span> <span class="text-slate-500">${Math.round(v.dewPoint||0)}°</span></div>
-                                        ${hasFrost ? `<div class="text-center bg-blue-900/30 text-blue-300 border border-blue-500/30 py-2 mt-3 rounded-lg">FROST RISK</div>` : ''}
+                                    <div class="mt-4 pt-4 border-t border-white/5 grid grid-cols-2 gap-4 text-[10px] tracking-widest font-mono text-slate-400">
+                                        <div class="flex flex-col space-y-1"><span>PRECIP</span> <span class="${precip > 40 ? 'text-white font-bold' : 'text-slate-500'}">${precip}%</span></div>
+                                        <div class="flex flex-col space-y-1"><span>WIND MAX</span> <span class="${(v.windGustMax || 0) > 15 ? 'text-yellow-500' : 'text-slate-500'}">${Math.round(v.windGustMax||0)} mph</span></div>
+                                        <div class="flex flex-col space-y-1"><span>HUMIDITY AVG</span> <span class="text-slate-500">${Math.round(v.humidityAvg||0)}%</span></div>
+                                        <div class="flex flex-col space-y-1"><span>DEW POINT AVG</span> <span class="text-slate-500">${Math.round(v.dewPoint||0)}°</span></div>
                                     </div>
+                                    ${hasFrost ? `<div class="text-[10px] tracking-widest font-mono w-full text-center bg-blue-900/30 text-blue-300 border border-blue-500/30 py-2 mt-4 rounded-lg">FROST RISK</div>` : ''}
                                 </details>`;
                         });
                         DOM.forecast.innerHTML = forecastHTML;
@@ -797,6 +884,13 @@
                 try {
                     const url = `https://api.weather.gov/alerts/active?point=${AppState.lat},${AppState.lon}`;
                     const data = await CacheEngine.fetchWithCache('alerts', url, 300000);
+                    
+                    AppState.nwsGeoJSON = data; 
+                    
+                    if (AppState.mapInstance && AppState.mapInstance.isStyleLoaded() && AppState.mapInstance.getSource('nws-alerts')) {
+                        AppState.mapInstance.getSource('nws-alerts').setData(data);
+                    }
+
                     if (data.features && data.features.length > 0) {
                         let html = '';
                         data.features.forEach(f => {
@@ -843,142 +937,115 @@
 
                 const offset = 263.89 - (score / 100) * 263.89;
                 DOM.doomRing.style.strokeDashoffset = offset;
-                DOM.doomRing.classList.remove('text-slate-400', 'text-yellow-500', 'text-orange-500', 'text-red-500', 'animate-pulse');
+                DOM.doomRing.className = 'doom-circle stroke-current transition-all duration-500';
+                DOM.doomRing.style.filter = '';
                 
                 if (score <= 30) DOM.doomRing.classList.add('text-slate-400');
                 else if (score <= 60) DOM.doomRing.classList.add('text-yellow-500');
                 else if (score <= 80) DOM.doomRing.classList.add('text-orange-500', 'animate-pulse');
-                else DOM.doomRing.classList.add('text-red-500', 'animate-pulse');
+                else {
+                    DOM.doomRing.classList.add('text-red-500', 'animate-heartbeat');
+                    DOM.doomRing.style.filter = 'drop-shadow(0 0 12px rgba(239,68,68,0.9))';
+                }
             }
 
-            let currentRadarFrame = 0, isRadarPlaying = true, radarPanX = 0, radarPanY = 0, zoomDebounceTimer = null, visualScale = 1;
-            let mapObserver = null;
-
-            function triggerLazyLoadForLayer(layerIdx) {
-                const layer = document.getElementById(`radar-layer-${layerIdx}`);
-                if (!layer) return;
-                layer.querySelectorAll('img[data-src]').forEach(img => { img.src = img.getAttribute('data-src'); img.removeAttribute('data-src'); });
-            }
+            // --- WEbGL MAPLIBRE RADAR ---
+            let currentRadarFrame = 0, isRadarPlaying = true;
+            const timeOffsets = [50, 45, 40, 35, 30, 25, 20, 15, 10, 5];
 
             async function buildRadarEngine() {
                 DOM.radarLoader.style.opacity = '1';
-                if (mapObserver) mapObserver.disconnect(); 
                 if (AppState.radarInterval) clearInterval(AppState.radarInterval);
 
-                try {
-                    const timeOffsets = [50, 45, 40, 35, 30, 25, 20, 15, 10, 5];
-                    const frames = timeOffsets.map(offset => {
-                        const mm = offset.toString().padStart(2, '0');
-                        return {
-                            timeCode: `nexrad-n0q-900913-m${mm}m`,
-                            label: `-${offset}m`
-                        };
+                if (!AppState.mapInstance) {
+                    AppState.mapInstance = new maplibregl.Map({
+                        container: 'radar-clip-window',
+                        style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+                        center: [AppState.lon, AppState.lat],
+                        zoom: AppState.radarZoom,
+                        interactive: true,
+                        pitch: 45
                     });
 
-                    const zoom = AppState.radarZoom;
-                    const latRad = AppState.lat * Math.PI / 180;
-                    const n = Math.pow(2, zoom);
-                    const center_x = parseInt((AppState.lon + 180.0) / 360.0 * n);
-                    const center_y = parseInt((1.0 - Math.log(Math.tan(latRad) + (1 / Math.cos(latRad))) / Math.PI) / 2.0 * n);
-
-                    let baseHTML = '', framesHTMLArray = frames.map(() => ''); 
-                    const tileSize = 256, gridOffset = 2; 
-                    
-                    for(let y = center_y - gridOffset, row = 0; y <= center_y + gridOffset; y++, row++) {
-                        for(let x = center_x - gridOffset, col = 0; x <= center_x + gridOffset; x++, col++) {
-                            const left = col * tileSize, top = row * tileSize;
-                            baseHTML += `<img data-src="https://a.basemaps.cartocdn.com/dark_all/${zoom}/${x}/${y}.png" class="absolute w-[256px] h-[256px] radar-tile" style="left:${left}px; top:${top}px;" draggable="false">`;
-                            
-                            frames.forEach((fObj, fIndex) => {
-                                const url = `https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/${fObj.timeCode}/${zoom}/${x}/${y}.png`;
-                                framesHTMLArray[fIndex] += `<img data-src="${url}" class="absolute w-[256px] h-[256px] radar-tile" style="left:${left}px; top:${top}px;" draggable="false" onerror="this.onerror=null; this.src='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='">`;
-                            });
-                        }
-                    }
-
-                    mapObserver = new IntersectionObserver((entries, obs) => {
-                        entries.forEach(entry => {
-                            if (entry.isIntersecting) {
-                                const img = entry.target;
-                                if (img.dataset.src) { img.src = img.dataset.src; img.removeAttribute('data-src'); }
-                                obs.unobserve(img);
-                            }
+                    AppState.mapInstance.on('load', () => {
+                        AppState.mapInstance.addSource('nws-alerts', { type: 'geojson', data: AppState.nwsGeoJSON || { type: 'FeatureCollection', features: [] } });
+                        AppState.mapInstance.addLayer({
+                            id: 'nws-alerts-fill', type: 'fill', source: 'nws-alerts',
+                            paint: { 'fill-color': '#ef4444', 'fill-opacity': 0.15 }
                         });
-                    }, { root: DOM.radarClip, rootMargin: '512px' });
+                        AppState.mapInstance.addLayer({
+                            id: 'nws-alerts-line', type: 'line', source: 'nws-alerts',
+                            paint: { 'line-color': '#ef4444', 'line-width': 2 }
+                        });
 
-                    const vpRect = DOM.radarClip.getBoundingClientRect();
-                    const gridPixelSize = (gridOffset * 2 + 1) * tileSize; 
-                    radarPanX = (vpRect.width / 2) - (gridPixelSize / 2); radarPanY = (vpRect.height / 2) - (gridPixelSize / 2); visualScale = 1; 
+                        timeOffsets.forEach((offset, idx) => {
+                            const mm = offset.toString().padStart(2, '0');
+                            AppState.mapInstance.addSource(`radar-${idx}`, {
+                                type: 'raster',
+                                tiles: [`https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913-m${mm}m/{z}/{x}/{y}.png`],
+                                tileSize: 256
+                            });
+                            AppState.mapInstance.addLayer({
+                                id: `radar-layer-${idx}`, type: 'raster', source: `radar-${idx}`,
+                                paint: { 'raster-opacity': idx === 0 ? AppState.radarMasterOpacity : 0, 'raster-resampling': 'linear', 'raster-fade-duration': 0 }
+                            }, 'nws-alerts-fill'); 
+                        });
 
-                    DOM.radarDrag.style.transform = `translate(${radarPanX}px, ${radarPanY}px) scale(${visualScale})`;
-                    DOM.radarBase.innerHTML = baseHTML;
-                    
-                    let compiledFrames = '';
-                    frames.forEach((fObj, index) => { compiledFrames += `<div id="radar-layer-${index}" class="absolute inset-0 radar-layer transition-opacity duration-150" style="opacity: ${index === 0 ? 1 : 0};" data-label="${fObj.label}">${framesHTMLArray[index]}</div>`; });
-                    DOM.radarFrames.innerHTML = compiledFrames;
-
-                    document.querySelectorAll('.radar-tile').forEach(img => mapObserver.observe(img));
-
-                    const setFrame = (idx) => {
-                        const oldEl = document.getElementById(`radar-layer-${currentRadarFrame}`);
-                        if (oldEl) oldEl.style.opacity = '0';
-                        currentRadarFrame = idx;
-                        const newEl = document.getElementById(`radar-layer-${currentRadarFrame}`);
-                        if (newEl) {
-                            triggerLazyLoadForLayer(currentRadarFrame); triggerLazyLoadForLayer((currentRadarFrame + 1) % AppState.radarMaxFrames);
-                            newEl.style.opacity = '1';
-                            document.getElementById('radar-time').textContent = newEl.getAttribute('data-label');
-                            DOM.radarScrubber.value = currentRadarFrame;
-                        }
-                    };
-
-                    const tick = () => { setFrame((currentRadarFrame + 1) % AppState.radarMaxFrames); };
-                    const play = () => { isRadarPlaying = true; DOM.radarPlay.textContent = 'PAUSE'; clearInterval(AppState.radarInterval); AppState.radarInterval = setInterval(tick, AppState.radarSpeeds[AppState.radarSpeedIndex]); };
-                    const pause = () => { isRadarPlaying = false; DOM.radarPlay.textContent = 'PLAY'; clearInterval(AppState.radarInterval); };
-
-                    if (!DOM.radarPlay.hasAttribute('data-bound')) {
-                        DOM.radarPlay.onclick = () => isRadarPlaying ? pause() : play();
-                        DOM.radarSpeedBtn.onclick = () => { AppState.radarSpeedIndex = (AppState.radarSpeedIndex + 1) % 4; DOM.radarSpeedBtn.textContent = ['0.5x', '1x', '2x', '4x'][AppState.radarSpeedIndex]; if (isRadarPlaying) play(); };
-                        DOM.radarScrubber.addEventListener('input', (e) => { pause(); setFrame(parseInt(e.target.value)); });
-                        DOM.radarOpacity.addEventListener('input', (e) => { DOM.radarFrames.style.opacity = e.target.value; });
-                        DOM.radarReset.onclick = () => { AppState.radarZoom = 8; buildRadarEngine(); };
-
-                        const triggerDebouncedZoom = () => {
-                            DOM.radarDrag.style.transform = `translate(${radarPanX}px, ${radarPanY}px) scale(${visualScale})`;
-                            clearTimeout(zoomDebounceTimer); zoomDebounceTimer = setTimeout(() => { buildRadarEngine(); }, 300);
-                        };
-
-                        DOM.radarZoomIn.onclick = () => { if(AppState.radarZoom < 10) { AppState.radarZoom++; visualScale = 1.2; triggerDebouncedZoom(); } };
-                        DOM.radarZoomOut.onclick = () => { if(AppState.radarZoom > 3) { AppState.radarZoom--; visualScale = 0.8; triggerDebouncedZoom(); } };
-
-                        DOM.radarClip.addEventListener('wheel', (e) => {
-                            if (!e.ctrlKey) return; e.preventDefault();
-                            visualScale *= (e.deltaY < 0) ? 1.05 : 0.95;
-                            DOM.radarDrag.style.transform = `translate(${radarPanX}px, ${radarPanY}px) scale(${visualScale})`;
-                            let newZoom = Math.max(3, Math.min(AppState.radarZoom + (e.deltaY < 0 ? 1 : -1), 10));
-                            if (newZoom !== AppState.radarZoom) { AppState.radarZoom = newZoom; clearTimeout(zoomDebounceTimer); zoomDebounceTimer = setTimeout(() => { buildRadarEngine(); }, 400); } 
-                            else { clearTimeout(zoomDebounceTimer); zoomDebounceTimer = setTimeout(() => { visualScale = 1; DOM.radarDrag.style.transform = `translate(${radarPanX}px, ${radarPanY}px) scale(${visualScale})`; }, 300); }
-                        }, {passive: false});
-
-                        let isDragging = false, startX, startY;
-                        DOM.radarClip.addEventListener('mousedown', (e) => { isDragging = true; startX = e.clientX - radarPanX; startY = e.clientY - radarPanY; });
-                        window.addEventListener('mousemove', (e) => { if(!isDragging) return; radarPanX = e.clientX - startX; radarPanY = e.clientY - startY; DOM.radarDrag.style.transform = `translate(${radarPanX}px, ${radarPanY}px) scale(${visualScale})`; });
-                        window.addEventListener('mouseup', () => { isDragging = false; });
-                        DOM.radarClip.addEventListener('touchstart', (e) => { isDragging = true; startX = e.touches[0].clientX - radarPanX; startY = e.touches[0].clientY - radarPanY; }, {passive: true});
-                        window.addEventListener('touchmove', (e) => { if(!isDragging || e.touches.length > 1) return; e.preventDefault(); radarPanX = e.touches[0].clientX - startX; radarPanY = e.touches[0].clientY - startY; DOM.radarDrag.style.transform = `translate(${radarPanX}px, ${radarPanY}px) scale(${visualScale})`; }, {passive: false});
-                        window.addEventListener('touchend', () => { isDragging = false; });
-                        DOM.radarPlay.setAttribute('data-bound', 'true');
-                    }
-
+                        DOM.radarLoader.style.opacity = '0';
+                        setFrame(0); if(isRadarPlaying) play();
+                    });
+                } else {
+                    AppState.mapInstance.flyTo({ center: [AppState.lon, AppState.lat], zoom: AppState.radarZoom });
                     DOM.radarLoader.style.opacity = '0';
-                    setFrame(0); if (isRadarPlaying) play();
-                } catch(e) { DOM.radarLoader.innerHTML = '<span class="font-mono text-sm text-red-500 bg-slate-900 p-2 rounded">> NEXRAD SYNC FAILURE.</span>'; }
+                    if(isRadarPlaying) play();
+                }
+
+                const setFrame = (idx) => {
+                    if (!AppState.mapInstance || !AppState.mapInstance.isStyleLoaded()) return;
+                    currentRadarFrame = idx;
+                    timeOffsets.forEach((_, i) => {
+                        const op = (i === currentRadarFrame) ? AppState.radarMasterOpacity : 0;
+                        if (AppState.mapInstance.getLayer(`radar-layer-${i}`)) {
+                            AppState.mapInstance.setPaintProperty(`radar-layer-${i}`, 'raster-opacity', op);
+                        }
+                    });
+                    DOM.radarTime.textContent = `-${timeOffsets[idx]}m`;
+                    DOM.radarScrubber.value = currentRadarFrame;
+                };
+
+                const tick = () => { setFrame((currentRadarFrame + 1) % AppState.radarMaxFrames); };
+                const play = () => { isRadarPlaying = true; DOM.radarPlay.textContent = 'PAUSE'; clearInterval(AppState.radarInterval); AppState.radarInterval = setInterval(tick, AppState.radarSpeeds[AppState.radarSpeedIndex]); };
+                const pause = () => { isRadarPlaying = false; DOM.radarPlay.textContent = 'PLAY'; clearInterval(AppState.radarInterval); };
+
+                if (!DOM.radarPlay.hasAttribute('data-bound')) {
+                    DOM.radarPlay.onclick = () => isRadarPlaying ? pause() : play();
+                    DOM.radarSpeedBtn.onclick = () => { AppState.radarSpeedIndex = (AppState.radarSpeedIndex + 1) % 4; DOM.radarSpeedBtn.textContent = ['0.5x', '1x', '2x', '4x'][AppState.radarSpeedIndex]; if (isRadarPlaying) play(); };
+                    DOM.radarScrubber.addEventListener('input', (e) => { pause(); setFrame(parseInt(e.target.value)); });
+                    
+                    DOM.radarOpacity.addEventListener('input', (e) => { 
+                        AppState.radarMasterOpacity = parseFloat(e.target.value);
+                        if(AppState.mapInstance && AppState.mapInstance.isStyleLoaded() && AppState.mapInstance.getLayer(`radar-layer-${currentRadarFrame}`)) {
+                            AppState.mapInstance.setPaintProperty(`radar-layer-${currentRadarFrame}`, 'raster-opacity', AppState.radarMasterOpacity);
+                        }
+                    });
+                    
+                    DOM.radarReset.onclick = () => { AppState.radarZoom = 8; AppState.mapInstance.flyTo({ center: [AppState.lon, AppState.lat], zoom: AppState.radarZoom, pitch: 45 }); };
+                    DOM.radarZoomIn.onclick = () => { AppState.mapInstance.zoomIn(); AppState.radarZoom = AppState.mapInstance.getZoom(); };
+                    DOM.radarZoomOut.onclick = () => { AppState.mapInstance.zoomOut(); AppState.radarZoom = AppState.mapInstance.getZoom(); };
+                    
+                    DOM.radarPlay.setAttribute('data-bound', 'true');
+                }
             }
 
             async function bootSystems() {
                 DOM.locName.textContent = AppState.name;
                 DOM.locCoords.textContent = `LAT: ${AppState.lat.toFixed(4)} | LON: ${AppState.lon.toFixed(4)}`;
                 StateManager.checkIfSaved(AppState.name);
+
+                document.getElementById('ui-current-temp').textContent = '--°';
+                document.getElementById('ui-current-desc').textContent = '> Fetching pipeline...';
+                DOM.hourly.innerHTML = '<span class="font-mono text-xs text-slate-500">> Awaiting pipeline...</span>';
+                DOM.forecast.innerHTML = '<div class="font-mono text-xs text-slate-500 animate-pulse">> Compiling meteorological payload...</div>';
 
                 const [tStats, alerts] = await Promise.all([
                     fetchMasterTelemetry(), fetchNWSAlerts(), buildRadarEngine()
@@ -990,17 +1057,14 @@
                 AppState.masterIntervalId_5min = setInterval(async () => { 
                     const [t, a] = await Promise.all([ fetchMasterTelemetry(), fetchNWSAlerts() ]); 
                     updateDoomIndex(t, a);
-                    buildRadarEngine(); 
                 }, 300000);
             }
 
             return {
                 init: () => {
-                    // Init State & Hotkeys
                     StateManager.renderDrawer();
                     UI.initKeyboardShortcuts();
 
-                    // Button bindings
                     document.getElementById('nav-drawer-btn').addEventListener('click', () => UI.toggleDrawer());
                     document.getElementById('close-drawer-btn').addEventListener('click', () => UI.toggleDrawer(false));
                     document.getElementById('trigger-search-btn').addEventListener('click', () => UI.toggleSpotlight(true));
@@ -1009,7 +1073,6 @@
                         StateManager.saveFavorite({ name: AppState.name, lat: AppState.lat, lon: AppState.lon });
                     });
 
-                    // Spotlight Search execution
                     UI.spotlightInput.addEventListener('keypress', (e) => { 
                         if(e.key === 'Enter') {
                             const val = UI.spotlightInput.value.trim(); 
