@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kzick Weather Hub V1.4.1</title>
+    <title>Kzick Weather Hub V1.4.3</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23000000'/><text x='50' y='55' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='65' font-weight='200' fill='%23ffffff'>W</text></svg>">
     
@@ -139,7 +139,7 @@
                 <span>SAVED</span>
                 <span class="bg-black/50 px-1.5 py-0.5 rounded text-[9px] text-slate-400 tracking-widest border border-white/5">⌘J</span>
             </button>
-            <span class="font-mono text-[9px] px-2 py-1 bg-white/5 text-slate-400 border border-white/10 rounded-full tracking-[0.2em] hidden sm:block">SYS V1.4.1</span>
+            <span class="font-mono text-[9px] px-2 py-1 bg-white/5 text-slate-400 border border-white/10 rounded-full tracking-[0.2em] hidden sm:block">SYS V1.4.3</span>
         </div>
     </div>
 
@@ -268,8 +268,7 @@
             
             <div class="pt-4 border-t border-white/5 space-y-4 font-mono text-xs text-slate-400 relative z-10">
                 <div class="flex justify-between items-center">
-                    <span class="tracking-widest">HUMIDITY</span> 
-                    <span id="ui-hum" class="text-white font-medium">--%</span>
+                    <span class="tracking-widest">HUMIDITY</span> <span id="ui-hum" class="text-white font-medium">--%</span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="tracking-widest">WIND</span> 
@@ -284,22 +283,20 @@
                     </div>
                 </div>
                 <div class="flex justify-between items-center">
-                    <span class="tracking-widest">DEW POINT</span> 
-                    <span id="ui-dew" class="text-white font-medium">--°</span>
+                    <span class="tracking-widest">DEW POINT</span> <span id="ui-dew" class="text-white font-medium">--°</span>
                 </div>
                 <div class="flex justify-between items-center">
-                    <span class="tracking-widest">UV MAX</span> 
-                    <span id="ui-uv" class="text-white font-medium">--</span>
+                    <span class="tracking-widest">UV MAX</span> <span id="ui-uv" class="text-white font-medium">--</span>
                 </div>
             </div>
 
             <details class="mt-6 pt-5 border-t border-white/5 group/hourly outline-none relative z-10" open>
                 <summary class="cursor-pointer text-[10px] font-mono text-slate-500 hover:text-white transition-colors flex justify-center w-full bg-white/5 py-3 rounded-xl border border-white/5">
-                    <span class="group-open/hourly:hidden tracking-widest">▼ MINUTELY & HOURLY FORECAST</span>
+                    <span class="group-open/hourly:hidden tracking-widest">▼ HOURLY FORECAST</span>
                     <span class="hidden group-open/hourly:block text-slate-300 tracking-widest">▲ COLLAPSE</span>
                 </summary>
                 <div class="mt-4 pb-2">
-                    <div id="minutely-spline-container"></div>
+                    <div id="hourly-spline-container"></div>
                     <div class="overflow-x-auto custom-scrollbar pb-2">
                         <div class="flex space-x-3 min-w-max" id="hourly-container">
                             <span class="font-mono text-xs text-slate-500">> Awaiting pipeline...</span>
@@ -347,11 +344,9 @@
             </div>
 
             <div class="relative flex-1 bg-[#111] border border-white/5 overflow-hidden z-10 shadow-inner rounded-3xl" id="radar-clip-window">
-                
                 <div class="absolute top-5 left-1/2 -translate-x-1/2 flex items-center justify-center bg-black/80 backdrop-blur-xl px-5 py-2.5 rounded-full border border-white/10 z-20 transition-opacity duration-300 pointer-events-none shadow-lg" id="radar-loader">
                     <span class="font-mono text-[10px] text-white tracking-widest animate-pulse">BOOTING WEBGL MAP...</span>
                 </div>
-
                 <button id="radar-reset" class="absolute top-5 left-5 bg-black/60 backdrop-blur-xl border border-white/10 hover:border-white/30 text-white font-mono p-3 rounded-xl transition-colors shadow-lg z-30" title="Recenter Map">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 </button>
@@ -363,7 +358,6 @@
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"></path></svg>
                     </button>
                 </div>
-                
                 <div class="absolute bottom-5 left-5 right-5 bg-black/70 backdrop-blur-2xl rounded-2xl p-4 border border-white/10 z-30 flex flex-wrap md:flex-nowrap items-center gap-5 shadow-2xl">
                     <button id="radar-play" class="bg-white/10 border border-white/10 text-white font-mono text-xs tracking-widest px-5 py-3 rounded-xl hover:bg-white/20 transition-colors w-28">PAUSE</button>
                     <button id="radar-speed-btn" class="bg-black/50 border border-white/5 text-slate-300 font-mono text-xs px-4 py-3 rounded-xl hover:bg-white/10 transition-colors w-16">1x</button>
@@ -383,34 +377,39 @@
     </div>
 
     <script>
-        // --- 1. STATE MANAGER (LOCAL STORAGE & MULTI-CITY) ---
         const StateManager = {
-            favorites: JSON.parse(localStorage.getItem('kzick_favs')) || [
-                { name: "St. Louis Park, MN", lat: 44.9483, lon: -93.3666 }
-            ],
+            favorites: (function() {
+                try {
+                    const saved = localStorage.getItem('kzick_favs');
+                    return saved ? JSON.parse(saved) : [{ name: "St. Louis Park, MN", lat: 44.9483, lon: -93.3666 }];
+                } catch(e) { 
+                    console.warn("Storage locked or corrupted");
+                    return [{ name: "St. Louis Park, MN", lat: 44.9483, lon: -93.3666 }];
+                }
+            })(),
             
             saveFavorite: function(loc) {
                 if(!this.favorites.find(f => f.name === loc.name)) {
                     this.favorites.push({ name: loc.name, lat: loc.lat, lon: loc.lon });
-                    localStorage.setItem('kzick_favs', JSON.stringify(this.favorites));
+                    try { localStorage.setItem('kzick_favs', JSON.stringify(this.favorites)); } catch(e) {}
                     this.renderDrawer();
                     document.getElementById('save-loc-btn').classList.add('text-yellow-400');
                 }
             },
-
+            
             removeFavorite: function(index) {
                 this.favorites.splice(index, 1);
-                localStorage.setItem('kzick_favs', JSON.stringify(this.favorites));
+                try { localStorage.setItem('kzick_favs', JSON.stringify(this.favorites)); } catch(e) {}
                 this.renderDrawer();
             },
-
+            
             checkIfSaved: function(name) {
                 const isSaved = this.favorites.some(f => f.name === name);
                 const btn = document.getElementById('save-loc-btn');
                 if(isSaved) btn.classList.add('text-yellow-400');
                 else btn.classList.remove('text-yellow-400');
             },
-
+            
             renderDrawer: function() {
                 const list = document.getElementById('saved-locations-list');
                 let html = '';
@@ -418,7 +417,7 @@
                     const hotkey = i < 9 ? `⌘${i+1}` : '';
                     html += `
                         <div class="group flex justify-between items-center p-3 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 hover:border-white/20 cursor-pointer transition-all">
-                            <div class="flex-1 flex flex-col" onclick="Pipeline.loadLocation(${fav.lat}, ${fav.lon}, '${fav.name.replace(/'/g, "\\'")}')">
+                            <div class="flex-1 flex flex-col" onclick="Pipeline.loadLocation(${fav.lat}, ${fav.lon}, '${fav.name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
                                 <span class="text-white text-sm font-medium tracking-wide">${fav.name}</span>
                                 <span class="text-[9px] font-mono text-slate-500 mt-1 uppercase tracking-widest">LAT: ${fav.lat.toFixed(2)} LON: ${fav.lon.toFixed(2)}</span>
                             </div>
@@ -426,24 +425,20 @@
                                 ${hotkey ? `<span class="text-[10px] font-mono bg-black/50 text-slate-400 px-2 py-1 rounded border border-white/10 hidden sm:block">${hotkey}</span>` : ''}
                                 <button onclick="StateManager.removeFavorite(${i})" class="text-slate-600 hover:text-red-400 transition-colors px-2 py-1 opacity-0 group-hover:opacity-100">&times;</button>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 });
                 list.innerHTML = html;
             }
         };
 
-        // --- 2. DESKTOP UI MODALS & HOTKEYS ---
         const UI = {
             spotlightOverlay: document.getElementById('spotlight-overlay'),
             spotlightInput: document.getElementById('spotlight-input'),
             drawerEl: document.getElementById('locations-drawer'),
             drawerOpen: false,
-
             toggleSpotlight: function(forceState) {
                 const isActive = !this.spotlightOverlay.classList.contains('spotlight-hidden');
                 const nextState = forceState !== undefined ? forceState : !isActive;
-                
                 if(nextState) {
                     this.spotlightOverlay.classList.remove('spotlight-hidden');
                     this.spotlightOverlay.classList.add('spotlight-active');
@@ -451,22 +446,14 @@
                 } else {
                     this.spotlightOverlay.classList.remove('spotlight-active');
                     this.spotlightOverlay.classList.add('spotlight-hidden');
-                    this.spotlightInput.value = '';
-                    this.spotlightInput.blur();
+                    this.spotlightInput.value = ''; this.spotlightInput.blur();
                 }
             },
-
             toggleDrawer: function(forceState) {
                 this.drawerOpen = forceState !== undefined ? forceState : !this.drawerOpen;
-                if(this.drawerOpen) {
-                    this.drawerEl.classList.remove('drawer-closed');
-                    this.drawerEl.classList.add('drawer-open');
-                } else {
-                    this.drawerEl.classList.remove('drawer-open');
-                    this.drawerEl.classList.add('drawer-closed');
-                }
+                if(this.drawerOpen) { this.drawerEl.classList.remove('drawer-closed'); this.drawerEl.classList.add('drawer-open'); } 
+                else { this.drawerEl.classList.remove('drawer-open'); this.drawerEl.classList.add('drawer-closed'); }
             },
-
             initKeyboardShortcuts: function() {
                 document.addEventListener('keydown', (e) => {
                     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); this.toggleSpotlight(); }
@@ -478,24 +465,18 @@
                     }
                     if (e.key === 'Escape') { this.toggleSpotlight(false); this.toggleDrawer(false); }
                 });
-                this.spotlightOverlay.addEventListener('click', (e) => {
-                    if(e.target === this.spotlightOverlay) this.toggleSpotlight(false);
-                });
+                this.spotlightOverlay.addEventListener('click', (e) => { if(e.target === this.spotlightOverlay) this.toggleSpotlight(false); });
             }
         };
 
-        // --- 3. SMART GLASS FLASHLIGHT TRACKING ---
         document.querySelectorAll('.app-tile').forEach(tile => {
             tile.addEventListener('mousemove', e => {
                 const rect = tile.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                tile.style.setProperty('--mouse-x', `${x}px`);
-                tile.style.setProperty('--mouse-y', `${y}px`);
+                tile.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+                tile.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
             });
         });
 
-        // --- 4. CANVAS FX ENGINES ---
         let windAnimId;
         function renderWindCanvas(speed, dir) {
             const canvas = document.getElementById('ui-wind-canvas');
@@ -503,17 +484,10 @@
             const ctx = canvas.getContext('2d');
             if(windAnimId) cancelAnimationFrame(windAnimId);
             
-            const particles = Array.from({length: 40}, () => ({
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                l: Math.random() * 15 + 5,
-                s: (Math.random() * 0.5 + 0.2) * (speed / 3 + 1)
-            }));
-            
+            const particles = Array.from({length: 40}, () => ({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, l: Math.random() * 15 + 5, s: (Math.random() * 0.5 + 0.2) * (speed / 3 + 1) }));
             const blowingTo = (dir + 180) % 360;
             const rad = (blowingTo - 90) * Math.PI / 180;
-            const dx = Math.cos(rad);
-            const dy = Math.sin(rad);
+            const dx = Math.cos(rad); const dy = Math.sin(rad);
 
             function draw() {
                 ctx.fillStyle = 'rgba(0,0,0,0.2)'; 
@@ -522,12 +496,10 @@
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 particles.forEach(p => {
-                    p.x += dx * p.s;
-                    p.y += dy * p.s;
+                    p.x += dx * p.s; p.y += dy * p.s;
                     if(p.x < 0) p.x = canvas.width; if(p.x > canvas.width) p.x = 0;
                     if(p.y < 0) p.y = canvas.height; if(p.y > canvas.height) p.y = 0;
-                    ctx.moveTo(p.x, p.y);
-                    ctx.lineTo(p.x - dx * p.l, p.y - dy * p.l);
+                    ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - dx * p.l, p.y - dy * p.l);
                 });
                 ctx.stroke();
                 windAnimId = requestAnimationFrame(draw);
@@ -535,9 +507,9 @@
             draw();
         }
 
-        function renderMinutelySpline(minutelyLine) {
-            if(!minutelyLine || !minutelyLine.intervals || minutelyLine.intervals.length < 10) return '';
-            const intervals = minutelyLine.intervals.slice(0, 60);
+        function renderHourlySpline(hourlyLine) {
+            if(!hourlyLine || !hourlyLine.intervals || hourlyLine.intervals.length < 12) return '';
+            const intervals = hourlyLine.intervals.slice(0, 24);
             const width = 600, height = 80;
             let pathD = `M 0,${height} `;
             let tempD = `M 0,`;
@@ -562,8 +534,8 @@
             <div class="w-full bg-[#050505]/80 border border-white/5 rounded-2xl p-4 mb-4 shadow-inner relative overflow-hidden group">
                 <div class="flex justify-between font-mono text-[9px] text-slate-500 tracking-widest mb-4">
                     <span>NOW</span>
-                    <span class="text-white/80">60-MIN PRECIP & TEMP</span>
-                    <span>+60m</span>
+                    <span class="text-white/80">24-HOUR PRECIP & TEMP</span>
+                    <span>+24h</span>
                 </div>
                 <svg viewBox="0 0 ${width} ${height}" class="w-full h-16 overflow-visible" preserveAspectRatio="none">
                     <defs>
@@ -579,23 +551,15 @@
             `;
         }
 
-        // --- 5. PIPELINE & DATA ENGINE ---
         const PROXY_URL = "https://kzick-weather.askozicki.workers.dev";
-
         const AppState = {
             lat: StateManager.favorites[0]?.lat || 44.9483,
             lon: StateManager.favorites[0]?.lon || -93.3666,
             name: StateManager.favorites[0]?.name || "St. Louis Park, MN",
             nwsGeoJSON: null,
-            
-            radarInterval: null,
-            masterIntervalId_5min: null,
-            radarSpeedIndex: 1, 
-            radarSpeeds: [2000, 1000, 500, 250], 
-            radarMaxFrames: 10,
-            radarZoom: 8,
-            mapInstance: null,
-            radarMasterOpacity: 0.85
+            radarInterval: null, masterIntervalId_5min: null,
+            radarSpeedIndex: 1, radarSpeeds: [2000, 1000, 500, 250], radarMaxFrames: 10, radarZoom: 8,
+            mapInstance: null, radarMasterOpacity: 0.85
         };
 
         const CacheEngine = (function() {
@@ -604,35 +568,31 @@
                     const cached = sessionStorage.getItem(`kzick_weather_${endpointKey}`);
                     if (cached) {
                         const parsed = JSON.parse(cached);
-                        const age = Date.now() - parsed.timestamp;
-                        if (age < ttlMs) return parsed.data; 
+                        if (Date.now() - parsed.timestamp < ttlMs) return parsed.data; 
                     }
                     const res = await fetch(url);
-                    if (!res.ok) throw new Error("API Failure");
+                    if (!res.ok) {
+                        const errData = await res.json().catch(() => ({}));
+                        throw new Error(errData.message || `HTTP ${res.status}`);
+                    }
                     const data = await res.json();
-                    
                     if (!data.error && !data.code && !data.message) {
-                        sessionStorage.setItem(`kzick_weather_${endpointKey}`, JSON.stringify({
-                            timestamp: Date.now(), data: data
-                        }));
+                        sessionStorage.setItem(`kzick_weather_${endpointKey}`, JSON.stringify({ timestamp: Date.now(), data: data }));
                     }
                     return data;
                 }
             }
         })();
 
-        // Cupertino Styled SVG Icons
         const getWeatherIcon = (code) => {
             const c = parseInt(code);
             if(isNaN(c)) return `<svg class="w-full h-full text-slate-500" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>`;
-            
             if(c === 1000) return `<svg class="w-full h-full text-white drop-shadow" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`;
             if([1100, 1101, 1102].includes(c)) return `<svg class="w-full h-full text-slate-300 drop-shadow" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M16 5l.01-.01M19.07 7.93l.01-.01"></path></svg>`;
             if([1001, 2000, 2100].includes(c)) return `<svg class="w-full h-full text-slate-400 drop-shadow" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>`;
             if((c >= 4000 && c < 5000) || (c >= 6000 && c < 7000)) return `<svg class="w-full h-full text-blue-300 drop-shadow" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14.99A4 4 0 0015 11H9.5a5.5 5.5 0 00-5.5 5.5v.5h15v-2zM12 21v-4m-4 4v-4m8 4v-4"></path></svg>`;
             if((c >= 5000 && c < 6000) || (c >= 7000 && c < 8000)) return `<svg class="w-full h-full text-white drop-shadow" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m0-18l-4 4m4-4l4 4m-4 14l-4-4m4 4l4-4M5.636 6.636l12.728 12.728m-12.728 0L18.364 6.636"></path></svg>`;
             if(c >= 8000) return `<svg class="w-full h-full text-indigo-400 drop-shadow" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>`;
-            
             return `<svg class="w-full h-full text-slate-500" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>`;
         };
 
@@ -646,38 +606,6 @@
                 7000: 'Ice Pellets', 7101: 'Heavy Ice Pellets', 7102: 'Light Ice Pellets', 8000: 'Thunderstorm'
             };
             return map[code] || 'Unknown';
-        };
-
-        const DOM = {
-            locName: document.getElementById('ui-location-name'),
-            locCoords: document.getElementById('ui-coords'),
-            
-            aqiRing: document.getElementById('ui-aqi-ring'),
-            aqiTop: document.getElementById('ui-aqi-top'),
-            aqiDescTop: document.getElementById('ui-aqi-desc-top'),
-            idxTree: document.getElementById('ui-idx-tree'),
-            idxGrass: document.getElementById('ui-idx-grass'),
-            idxWeed: document.getElementById('ui-idx-weed'),
-            
-            alerts: document.getElementById('alerts-container'),
-            forecast: document.getElementById('forecast-container'),
-            hourly: document.getElementById('hourly-container'),
-            
-            radarClip: document.getElementById('radar-clip-window'),
-            radarLoader: document.getElementById('radar-loader'),
-            radarTime: document.getElementById('radar-time'),
-            radarPlay: document.getElementById('radar-play'),
-            radarScrubber: document.getElementById('radar-scrubber'),
-            radarOpacity: document.getElementById('radar-opacity-slider'),
-            radarReset: document.getElementById('radar-reset'),
-            radarZoomIn: document.getElementById('radar-zoom-in'),
-            radarZoomOut: document.getElementById('radar-zoom-out'),
-            radarSpeedBtn: document.getElementById('radar-speed-btn'),
-            
-            doomRing: document.getElementById('ui-doom-ring'),
-            doomScore: document.getElementById('ui-doom-score'),
-            doomGood: document.getElementById('ui-doom-good'),
-            doomDesc: document.getElementById('ui-doom-desc')
         };
 
         const Pipeline = (function() {
@@ -697,12 +625,8 @@
                         sessionStorage.clear();
                         bootSystems();
                     } else { alert("Geocoding failed. Try another city."); }
-                } catch(e) { 
-                    console.error(e); 
-                    alert("Network error during search. Please check your connection.");
-                } finally { 
-                    UI.spotlightInput.disabled = false; UI.spotlightInput.value = ''; 
-                }
+                } catch(e) { console.error(e); alert("Network error during search."); } 
+                finally { UI.spotlightInput.disabled = false; UI.spotlightInput.value = ''; }
             }
 
             async function fetchMasterTelemetry() {
@@ -710,34 +634,25 @@
                     const secureUrl = `${PROXY_URL}?lat=${AppState.lat}&lon=${AppState.lon}`;
                     const data = await CacheEngine.fetchWithCache('tomorrow_master', secureUrl, 300000); 
                     
-                    if (data.error) throw new Error(data.error);
-                    if (data.code && data.type) throw new Error(`${data.type}: ${data.message || 'API Error'}`);
-                    if (data.message) throw new Error(data.message);
-
-                    let currentLine, minutelyLine, hourlyLine, dailyLine;
+                    let currentLine, hourlyLine, dailyLine;
 
                     if (data.timelines && !Array.isArray(data.timelines)) {
                         currentLine = { intervals: data.timelines.minutely?.length > 0 ? [data.timelines.minutely[0]] : (data.timelines.hourly?.length > 0 ? [data.timelines.hourly[0]] : []) };
-                        minutelyLine = { intervals: data.timelines.minutely || [] };
                         hourlyLine = { intervals: data.timelines.hourly || [] };
                         dailyLine = { intervals: data.timelines.daily || [] };
                     } else if (data.data && Array.isArray(data.data.timelines)) {
                         const t = data.data.timelines;
-                        currentLine = t.find(x => x.timestep === 'current' || x.timestep === '1m') || t[0];
-                        minutelyLine = t.find(x => x.timestep === '1m');
+                        currentLine = t.find(x => x.timestep === 'current' || x.timestep === '1h') || t[0];
                         hourlyLine = t.find(x => x.timestep === '1h');
                         dailyLine = t.find(x => x.timestep === '1d');
                     } else if (Array.isArray(data.timelines)) {
                         const t = data.timelines;
-                        currentLine = t.find(x => x.timestep === 'current' || x.timestep === '1m') || t[0];
-                        minutelyLine = t.find(x => x.timestep === '1m');
+                        currentLine = t.find(x => x.timestep === 'current' || x.timestep === '1h') || t[0];
                         hourlyLine = t.find(x => x.timestep === '1h');
                         dailyLine = t.find(x => x.timestep === '1d');
                     } else { throw new Error("Invalid API payload structure."); }
 
-                    if(!currentLine || !currentLine.intervals || !currentLine.intervals[0]) {
-                        throw new Error("No payload intervals found.");
-                    }
+                    if(!currentLine || !currentLine.intervals || !currentLine.intervals[0]) throw new Error("No payload intervals found.");
 
                     const cur = currentLine.intervals[0].values;
                     const dailyFirst = dailyLine?.intervals[0]?.values || {};
@@ -789,8 +704,8 @@
                     if ((cur.temperature || 0) <= 36 && Math.abs((cur.temperature || 0) - (cur.dewPoint || 0)) <= 3) { frostBadge.classList.remove('hidden'); } 
                     else { frostBadge.classList.add('hidden'); }
 
-                    if(minutelyLine && minutelyLine.intervals) {
-                        document.getElementById('minutely-spline-container').innerHTML = renderMinutelySpline(minutelyLine);
+                    if(hourlyLine && hourlyLine.intervals) {
+                        document.getElementById('hourly-spline-container').innerHTML = renderHourlySpline(hourlyLine);
                     }
 
                     if (hourlyLine && hourlyLine.intervals) {
@@ -875,7 +790,7 @@
                     return { temp: cur.temperature || 0, windSpeed: cur.windSpeed || 0, aqi: aqiVal };
                 } catch(e) { 
                     console.error("Master Sync Failure:", e);
-                    document.getElementById('ui-current-desc').textContent = `> ${e.message.toUpperCase().substring(0, 35)}`;
+                    document.getElementById('ui-current-desc').textContent = `> ERROR: ${e.message.toUpperCase().substring(0, 45)}`;
                     return { temp: 50, windSpeed: 0, aqi: 1 };
                 }
             }
@@ -995,7 +910,8 @@
                         setFrame(0); if(isRadarPlaying) play();
                     });
                 } else {
-                    AppState.mapInstance.flyTo({ center: [AppState.lon, AppState.lat], zoom: AppState.radarZoom });
+                    // Reset pitch and bearing so the new city yields a clean top-down view
+                    AppState.mapInstance.flyTo({ center: [AppState.lon, AppState.lat], zoom: AppState.radarZoom, pitch: 45, bearing: 0 });
                     DOM.radarLoader.style.opacity = '0';
                     if(isRadarPlaying) play();
                 }
@@ -1029,7 +945,7 @@
                         }
                     });
                     
-                    DOM.radarReset.onclick = () => { AppState.radarZoom = 8; AppState.mapInstance.flyTo({ center: [AppState.lon, AppState.lat], zoom: AppState.radarZoom, pitch: 45 }); };
+                    DOM.radarReset.onclick = () => { AppState.radarZoom = 8; AppState.mapInstance.flyTo({ center: [AppState.lon, AppState.lat], zoom: AppState.radarZoom, pitch: 45, bearing: 0 }); };
                     DOM.radarZoomIn.onclick = () => { AppState.mapInstance.zoomIn(); AppState.radarZoom = AppState.mapInstance.getZoom(); };
                     DOM.radarZoomOut.onclick = () => { AppState.mapInstance.zoomOut(); AppState.radarZoom = AppState.mapInstance.getZoom(); };
                     
@@ -1046,6 +962,7 @@
                 document.getElementById('ui-current-desc').textContent = '> Fetching pipeline...';
                 DOM.hourly.innerHTML = '<span class="font-mono text-xs text-slate-500">> Awaiting pipeline...</span>';
                 DOM.forecast.innerHTML = '<div class="font-mono text-xs text-slate-500 animate-pulse">> Compiling meteorological payload...</div>';
+                document.getElementById('hourly-spline-container').innerHTML = '';
 
                 const [tStats, alerts] = await Promise.all([
                     fetchMasterTelemetry(), fetchNWSAlerts(), buildRadarEngine()
