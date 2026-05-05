@@ -339,9 +339,10 @@
             const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
             const now = Date.now();
 
-            // 1. Filter out Ghost data
+           // 1. Filter out Ghost data (and catch V1.0 flat-schema ghosts)
             const validTeams = Object.values(data.teams).filter(team => {
-                return !(team._meta && (now - team._meta.last_fetched > TWENTY_FOUR_HOURS));
+                if (!team._meta) return false; // Destroy flat-schema ghosts immediately
+                return (now - team._meta.last_fetched <= TWENTY_FOUR_HOURS);
             });
 
             // 2. Sort by urgency
