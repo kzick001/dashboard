@@ -3,1043 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kzick Weather Hub V1.4.4</title>
-    
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23000000'/><text x='50' y='55' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='65' font-weight='200' fill='%23ffffff'>W</text></svg>">
-    
-    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
-    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
-
+    <title>Dev Weather v1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = { 
             darkMode: 'class',
             theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
-                    transitionTimingFunction: {
-                        'spring': 'cubic-bezier(0.175, 0.885, 0.32, 1.1)',
-                    },
-                    animation: {
-                        'breathe': 'breathe 4s ease-in-out infinite',
-                        'heartbeat': 'heartbeat 1.2s ease-in-out infinite'
-                    },
-                    keyframes: {
-                        breathe: {
-                            '0%, 100%': { opacity: '0.3', transform: 'scale(0.95)' },
-                            '50%': { opacity: '1', transform: 'scale(1.1)' },
-                        },
-                        heartbeat: {
-                            '0%, 100%': { transform: 'rotate(-90deg) scale(1)' },
-                            '15%': { transform: 'rotate(-90deg) scale(1.15)' },
-                            '30%': { transform: 'rotate(-90deg) scale(1)' },
-                            '45%': { transform: 'rotate(-90deg) scale(1.15)' }
-                        }
-                    }
-                }
+                extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } }
             }
         }
     </script>
-    
     <style>
-        /* BASE CUPERTINO THEME */
-        :root {
-            --glass-shine: rgba(255, 255, 255, 0.06);
-        }
-
         body { 
             background-color: #000000; 
-            background-image: radial-gradient(at 0% 0%, rgba(20, 20, 20, 1) 0, transparent 50%), 
-                              radial-gradient(at 50% 0%, rgba(10, 10, 10, 1) 0, transparent 50%), 
-                              radial-gradient(at 100% 0%, rgba(20, 20, 20, 1) 0, transparent 50%);
+            background-image: radial-gradient(at 0% 0%, rgba(20, 20, 20, 1) 0, transparent 50%), radial-gradient(at 100% 0%, rgba(10, 10, 10, 1) 0, transparent 50%);
             background-attachment: fixed; 
             color: #f1f5f9;
         }
-
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
-        
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
-
-        /* SMART GLASS TILE ENGINE */
-        .app-tile {
-            position: relative;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1), border-color 0.3s ease, background 0.3s ease;
+        .glass-tile {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 1.5rem;
         }
-
-        .app-tile::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(
-                600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
-                var(--glass-shine), 
-                transparent 40%
-            );
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            pointer-events: none;
-            z-index: 1;
-            border-radius: inherit;
-        }
-
-        .app-tile:hover {
-            transform: translateY(-2px);
-            border-color: rgba(255, 255, 255, 0.15);
-            background: rgba(255, 255, 255, 0.04);
-            z-index: 20;
-        }
-        
-        .app-tile:hover::before { opacity: 1; }
-        
-        .doom-circle { transition: stroke-dashoffset 1s cubic-bezier(0.175, 0.885, 0.32, 1.1), stroke 0.5s ease, filter 0.5s ease; transform: rotate(-90deg); transform-origin: 50% 50%; }
-
-        input[type=range] { -webkit-appearance: none; background: transparent; }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #ffffff; cursor: pointer; margin-top: -6px; transition: transform 0.1s; box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: rgba(255, 255, 255, 0.2); border-radius: 2px; }
-        
-        #radar-clip-window { touch-action: none; border-radius: 1.5rem; } 
-        
-        /* MapLibre Core Overrides */
-        .maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right { display: none !important; }
-        .maplibregl-canvas:focus { outline: none; }
-
-        details > summary { list-style: none; }
-        details > summary::-webkit-details-marker { display: none; }
-
-        /* Modal & Drawer Transitions */
-        .spotlight-active { opacity: 1; pointer-events: auto; transform: scale(1); }
-        .spotlight-hidden { opacity: 0; pointer-events: none; transform: scale(0.95); }
-        
-        .drawer-open { transform: translateX(0); }
-        .drawer-closed { transform: translateX(100%); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
     </style>
 </head>
-<body class="min-h-screen p-4 md:p-8 font-sans relative flex flex-col items-center overflow-x-hidden">
+<body class="min-h-screen p-4 md:p-8 font-sans flex flex-col items-center">
 
-    <div class="fixed top-0 w-full px-8 py-4 flex justify-between items-center z-[80] bg-black/40 backdrop-blur-2xl border-b border-white/5">
-        <a href="https://kzick001.github.io/dashboard/" class="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-400 hover:text-white transition-colors group">
-            <span class="transform group-hover:-translate-x-1 transition-transform">&larr;</span> DASHBOARD
-        </a>
-        
-        <div class="flex items-center gap-4">
-            <button id="nav-drawer-btn" class="font-mono text-[10px] px-4 py-2 bg-white/5 text-white border border-white/10 rounded-full hover:bg-white/10 transition-colors flex items-center gap-2 shadow-lg">
-                <span>SAVED</span>
-                <span class="bg-black/50 px-1.5 py-0.5 rounded text-[9px] text-slate-400 tracking-widest border border-white/5">⌘J</span>
-            </button>
-            <span class="font-mono text-[9px] px-2 py-1 bg-white/5 text-slate-400 border border-white/10 rounded-full tracking-[0.2em] hidden sm:block">SYS V1.4.4</span>
+    <div class="w-full max-w-4xl flex justify-between items-end mb-8 border-b border-white/10 pb-4">
+        <div>
+            <h1 class="text-2xl font-semibold tracking-tight">Dev Weather</h1>
+            <p class="font-mono text-xs text-slate-500 mt-1">v1.0 • Diagnostic Build</p>
+        </div>
+        <div id="sys-status" class="font-mono text-[10px] px-3 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full tracking-widest animate-pulse">
+            CONNECTING...
         </div>
     </div>
 
-    <div id="spotlight-overlay" class="fixed inset-0 z-[100] bg-black/50 backdrop-blur-xl spotlight-hidden transition-all duration-300 flex items-start justify-center pt-[20vh]">
-        <div class="bg-[#151515] border border-white/10 w-full max-w-2xl mx-4 rounded-2xl shadow-2xl overflow-hidden flex flex-col transform transition-transform duration-300" id="spotlight-box">
-            <div class="flex items-center px-6 py-5 border-b border-white/10">
-                <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                <input type="text" id="spotlight-input" autocomplete="off" class="bg-transparent text-2xl font-light text-white outline-none flex-1 ml-4 placeholder-slate-600" placeholder="Search city or zip code...">
-                <span class="text-[10px] text-slate-500 font-mono bg-white/5 border border-white/10 px-2 py-1 rounded tracking-widest ml-4">ESC</span>
-            </div>
-            <div class="p-4 bg-black/20 font-mono text-xs text-slate-500 tracking-widest uppercase text-center">
-                Press Enter to search Tomorrow.io Matrix
-            </div>
-        </div>
-    </div>
+    <div class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6">
 
-    <div id="locations-drawer" class="fixed right-0 top-0 bottom-0 w-80 bg-[#0a0a0a]/90 backdrop-blur-3xl border-l border-white/10 z-[90] drawer-closed transition-transform duration-500 flex flex-col shadow-2xl">
-        <div class="p-6 border-b border-white/10 flex justify-between items-center mt-16">
-            <h2 class="font-mono text-xs tracking-widest text-white flex items-center gap-2">
-                <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                FAVORITES
-            </h2>
-            <button id="close-drawer-btn" class="text-slate-500 hover:text-white transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-        </div>
-        <div id="saved-locations-list" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-            </div>
-        <div class="p-4 border-t border-white/10 font-mono text-[10px] text-slate-500 text-center tracking-widest">
-            USE ⌘1-9 FOR QUICK JUMP
-        </div>
-    </div>
-
-    <div class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 relative mt-24 pb-20">
-
-        <div class="app-tile rounded-[2rem] p-6 md:p-8 lg:col-span-3">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
-                <div class="flex-1 w-full text-center md:text-left flex flex-col justify-center">
-                    <div class="flex items-center justify-center md:justify-start gap-4">
-                        <h1 class="text-4xl sm:text-5xl font-light tracking-tight text-white" id="ui-location-name">Locating...</h1>
-                        <button id="save-loc-btn" class="text-slate-600 hover:text-yellow-400 transition-colors" title="Save to Favorites">
-                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                        </button>
-                    </div>
-                    <div class="flex items-center justify-center md:justify-start gap-4 mt-3">
-                        <p class="font-mono text-slate-500 text-xs tracking-widest uppercase bg-black/40 px-3 py-1 rounded-lg border border-white/5 shadow-inner" id="ui-coords">LAT: -- | LON: --</p>
-                        <button id="trigger-search-btn" class="font-mono text-[10px] tracking-widest text-slate-400 bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                            <span>SEARCH (⌘K)</span>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="flex items-start space-x-6 md:space-x-10 bg-black/30 p-5 rounded-3xl border border-white/5 relative w-full md:w-auto justify-center shadow-inner">
-                    <div class="flex flex-col items-center">
-                        <span class="text-[10px] font-mono text-slate-500 tracking-widest mb-3">US AQI</span>
-                        <div id="ui-aqi-ring" class="w-16 h-16 rounded-full border-4 border-slate-700 flex items-center justify-center transition-colors duration-500 shadow-lg">
-                            <span id="ui-aqi-top" class="font-mono text-xl font-bold text-white">--</span>
-                        </div>
-                        <span id="ui-aqi-desc-top" class="text-[10px] font-mono mt-3 uppercase tracking-wider text-slate-400 text-center w-24">SCANNING</span>
-                        
-                        <details class="mt-3 group/env w-full text-center relative z-50">
-                            <summary class="cursor-pointer text-[10px] font-mono text-slate-500 hover:text-white transition-colors outline-none">
-                                <span class="group-open/env:hidden tracking-widest">▼ BIO-HAZARDS</span>
-                                <span class="hidden group-open/env:block text-slate-300 tracking-widest">▲ COLLAPSE</span>
-                            </summary>
-                            <div class="mt-3 text-[10px] font-mono text-slate-300 space-y-2 bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 text-left absolute w-56 shadow-2xl -translate-x-1/2 left-1/2">
-                                <div class="flex justify-between border-b border-white/5 pb-2"><span>TREE POLLEN</span><span id="ui-idx-tree" class="text-white font-bold">--</span></div>
-                                <div class="flex justify-between border-b border-white/5 pb-2"><span>GRASS POLLEN</span><span id="ui-idx-grass" class="text-white font-bold">--</span></div>
-                                <div class="flex justify-between"><span>WEED POLLEN</span><span id="ui-idx-weed" class="text-white font-bold">--</span></div>
-                            </div>
-                        </details>
-                    </div>
-
-                    <div class="w-px h-20 bg-white/5 self-center"></div>
-
-                    <div class="relative flex flex-col items-center">
-                        <span class="text-[10px] font-mono text-slate-500 tracking-widest mb-3">DOOM INDEX</span>
-                        <div class="relative w-16 h-16 shadow-lg rounded-full">
-                            <svg class="w-full h-full" viewBox="0 0 100 100">
-                                <circle class="text-white/5 stroke-current" stroke-width="6" cx="50" cy="50" r="42" fill="transparent"></circle>
-                                <circle id="ui-doom-ring" class="doom-circle text-slate-600 stroke-current" stroke-width="6" stroke-linecap="round" cx="50" cy="50" r="42" fill="transparent" stroke-dasharray="263.89" stroke-dashoffset="263.89"></circle>
-                            </svg>
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <span id="ui-doom-score" class="font-mono text-xl font-bold text-white">--</span>
-                                <svg id="ui-doom-good" class="hidden w-6 h-6 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            </div>
-                        </div>
-                        <span id="ui-doom-desc" class="text-[10px] font-mono mt-3 uppercase tracking-wider text-slate-400 text-center w-24">AWAITING</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="app-tile rounded-[2rem] p-6 md:p-8 flex flex-col lg:col-span-1">
-            <div class="flex items-center space-x-3 mb-6 relative z-10">
-                <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+        <div class="glass-tile p-6 flex flex-col justify-center">
+            <span class="font-mono text-xs text-slate-400 tracking-widest uppercase mb-2">Location 55426</span>
+            <div class="flex items-center gap-4">
+                <span id="ui-temp" class="text-6xl font-light tracking-tighter">--°</span>
                 <div class="flex flex-col">
-                    <h2 class="text-lg font-medium tracking-wide text-white">Currently</h2>
-                    <span class="text-[9px] font-mono text-slate-500 tracking-[0.2em] uppercase">Tomorrow.io Engine</span>
-                </div>
-            </div>
-
-            <div class="flex items-center mt-2 relative z-10">
-                <div id="ui-current-icon" class="w-20 h-20 mr-4 text-slate-300 drop-shadow-lg"></div>
-                <div class="flex flex-col">
-                    <div class="flex items-center">
-                        <span class="font-mono text-6xl text-white font-light tracking-tighter" id="ui-current-temp">--°</span>
-                        <div id="ui-frost-badge" class="hidden bg-blue-900/30 text-blue-300 border border-blue-500/30 px-2 py-1 rounded text-[10px] ml-3 animate-pulse font-mono tracking-widest">FROST</div>
-                    </div>
-                    <span class="font-mono text-xs text-slate-400 mt-2 tracking-wide" id="ui-current-desc">> Fetching pipeline...</span>
+                    <span id="ui-desc" class="text-lg font-medium text-white">Awaiting Data</span>
+                    <span id="ui-feels" class="font-mono text-xs text-slate-500">Dew Point: --°</span>
                 </div>
             </div>
             
-            <div class="mt-8 mb-6 flex items-center justify-around text-sm text-slate-300 border border-white/5 bg-black/40 px-4 py-4 rounded-2xl shadow-inner relative z-10">
-                <div class="flex items-center space-x-3">
-                    <svg class="w-5 h-5 text-yellow-500/80" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    <span id="ui-sunrise" class="font-mono font-medium text-white tracking-wide">--:--</span>
+            <div class="grid grid-cols-3 gap-4 mt-8 border-t border-white/5 pt-4">
+                <div class="flex flex-col">
+                    <span class="font-mono text-[9px] text-slate-500 tracking-widest">WIND</span>
+                    <span id="ui-wind" class="font-mono text-sm text-white mt-1">-- mph</span>
                 </div>
-                <span class="opacity-20 text-white">|</span>
-                <div class="flex items-center space-x-3">
-                    <svg class="w-5 h-5 text-orange-500/80" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-1m0-16V3m9 9h1M4 12H3m15.364 6.364l.707.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z M12 16a4 4 0 004-4h-8a4 4 0 004 4z"></path></svg>
-                    <span id="ui-sunset" class="font-mono font-medium text-white tracking-wide">--:--</span>
+                <div class="flex flex-col">
+                    <span class="font-mono text-[9px] text-slate-500 tracking-widest">HUMIDITY</span>
+                    <span id="ui-hum" class="font-mono text-sm text-white mt-1">--%</span>
                 </div>
-            </div>
-            
-            <div class="pt-4 border-t border-white/5 space-y-4 font-mono text-xs text-slate-400 relative z-10">
-                <div class="flex justify-between items-center">
-                    <span class="tracking-widest">HUMIDITY</span> <span id="ui-hum" class="text-white font-medium">--%</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="tracking-widest">WIND</span> 
-                    <div class="flex items-center space-x-3 text-white">
-                        <div class="flex flex-col items-end mr-1">
-                            <span id="ui-wind" class="font-medium">--</span>
-                            <span id="ui-wind-dir" class="text-[9px] text-slate-400 font-mono tracking-widest text-right">--</span>
-                        </div>
-                        <div class="relative w-10 h-10 rounded-full border border-white/10 bg-[#050505] shadow-inner overflow-hidden">
-                            <canvas id="ui-wind-canvas" width="80" height="80" class="w-full h-full opacity-80"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="tracking-widest">DEW POINT</span> <span id="ui-dew" class="text-white font-medium">--°</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="tracking-widest">UV MAX</span> <span id="ui-uv" class="text-white font-medium">--</span>
-                </div>
-            </div>
-
-            <details class="mt-6 pt-5 border-t border-white/5 group/hourly outline-none relative z-10" open>
-                <summary class="cursor-pointer text-[10px] font-mono text-slate-500 hover:text-white transition-colors flex justify-center w-full bg-white/5 py-3 rounded-xl border border-white/5">
-                    <span class="group-open/hourly:hidden tracking-widest">▼ HOURLY FORECAST</span>
-                    <span class="hidden group-open/hourly:block text-slate-300 tracking-widest">▲ COLLAPSE</span>
-                </summary>
-                <div class="mt-4 pb-2">
-                    <div id="hourly-spline-container"></div>
-                    <div class="overflow-x-auto custom-scrollbar pb-2">
-                        <div class="flex space-x-3 min-w-max" id="hourly-container">
-                            <span class="font-mono text-xs text-slate-500">> Awaiting pipeline...</span>
-                        </div>
-                    </div>
-                </div>
-            </details>
-        </div>
-
-        <div class="app-tile rounded-[2rem] p-6 md:p-8 flex flex-col lg:col-span-2 overflow-hidden">
-            <div class="flex items-center space-x-3 mb-6 relative z-10">
-                <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                <h2 class="text-lg font-medium tracking-wide text-white">10-Day Forecast</h2>
-            </div>
-            <div class="overflow-y-auto relative z-10 pb-4 flex-1 h-[650px] pr-2 custom-scrollbar">
-                <div class="flex flex-col space-y-3 w-full" id="forecast-container">
-                    <div class="font-mono text-xs text-slate-500 animate-pulse">> Compiling meteorological payload...</div>
+                <div class="flex flex-col">
+                    <span class="font-mono text-[9px] text-slate-500 tracking-widest">PRECIP PROB</span>
+                    <span id="ui-precip" class="font-mono text-sm text-white mt-1">--%</span>
                 </div>
             </div>
         </div>
 
-        <div class="app-tile rounded-[2rem] p-6 md:p-8 lg:col-span-3">
-            <div class="flex items-center space-x-3 mb-6 relative z-10">
-                <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                <h2 class="text-lg font-medium tracking-wide text-white">National Weather Service Alerts</h2>
+        <div class="glass-tile p-6 flex flex-col justify-between">
+            <div>
+                <span class="font-mono text-xs text-slate-400 tracking-widest uppercase">Edge Cache Metrics</span>
+                <div class="mt-4 space-y-3 font-mono text-sm">
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-slate-500">Data Source:</span>
+                        <span id="ui-source" class="text-white">--</span>
+                    </div>
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-slate-500">Cache Key:</span>
+                        <span id="ui-key" class="text-white">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Timestamp:</span>
+                        <span id="ui-time" class="text-white">--</span>
+                    </div>
+                </div>
             </div>
-            <div class="relative z-10 bg-black/40 border border-white/5 p-4 rounded-2xl max-h-40 overflow-y-auto shadow-inner custom-scrollbar" id="alerts-container">
-                <div class="font-mono text-xs text-slate-500 animate-pulse">> Connecting to NWS point node...</div>
-            </div>
+            <button onclick="fetchData()" class="mt-6 w-full bg-white/10 hover:bg-white/20 text-white font-mono text-xs py-3 rounded-lg border border-white/10 transition-colors">
+                FORCE REFRESH
+            </button>
         </div>
 
-        <div class="app-tile rounded-[2rem] p-6 md:p-8 flex flex-col h-[800px] lg:col-span-3">
-            <div class="flex justify-between items-center mb-6 relative z-10">
-                <div class="flex items-center space-x-3">
-                    <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
-                    <div class="flex flex-col">
-                        <h2 class="text-lg font-medium tracking-wide text-white">Live Radar</h2>
-                        <span class="text-[9px] font-mono text-slate-500 tracking-[0.2em] hidden md:block">MAPLIBRE GL • IOWA ENVIRONMENTAL MESONET</span>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <span class="text-[10px] font-mono text-slate-500 mr-2 tracking-widest">T-MINUS</span>
-                    <div class="font-mono text-sm font-medium text-white bg-black/50 px-4 py-2 rounded-xl border border-white/10" id="radar-time">-50m</div>
-                </div>
+        <div class="glass-tile p-0 md:col-span-2 overflow-hidden flex flex-col h-96">
+            <div class="bg-black/40 px-6 py-3 border-b border-white/10 flex justify-between items-center">
+                <span class="font-mono text-xs text-slate-400 tracking-widest">RAW JSON PAYLOAD</span>
             </div>
-
-            <div class="relative flex-1 bg-[#111] border border-white/5 overflow-hidden z-10 shadow-inner rounded-3xl" id="radar-clip-window">
-                <div class="absolute top-5 left-1/2 -translate-x-1/2 flex items-center justify-center bg-black/80 backdrop-blur-xl px-5 py-2.5 rounded-full border border-white/10 z-20 transition-opacity duration-300 pointer-events-none shadow-lg" id="radar-loader">
-                    <span class="font-mono text-[10px] text-white tracking-widest animate-pulse">BOOTING WEBGL MAP...</span>
-                </div>
-                <button id="radar-reset" class="absolute top-5 left-5 bg-black/60 backdrop-blur-xl border border-white/10 hover:border-white/30 text-white font-mono p-3 rounded-xl transition-colors shadow-lg z-30" title="Recenter Map">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                </button>
-                <div class="absolute top-5 right-5 flex flex-col space-y-2 z-30">
-                    <button id="radar-zoom-in" class="w-12 h-12 bg-black/60 backdrop-blur-xl rounded-xl border border-white/10 hover:border-white/30 text-white flex items-center justify-center transition-colors shadow-lg">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                    </button>
-                    <button id="radar-zoom-out" class="w-12 h-12 bg-black/60 backdrop-blur-xl rounded-xl border border-white/10 hover:border-white/30 text-white flex items-center justify-center transition-colors shadow-lg">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"></path></svg>
-                    </button>
-                </div>
-                <div class="absolute bottom-5 left-5 right-5 bg-black/70 backdrop-blur-2xl rounded-2xl p-4 border border-white/10 z-30 flex flex-wrap md:flex-nowrap items-center gap-5 shadow-2xl">
-                    <button id="radar-play" class="bg-white/10 border border-white/10 text-white font-mono text-xs tracking-widest px-5 py-3 rounded-xl hover:bg-white/20 transition-colors w-28">PAUSE</button>
-                    <button id="radar-speed-btn" class="bg-black/50 border border-white/5 text-slate-300 font-mono text-xs px-4 py-3 rounded-xl hover:bg-white/10 transition-colors w-16">1x</button>
-                    <div class="flex-1 flex items-center space-x-4 px-3 border-l border-white/10 min-w-[150px]">
-                        <span class="text-[9px] font-mono text-slate-500 hidden sm:inline tracking-widest">TIMELINE</span>
-                        <input type="range" id="radar-scrubber" min="0" max="9" step="1" value="0" class="flex-1">
-                    </div>
-                    <div class="flex items-center space-x-4 px-3 border-l border-white/10 w-32 md:max-w-[200px]">
-                        <span class="text-[9px] font-mono text-slate-500 hidden sm:inline tracking-widest">OPACITY</span>
-                        <input type="range" id="radar-opacity-slider" min="0" max="1" step="0.01" value="0.85" class="flex-1">
-                    </div>
-                </div>
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-1">
+                <pre id="json-output" class="font-mono text-[10px] text-slate-300 leading-relaxed break-words whitespace-pre-wrap">Awaiting Worker connection...</pre>
             </div>
-            <p class="text-[10px] text-slate-600 font-mono mt-4 z-10 relative text-right tracking-widest">SCROLL TO ZOOM / RIGHT-CLICK & DRAG TO PITCH 3D</p>
         </div>
 
     </div>
 
     <script>
-        const StateManager = {
-            favorites: (function() {
-                try {
-                    const saved = localStorage.getItem('kzick_favs');
-                    return saved ? JSON.parse(saved) : [{ name: "St. Louis Park, MN", lat: 44.9483, lon: -93.3666 }];
-                } catch(e) { 
-                    console.warn("Storage locked or corrupted");
-                    return [{ name: "St. Louis Park, MN", lat: 44.9483, lon: -93.3666 }];
-                }
-            })(),
-            
-            saveFavorite: function(loc) {
-                if(!this.favorites.find(f => f.name === loc.name)) {
-                    this.favorites.push({ name: loc.name, lat: loc.lat, lon: loc.lon });
-                    try { localStorage.setItem('kzick_favs', JSON.stringify(this.favorites)); } catch(e) {}
-                    this.renderDrawer();
-                    document.getElementById('save-loc-btn').classList.add('text-yellow-400');
-                }
-            },
-            
-            removeFavorite: function(index) {
-                this.favorites.splice(index, 1);
-                try { localStorage.setItem('kzick_favs', JSON.stringify(this.favorites)); } catch(e) {}
-                this.renderDrawer();
-            },
-            
-            checkIfSaved: function(name) {
-                const isSaved = this.favorites.some(f => f.name === name);
-                const btn = document.getElementById('save-loc-btn');
-                if(isSaved) btn.classList.add('text-yellow-400');
-                else btn.classList.remove('text-yellow-400');
-            },
-            
-            renderDrawer: function() {
-                const list = document.getElementById('saved-locations-list');
-                let html = '';
-                this.favorites.forEach((fav, i) => {
-                    const hotkey = i < 9 ? `⌘${i+1}` : '';
-                    html += `
-                        <div class="group flex justify-between items-center p-3 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 hover:border-white/20 cursor-pointer transition-all">
-                            <div class="flex-1 flex flex-col" onclick="Pipeline.loadLocation(${fav.lat}, ${fav.lon}, '${fav.name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
-                                <span class="text-white text-sm font-medium tracking-wide">${fav.name}</span>
-                                <span class="text-[9px] font-mono text-slate-500 mt-1 uppercase tracking-widest">LAT: ${fav.lat.toFixed(2)} LON: ${fav.lon.toFixed(2)}</span>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                ${hotkey ? `<span class="text-[10px] font-mono bg-black/50 text-slate-400 px-2 py-1 rounded border border-white/10 hidden sm:block">${hotkey}</span>` : ''}
-                                <button onclick="StateManager.removeFavorite(${i})" class="text-slate-600 hover:text-red-400 transition-colors px-2 py-1 opacity-0 group-hover:opacity-100">&times;</button>
-                            </div>
-                        </div>`;
-                });
-                list.innerHTML = html;
-            }
-        };
-
-        const UI = {
-            spotlightOverlay: document.getElementById('spotlight-overlay'),
-            spotlightInput: document.getElementById('spotlight-input'),
-            drawerEl: document.getElementById('locations-drawer'),
-            drawerOpen: false,
-            toggleSpotlight: function(forceState) {
-                const isActive = !this.spotlightOverlay.classList.contains('spotlight-hidden');
-                const nextState = forceState !== undefined ? forceState : !isActive;
-                if(nextState) {
-                    this.spotlightOverlay.classList.remove('spotlight-hidden');
-                    this.spotlightOverlay.classList.add('spotlight-active');
-                    setTimeout(() => this.spotlightInput.focus(), 50);
-                } else {
-                    this.spotlightOverlay.classList.remove('spotlight-active');
-                    this.spotlightOverlay.classList.add('spotlight-hidden');
-                    this.spotlightInput.value = ''; this.spotlightInput.blur();
-                }
-            },
-            toggleDrawer: function(forceState) {
-                this.drawerOpen = forceState !== undefined ? forceState : !this.drawerOpen;
-                if(this.drawerOpen) { this.drawerEl.classList.remove('drawer-closed'); this.drawerEl.classList.add('drawer-open'); } 
-                else { this.drawerEl.classList.remove('drawer-open'); this.drawerEl.classList.add('drawer-closed'); }
-            },
-            initKeyboardShortcuts: function() {
-                document.addEventListener('keydown', (e) => {
-                    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); this.toggleSpotlight(); }
-                    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') { e.preventDefault(); this.toggleDrawer(); }
-                    if ((e.metaKey || e.ctrlKey) && !isNaN(e.key) && e.key !== '0') {
-                        e.preventDefault();
-                        const target = StateManager.favorites[parseInt(e.key) - 1];
-                        if (target) Pipeline.loadLocation(target.lat, target.lon, target.name);
-                    }
-                    if (e.key === 'Escape') { this.toggleSpotlight(false); this.toggleDrawer(false); }
-                });
-                this.spotlightOverlay.addEventListener('click', (e) => { if(e.target === this.spotlightOverlay) this.toggleSpotlight(false); });
-            }
-        };
+        const WORKER_URL = "https://kzick-weather.askozicki.workers.dev/";
 
         const DOM = {
-            locName: document.getElementById('ui-location-name'),
-            locCoords: document.getElementById('ui-coords'),
-            
-            aqiRing: document.getElementById('ui-aqi-ring'),
-            aqiTop: document.getElementById('ui-aqi-top'),
-            aqiDescTop: document.getElementById('ui-aqi-desc-top'),
-            idxTree: document.getElementById('ui-idx-tree'),
-            idxGrass: document.getElementById('ui-idx-grass'),
-            idxWeed: document.getElementById('ui-idx-weed'),
-            
-            alerts: document.getElementById('alerts-container'),
-            forecast: document.getElementById('forecast-container'),
-            hourly: document.getElementById('hourly-container'),
-            
-            radarClip: document.getElementById('radar-clip-window'),
-            radarLoader: document.getElementById('radar-loader'),
-            radarTime: document.getElementById('radar-time'),
-            radarPlay: document.getElementById('radar-play'),
-            radarScrubber: document.getElementById('radar-scrubber'),
-            radarOpacity: document.getElementById('radar-opacity-slider'),
-            radarReset: document.getElementById('radar-reset'),
-            radarZoomIn: document.getElementById('radar-zoom-in'),
-            radarZoomOut: document.getElementById('radar-zoom-out'),
-            radarSpeedBtn: document.getElementById('radar-speed-btn'),
-            
-            doomRing: document.getElementById('ui-doom-ring'),
-            doomScore: document.getElementById('ui-doom-score'),
-            doomGood: document.getElementById('ui-doom-good'),
-            doomDesc: document.getElementById('ui-doom-desc')
+            status: document.getElementById('sys-status'),
+            temp: document.getElementById('ui-temp'),
+            desc: document.getElementById('ui-desc'),
+            feels: document.getElementById('ui-feels'),
+            wind: document.getElementById('ui-wind'),
+            hum: document.getElementById('ui-hum'),
+            precip: document.getElementById('ui-precip'),
+            source: document.getElementById('ui-source'),
+            key: document.getElementById('ui-key'),
+            time: document.getElementById('ui-time'),
+            jsonOut: document.getElementById('json-output')
         };
 
-        document.querySelectorAll('.app-tile').forEach(tile => {
-            tile.addEventListener('mousemove', e => {
-                const rect = tile.getBoundingClientRect();
-                tile.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
-                tile.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
-            });
-        });
-
-        let windAnimId;
-        function renderWindCanvas(speed, dir) {
-            const canvas = document.getElementById('ui-wind-canvas');
-            if(!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if(windAnimId) cancelAnimationFrame(windAnimId);
-            
-            const particles = Array.from({length: 40}, () => ({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, l: Math.random() * 15 + 5, s: (Math.random() * 0.5 + 0.2) * (speed / 3 + 1) }));
-            const blowingTo = (dir + 180) % 360;
-            const rad = (blowingTo - 90) * Math.PI / 180;
-            const dx = Math.cos(rad); const dy = Math.sin(rad);
-
-            function draw() {
-                ctx.fillStyle = 'rgba(0,0,0,0.2)'; 
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                particles.forEach(p => {
-                    p.x += dx * p.s; p.y += dy * p.s;
-                    if(p.x < 0) p.x = canvas.width; if(p.x > canvas.width) p.x = 0;
-                    if(p.y < 0) p.y = canvas.height; if(p.y > canvas.height) p.y = 0;
-                    ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - dx * p.l, p.y - dy * p.l);
-                });
-                ctx.stroke();
-                windAnimId = requestAnimationFrame(draw);
-            }
-            draw();
-        }
-
-        function renderHourlySpline(hourlyLine) {
-            if(!hourlyLine || !hourlyLine.intervals || hourlyLine.intervals.length < 12) return '';
-            const intervals = hourlyLine.intervals.slice(0, 24);
-            const width = 600, height = 80;
-            let pathD = `M 0,${height} `;
-            let tempD = `M 0,`;
-            
-            const temps = intervals.map(i => i.values.temperature || 0);
-            const minT = Math.min(...temps);
-            const maxT = Math.max(...temps);
-            const tRange = (maxT - minT) || 1;
-
-            intervals.forEach((interval, i) => {
-                const x = (i / (intervals.length - 1)) * width;
-                const precip = interval.values.precipitationProbability || 0;
-                const y = height - (precip / 100) * height;
-                pathD += `L ${x},${y} `;
-                
-                const ty = 70 - ((interval.values.temperature || 0) - minT) / tRange * 60;
-                tempD += i === 0 ? `${ty} ` : `L ${x},${ty} `;
-            });
-            pathD += `L ${width},${height} Z`;
-
-            return `
-            <div class="w-full bg-[#050505]/80 border border-white/5 rounded-2xl p-4 mb-4 shadow-inner relative overflow-hidden group">
-                <div class="flex justify-between font-mono text-[9px] text-slate-500 tracking-widest mb-4">
-                    <span>NOW</span>
-                    <span class="text-white/80">24-HOUR PRECIP & TEMP</span>
-                    <span>+24h</span>
-                </div>
-                <svg viewBox="0 0 ${width} ${height}" class="w-full h-16 overflow-visible" preserveAspectRatio="none">
-                    <defs>
-                        <linearGradient id="precipGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="rgba(59, 130, 246, 0.4)" />
-                            <stop offset="100%" stop-color="rgba(59, 130, 246, 0)" />
-                        </linearGradient>
-                    </defs>
-                    <path d="${pathD}" fill="url(#precipGrad)" stroke="rgba(59,130,246,0.8)" stroke-width="2"/>
-                    <path d="${tempD}" fill="none" stroke="rgba(245,158,11,0.8)" stroke-width="2" stroke-dasharray="4 4"/>
-                </svg>
-            </div>
-            `;
-        }
-
-        const PROXY_URL = "https://kzick-weather.askozicki.workers.dev";
-        const AppState = {
-            lat: StateManager.favorites[0]?.lat || 44.9483,
-            lon: StateManager.favorites[0]?.lon || -93.3666,
-            name: StateManager.favorites[0]?.name || "St. Louis Park, MN",
-            nwsGeoJSON: null,
-            radarInterval: null, masterIntervalId_5min: null,
-            radarSpeedIndex: 1, radarSpeeds: [2000, 1000, 500, 250], radarMaxFrames: 10, radarZoom: 8,
-            mapInstance: null, radarMasterOpacity: 0.85
+        const weatherCodes = {
+            1000: 'Clear', 1100: 'Mostly Clear', 1101: 'Partly Cloudy', 1102: 'Mostly Cloudy',
+            1001: 'Cloudy', 2000: 'Fog', 2100: 'Light Fog', 4000: 'Drizzle', 4001: 'Rain',
+            4200: 'Light Rain', 4201: 'Heavy Rain', 5000: 'Snow', 5001: 'Flurries',
+            5100: 'Light Snow', 5101: 'Heavy Snow', 6000: 'Freezing Drizzle',
+            6001: 'Freezing Rain', 6200: 'Light Freezing Rain', 6201: 'Heavy Freezing Rain',
+            7000: 'Ice Pellets', 7101: 'Heavy Ice Pellets', 7102: 'Light Ice Pellets', 8000: 'Thunderstorm'
         };
 
-        const CacheEngine = (function() {
-            return {
-                fetchWithCache: async function(endpointKey, url, ttlMs = 300000) { 
-                    const cached = sessionStorage.getItem(`kzick_weather_${endpointKey}`);
-                    if (cached) {
-                        const parsed = JSON.parse(cached);
-                        if (Date.now() - parsed.timestamp < ttlMs) return parsed.data; 
-                    }
-                    const res = await fetch(url);
-                    if (!res.ok) {
-                        const errData = await res.json().catch(() => ({}));
-                        throw new Error(errData.message || `HTTP ${res.status}`);
-                    }
-                    const data = await res.json();
-                    if (!data.error && !data.code && !data.message) {
-                        sessionStorage.setItem(`kzick_weather_${endpointKey}`, JSON.stringify({ timestamp: Date.now(), data: data }));
-                    }
-                    return data;
+        async function fetchData() {
+            DOM.status.textContent = "FETCHING...";
+            DOM.status.className = "font-mono text-[10px] px-3 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full tracking-widest animate-pulse";
+            
+            try {
+                const response = await fetch(WORKER_URL);
+                const data = await response.json();
+
+                // Dump Raw JSON to Inspector
+                DOM.jsonOut.textContent = JSON.stringify(data, null, 2);
+
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || `HTTP ${response.status}`);
                 }
-            }
-        })();
 
-        const getWeatherIcon = (code) => {
-            const c = parseInt(code);
-            if(isNaN(c)) return `<svg class="w-full h-full text-slate-500" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>`;
-            if(c === 1000) return `<svg class="w-full h-full text-white drop-shadow" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`;
-            if([1100, 1101, 1102].includes(c)) return `<svg class="w-full h-full text-slate-300 drop-shadow" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M16 5l.01-.01M19.07 7.93l.01-.01"></path></svg>`;
-            if([1001, 2000, 2100].includes(c)) return `<svg class="w-full h-full text-slate-400 drop-shadow" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>`;
-            if((c >= 4000 && c < 5000) || (c >= 6000 && c < 7000)) return `<svg class="w-full h-full text-blue-300 drop-shadow" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14.99A4 4 0 0015 11H9.5a5.5 5.5 0 00-5.5 5.5v.5h15v-2zM12 21v-4m-4 4v-4m8 4v-4"></path></svg>`;
-            if((c >= 5000 && c < 6000) || (c >= 7000 && c < 8000)) return `<svg class="w-full h-full text-white drop-shadow" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m0-18l-4 4m4-4l4 4m-4 14l-4-4m4 4l4-4M5.636 6.636l12.728 12.728m-12.728 0L18.364 6.636"></path></svg>`;
-            if(c >= 8000) return `<svg class="w-full h-full text-indigo-400 drop-shadow" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>`;
-            return `<svg class="w-full h-full text-slate-500" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>`;
-        };
-
-        const getTomorrowWeatherDesc = (code) => {
-            const map = {
-                1000: 'Clear', 1100: 'Mostly Clear', 1101: 'Partly Cloudy', 1102: 'Mostly Cloudy',
-                1001: 'Cloudy', 2000: 'Fog', 2100: 'Light Fog', 4000: 'Drizzle', 4001: 'Rain',
-                4200: 'Light Rain', 4201: 'Heavy Rain', 5000: 'Snow', 5001: 'Flurries',
-                5100: 'Light Snow', 5101: 'Heavy Snow', 6000: 'Freezing Drizzle',
-                6001: 'Freezing Rain', 6200: 'Light Freezing Rain', 6201: 'Heavy Freezing Rain',
-                7000: 'Ice Pellets', 7101: 'Heavy Ice Pellets', 7102: 'Light Ice Pellets', 8000: 'Thunderstorm'
-            };
-            return map[code] || 'Unknown';
-        };
-
-        const Pipeline = (function() {
-            
-            async function geocodeAndSync(query) {
-                UI.spotlightInput.disabled = true;
-                try {
-                    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`);
-                    const data = await res.json();
-                    if (data.results && data.results.length > 0) {
-                        const loc = data.results[0];
-                        AppState.lat = loc.latitude; AppState.lon = loc.longitude;
-                        AppState.name = `${loc.name}${loc.admin1 ? ', ' + loc.admin1 : ''}`;
-                        AppState.radarZoom = 8; 
-                        
-                        UI.toggleSpotlight(false);
-                        sessionStorage.clear();
-                        bootSystems();
-                    } else { alert("Geocoding failed. Try another city."); }
-                } catch(e) { console.error(e); alert("Network error during search."); } 
-                finally { UI.spotlightInput.disabled = false; UI.spotlightInput.value = ''; }
-            }
-
-            async function fetchMasterTelemetry() {
-                try {
-                    const secureUrl = `${PROXY_URL}?lat=${AppState.lat}&lon=${AppState.lon}`;
-                    const data = await CacheEngine.fetchWithCache('tomorrow_master', secureUrl, 300000); 
-                    
-                    let currentLine, hourlyLine, dailyLine;
-
-                    if (data.timelines && !Array.isArray(data.timelines)) {
-                        currentLine = { intervals: data.timelines.minutely?.length > 0 ? [data.timelines.minutely[0]] : (data.timelines.hourly?.length > 0 ? [data.timelines.hourly[0]] : []) };
-                        hourlyLine = { intervals: data.timelines.hourly || [] };
-                        dailyLine = { intervals: data.timelines.daily || [] };
-                    } else if (data.data && Array.isArray(data.data.timelines)) {
-                        const t = data.data.timelines;
-                        currentLine = t.find(x => x.timestep === 'current' || x.timestep === '1h') || t[0];
-                        hourlyLine = t.find(x => x.timestep === '1h');
-                        dailyLine = t.find(x => x.timestep === '1d');
-                    } else if (Array.isArray(data.timelines)) {
-                        const t = data.timelines;
-                        currentLine = t.find(x => x.timestep === 'current' || x.timestep === '1h') || t[0];
-                        hourlyLine = t.find(x => x.timestep === '1h');
-                        dailyLine = t.find(x => x.timestep === '1d');
-                    } else { throw new Error("Invalid API payload structure."); }
-
-                    if(!currentLine || !currentLine.intervals || !currentLine.intervals[0]) throw new Error("No payload intervals found.");
-
-                    const cur = currentLine.intervals[0].values;
-                    const dailyFirst = dailyLine?.intervals[0]?.values || {};
-
-                    let aqiVal = cur.epaPrimaryAQI !== undefined ? cur.epaPrimaryAQI : (cur.epaIndex !== undefined ? cur.epaIndex : 1);
-                    if(aqiVal <= 6 && aqiVal >= 1) { 
-                        const aqiMap = {1:25, 2:75, 3:125, 4:175, 5:250, 6:400};
-                        aqiVal = aqiMap[aqiVal] || 25;
-                    }
-                    
-                    let t = 'HAZARDOUS', tColor = 'text-red-500', bColor = 'border-red-500';
-                    if (aqiVal <= 50) { t = 'GOOD'; tColor = 'text-green-400'; bColor = 'border-green-400'; }
-                    else if (aqiVal <= 100) { t = 'MODERATE'; tColor = 'text-yellow-400'; bColor = 'border-yellow-400'; }
-                    else if (aqiVal <= 150) { t = 'SENSITIVE'; tColor = 'text-orange-400'; bColor = 'border-orange-400'; }
-                    else if (aqiVal <= 200) { t = 'UNHEALTHY'; tColor = 'text-red-400'; bColor = 'border-red-400'; }
-                    else if (aqiVal <= 300) { t = 'VERY UNHEALTHY'; tColor = 'text-purple-400'; bColor = 'border-purple-400'; }
-
-                    DOM.aqiTop.textContent = Math.round(aqiVal);
-                    DOM.aqiDescTop.textContent = t;
-                    DOM.aqiDescTop.className = `text-[10px] font-mono mt-3 uppercase tracking-wider text-center w-24 transition-colors duration-500 ${tColor}`;
-                    DOM.aqiRing.className = `w-16 h-16 rounded-full border-4 flex items-center justify-center transition-colors duration-500 shadow-lg ${bColor} ${aqiVal > 200 ? 'animate-pulse' : ''}`;
-                    
-                    DOM.idxTree.textContent = cur.treeIndex !== undefined ? cur.treeIndex : '--';
-                    DOM.idxGrass.textContent = cur.grassIndex !== undefined ? cur.grassIndex : '--';
-                    DOM.idxWeed.textContent = cur.weedIndex !== undefined ? cur.weedIndex : '--';
-
-                    document.getElementById('ui-current-temp').textContent = `${Math.round(cur.temperature || 0)}°`;
-                    document.getElementById('ui-current-desc').textContent = `> ${getTomorrowWeatherDesc(cur.weatherCode).toUpperCase()}`;
-                    document.getElementById('ui-current-icon').innerHTML = getWeatherIcon(cur.weatherCode); 
-                    document.getElementById('ui-hum').textContent = `${Math.round(cur.humidity || 0)}%`;
-                    document.getElementById('ui-dew').textContent = `${Math.round(cur.dewPoint || 0)}°`;
-                    document.getElementById('ui-uv').textContent = cur.uvIndex !== undefined ? cur.uvIndex : '--';
-                    
-                    const wSpeed = Math.round(cur.windSpeed || 0);
-                    const wGust = Math.round(cur.windGust || wSpeed);
-                    const wDir = cur.windDirection || 0;
-                    document.getElementById('ui-wind').textContent = `${wSpeed} mph`;
-                    document.getElementById('ui-wind-dir').textContent = `GUST ${wGust}`;
-                    renderWindCanvas(wSpeed, wDir);
-
-                    if(dailyFirst.sunriseTime && dailyFirst.sunsetTime) {
-                        const sr = new Date(dailyFirst.sunriseTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        const ss = new Date(dailyFirst.sunsetTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        document.getElementById('ui-sunrise').textContent = sr;
-                        document.getElementById('ui-sunset').textContent = ss;
-                    }
-
-                    const frostBadge = document.getElementById('ui-frost-badge');
-                    if ((cur.temperature || 0) <= 36 && Math.abs((cur.temperature || 0) - (cur.dewPoint || 0)) <= 3) { frostBadge.classList.remove('hidden'); } 
-                    else { frostBadge.classList.add('hidden'); }
-
-                    if(hourlyLine && hourlyLine.intervals) {
-                        document.getElementById('hourly-spline-container').innerHTML = renderHourlySpline(hourlyLine);
-                    }
-
-                    if (hourlyLine && hourlyLine.intervals) {
-                        let hourlyHTML = '';
-                        const hTicks = hourlyLine.intervals.slice(0, 24);
-                        hTicks.forEach((h, i) => {
-                            const rawTime = h.startTime || h.time;
-                            const date = rawTime ? new Date(rawTime) : new Date(Date.now() + (i * 3600000));
-                            let tStr = '--:--';
-                            if (!isNaN(date.getTime())) { tStr = date.toLocaleTimeString([], {hour: 'numeric'}); }
-                            
-                            const hVals = h.values;
-                            hourlyHTML += `
-                                <div class="flex flex-col items-center bg-white/5 border border-white/5 rounded-2xl p-4 min-w-[120px] text-center shadow-lg">
-                                    <span class="font-mono text-xs text-slate-400 mb-3">${tStr}</span>
-                                    <div class="w-10 h-10 mb-3">${getWeatherIcon(hVals.weatherCode)}</div>
-                                    <span class="font-mono text-2xl text-white font-medium">${Math.round(hVals.temperature || 0)}°</span>
-                                    <span class="font-mono text-[10px] text-slate-400 truncate w-full mt-2 tracking-widest uppercase" title="${getTomorrowWeatherDesc(hVals.weatherCode)}">${getTomorrowWeatherDesc(hVals.weatherCode)}</span>
-                                    <div class="mt-4 text-[10px] font-mono text-slate-500 w-full text-left space-y-1.5">
-                                        <div class="flex justify-between"><span>DP:</span><span class="text-white">${Math.round(hVals.dewPoint || 0)}°</span></div>
-                                        <div class="flex justify-between"><span>WND:</span><span class="text-white">${Math.round(hVals.windSpeed || 0)}</span></div>
-                                    </div>
-                                </div>
-                            `;
-                        });
-                        DOM.hourly.innerHTML = hourlyHTML;
-                    }
-
-                    if (dailyLine && dailyLine.intervals) {
-                        let forecastHTML = '';
-                        const dTicks = dailyLine.intervals.slice(0, 10);
-                        const globalMax = Math.max(...dTicks.map(d => d.values.temperatureMax || 0));
-                        const globalMin = Math.min(...dTicks.map(d => d.values.temperatureMin || 0));
-                        const tempRange = (globalMax - globalMin) || 1;
-
-                        dTicks.forEach((d, i) => {
-                            const rawTime = d.startTime || d.time;
-                            const date = rawTime ? new Date(rawTime) : new Date(Date.now() + (i * 86400000));
-                            let dayName = 'UNK';
-                            if (!isNaN(date.getTime())) { dayName = i === 0 ? 'TODAY' : date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase(); } 
-                            else { const fallbackDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']; dayName = fallbackDays[(new Date().getDay() + i) % 7]; }
-
-                            const v = d.values;
-                            const precip = v.precipitationProbability || 0;
-                            const wCodeDaily = v.weatherCodeMax || v.weatherCodeMin || v.weatherCode || 0;
-                            const hasFrost = ((v.temperatureMin || 0) <= 36 && Math.abs((v.temperatureMin || 0) - (v.dewPoint || 0)) <= 3);
-                            
-                            const dayMin = Math.round(v.temperatureMin || 0);
-                            const dayMax = Math.round(v.temperatureMax || 0);
-                            const leftOffset = Math.max(0, ((dayMin - globalMin) / tempRange) * 100);
-                            const barWidth = Math.max(5, ((dayMax - dayMin) / tempRange) * 100);
-                            
-                            forecastHTML += `
-                                <details class="group/day bg-white/5 border border-white/5 rounded-2xl p-4 w-full hover:border-white/20 hover:bg-white/10 transition-colors cursor-pointer shadow-lg">
-                                    <summary class="list-none marker:hidden outline-none flex items-center justify-between transition-colors">
-                                        <span class="font-mono text-sm tracking-widest text-slate-300 w-16">${dayName}</span>
-                                        <div class="w-8 h-8">${getWeatherIcon(wCodeDaily)}</div>
-                                        
-                                        <div class="flex items-center flex-1 max-w-[200px] mx-4">
-                                            <span class="w-8 text-right font-mono text-slate-400">${dayMin}°</span>
-                                            <div class="flex-1 h-1.5 bg-black/50 rounded-full mx-3 relative overflow-hidden shadow-inner border border-white/5">
-                                                <div class="absolute h-full rounded-full bg-gradient-to-r from-blue-400 via-yellow-400 to-orange-500 shadow-[0_0_8px_rgba(251,146,60,0.5)]" 
-                                                     style="left: ${leftOffset}%; width: ${barWidth}%;">
-                                                </div>
-                                            </div>
-                                            <span class="w-8 text-left font-mono text-white font-medium">${dayMax}°</span>
-                                        </div>
-                                        <span class="text-[10px] font-mono text-slate-500 group-open/day:rotate-180 transition-transform">▼</span>
-                                    </summary>
-                                    <div class="mt-4 pt-4 border-t border-white/5 grid grid-cols-2 gap-4 text-[10px] tracking-widest font-mono text-slate-400">
-                                        <div class="flex flex-col space-y-1"><span>PRECIP</span> <span class="${precip > 40 ? 'text-white font-bold' : 'text-slate-500'}">${precip}%</span></div>
-                                        <div class="flex flex-col space-y-1"><span>WIND MAX</span> <span class="${(v.windGustMax || 0) > 15 ? 'text-yellow-500' : 'text-slate-500'}">${Math.round(v.windGustMax||0)} mph</span></div>
-                                        <div class="flex flex-col space-y-1"><span>HUMIDITY AVG</span> <span class="text-slate-500">${Math.round(v.humidityAvg||0)}%</span></div>
-                                        <div class="flex flex-col space-y-1"><span>DEW POINT AVG</span> <span class="text-slate-500">${Math.round(v.dewPoint||0)}°</span></div>
-                                    </div>
-                                    ${hasFrost ? `<div class="text-[10px] tracking-widest font-mono w-full text-center bg-blue-900/30 text-blue-300 border border-blue-500/30 py-2 mt-4 rounded-lg">FROST RISK</div>` : ''}
-                                </details>`;
-                        });
-                        DOM.forecast.innerHTML = forecastHTML;
-                    }
-
-                    return { temp: cur.temperature || 0, windSpeed: cur.windSpeed || 0, aqi: aqiVal };
-                } catch(e) { 
-                    console.error("Master Sync Failure:", e);
-                    document.getElementById('ui-current-desc').textContent = `> ERROR: ${e.message.toUpperCase().substring(0, 45)}`;
-                    return { temp: 50, windSpeed: 0, aqi: 1 };
+                // Parse Data
+                let currentVals = {};
+                if (data.timelines && data.timelines.current && data.timelines.current[0]) {
+                    currentVals = data.timelines.current[0].values;
+                } else if (data.data && data.data.timelines) {
+                    const currentLine = data.data.timelines.find(t => t.timestep === 'current') || data.data.timelines[0];
+                    if (currentLine && currentLine.intervals) currentVals = currentLine.intervals[0].values;
+                } else if (Array.isArray(data.timelines)) {
+                    const currentLine = data.timelines.find(t => t.timestep === 'current') || data.timelines[0];
+                    if (currentLine && currentLine.intervals) currentVals = currentLine.intervals[0].values;
                 }
-            }
 
-            async function fetchNWSAlerts() {
-                try {
-                    const url = `https://api.weather.gov/alerts/active?point=${AppState.lat},${AppState.lon}`;
-                    const data = await CacheEngine.fetchWithCache('alerts', url, 300000);
-                    
-                    AppState.nwsGeoJSON = data; 
-                    
-                    if (AppState.mapInstance && AppState.mapInstance.isStyleLoaded() && AppState.mapInstance.getSource('nws-alerts')) {
-                        AppState.mapInstance.getSource('nws-alerts').setData(data);
-                    }
+                // Update UI
+                DOM.temp.textContent = `${Math.round(currentVals.temperature || 0)}°`;
+                DOM.desc.textContent = weatherCodes[currentVals.weatherCode] || 'Unknown';
+                DOM.feels.textContent = `Dew Point: ${Math.round(currentVals.dewPoint || 0)}°`;
+                DOM.wind.textContent = `${Math.round(currentVals.windSpeed || 0)} mph`;
+                DOM.hum.textContent = `${Math.round(currentVals.humidity || 0)}%`;
+                DOM.precip.textContent = `${currentVals.precipitationProbability || 0}%`;
 
-                    if (data.features && data.features.length > 0) {
-                        let html = '';
-                        data.features.forEach(f => {
-                            const isSevere = f.properties.severity === 'Severe' || f.properties.severity === 'Extreme';
-                            const bColor = isSevere ? 'border-red-500' : 'border-yellow-500';
-                            const tColor = isSevere ? 'text-red-400' : 'text-yellow-500';
-                            html += `
-                                <div class="border-l-4 ${bColor} pl-4 mb-4 bg-white/5 p-4 rounded-r-2xl border border-white/5 border-l-0">
-                                    <div class="font-medium text-sm ${tColor} tracking-wide uppercase">${f.properties.event}</div>
-                                    <div class="text-xs text-slate-400 font-mono mt-2 leading-relaxed tracking-wide">${f.properties.headline}</div>
-                                </div>`;
-                        });
-                        DOM.alerts.innerHTML = html;
+                // Update Meta
+                if (data._meta) {
+                    DOM.source.textContent = data._meta.source;
+                    DOM.key.textContent = data._meta.cache_key;
+                    DOM.time.textContent = new Date(data._meta.timestamp).toLocaleTimeString();
+                    
+                    if (data._meta.source === "KV_CACHE_SUCCESS") {
+                        DOM.status.textContent = "KV CACHE HIT";
+                        DOM.status.className = "font-mono text-[10px] px-3 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full tracking-widest";
                     } else {
-                        DOM.alerts.innerHTML = `<div class="flex items-center h-full opacity-50"><span class="font-mono text-xs text-white tracking-widest uppercase">> ALL CLEAR. NO HAZARDS DETECTED.</span></div>`;
+                        DOM.status.textContent = "API LIVE FETCH";
+                        DOM.status.className = "font-mono text-[10px] px-3 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded-full tracking-widest";
                     }
-                    return data.features || [];
-                } catch(e) {
-                    DOM.alerts.innerHTML = '<span class="font-mono text-xs text-red-500">> NWS COMMS FAILURE.</span>';
-                    return [];
                 }
+
+            } catch (error) {
+                DOM.status.textContent = "ERROR";
+                DOM.status.className = "font-mono text-[10px] px-3 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full tracking-widest";
+                DOM.jsonOut.textContent = `CRITICAL FAILURE:\n\n${error.message}\n\nCheck Worker Logs.`;
+                console.error(error);
             }
+        }
 
-            function updateDoomIndex(tStats, alerts) {
-                let score = 0;
-                if (tStats.aqi > 50) score += Math.min(((tStats.aqi - 50) / 150) * 30, 30);
-                if (tStats.windSpeed > 15) score += Math.min(((tStats.windSpeed - 15) / 25) * 20, 20);
-                
-                const temp = tStats.temp;
-                if (temp < 40) score += Math.min(((40 - temp) / 40) * 25, 25);
-                if (temp > 85) score += Math.min(((temp - 85) / 25) * 25, 25);
-                
-                if (alerts.length > 0) {
-                    const hasSevere = alerts.some(a => a.properties.severity === 'Severe' || a.properties.severity === 'Extreme');
-                    score += hasSevere ? 25 : 15;
-                }
-
-                score = Math.floor(score);
-                if (score === 0) {
-                    DOM.doomScore.classList.add('hidden'); DOM.doomGood.classList.remove('hidden'); DOM.doomDesc.textContent = "OPTIMAL";
-                } else {
-                    DOM.doomScore.classList.remove('hidden'); DOM.doomGood.classList.add('hidden'); DOM.doomScore.textContent = score; DOM.doomDesc.textContent = "THREAT LVL";
-                }
-
-                const offset = 263.89 - (score / 100) * 263.89;
-                DOM.doomRing.style.strokeDashoffset = offset;
-                DOM.doomRing.className = 'doom-circle stroke-current transition-all duration-500';
-                DOM.doomRing.style.filter = '';
-                
-                if (score <= 30) DOM.doomRing.classList.add('text-slate-400');
-                else if (score <= 60) DOM.doomRing.classList.add('text-yellow-500');
-                else if (score <= 80) DOM.doomRing.classList.add('text-orange-500', 'animate-pulse');
-                else {
-                    DOM.doomRing.classList.add('text-red-500', 'animate-heartbeat');
-                    DOM.doomRing.style.filter = 'drop-shadow(0 0 12px rgba(239,68,68,0.9))';
-                }
-            }
-
-            let currentRadarFrame = 0, isRadarPlaying = true;
-            const timeOffsets = [50, 45, 40, 35, 30, 25, 20, 15, 10, 5];
-
-            async function buildRadarEngine() {
-                DOM.radarLoader.style.opacity = '1';
-                if (AppState.radarInterval) clearInterval(AppState.radarInterval);
-
-                if (!AppState.mapInstance) {
-                    AppState.mapInstance = new maplibregl.Map({
-                        container: 'radar-clip-window',
-                        style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-                        center: [AppState.lon, AppState.lat],
-                        zoom: AppState.radarZoom,
-                        interactive: true,
-                        pitch: 45
-                    });
-
-                    AppState.mapInstance.on('load', () => {
-                        AppState.mapInstance.addSource('nws-alerts', { type: 'geojson', data: AppState.nwsGeoJSON || { type: 'FeatureCollection', features: [] } });
-                        AppState.mapInstance.addLayer({
-                            id: 'nws-alerts-fill', type: 'fill', source: 'nws-alerts',
-                            paint: { 'fill-color': '#ef4444', 'fill-opacity': 0.15 }
-                        });
-                        AppState.mapInstance.addLayer({
-                            id: 'nws-alerts-line', type: 'line', source: 'nws-alerts',
-                            paint: { 'line-color': '#ef4444', 'line-width': 2 }
-                        });
-
-                        timeOffsets.forEach((offset, idx) => {
-                            const mm = offset.toString().padStart(2, '0');
-                            AppState.mapInstance.addSource(`radar-${idx}`, {
-                                type: 'raster',
-                                tiles: [`https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913-m${mm}m/{z}/{x}/{y}.png`],
-                                tileSize: 256
-                            });
-                            AppState.mapInstance.addLayer({
-                                id: `radar-layer-${idx}`, type: 'raster', source: `radar-${idx}`,
-                                paint: { 'raster-opacity': idx === 0 ? AppState.radarMasterOpacity : 0, 'raster-resampling': 'linear', 'raster-fade-duration': 0 }
-                            }, 'nws-alerts-fill'); 
-                        });
-
-                        DOM.radarLoader.style.opacity = '0';
-                        setFrame(0); if(isRadarPlaying) play();
-                    });
-                } else {
-                    AppState.mapInstance.flyTo({ center: [AppState.lon, AppState.lat], zoom: AppState.radarZoom, pitch: 45, bearing: 0 });
-                    DOM.radarLoader.style.opacity = '0';
-                    if(isRadarPlaying) play();
-                }
-
-                const setFrame = (idx) => {
-                    if (!AppState.mapInstance || !AppState.mapInstance.isStyleLoaded()) return;
-                    currentRadarFrame = idx;
-                    timeOffsets.forEach((_, i) => {
-                        const op = (i === currentRadarFrame) ? AppState.radarMasterOpacity : 0;
-                        if (AppState.mapInstance.getLayer(`radar-layer-${i}`)) {
-                            AppState.mapInstance.setPaintProperty(`radar-layer-${i}`, 'raster-opacity', op);
-                        }
-                    });
-                    DOM.radarTime.textContent = `-${timeOffsets[idx]}m`;
-                    DOM.radarScrubber.value = currentRadarFrame;
-                };
-
-                const tick = () => { setFrame((currentRadarFrame + 1) % AppState.radarMaxFrames); };
-                const play = () => { isRadarPlaying = true; DOM.radarPlay.textContent = 'PAUSE'; clearInterval(AppState.radarInterval); AppState.radarInterval = setInterval(tick, AppState.radarSpeeds[AppState.radarSpeedIndex]); };
-                const pause = () => { isRadarPlaying = false; DOM.radarPlay.textContent = 'PLAY'; clearInterval(AppState.radarInterval); };
-
-                if (!DOM.radarPlay.hasAttribute('data-bound')) {
-                    DOM.radarPlay.onclick = () => isRadarPlaying ? pause() : play();
-                    DOM.radarSpeedBtn.onclick = () => { AppState.radarSpeedIndex = (AppState.radarSpeedIndex + 1) % 4; DOM.radarSpeedBtn.textContent = ['0.5x', '1x', '2x', '4x'][AppState.radarSpeedIndex]; if (isRadarPlaying) play(); };
-                    DOM.radarScrubber.addEventListener('input', (e) => { pause(); setFrame(parseInt(e.target.value)); });
-                    
-                    DOM.radarOpacity.addEventListener('input', (e) => { 
-                        AppState.radarMasterOpacity = parseFloat(e.target.value);
-                        if(AppState.mapInstance && AppState.mapInstance.isStyleLoaded() && AppState.mapInstance.getLayer(`radar-layer-${currentRadarFrame}`)) {
-                            AppState.mapInstance.setPaintProperty(`radar-layer-${currentRadarFrame}`, 'raster-opacity', AppState.radarMasterOpacity);
-                        }
-                    });
-                    
-                    DOM.radarReset.onclick = () => { AppState.radarZoom = 8; AppState.mapInstance.flyTo({ center: [AppState.lon, AppState.lat], zoom: AppState.radarZoom, pitch: 45, bearing: 0 }); };
-                    DOM.radarZoomIn.onclick = () => { AppState.mapInstance.zoomIn(); AppState.radarZoom = AppState.mapInstance.getZoom(); };
-                    DOM.radarZoomOut.onclick = () => { AppState.mapInstance.zoomOut(); AppState.radarZoom = AppState.mapInstance.getZoom(); };
-                    
-                    DOM.radarPlay.setAttribute('data-bound', 'true');
-                }
-            }
-
-            async function bootSystems() {
-                DOM.locName.textContent = AppState.name;
-                DOM.locCoords.textContent = `LAT: ${AppState.lat.toFixed(4)} | LON: ${AppState.lon.toFixed(4)}`;
-                StateManager.checkIfSaved(AppState.name);
-
-                document.getElementById('ui-current-temp').textContent = '--°';
-                document.getElementById('ui-current-desc').textContent = '> Fetching pipeline...';
-                DOM.hourly.innerHTML = '<span class="font-mono text-xs text-slate-500">> Awaiting pipeline...</span>';
-                DOM.forecast.innerHTML = '<div class="font-mono text-xs text-slate-500 animate-pulse">> Compiling meteorological payload...</div>';
-                document.getElementById('hourly-spline-container').innerHTML = '';
-
-                const [tStats, alerts] = await Promise.all([
-                    fetchMasterTelemetry(), fetchNWSAlerts(), buildRadarEngine()
-                ]);
-                
-                updateDoomIndex(tStats, alerts);
-
-                if(AppState.masterIntervalId_5min) clearInterval(AppState.masterIntervalId_5min);
-                AppState.masterIntervalId_5min = setInterval(async () => { 
-                    const [t, a] = await Promise.all([ fetchMasterTelemetry(), fetchNWSAlerts() ]); 
-                    updateDoomIndex(t, a);
-                }, 300000);
-            }
-
-            return {
-                init: () => {
-                    StateManager.renderDrawer();
-                    UI.initKeyboardShortcuts();
-
-                    document.getElementById('nav-drawer-btn').addEventListener('click', () => UI.toggleDrawer());
-                    document.getElementById('close-drawer-btn').addEventListener('click', () => UI.toggleDrawer(false));
-                    document.getElementById('trigger-search-btn').addEventListener('click', () => UI.toggleSpotlight(true));
-                    
-                    document.getElementById('save-loc-btn').addEventListener('click', () => {
-                        StateManager.saveFavorite({ name: AppState.name, lat: AppState.lat, lon: AppState.lon });
-                    });
-
-                    UI.spotlightInput.addEventListener('keypress', (e) => { 
-                        if(e.key === 'Enter') {
-                            const val = UI.spotlightInput.value.trim(); 
-                            if(val) geocodeAndSync(val); 
-                        }
-                    });
-
-                    bootSystems();
-                },
-                loadLocation: (lat, lon, name) => {
-                    AppState.lat = lat;
-                    AppState.lon = lon;
-                    AppState.name = name;
-                    UI.toggleDrawer(false);
-                    bootSystems();
-                }
-            }
-        })();
-
-        document.addEventListener('DOMContentLoaded', Pipeline.init);
+        // Boot
+        fetchData();
     </script>
 </body>
 </html>
