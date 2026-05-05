@@ -1,5 +1,5 @@
 /**
- * ATMOS V1.1 - Logic Controller (Phase 3)
+ * ATMOS V1.1 - Logic Controller (Phase 3 - Hardened)
  * Architecture: Vanilla JS Module Pattern
  */
 
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const STATE = {
     weatherCode: 1000,
     isThunderstorm: false,
-    radar: { layers: [], currentFrame: 0, intervalId: null, isPlaying: true, speed: 600 }
+    radar: { layers: [], timestamps: [], currentFrame: 0, intervalId: null, isPlaying: true, speed: 600 }
   };
 
   // --- 2. UTILITIES & ICONS ---
@@ -33,13 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const formatDay = (iso) => new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'America/Chicago' }).format(new Date(iso));
 
   const getIcon = (code) => {
-    // Map WeatherCodes to simple inline SVGs
     const icons = {
-      1000: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`, // Clear
-      1001: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>`, // Cloudy
-      1100: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18v2M8 18v2M16 18v2" stroke="#60A5FA"></path></svg>`, // Rain
-      1102: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" stroke="#FBBF24"></path></svg>`, // Thunderstorm
-      5000: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v18m-9-9h18m-11.36-6.36l12.72 12.72M4.64 17.36l12.72-12.72"></path></svg>`, // Snow
+      1000: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`,
+      1001: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>`,
+      1100: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18v2M8 18v2M16 18v2" stroke="#60A5FA"></path></svg>`,
+      1102: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" stroke="#FBBF24"></path></svg>`,
+      5000: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v18m-9-9h18m-11.36-6.36l12.72 12.72M4.64 17.36l12.72-12.72"></path></svg>`,
     };
     return icons[code] || icons[1001]; 
   };
@@ -68,7 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
         animation: 200,
         ghostClass: 'sortable-ghost',
         dragClass: 'sortable-drag',
-        delay: L.Browser.mobile ? 200 : 0, // Delay on mobile to allow normal scrolling
+        filter: 'button, details, summary, .leaflet-control, canvas, a', // Prevents trapping UI interaction
+        preventOnFilter: false,
+        delay: L.Browser.mobile ? 200 : 0, 
         delayOnTouchOnly: true,
         onEnd: StorageEngine.saveLayout
       });
@@ -98,6 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
         HydrationEngine.render(payload);
       } catch (err) {
         console.error("Fetch Error:", err);
+        if (!cache) {
+          document.getElementById('weather-desc').innerText = 'Data offline. Retrying...';
+        }
       }
     }
   };
@@ -107,9 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const ChartEngine = {
     render: (hourlyData) => {
       const ctx = document.getElementById('hourly-chart').getContext('2d');
-      if (currentChart) currentChart.destroy(); // Prevent memory leaks on update
+      if (currentChart) currentChart.destroy(); 
 
-      // Extract next 24 hours
       const next24 = hourlyData.slice(0, 24);
       const labels = next24.map(h => formatTime(h.startTime));
       const temps = next24.map(h => Math.round(h.values.temperature));
@@ -122,40 +125,21 @@ document.addEventListener('DOMContentLoaded', () => {
           labels: labels,
           datasets: [
             {
-              label: 'Temperature (°F)',
-              data: temps,
-              borderColor: '#60A5FA', // Tailwind blue-400
-              backgroundColor: '#60A5FA',
-              tension: 0.4,
-              yAxisID: 'y',
-              borderWidth: 2,
-              pointRadius: 0
+              label: 'Temperature (°F)', data: temps, borderColor: '#60A5FA', backgroundColor: '#60A5FA',
+              tension: 0.4, yAxisID: 'y', borderWidth: 2, pointRadius: 0
             },
             {
-              label: 'Dew Point',
-              data: dews,
-              borderColor: '#94A3B8', // Tailwind slate-400
-              borderDash: [5, 5],
-              tension: 0.4,
-              yAxisID: 'y',
-              borderWidth: 2,
-              pointRadius: 0
+              label: 'Dew Point', data: dews, borderColor: '#94A3B8', borderDash: [5, 5],
+              tension: 0.4, yAxisID: 'y', borderWidth: 2, pointRadius: 0
             },
             {
-              type: 'bar',
-              label: 'Precip Chance (%)',
-              data: precip,
-              backgroundColor: 'rgba(56, 189, 248, 0.2)', // Sky-400 translucent
-              yAxisID: 'y1',
-              barPercentage: 1.0,
-              categoryPercentage: 1.0
+              type: 'bar', label: 'Precip Chance (%)', data: precip, backgroundColor: 'rgba(56, 189, 248, 0.2)',
+              yAxisID: 'y1', barPercentage: 1.0, categoryPercentage: 1.0
             }
           ]
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: { mode: 'index', intersect: false },
+          responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
           plugins: { legend: { display: false } },
           scales: {
             x: { grid: { display: false }, ticks: { color: '#94A3B8', maxTicksLimit: 8 } },
@@ -179,26 +163,25 @@ document.addEventListener('DOMContentLoaded', () => {
       L.circleMarker([CONFIG.lat, CONFIG.lon], { color: '#38bdf8', radius: 6, weight: 2, fillOpacity: 0.5 }).addTo(map);
 
       try {
-        // Fetch valid timestamps from RainViewer
         const res = await fetch(CONFIG.endpoints.rainviewer);
         const meta = await res.json();
-        const timestamps = meta.radar.past; // Array of UNIX timestamps
+        const timestamps = meta.radar.past; 
 
-        // Preload Tile Layers
+        STATE.radar.timestamps = timestamps;
         STATE.radar.layers = timestamps.map(ts => {
           return L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/${ts}/256/{z}/{x}/{y}/2/1_1.png`, {
             opacity: 0, transparent: true, zIndex: 400
           }).addTo(map);
         });
 
-        RadarEngine.startLoop(timestamps);
+        RadarEngine.startLoop();
         RadarEngine.bindControls();
 
       } catch (e) {
         console.error("Radar Init Failed", e);
       }
     },
-    startLoop: (timestamps) => {
+    startLoop: () => {
       const timeLabel = document.getElementById('radar-time-label');
       
       const tick = () => {
@@ -206,8 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
         STATE.radar.currentFrame = (STATE.radar.currentFrame + 1) % STATE.radar.layers.length;
         STATE.radar.layers[STATE.radar.currentFrame].setOpacity(0.7);
         
-        // Update UI Time Label
-        const date = new Date(timestamps[STATE.radar.currentFrame] * 1000);
+        const date = new Date(STATE.radar.timestamps[STATE.radar.currentFrame] * 1000);
         timeLabel.innerText = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(date);
       };
 
@@ -222,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
         STATE.radar.isPlaying = !STATE.radar.isPlaying;
         if (STATE.radar.isPlaying) {
           playBtn.innerHTML = `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg><span class="text-xs font-bold tracking-widest uppercase">Pause</span>`;
-          RadarEngine.startLoop(STATE.radar.layers.map(() => 0)); // Re-start loop
+          RadarEngine.startLoop(); 
         } else {
           playBtn.innerHTML = `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg><span class="text-xs font-bold tracking-widest uppercase">Play</span>`;
           clearInterval(STATE.radar.intervalId);
@@ -232,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
       speedBtn.addEventListener('click', () => {
         STATE.radar.speed = STATE.radar.speed === 600 ? 300 : 600;
         speedBtn.innerText = STATE.radar.speed === 600 ? '1x Speed' : '2x Speed';
-        if(STATE.radar.isPlaying) RadarEngine.startLoop(STATE.radar.layers.map(() => 0));
+        if(STATE.radar.isPlaying) RadarEngine.startLoop();
       });
     }
   };
@@ -249,11 +231,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (!current || !daily) return;
 
-      // Global State Updates
       STATE.weatherCode = current.weatherCode;
       STATE.isThunderstorm = current.weatherCode >= 1101 && current.precipitationIntensity > 0.1;
 
-      // Hydrate Hero
       const dom = (id) => document.getElementById(id);
       dom('weather-desc').innerText = mapDesc(current.weatherCode);
       dom('hero-icon').innerHTML = getIcon(current.weatherCode);
@@ -262,13 +242,11 @@ document.addEventListener('DOMContentLoaded', () => {
       dom('temp-low').innerHTML = `L: ${safeVal(daily[0].values.temperatureMin)}&deg;`;
       dom('current-feels').innerText = safeVal(current.temperatureApparent);
       
-      // Hydrate Hero Details
       dom('current-wind').innerText = `${safeVal(current.windSpeed)} mph`;
       dom('current-humidity').innerText = `${safeVal(current.humidity)}%`;
       dom('current-dew').innerHTML = `${safeVal(current.dewPoint)}&deg;`;
       dom('current-pressure').innerText = current.pressureSurfaceLevel ? `${current.pressureSurfaceLevel} inHg` : '--';
 
-      // Hydrate Alerts
       const alertMod = dom('module-alerts');
       if (data.alerts && data.alerts.length > 0) {
         alertMod.classList.remove('hidden');
@@ -278,10 +256,8 @@ document.addEventListener('DOMContentLoaded', () => {
         alertMod.classList.add('hidden');
       }
 
-      // Hydrate Chart
       if (hourly) ChartEngine.render(hourly);
 
-      // Hydrate Extended Forecast
       if (daily) {
         dom('extended-container').innerHTML = daily.slice(1, 8).map(day => {
           const v = day.values;
@@ -314,9 +290,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const resize = () => { cw = canvas.width = window.innerWidth; ch = canvas.height = window.innerHeight; };
       window.addEventListener('resize', resize);
-      resize();
+      resize(); // Init variables immediately
 
-      for (let i = 0; i < 300; i++) particles.push({ x: Math.random() * 2000, y: Math.random() * 2000, l: Math.random() * 25 + 10, s: Math.random() * 20 + 15 });
+      for (let i = 0; i < 300; i++) particles.push({ x: Math.random() * cw, y: Math.random() * ch, l: Math.random() * 25 + 10, s: Math.random() * 20 + 15 });
 
       const animate = () => {
         ctx.clearRect(0, 0, cw, ch);
@@ -344,6 +320,6 @@ document.addEventListener('DOMContentLoaded', () => {
   RadarEngine.init();
   NetworkEngine.fetch();
 
-  setInterval(NetworkEngine.fetch, 300000); // 5-minute auto-refresh
+  setInterval(NetworkEngine.fetch, 300000); 
 
 });
