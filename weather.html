@@ -1,198 +1,359 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dev Weather v1.0</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = { 
-            darkMode: 'class',
-            theme: {
-                extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } }
-            }
-        }
-    </script>
-    <style>
-        body { 
-            background-color: #000000; 
-            background-image: radial-gradient(at 0% 0%, rgba(20, 20, 20, 1) 0, transparent 50%), radial-gradient(at 100% 0%, rgba(10, 10, 10, 1) 0, transparent 50%);
-            background-attachment: fixed; 
-            color: #f1f5f9;
-        }
-        .glass-tile {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            border-radius: 1.5rem;
-        }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>St. Louis Park Weather</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    body { 
+      margin: 0; 
+      background-color: #0f172a; 
+      color: #f8fafc; 
+      font-family: system-ui, -apple-system, sans-serif; 
+      overflow-x: hidden;
+    }
+    
+    /* 3D/Micro View Canvas Background */
+    #weather-canvas { 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 100vw; 
+      height: 100vh; 
+      z-index: -1; 
+      pointer-events: none; 
+    }
+    
+    /* Glassmorphism UI */
+    .glass-panel {
+      background: rgba(30, 41, 59, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Radar Map Container */
+    #radar-map { 
+      min-height: 350px; 
+      width: 100%; 
+      border-radius: 1rem; 
+      background: #1e293b; 
+      z-index: 1;
+    }
+    
+    /* Hide Leaflet Attribution for cleaner UI */
+    .leaflet-control-attribution { display: none !important; } 
+    .leaflet-control-zoom { border: none !important; }
+    .leaflet-control-zoom a { background: rgba(30, 41, 59, 0.8) !important; color: #fff !important; border-color: rgba(255,255,255,0.1) !important;}
+
+    /* Scrollbar hiding for horizontal hourly ribbon */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
 </head>
-<body class="min-h-screen p-4 md:p-8 font-sans flex flex-col items-center">
+<body class="p-4 md:p-6 min-h-screen flex flex-col items-center">
 
-    <div class="w-full max-w-4xl flex justify-between items-end mb-8 border-b border-white/10 pb-4">
+  <canvas id="weather-canvas"></canvas>
+
+  <main class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10">
+    
+    <details id="alerts-container" class="col-span-1 lg:col-span-3 glass-panel hidden group cursor-pointer transition-all">
+      <summary class="p-4 font-bold text-red-400 list-none flex justify-between items-center outline-none">
+        <span id="alert-title" class="flex items-center gap-3">
+          <svg class="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          LOADING ALERTS...
+        </span>
+        <span class="text-sm text-gray-400 group-open:rotate-180 transition-transform">▼</span>
+      </summary>
+      <div class="p-4 pt-0 text-sm text-gray-300 border-t border-red-500/30 mt-2 leading-relaxed whitespace-pre-wrap break-words" id="alert-description">
+        </div>
+    </details>
+
+    <section class="glass-panel p-6 flex flex-col justify-between col-span-1 h-full">
+      <header>
+        <h1 class="text-xs font-bold text-gray-400 tracking-widest uppercase">St. Louis Park, MN</h1>
+        <p id="weather-desc" class="text-xl font-medium text-blue-200 mt-1 capitalize">Initializing...</p>
+      </header>
+      <div class="mt-8 mb-8">
+        <div class="text-8xl font-bold tracking-tighter" id="current-temp">--&deg;</div>
+        <p class="text-gray-400 mt-2 text-lg">Feels like <span id="current-feels" class="text-gray-200">--</span>&deg;</p>
+      </div>
+      <div class="grid grid-cols-2 gap-4 pt-6 border-t border-gray-600/50">
         <div>
-            <h1 class="text-2xl font-semibold tracking-tight">Dev Weather</h1>
-            <p class="font-mono text-xs text-slate-500 mt-1">v1.0 • Diagnostic Build</p>
+          <p class="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Wind</p>
+          <p class="font-semibold text-lg flex items-center gap-2" id="current-wind">-- mph</p>
         </div>
-        <div id="sys-status" class="font-mono text-[10px] px-3 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full tracking-widest animate-pulse">
-            CONNECTING...
+        <div>
+          <p class="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Humidity</p>
+          <p class="font-semibold text-lg" id="current-humidity">--%</p>
         </div>
-    </div>
-
-    <div class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        <div class="glass-tile p-6 flex flex-col justify-center">
-            <span class="font-mono text-xs text-slate-400 tracking-widest uppercase mb-2">Location 55426</span>
-            <div class="flex items-center gap-4">
-                <span id="ui-temp" class="text-6xl font-light tracking-tighter">--°</span>
-                <div class="flex flex-col">
-                    <span id="ui-desc" class="text-lg font-medium text-white">Awaiting Data</span>
-                    <span id="ui-feels" class="font-mono text-xs text-slate-500">Dew Point: --°</span>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-3 gap-4 mt-8 border-t border-white/5 pt-4">
-                <div class="flex flex-col">
-                    <span class="font-mono text-[9px] text-slate-500 tracking-widest">WIND</span>
-                    <span id="ui-wind" class="font-mono text-sm text-white mt-1">-- mph</span>
-                </div>
-                <div class="flex flex-col">
-                    <span class="font-mono text-[9px] text-slate-500 tracking-widest">HUMIDITY</span>
-                    <span id="ui-hum" class="font-mono text-sm text-white mt-1">--%</span>
-                </div>
-                <div class="flex flex-col">
-                    <span class="font-mono text-[9px] text-slate-500 tracking-widest">PRECIP PROB</span>
-                    <span id="ui-precip" class="font-mono text-sm text-white mt-1">--%</span>
-                </div>
-            </div>
+        <div>
+          <p class="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Dew Point</p>
+          <p class="font-semibold text-lg" id="current-dew">--&deg;</p>
         </div>
-
-        <div class="glass-tile p-6 flex flex-col justify-between">
-            <div>
-                <span class="font-mono text-xs text-slate-400 tracking-widest uppercase">Edge Cache Metrics</span>
-                <div class="mt-4 space-y-3 font-mono text-sm">
-                    <div class="flex justify-between border-b border-white/5 pb-2">
-                        <span class="text-slate-500">Data Source:</span>
-                        <span id="ui-source" class="text-white">--</span>
-                    </div>
-                    <div class="flex justify-between border-b border-white/5 pb-2">
-                        <span class="text-slate-500">Cache Key:</span>
-                        <span id="ui-key" class="text-white">--</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-slate-500">Timestamp:</span>
-                        <span id="ui-time" class="text-white">--</span>
-                    </div>
-                </div>
-            </div>
-            <button onclick="fetchData()" class="mt-6 w-full bg-white/10 hover:bg-white/20 text-white font-mono text-xs py-3 rounded-lg border border-white/10 transition-colors">
-                FORCE REFRESH
-            </button>
+        <div>
+          <p class="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Pressure</p>
+          <p class="font-semibold text-lg" id="current-pressure">-- inHg</p>
         </div>
+      </div>
+    </section>
 
-        <div class="glass-tile p-0 md:col-span-2 overflow-hidden flex flex-col h-96">
-            <div class="bg-black/40 px-6 py-3 border-b border-white/10 flex justify-between items-center">
-                <span class="font-mono text-xs text-slate-400 tracking-widest">RAW JSON PAYLOAD</span>
-            </div>
-            <div class="p-6 overflow-y-auto custom-scrollbar flex-1">
-                <pre id="json-output" class="font-mono text-[10px] text-slate-300 leading-relaxed break-words whitespace-pre-wrap">Awaiting Worker connection...</pre>
-            </div>
+    <section class="glass-panel col-span-1 lg:col-span-2 relative overflow-hidden flex flex-col p-1">
+      <div class="absolute top-4 left-4 z-[1000] pointer-events-none bg-slate-900/80 backdrop-blur px-3 py-1 rounded-full border border-slate-700">
+        <h2 class="font-bold text-[10px] tracking-widest text-gray-300 uppercase flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+          Live Radar Loop
+        </h2>
+      </div>
+      <div id="radar-map" class="flex-grow rounded-[14px]"></div>
+    </section>
+
+    <section class="glass-panel p-6 col-span-1 lg:col-span-3">
+      <h2 class="text-xs font-bold tracking-widest text-gray-400 mb-6 uppercase">Next 24 Hours</h2>
+      <div id="hourly-container" class="flex gap-4 overflow-x-auto no-scrollbar pb-2">
         </div>
+    </section>
 
-    </div>
+  </main>
 
-    <script>
-        const WORKER_URL = "https://kzick-weather.askozicki.workers.dev/";
+  <script>
+    // --- 1. CONFIGURATION ---
+    const CONFIG = {
+      lat: 44.9483,
+      lon: -93.3666,
+      endpoints: {
+        telemetry: 'https://kzick-weather.askozicki.workers.dev/',
+        alerts: `https://api.weather.gov/alerts/active?point=44.9483,-93.3666`
+      }
+    };
 
-        const DOM = {
-            status: document.getElementById('sys-status'),
-            temp: document.getElementById('ui-temp'),
-            desc: document.getElementById('ui-desc'),
-            feels: document.getElementById('ui-feels'),
-            wind: document.getElementById('ui-wind'),
-            hum: document.getElementById('ui-hum'),
-            precip: document.getElementById('ui-precip'),
-            source: document.getElementById('ui-source'),
-            key: document.getElementById('ui-key'),
-            time: document.getElementById('ui-time'),
-            jsonOut: document.getElementById('json-output')
-        };
+    // Shared state to drive the canvas background
+    const appState = {
+      weatherCode: 1000,
+      isThunderstorm: false
+    };
 
-        const weatherCodes = {
-            1000: 'Clear', 1100: 'Mostly Clear', 1101: 'Partly Cloudy', 1102: 'Mostly Cloudy',
-            1001: 'Cloudy', 2000: 'Fog', 2100: 'Light Fog', 4000: 'Drizzle', 4001: 'Rain',
-            4200: 'Light Rain', 4201: 'Heavy Rain', 5000: 'Snow', 5001: 'Flurries',
-            5100: 'Light Snow', 5101: 'Heavy Snow', 6000: 'Freezing Drizzle',
-            6001: 'Freezing Rain', 6200: 'Light Freezing Rain', 6201: 'Heavy Freezing Rain',
-            7000: 'Ice Pellets', 7101: 'Heavy Ice Pellets', 7102: 'Light Ice Pellets', 8000: 'Thunderstorm'
-        };
+    // --- 2. HTML5 CANVAS ENGINE (Micro View) ---
+    const canvas = document.getElementById('weather-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let cw, ch;
 
-        async function fetchData() {
-            DOM.status.textContent = "FETCHING...";
-            DOM.status.className = "font-mono text-[10px] px-3 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full tracking-widest animate-pulse";
-            
-            try {
-                const response = await fetch(WORKER_URL);
-                const data = await response.json();
+    function resizeCanvas() {
+      cw = canvas.width = window.innerWidth;
+      ch = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
-                // Dump Raw JSON to Inspector
-                DOM.jsonOut.textContent = JSON.stringify(data, null, 2);
+    // Populate rain particles
+    for (let i = 0; i < 400; i++) {
+      particles.push({
+        x: Math.random() * cw,
+        y: Math.random() * ch,
+        l: Math.random() * 25 + 10, // length
+        s: Math.random() * 20 + 15  // speed
+      });
+    }
 
-                if (!response.ok || data.error) {
-                    throw new Error(data.error || `HTTP ${response.status}`);
-                }
+    function animateBackground() {
+      ctx.clearRect(0, 0, cw, ch);
 
-                // Parse Data
-                let currentVals = {};
-                if (data.timelines && data.timelines.current && data.timelines.current[0]) {
-                    currentVals = data.timelines.current[0].values;
-                } else if (data.data && data.data.timelines) {
-                    const currentLine = data.data.timelines.find(t => t.timestep === 'current') || data.data.timelines[0];
-                    if (currentLine && currentLine.intervals) currentVals = currentLine.intervals[0].values;
-                } else if (Array.isArray(data.timelines)) {
-                    const currentLine = data.timelines.find(t => t.timestep === 'current') || data.timelines[0];
-                    if (currentLine && currentLine.intervals) currentVals = currentLine.intervals[0].values;
-                }
-
-                // Update UI
-                DOM.temp.textContent = `${Math.round(currentVals.temperature || 0)}°`;
-                DOM.desc.textContent = weatherCodes[currentVals.weatherCode] || 'Unknown';
-                DOM.feels.textContent = `Dew Point: ${Math.round(currentVals.dewPoint || 0)}°`;
-                DOM.wind.textContent = `${Math.round(currentVals.windSpeed || 0)} mph`;
-                DOM.hum.textContent = `${Math.round(currentVals.humidity || 0)}%`;
-                DOM.precip.textContent = `${currentVals.precipitationProbability || 0}%`;
-
-                // Update Meta
-                if (data._meta) {
-                    DOM.source.textContent = data._meta.source;
-                    DOM.key.textContent = data._meta.cache_key;
-                    DOM.time.textContent = new Date(data._meta.timestamp).toLocaleTimeString();
-                    
-                    if (data._meta.source === "KV_CACHE_SUCCESS") {
-                        DOM.status.textContent = "KV CACHE HIT";
-                        DOM.status.className = "font-mono text-[10px] px-3 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full tracking-widest";
-                    } else {
-                        DOM.status.textContent = "API LIVE FETCH";
-                        DOM.status.className = "font-mono text-[10px] px-3 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded-full tracking-widest";
-                    }
-                }
-
-            } catch (error) {
-                DOM.status.textContent = "ERROR";
-                DOM.status.className = "font-mono text-[10px] px-3 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full tracking-widest";
-                DOM.jsonOut.textContent = `CRITICAL FAILURE:\n\n${error.message}\n\nCheck Worker Logs.`;
-                console.error(error);
-            }
+      // Rain Condition (Codes 1100, 1101, 1102, etc.)
+      if (appState.weatherCode >= 1100 && appState.weatherCode <= 1102) {
+        ctx.strokeStyle = 'rgba(147, 197, 253, 0.3)'; // Tailwind blue-300
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let p of particles) {
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p.x, p.y + p.l);
+          p.y += p.s;
+          if (p.y > ch) p.y = -p.l; // Loop to top
         }
+        ctx.stroke();
+      }
 
-        // Boot
-        fetchData();
-    </script>
+      // Lightning Condition
+      if (appState.isThunderstorm && Math.random() > 0.985) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fillRect(0, 0, cw, ch);
+      }
+
+      requestAnimationFrame(animateBackground);
+    }
+    animateBackground();
+
+    // --- 3. LEAFLET RADAR ENGINE ---
+    function initializeRadar() {
+      const map = L.map('radar-map', {
+        center: [CONFIG.lat, CONFIG.lon],
+        zoom: 7,
+        zoomControl: true,
+        scrollWheelZoom: false,
+        dragging: !L.Browser.mobile,
+        tap: !L.Browser.mobile
+      });
+
+      // CartoDB Dark Matter Basemap
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19
+      }).addTo(map);
+
+      // Location Marker
+      L.circleMarker([CONFIG.lat, CONFIG.lon], { 
+        color: '#38bdf8', // Tailwind sky-400
+        radius: 6, 
+        weight: 2, 
+        fillOpacity: 0.5 
+      }).addTo(map);
+
+      // Iowa Environmental Mesonet (IEM) NEXRAD Tiles (Last 50 minutes in 5-min increments)
+      const offsets = ['50', '45', '40', '35', '30', '25', '20', '15', '10', '05'];
+      const radarLayers = offsets.map(offset => {
+        return L.tileLayer(`https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913-m${offset}m/{z}/{x}/{y}.png`, {
+          opacity: 0,
+          transparent: true,
+          format: 'image/png'
+        }).addTo(map);
+      });
+
+      // Animate Radar Loop
+      let currentFrame = 0;
+      setInterval(() => {
+        radarLayers[currentFrame].setOpacity(0);
+        currentFrame = (currentFrame + 1) % radarLayers.length;
+        radarLayers[currentFrame].setOpacity(0.65);
+      }, 600); // 600ms per frame
+    }
+
+    // --- 4. DATA FETCHING & HYDRATION ---
+    const dom = (id) => document.getElementById(id);
+    const formatTime = (iso) => new Intl.DateTimeFormat('en-US', { hour: 'numeric', timeZone: 'America/Chicago' }).format(new Date(iso));
+    
+    // Very basic weather code to text mapper
+    const mapWeatherCode = (code) => {
+      const codes = { 1000: 'Clear', 1001: 'Cloudy', 1100: 'Light Rain', 1101: 'Rain', 1102: 'Heavy Rain', 2000: 'Fog', 2100: 'Light Fog', 4000: 'Drizzle', 5000: 'Snow' };
+      return codes[code] || 'Active Conditions';
+    };
+
+    async function fetchAndRenderData() {
+      // Stale-While-Revalidate: Check cache first
+      const cache = localStorage.getItem('weatherData_slp');
+      if (cache) renderUI(JSON.parse(cache));
+
+      try {
+        // Catch network failures inline for the secondary API so it doesn't break Promise.all
+        const [cfRes, nwsRes] = await Promise.all([
+          fetch(CONFIG.endpoints.telemetry),
+          fetch(CONFIG.endpoints.alerts).catch(() => ({ ok: false })) 
+        ]);
+        
+        // Only throw if the CORE telemetry fails
+        if (!cfRes.ok) throw new Error('Core Telemetry API Error');
+        
+        const cfData = await cfRes.json();
+        
+        // Gracefully handle alerts failure
+        let nwsData = { features: [] };
+        if (nwsRes.ok) {
+          try { nwsData = await nwsRes.json(); } catch(e) {} 
+        }
+        
+        const payload = { telemetry: cfData.data, alerts: nwsData.features || [] };
+        
+        // Update cache and DOM
+        localStorage.setItem('weatherData_slp', JSON.stringify(payload));
+        renderUI(payload);
+      } catch (error) {
+        console.error("Network fetch failed, relying on cache.", error);
+        if (!cache) {
+          dom('weather-desc').innerHTML = 'Data unavailable. Retrying...';
+          dom('alerts-container').classList.add('hidden');
+        }
+      }
+    }
+
+    function renderUI(data) {
+      if (!data || !data.telemetry) {
+        dom('weather-desc').innerHTML = 'Data error. Retrying...';
+        return;
+      }
+
+      // Extract timelines based on your JSON structure
+      const timelines = data.telemetry.timelines;
+      const current = timelines.find(t => t.timestep === 'current')?.intervals[0]?.values;
+      const hourly = timelines.find(t => t.timestep === '1h')?.intervals;
+
+      if (!current) return;
+
+      // Update Engine State
+      appState.weatherCode = current.weatherCode;
+      appState.isThunderstorm = current.weatherCode >= 1101 && current.precipitationIntensity > 0.1;
+
+      const safeVal = (val) => val != null ? Math.round(val) : '--';
+      
+      // Hydrate Current Conditions
+      dom('current-temp').innerHTML = `${safeVal(current.temperature)}&deg;`;
+      dom('current-feels').innerHTML = safeVal(current.temperatureApparent);
+      dom('current-wind').innerHTML = `${safeVal(current.windSpeed)} mph`;
+      dom('current-humidity').innerHTML = `${safeVal(current.humidity)}%`;
+      dom('current-dew').innerHTML = `${safeVal(current.dewPoint)}&deg;`;
+      dom('current-pressure').innerHTML = current.pressureSurfaceLevel != null ? `${current.pressureSurfaceLevel} inHg` : '-- inHg';
+      dom('weather-desc').innerHTML = mapWeatherCode(current.weatherCode);
+
+      // Hydrate Alerts
+      const alertsContainer = dom('alerts-container');
+      if (data.alerts && data.alerts.length > 0) {
+        alertsContainer.classList.remove('hidden');
+        dom('alert-title').innerHTML = `
+          <svg class="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          ACTIVE ALERTS (${data.alerts.length})
+        `;
+        dom('alert-description').innerHTML = data.alerts.map(a => 
+          `<div class="mb-4 last:mb-0">
+            <strong class="text-white block mb-1">${a.properties.event}</strong>
+            ${a.properties.description || a.properties.headline}
+           </div>`
+        ).join('');
+      } else {
+        alertsContainer.classList.add('hidden');
+      }
+
+      // Hydrate Hourly Forecast
+      if (Array.isArray(hourly)) {
+        dom('hourly-container').innerHTML = hourly.slice(0, 24).map(hour => {
+          const v = hour.values;
+          const isPrecip = v.precipitationProbability > 20;
+          return `
+            <div class="flex flex-col items-center justify-between min-w-[70px] bg-slate-800/40 rounded-xl p-3 border border-slate-700/50">
+              <span class="text-xs text-gray-400 font-medium mb-2 whitespace-nowrap">${formatTime(hour.startTime)}</span>
+              <div class="w-10 h-10 rounded-full bg-slate-900/50 flex items-center justify-center mb-2 shadow-inner">
+                <span class="text-lg">${isPrecip ? '💧' : '☁️'}</span>
+              </div>
+              <span class="font-bold text-gray-100 text-lg">${Math.round(v.temperature)}&deg;</span>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // --- 5. INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeRadar();
+      fetchAndRenderData();
+      
+      // Auto-refresh data every 5 minutes
+      setInterval(fetchAndRenderData, 300000);
+    });
+
+  </script>
 </body>
 </html>
