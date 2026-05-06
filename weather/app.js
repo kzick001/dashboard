@@ -1,141 +1,391 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Atmos</title>
-  
-  <meta name="theme-color" id="meta-theme" content="#0f172a">
+/**
+ * ATMOS V1.2 - Advanced Logic Controller (UI Polish)
+ * Architecture: Vanilla JS Module Pattern
+ */
 
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+document.addEventListener('DOMContentLoaded', () => {
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-
-  <link rel="stylesheet" href="styles.css">
-
-  <style>
-    /* Forces native crossfading when JS updates Leaflet layer opacities */
-    .leaflet-layer {
-      transition: opacity 0.6s ease-in-out;
+  // --- 1. CONFIGURATION & STATE ---
+  const CONFIG = {
+    lat: 44.9483,
+    lon: -93.3666,
+    endpoints: {
+      telemetry: 'https://kzick-weather.askozicki.workers.dev/',
+      alerts: `https://api.weather.gov/alerts/active?point=44.9483,-93.3666`
+    },
+    dom: {
+      grid: document.getElementById('dashboard-grid')
     }
-  </style>
-</head>
-<body class="p-4 md:p-6 min-h-screen flex flex-col items-center bg-slate-900 text-slate-50 antialiased overflow-x-hidden relative">
+  };
 
-  <canvas id="weather-canvas"></canvas>
+  const STATE = {
+    weatherCode: 1000,
+    isThunderstorm: false,
+    radar: { layers: [], timestamps: [], currentFrame: 0, intervalId: null, isPlaying: true, speed: 800 },
+    freshness: { timestamp: null, intervalId: null }
+  };
 
-  <header class="w-full max-w-6xl flex justify-between items-center mb-6 relative z-10 glass-panel px-5 py-3 sm:px-6 sm:py-4">
-    <div class="flex items-center gap-2 sm:gap-3">
-      <svg class="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"></path></svg>
-      <h1 class="text-lg sm:text-xl font-bold tracking-widest uppercase">Atmos</h1>
-    </div>
-    <div class="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-4 text-[10px] sm:text-xs font-bold text-slate-400 tracking-widest uppercase text-right">
-      <span id="live-clock" class="hidden sm:block">--:--</span>
-      <span id="last-updated-text" class="text-blue-300">Updated: Just now</span>
-      <button id="manual-refresh-btn" class="hover:text-white transition-colors cursor-pointer focus:outline-none p-2 -mr-2 sm:-my-2" aria-label="Refresh Data">
-        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-      </button>
-    </div>
-  </header>
+  // --- 2. UTILITIES & ICONS ---
+  const safeVal = (val) => val != null ? Math.round(val) : '--';
+  
+  const formatTime = (iso) => new Intl.DateTimeFormat('en-US', { hour: 'numeric', timeZone: 'America/Chicago' }).format(new Date(iso));
+  const formatDay = (iso) => new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'America/Chicago' }).format(new Date(iso));
+  const formatMonthDay = (iso) => new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', timeZone: 'America/Chicago' }).format(new Date(iso));
 
-  <main id="dashboard-grid" class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10 flex-grow">
+  const getIcon = (code) => {
+    const sun = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`;
+    const cloud = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>`;
+    const rain = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18v2M8 18v2M16 18v2" stroke="#60A5FA"></path></svg>`;
+    const storm = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" stroke="#FBBF24"></path></svg>`;
+    const snow = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v18m-9-9h18m-11.36-6.36l12.72 12.72M4.64 17.36l12.72-12.72"></path></svg>`;
     
-    <section data-id="module-alerts" id="module-alerts" class="col-span-1 lg:col-span-3 hidden cursor-pointer">
-      <details class="glass-panel group transition-all w-full">
-        <summary class="p-4 font-bold text-red-400 list-none flex justify-between items-center outline-none">
-          <span id="alert-title" class="flex items-center gap-3">
-            <svg class="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-            Loading Alerts...
-          </span>
-          <span class="text-sm text-slate-400 group-open:rotate-180 transition-transform duration-300">▼</span>
-        </summary>
-        <div id="alert-description" class="p-4 pt-0 text-sm text-slate-300 border-t border-red-500/30 mt-2 leading-relaxed whitespace-pre-wrap break-words"></div>
-      </details>
-    </section>
+    if (code === 1000 || code === 1100) return sun;
+    if (code === 1001 || code === 1101 || code === 1102 || code === 2000 || code === 2100) return cloud;
+    if (code >= 4000 && code < 5000) return rain;
+    if (code >= 6000 && code < 7000) return rain;
+    if (code >= 5000 && code < 6000) return snow;
+    if (code >= 7000 && code < 8000) return snow;
+    if (code === 8000) return storm;
+    return cloud; 
+  };
 
-    <section data-id="module-hero" id="module-hero" class="glass-panel p-6 col-span-1 min-h-[350px] flex flex-col justify-between">
-      <div class="grid grid-cols-2 gap-4 h-full">
-        <div class="flex flex-col justify-between">
-          <div>
-            <h2 class="text-[10px] font-bold text-slate-400 tracking-widest uppercase">St. Louis Park, MN</h2>
-            <div class="mt-2 inline-block px-2 py-1 rounded bg-blue-500/20 border border-blue-500/30 text-blue-300 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" id="weather-desc">Initializing</div>
-          </div>
-          <div class="mt-4">
-            <div class="text-7xl xl:text-8xl font-bold tracking-tighter" id="current-temp">--&deg;</div>
-            <div class="flex gap-3 text-sm font-bold text-slate-400 mt-2">
-              <span id="temp-high" class="text-slate-200">H: --&deg;</span>
-              <span id="temp-low">L: --&deg;</span>
+  const mapDesc = (code) => {
+    const map = { 1000: 'Clear', 1100: 'Mostly Clear', 1101: 'Partly Cloudy', 1102: 'Mostly Cloudy', 1001: 'Cloudy', 2000: 'Fog', 2100: 'Light Fog', 4000: 'Drizzle', 4001: 'Rain', 4200: 'Light Rain', 4201: 'Heavy Rain', 5000: 'Snow', 5001: 'Flurries', 5100: 'Light Snow', 5101: 'Heavy Snow', 6000: 'Freezing Drizzle', 6001: 'Freezing Rain', 6200: 'Light Freezing Rain', 6201: 'Heavy Freezing Rain', 7000: 'Ice Pellets', 7101: 'Heavy Ice Pellets', 7102: 'Light Ice Pellets', 8000: 'Thunderstorms' };
+    return map[code] || 'Active Conditions';
+  };
+
+  // --- 3. STORAGE & SORTABLE ENGINE ---
+  const StorageEngine = {
+    loadLayout: () => {
+      const saved = JSON.parse(localStorage.getItem('atmos_layout'));
+      if (!saved || saved.length === 0) return;
+      saved.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) CONFIG.dom.grid.appendChild(el);
+      });
+    },
+    saveLayout: () => {
+      const order = Array.from(CONFIG.dom.grid.children).map(el => el.getAttribute('data-id'));
+      localStorage.setItem('atmos_layout', JSON.stringify(order));
+    },
+    initDragAndDrop: () => {
+      new Sortable(CONFIG.dom.grid, {
+        animation: 200,
+        ghostClass: 'sortable-ghost',
+        dragClass: 'sortable-drag',
+        filter: 'button, details, summary, .leaflet-control, canvas, a', 
+        preventOnFilter: false,
+        delay: L.Browser.mobile ? 200 : 0, 
+        delayOnTouchOnly: true,
+        onEnd: StorageEngine.saveLayout
+      });
+    }
+  };
+
+  // --- 4. NETWORK & FRESHNESS ENGINE ---
+  const NetworkEngine = {
+    fetch: async () => {
+      const cache = localStorage.getItem('atmos_data');
+      if (cache && !STATE.freshness.timestamp) HydrationEngine.render(JSON.parse(cache));
+
+      const refreshBtn = document.getElementById('manual-refresh-btn');
+      refreshBtn.classList.add('animate-spin', 'text-blue-400');
+
+      try {
+        const [cfRes, nwsRes] = await Promise.all([
+          fetch(CONFIG.endpoints.telemetry),
+          fetch(CONFIG.endpoints.alerts).catch(() => ({ ok: false }))
+        ]);
+        
+        if (!cfRes.ok) throw new Error('Telemetry API Failed');
+        
+        const cfData = await cfRes.json();
+        let nwsData = { features: [] };
+        if (nwsRes.ok) { try { nwsData = await nwsRes.json(); } catch(e){} }
+        
+        const payload = { telemetry: cfData.data, alerts: nwsData.features || [] };
+        
+        const hasValidData = payload.telemetry?.timelines?.find(x => x.timestep === 'current');
+        if (!hasValidData) throw new Error('Malformed Telemetry Data Payload');
+        
+        localStorage.setItem('atmos_data', JSON.stringify(payload));
+        
+        HydrationEngine.render(payload);
+        NetworkEngine.updateFreshness(true);
+
+      } catch (err) {
+        console.error("Fetch Error:", err);
+        if (!cache) document.getElementById('weather-desc').innerText = 'Data offline. Retrying...';
+      } finally {
+        setTimeout(() => refreshBtn.classList.remove('animate-spin', 'text-blue-400'), 500);
+      }
+    },
+    updateFreshness: (reset = false) => {
+      if (reset) {
+        STATE.freshness.timestamp = Date.now();
+        if (STATE.freshness.intervalId) clearInterval(STATE.freshness.intervalId);
+        STATE.freshness.intervalId = setInterval(() => NetworkEngine.updateFreshness(), 60000);
+      }
+      
+      if (!STATE.freshness.timestamp) return;
+      
+      const diffMins = Math.floor((Date.now() - STATE.freshness.timestamp) / 60000);
+      const textEl = document.getElementById('last-updated-text');
+      
+      if (diffMins === 0) textEl.innerText = "Updated: Just now";
+      else textEl.innerText = `Updated: ${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+
+      const clockEl = document.getElementById('live-clock');
+      if (clockEl) clockEl.innerText = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(new Date());
+    }
+  };
+
+  // --- 5. CHART ENGINE ---
+  let currentChart = null;
+  const ChartEngine = {
+    render: (hourlyData) => {
+      const ctx = document.getElementById('hourly-chart').getContext('2d');
+      if (currentChart) currentChart.destroy(); 
+
+      const next24 = hourlyData.slice(0, 24);
+      const labels = next24.map(h => formatTime(h.startTime));
+      const temps = next24.map(h => Math.round(h.values.temperature));
+      const dews = next24.map(h => Math.round(h.values.dewPoint));
+      const precip = next24.map(h => h.values.precipitationProbability || 0);
+
+      const pointRadii = temps.map((_, i) => i === 0 ? 6 : 0);
+      const pointBgColors = temps.map((_, i) => i === 0 ? '#ffffff' : 'transparent');
+      const pointBorderColors = temps.map((_, i) => i === 0 ? '#60A5FA' : 'transparent');
+
+      currentChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Temp (°F)', data: temps, borderColor: '#60A5FA', backgroundColor: '#60A5FA',
+              pointRadius: pointRadii, pointBackgroundColor: pointBgColors, pointBorderColor: pointBorderColors, pointBorderWidth: 3,
+              tension: 0.4, yAxisID: 'y', borderWidth: 2
+            },
+            {
+              // Swapped to Tailwind Emerald-500 for better contrast
+              label: 'Dew Point', data: dews, borderColor: '#10B981', borderDash: [5, 5],
+              pointRadius: 0, tension: 0.4, yAxisID: 'y', borderWidth: 2
+            },
+            {
+              type: 'bar', label: 'Precip Chance (%)', data: precip, backgroundColor: 'rgba(56, 189, 248, 0.15)',
+              yAxisID: 'y1', barPercentage: 1.0, categoryPercentage: 1.0
+            }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+          plugins: { 
+            legend: { 
+              display: true, 
+              position: 'top',
+              labels: { color: '#94A3B8', boxWidth: 12, usePointStyle: true, font: { weight: 'bold' } }
+            },
+            // Themed glassmorphic tooltip
+            tooltip: {
+              backgroundColor: 'rgba(30, 41, 59, 0.85)', 
+              titleColor: '#94A3B8',
+              bodyColor: '#F8FAFC',
+              borderColor: 'rgba(255,255,255,0.1)',
+              borderWidth: 1,
+              padding: 10,
+              displayColors: true
+            }
+          },
+          scales: {
+            // maxRotation: 0 forces labels to stay horizontal
+            x: { grid: { display: false }, ticks: { color: '#94A3B8', maxTicksLimit: 6, maxRotation: 0 } },
+            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94A3B8' } },
+            y1: { position: 'right', min: 0, max: 100, grid: { display: false }, ticks: { display: false } }
+          }
+        }
+      });
+    }
+  };
+
+  // --- 6. RADAR ENGINE ---
+  const RadarEngine = {
+    init: () => {
+      const map = L.map('radar-map', {
+        center: [CONFIG.lat, CONFIG.lon], zoom: 7, zoomControl: true,
+        scrollWheelZoom: false, dragging: !L.Browser.mobile, tap: !L.Browser.mobile
+      });
+
+      // Swapped to ESRI World Dark Gray Canvas for high-contrast meteorological rendering
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16 }).addTo(map);
+      L.circleMarker([CONFIG.lat, CONFIG.lon], { color: '#38bdf8', radius: 6, weight: 2, fillOpacity: 0.5 }).addTo(map);
+
+      const offsets = ['50', '45', '40', '35', '30', '25', '20', '15', '10', '05'];
+      STATE.radar.timestamps = offsets;
+      
+      STATE.radar.layers = offsets.map(offset => {
+        return L.tileLayer(`https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913-m${offset}m/{z}/{x}/{y}.png`, {
+          opacity: 0, transparent: true, zIndex: 400
+        }).addTo(map);
+      });
+
+      RadarEngine.startLoop();
+      RadarEngine.bindControls();
+    },
+    startLoop: () => {
+      const timeLabel = document.getElementById('radar-time-label');
+      
+      const tick = () => {
+        STATE.radar.layers[STATE.radar.currentFrame].setOpacity(0);
+        STATE.radar.currentFrame = (STATE.radar.currentFrame + 1) % STATE.radar.layers.length;
+        STATE.radar.layers[STATE.radar.currentFrame].setOpacity(0.7);
+        
+        const offsetStr = STATE.radar.timestamps[STATE.radar.currentFrame];
+        timeLabel.innerText = `-${offsetStr} mins`;
+      };
+
+      if(STATE.radar.intervalId) clearInterval(STATE.radar.intervalId);
+      STATE.radar.intervalId = setInterval(tick, STATE.radar.speed);
+    },
+    bindControls: () => {
+      const playBtn = document.getElementById('radar-play-btn');
+      const speedBtn = document.getElementById('radar-speed-btn');
+
+      playBtn.addEventListener('click', () => {
+        STATE.radar.isPlaying = !STATE.radar.isPlaying;
+        if (STATE.radar.isPlaying) {
+          playBtn.innerHTML = `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg><span class="text-xs font-bold tracking-widest uppercase">Pause</span>`;
+          RadarEngine.startLoop(); 
+        } else {
+          playBtn.innerHTML = `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg><span class="text-xs font-bold tracking-widest uppercase">Play</span>`;
+          clearInterval(STATE.radar.intervalId);
+        }
+      });
+
+      speedBtn.addEventListener('click', () => {
+        STATE.radar.speed = STATE.radar.speed === 800 ? 400 : 800;
+        speedBtn.innerText = STATE.radar.speed === 800 ? '1x Speed' : '2x Speed';
+        if(STATE.radar.isPlaying) RadarEngine.startLoop();
+      });
+    }
+  };
+
+  // --- 7. DOM HYDRATION & THEME ENGINE ---
+  const HydrationEngine = {
+    updateTheme: (code) => {
+      const metaTheme = document.getElementById('meta-theme');
+      let hex = '#0f172a'; 
+      if (code === 1000 || code === 1100) hex = '#0284c7'; 
+      else if (code === 1001 || code === 1101 || code === 1102) hex = '#334155'; 
+      else if (code >= 4000 && code < 5000) hex = '#1e293b'; 
+      else if (code >= 5000) hex = '#475569'; 
+      metaTheme.setAttribute('content', hex);
+    },
+    render: (data) => {
+      if (!data || !data.telemetry) return;
+      const t = data.telemetry.timelines;
+      
+      const current = t.find(x => x.timestep === 'current')?.intervals[0]?.values;
+      const hourly = t.find(x => x.timestep === '1h')?.intervals;
+      const daily = t.find(x => x.timestep === '1d')?.intervals;
+
+      if (!current || !daily) return;
+
+      STATE.weatherCode = current.weatherCode;
+      STATE.isThunderstorm = current.weatherCode === 8000;
+      
+      HydrationEngine.updateTheme(STATE.weatherCode);
+
+      const dom = (id) => document.getElementById(id);
+      dom('weather-desc').innerText = mapDesc(current.weatherCode);
+      dom('hero-icon').innerHTML = getIcon(current.weatherCode);
+      dom('current-temp').innerHTML = `${safeVal(current.temperature)}&deg;`;
+      dom('temp-high').innerHTML = `H: ${safeVal(daily[0].values.temperatureMax)}&deg;`;
+      dom('temp-low').innerHTML = `L: ${safeVal(daily[0].values.temperatureMin)}&deg;`;
+      
+      dom('current-wind').innerText = `${safeVal(current.windSpeed)} mph`;
+      dom('current-humidity').innerText = `${safeVal(current.humidity)}%`;
+      dom('current-dew').innerHTML = `${safeVal(current.dewPoint)}&deg;`;
+      dom('current-pressure').innerText = current.pressureSurfaceLevel ? `${current.pressureSurfaceLevel} inHg` : '--';
+
+      const alertMod = dom('module-alerts');
+      if (data.alerts && data.alerts.length > 0) {
+        alertMod.classList.remove('hidden');
+        dom('alert-title').innerHTML = `<svg class="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg> ACTIVE ALERTS (${data.alerts.length})`;
+        dom('alert-description').innerHTML = data.alerts.map(a => `<div class="mb-3"><strong class="text-white block">${a.properties.event}</strong>${a.properties.description || a.properties.headline}</div>`).join('');
+      } else {
+        alertMod.classList.add('hidden');
+      }
+
+      if (hourly) ChartEngine.render(hourly);
+
+      if (daily) {
+        dom('extended-container').innerHTML = daily.slice(1, 6).map(day => {
+          const v = day.values;
+          // Always show percentage (even 0%) for better UI consistency
+          return `
+            <div class="flex flex-col items-center justify-between p-4 bg-slate-800/40 rounded-xl border border-slate-700/50 min-w-[85px] flex-1">
+              <span class="font-bold text-slate-300 uppercase text-xs">${formatDay(day.startTime)}</span>
+              <span class="text-[10px] text-slate-500 mb-2 whitespace-nowrap">${formatMonthDay(day.startTime)}</span>
+              <div class="w-10 h-10 text-slate-400 mb-2">${getIcon(v.weatherCode)}</div>
+              <div class="flex gap-2 font-bold text-sm">
+                <span class="text-slate-100">${Math.round(v.temperatureMax)}&deg;</span>
+                <span class="text-slate-500">${Math.round(v.temperatureMin)}&deg;</span>
+              </div>
+              <span class="text-[10px] font-bold text-blue-400 mt-2">${Math.round(v.precipitationProbability || 0)}%</span>
             </div>
-          </div>
-        </div>
+          `;
+        }).join('');
+      }
+    }
+  };
 
-        <div class="flex flex-col justify-between items-end">
-          <div id="hero-icon" class="w-24 h-24 text-slate-100 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-            </div>
-          
-          <div class="grid grid-cols-2 gap-2 w-full mt-4">
-            <div class="bg-slate-800/50 p-2 rounded-lg border border-slate-700/50 flex flex-col justify-center">
-              <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Wind</p>
-              <p class="text-sm font-bold mt-0.5" id="current-wind">--</p>
-            </div>
-            <div class="bg-slate-800/50 p-2 rounded-lg border border-slate-700/50 flex flex-col justify-center">
-              <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Humidity</p>
-              <p class="text-sm font-bold mt-0.5" id="current-humidity">--</p>
-            </div>
-            <div class="bg-slate-800/50 p-2 rounded-lg border border-slate-700/50 flex flex-col justify-center">
-              <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Pressure</p>
-              <p class="text-sm font-bold mt-0.5" id="current-pressure">--</p>
-            </div>
-            <div class="bg-slate-800/50 p-2 rounded-lg border border-slate-700/50 flex flex-col justify-center">
-              <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Dew Pt</p>
-              <p class="text-sm font-bold mt-0.5" id="current-dew">--</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+  // --- 8. MICRO-VIEW CANVAS BACKGROUND ---
+  const CanvasEngine = {
+    init: () => {
+      const canvas = document.getElementById('weather-canvas');
+      const ctx = canvas.getContext('2d');
+      let particles = [], cw, ch;
 
-    <section data-id="module-radar" id="module-radar" class="glass-panel col-span-1 lg:col-span-2 relative overflow-hidden flex flex-col p-1 min-h-[350px]">
-      <div class="radar-controls absolute bottom-4 left-4 z-[1000] bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-full border border-slate-700 flex items-center gap-4 shadow-lg shadow-black/50">
-        <button id="radar-play-btn" class="text-slate-200 hover:text-white focus:outline-none flex items-center gap-2">
-          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
-          <span class="text-xs font-bold tracking-widest uppercase">Pause</span>
-        </button>
-        <div class="w-px h-4 bg-slate-600"></div>
-        <button id="radar-speed-btn" class="text-xs font-bold tracking-widest uppercase text-slate-400 hover:text-white transition-colors focus:outline-none">
-          1x Speed
-        </button>
-        <span id="radar-time-label" class="text-xs font-mono text-blue-300 ml-2">--:--</span>
-      </div>
-      <div id="radar-map" class="flex-grow rounded-[14px] bg-slate-800"></div>
-    </section>
+      const resize = () => { cw = canvas.width = window.innerWidth; ch = canvas.height = window.innerHeight; };
+      window.addEventListener('resize', resize);
+      resize(); 
 
-    <section data-id="module-hourly" id="module-hourly" class="glass-panel p-6 col-span-1 lg:col-span-3 min-h-[300px] flex flex-col">
-      <h2 class="text-xs font-bold tracking-widest text-slate-400 mb-4 uppercase">Hourly Trends</h2>
-      <div class="relative flex-grow w-full h-full">
-        <canvas id="hourly-chart"></canvas>
-      </div>
-    </section>
+      for (let i = 0; i < 300; i++) particles.push({ x: Math.random() * cw, y: Math.random() * ch, l: Math.random() * 25 + 10, s: Math.random() * 20 + 15 });
 
-    <section data-id="module-extended" id="module-extended" class="glass-panel p-6 col-span-1 lg:col-span-3">
-      <h2 class="text-xs font-bold tracking-widest text-slate-400 mb-6 uppercase">5-Day Outlook</h2>
-      <div id="extended-container" class="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-        </div>
-    </section>
+      const animate = () => {
+        ctx.clearRect(0, 0, cw, ch);
+        if (STATE.weatherCode >= 4000) {
+          ctx.strokeStyle = (STATE.weatherCode >= 5000 && STATE.weatherCode < 6000) ? 'rgba(255, 255, 255, 0.5)' : 'rgba(147, 197, 253, 0.3)'; 
+          ctx.lineWidth = 2; ctx.beginPath();
+          for (let p of particles) {
+            ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y + p.l);
+            p.y += p.s; 
+            if (p.y > ch) { 
+              p.y = -p.l; 
+              p.x = Math.random() * cw; 
+            }
+          }
+          ctx.stroke();
+        }
+        if (STATE.isThunderstorm && Math.random() > 0.985) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'; ctx.fillRect(0, 0, cw, ch);
+        }
+        requestAnimationFrame(animate);
+      };
+      animate();
+    }
+  };
 
-  </main>
+  // --- BOOTSTRAP ---
+  StorageEngine.loadLayout();
+  StorageEngine.initDragAndDrop();
+  CanvasEngine.init();
+  RadarEngine.init();
+  
+  NetworkEngine.fetch();
+  document.getElementById('manual-refresh-btn').addEventListener('click', NetworkEngine.fetch);
+  
+  setInterval(NetworkEngine.fetch, 300000); 
 
-  <footer class="w-full max-w-6xl mt-8 text-center text-[10px] font-bold tracking-widest uppercase text-slate-500 relative z-10 pb-4">
-    <p>Data provided by <a href="https://www.weather.gov/" class="text-slate-400 hover:text-white" target="_blank">NWS</a> &middot; Telemetry by Cloudflare &middot; Radar by IEM</p>
-  </footer>
-
-  <script src="app.js" defer></script>
-</body>
-</html>
+});
