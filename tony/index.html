@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tony Kiosk V0.4.1</title>
+    <title>Tony Kiosk V0.4.2</title>
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 10 C20 10, 15 20, 15 20 C15 20, 25 25, 32 18 C39 25, 49 20, 49 20 C49 20, 44 10, 32 10 Z' fill='%2322c55e'/><circle cx='22' cy='30' r='10' fill='%23e30b5d'/><circle cx='42' cy='30' r='10' fill='%23e30b5d'/><circle cx='26' cy='45' r='10' fill='%23e30b5d'/><circle cx='38' cy='45' r='10' fill='%23e30b5d'/><circle cx='32' cy='52' r='10' fill='%23e30b5d'/><circle cx='32' cy='35' r='14' fill='%23e30b5d'/><text x='32' y='48' font-family='sans-serif' font-size='36' font-weight='bold' fill='%23fde047' text-anchor='middle'>T</text></svg>">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -47,7 +49,7 @@
     </div>
 
     <div class="z-10 flex justify-between items-center mb-8 border-b border-slate-800/60 pb-4 flex-none">
-        <div class="text-[10px] font-mono tracking-[0.3em] text-slate-500 uppercase">Raspberry Tony // V0.4.1 Stable</div>
+        <div class="text-[10px] font-mono tracking-[0.3em] text-slate-500 uppercase">Raspberry Tony // V0.4.2 Hotfix</div>
         <div class="flex items-center gap-2">
             <span id="sys-status-dot" class="text-green-500 animate-blink">●</span> 
             <span id="sys-status-text" class="text-[10px] font-mono text-slate-400 uppercase tracking-widest">System Online</span>
@@ -58,8 +60,11 @@
         
         <div class="col-span-4 flex flex-col gap-6 h-full">
             <div class="flex flex-col items-center">
-                <div class="text-[8rem] font-light tracking-tighter text-white leading-none flex items-center">
-                    <span id="comp-hour">--</span><span class="animate-blink opacity-40 mx-2">:</span><span id="comp-minute">--</span>
+                <div class="text-[8rem] font-light tracking-tighter text-white leading-none flex items-baseline justify-center">
+                    <span id="comp-hour">--</span>
+                    <span class="animate-blink opacity-40 mx-2 text-[6rem] self-center mb-4">:</span>
+                    <span id="comp-minute">--</span>
+                    <span id="comp-ampm" class="text-3xl font-mono text-slate-500 ml-4 mb-2">--</span>
                 </div>
                 <div id="comp-date" class="text-xl font-mono text-cyan-500/80 tracking-widest uppercase mt-2">Awaiting Sync</div>
             </div>
