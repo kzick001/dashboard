@@ -1,5 +1,5 @@
 /**
- * ATMOS V1.2 - Advanced Logic Controller (Phase 2)
+ * ATMOS V1.2 - Advanced Logic Controller (Final Polish)
  * Architecture: Vanilla JS Module Pattern
  */
 
@@ -33,18 +33,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const formatMonthDay = (iso) => new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', timeZone: 'America/Chicago' }).format(new Date(iso));
 
   const getIcon = (code) => {
-    const icons = {
-      1000: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`,
-      1001: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>`,
-      1100: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18v2M8 18v2M16 18v2" stroke="#60A5FA"></path></svg>`,
-      1102: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" stroke="#FBBF24"></path></svg>`,
-      5000: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v18m-9-9h18m-11.36-6.36l12.72 12.72M4.64 17.36l12.72-12.72"></path></svg>`,
-    };
-    return icons[code] || icons[1001]; 
+    const sun = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`;
+    const cloud = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>`;
+    const rain = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18v2M8 18v2M16 18v2" stroke="#60A5FA"></path></svg>`;
+    const storm = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" stroke="#FBBF24"></path></svg>`;
+    const snow = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v18m-9-9h18m-11.36-6.36l12.72 12.72M4.64 17.36l12.72-12.72"></path></svg>`;
+    
+    if (code === 1000 || code === 1100) return sun;
+    if (code === 1001 || code === 1101 || code === 1102 || code === 2000 || code === 2100) return cloud;
+    if (code >= 4000 && code < 5000) return rain;
+    if (code >= 6000 && code < 7000) return rain;
+    if (code >= 5000 && code < 6000) return snow;
+    if (code >= 7000 && code < 8000) return snow;
+    if (code === 8000) return storm;
+    return cloud; 
   };
 
   const mapDesc = (code) => {
-    const map = { 1000: 'Clear', 1001: 'Cloudy', 1100: 'Light Rain', 1101: 'Rain', 1102: 'Thunderstorms', 2000: 'Fog', 4000: 'Drizzle', 5000: 'Snow' };
+    const map = { 1000: 'Clear', 1100: 'Mostly Clear', 1101: 'Partly Cloudy', 1102: 'Mostly Cloudy', 1001: 'Cloudy', 2000: 'Fog', 2100: 'Light Fog', 4000: 'Drizzle', 4001: 'Rain', 4200: 'Light Rain', 4201: 'Heavy Rain', 5000: 'Snow', 5001: 'Flurries', 5100: 'Light Snow', 5101: 'Heavy Snow', 6000: 'Freezing Drizzle', 6001: 'Freezing Rain', 6200: 'Light Freezing Rain', 6201: 'Heavy Freezing Rain', 7000: 'Ice Pellets', 7101: 'Heavy Ice Pellets', 7102: 'Light Ice Pellets', 8000: 'Thunderstorms' };
     return map[code] || 'Active Conditions';
   };
 
@@ -194,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // --- 6. RADAR ENGINE (IEM REVERT + SMOOTHING) ---
+  // --- 6. RADAR ENGINE (IEM + SMOOTHING) ---
   const RadarEngine = {
     init: () => {
       const map = L.map('radar-map', {
@@ -266,9 +272,10 @@ document.addEventListener('DOMContentLoaded', () => {
     updateTheme: (code) => {
       const metaTheme = document.getElementById('meta-theme');
       let hex = '#0f172a'; // Default dark slate
-      if (code === 1000) hex = '#0284c7'; // Clear: Sky-600
-      else if (code >= 1100 && code < 1200) hex = '#1e293b'; // Rain: Slate-800
-      else if (code >= 5000) hex = '#475569'; // Snow: Slate-600
+      if (code === 1000 || code === 1100) hex = '#0284c7'; // Clear: Sky-600
+      else if (code === 1001 || code === 1101 || code === 1102) hex = '#334155'; // Cloudy: Slate-700
+      else if (code >= 4000 && code < 5000) hex = '#1e293b'; // Rain: Slate-800
+      else if (code >= 5000) hex = '#475569'; // Snow/Ice: Slate-600
       metaTheme.setAttribute('content', hex);
     },
     render: (data) => {
@@ -282,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!current || !daily) return;
 
       STATE.weatherCode = current.weatherCode;
-      STATE.isThunderstorm = current.weatherCode >= 1101 && current.precipitationIntensity > 0.1;
+      STATE.isThunderstorm = current.weatherCode === 8000;
       
       HydrationEngine.updateTheme(STATE.weatherCode);
 
@@ -348,8 +355,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const animate = () => {
         ctx.clearRect(0, 0, cw, ch);
-        if (STATE.weatherCode >= 1100 && STATE.weatherCode <= 1102) {
-          ctx.strokeStyle = 'rgba(147, 197, 253, 0.2)'; ctx.lineWidth = 2; ctx.beginPath();
+        if (STATE.weatherCode >= 4000) {
+          // Tint particles white for snow/ice, blue for rain
+          ctx.strokeStyle = (STATE.weatherCode >= 5000 && STATE.weatherCode < 6000) ? 'rgba(255, 255, 255, 0.5)' : 'rgba(147, 197, 253, 0.3)'; 
+          ctx.lineWidth = 2; ctx.beginPath();
           for (let p of particles) {
             ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y + p.l);
             p.y += p.s; 
