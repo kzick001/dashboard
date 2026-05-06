@@ -31,16 +31,16 @@
 
   <canvas id="weather-canvas"></canvas>
 
-  <header class="w-full max-w-6xl flex justify-between items-center mb-6 relative z-10 glass-panel px-6 py-4">
-    <div class="flex items-center gap-3">
-      <svg class="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"></path></svg>
-      <h1 class="text-xl font-bold tracking-widest uppercase">Atmos</h1>
+  <header class="w-full max-w-6xl flex justify-between items-center mb-6 relative z-10 glass-panel px-5 py-3 sm:px-6 sm:py-4">
+    <div class="flex items-center gap-2 sm:gap-3">
+      <svg class="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"></path></svg>
+      <h1 class="text-lg sm:text-xl font-bold tracking-widest uppercase">Atmos</h1>
     </div>
-    <div class="flex items-center gap-4 text-xs font-bold text-slate-400 tracking-widest uppercase">
+    <div class="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-4 text-[10px] sm:text-xs font-bold text-slate-400 tracking-widest uppercase text-right">
       <span id="live-clock" class="hidden sm:block">--:--</span>
       <span id="last-updated-text" class="text-blue-300">Updated: Just now</span>
-      <button id="manual-refresh-btn" class="hover:text-white transition-colors cursor-pointer focus:outline-none p-2 -mr-2" aria-label="Refresh Data">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+      <button id="manual-refresh-btn" class="hover:text-white transition-colors cursor-pointer focus:outline-none p-2 -mr-2 sm:-my-2" aria-label="Refresh Data">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
       </button>
     </div>
   </header>
