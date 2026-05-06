@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tony Kiosk V0.3.5</title>
+    <title>Tony Kiosk V0.4.1</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,14 +15,12 @@
             darkMode: 'class',
             theme: {
                 extend: {
+                    gridTemplateColumns: { '16': 'repeat(16, minmax(0, 1fr))' },
+                    gridColumn: { 'span-16': 'span 16 / span 16' },
                     fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
                     colors: { slate: { 850: '#151e2e', 900: '#0f172a', 950: '#020617' } },
-                    animation: {
-                        'blink': 'blink 1s step-start infinite'
-                    },
-                    keyframes: {
-                        blink: { '50%': { opacity: '0' } }
-                    }
+                    animation: { 'blink': 'blink 1s step-start infinite' },
+                    keyframes: { blink: { '50%': { opacity: '0' } } }
                 }
             }
         }
@@ -31,11 +29,10 @@
     <style type="text/tailwindcss">
         @layer base {
             body {
-                @apply bg-black text-slate-200 overflow-hidden;
-                width: 1440px; height: 900px; cursor: none;
+                @apply bg-black text-slate-200 overflow-hidden font-sans;
+                width: 1920px; height: 1080px; cursor: none;
             }
         }
-        /* Pan animation removed to stop VideoCore IV thermal throttling */
         .bg-mesh {
             background: radial-gradient(circle at 20% 30%, rgba(15, 23, 42, 0.8), transparent 70%),
                         radial-gradient(circle at 80% 70%, rgba(2, 6, 23, 0.9), transparent 70%);
@@ -49,152 +46,107 @@
         <div class="absolute inset-0 bg-mesh"></div>
     </div>
 
-    <div class="z-10 flex justify-between items-center mb-8 border-b border-slate-800/60 pb-4">
-        <div class="text-[10px] font-mono tracking-[0.3em] text-slate-500 uppercase">Raspberry Tony // V0.3.5 Stable</div>
+    <div class="z-10 flex justify-between items-center mb-8 border-b border-slate-800/60 pb-4 flex-none">
+        <div class="text-[10px] font-mono tracking-[0.3em] text-slate-500 uppercase">Raspberry Tony // V0.4.1 Stable</div>
         <div class="flex items-center gap-2">
             <span id="sys-status-dot" class="text-green-500 animate-blink">●</span> 
             <span id="sys-status-text" class="text-[10px] font-mono text-slate-400 uppercase tracking-widest">System Online</span>
         </div>
     </div>
 
-    <div class="grid grid-cols-12 gap-8 z-10 flex-1 h-full">
+    <div class="grid grid-cols-16 gap-8 z-10 flex-1 h-full w-full min-h-0">
         
-        <div class="col-span-3 flex flex-col gap-6 relative h-full">
-            <div class="flex flex-col">
-                <div class="text-[7rem] font-light tracking-tighter text-white leading-none flex items-center">
-                    <span id="comp-hour">--</span><span class="animate-blink opacity-40 mx-1">:</span><span id="comp-minute">--</span>
+        <div class="col-span-4 flex flex-col gap-6 h-full">
+            <div class="flex flex-col items-center">
+                <div class="text-[8rem] font-light tracking-tighter text-white leading-none flex items-center">
+                    <span id="comp-hour">--</span><span class="animate-blink opacity-40 mx-2">:</span><span id="comp-minute">--</span>
                 </div>
-                <div id="comp-date" class="text-lg font-mono text-cyan-500/80 tracking-widest uppercase mt-2">Awaiting Sync</div>
+                <div id="comp-date" class="text-xl font-mono text-cyan-500/80 tracking-widest uppercase mt-2">Awaiting Sync</div>
             </div>
 
-            <div class="bg-slate-900/40 backdrop-blur-md border border-slate-700/30 rounded-[2rem] p-6 flex flex-col shadow-xl">
-                <div class="text-[10px] font-mono text-slate-500 tracking-widest uppercase mb-4 text-center">Current Conditions</div>
-                <div class="flex items-center justify-center gap-6 mb-4">
-                    <div id="current-icon" class="w-16 h-16 text-slate-200"></div>
-                </div>
-                <div class="flex items-end justify-center gap-4">
-                    <span id="low-temp" class="text-3xl font-mono text-blue-500/80 pb-2">--°</span>
-                    <span id="current-temp" class="text-7xl font-light text-white leading-none tracking-tighter">--°</span>
-                    <span id="high-temp" class="text-3xl font-mono text-red-500/80 pb-2">--°</span>
+            <div class="bg-slate-900/40 border border-slate-700/30 rounded-[2rem] p-8 flex flex-col shadow-xl">
+                <div class="text-xs font-mono text-slate-500 tracking-widest uppercase mb-4 text-center">Current Conditions</div>
+                <div class="flex items-end justify-center gap-6">
+                    <span id="low-temp" class="text-4xl font-mono text-blue-500/80 pb-2">--°</span>
+                    <div id="current-icon" class="w-20 h-20 text-slate-200 mb-2"></div>
+                    <span id="current-temp" class="text-[8rem] font-light text-white leading-none tracking-tighter mx-6">--°</span>
+                    <span id="high-temp" class="text-4xl font-mono text-red-500/80 pb-2">--°</span>
                 </div>
             </div>
 
-            <div class="bg-slate-900/40 backdrop-blur-md border border-slate-700/30 rounded-[2rem] p-6 flex flex-col gap-6 flex-1">
+            <div class="bg-slate-900/40 border border-slate-700/30 rounded-[2rem] p-8 flex flex-col gap-6">
                 <div class="flex justify-between items-center">
                     <div class="flex flex-col gap-1">
-                        <span class="text-[9px] font-mono text-slate-600 tracking-widest uppercase">Wind</span>
-                        <div class="flex items-center gap-2 text-white font-mono text-lg">
-                            <svg id="wind-dir-icon" class="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2.5" d="M12 2L16 10L12 8L8 10L12 2Z"></path></svg>
-                            <span id="wind-speed">--</span>
+                        <span class="text-xs font-mono text-slate-600 tracking-widest uppercase">Wind</span>
+                        <div class="flex items-center gap-2 text-white font-mono text-2xl">
+                            <svg id="wind-dir-icon" class="w-6 h-6 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2.5" d="M12 2L16 10L12 8L8 10L12 2Z"></path></svg>
+                            <span id="wind-speed">-- MPH</span>
                         </div>
                     </div>
                     <div class="flex flex-col items-end gap-1">
-                        <span class="text-[9px] font-mono text-slate-600 tracking-widest uppercase text-right">Dew Point</span>
-                        <span id="dew-point" class="text-white font-mono text-lg text-right">--°</span>
+                        <span class="text-xs font-mono text-slate-600 tracking-widest uppercase text-right">Dew Point</span>
+                        <span id="dew-point" class="text-white font-mono text-2xl text-right">--°</span>
                     </div>
                 </div>
 
-                <div class="flex flex-col items-center py-4 border-y border-slate-800/50">
-                    <span class="text-[9px] font-mono text-slate-600 tracking-widest uppercase mb-3">Air Quality Index</span>
-                    <div class="relative w-24 h-24">
+                <div class="flex flex-col items-center py-4">
+                    <span class="text-xs font-mono text-slate-600 tracking-widest uppercase mb-4">Air Quality Index</span>
+                    <div class="relative w-32 h-32">
                         <svg class="w-full h-full transform -rotate-90" viewBox="0 0 128 128">
-                            <circle cx="64" cy="64" r="58" fill="none" class="stroke-slate-800" stroke-width="6"></circle>
-                            <circle id="aqi-ring" cx="64" cy="64" r="58" fill="none" class="stroke-slate-600 transition-colors duration-1000" stroke-width="6" stroke-dasharray="364" stroke-dashoffset="364" stroke-linecap="round"></circle>
+                            <circle cx="64" cy="64" r="58" fill="none" class="stroke-slate-800" stroke-width="8"></circle>
+                            <circle id="aqi-ring" cx="64" cy="64" r="58" fill="none" class="stroke-slate-600 transition-colors duration-1000" stroke-width="8" stroke-dasharray="364" stroke-dashoffset="364" stroke-linecap="round"></circle>
                         </svg>
                         <div class="absolute inset-0 flex flex-col items-center justify-center">
-                            <span id="aqi-value" class="text-3xl font-bold text-white tracking-tighter">--</span>
-                            <svg id="aqi-skull" class="w-5 h-5 text-purple-500 absolute -bottom-2 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h.01M15 12h.01M12 2a8 8 0 0 0-8 8c0 1.5.5 3 1.2 4.2L4 20h16l-1.2-5.8C19.5 13 20 11.5 20 10a8 8 0 0 0-8-8z"/><path d="M10 16v2m4-2v2"/></svg>
+                            <span id="aqi-value" class="text-5xl font-bold text-white tracking-tighter">--</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex justify-between items-center text-sm mt-auto">
-                    <div class="flex flex-col gap-1">
-                        <span class="text-slate-500 font-mono tracking-widest text-[9px]">SUNRISE</span>
-                        <span id="sunrise-time" class="text-white font-light text-base tracking-tight">--:--</span>
+                <div class="flex justify-between items-center w-full mt-4 pt-4 border-t border-slate-800/50">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-6 h-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                        <span id="sunrise-time" class="text-white font-light text-xl tracking-tight">--:--</span>
                     </div>
-                    <div class="flex flex-col items-end gap-1">
-                        <span class="text-slate-500 font-mono tracking-widest text-[9px]">SUNSET</span>
-                        <span id="sunset-time" class="text-white font-light text-base tracking-tight">--:--</span>
+                    <div class="flex items-center gap-2">
+                        <span id="sunset-time" class="text-white font-light text-xl tracking-tight">--:--</span>
+                        <svg class="w-6 h-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
                     </div>
                 </div>
             </div>
 
-            <div class="absolute bottom-0 left-0 w-full flex justify-center opacity-20 mix-blend-screen pointer-events-none">
-                <img src="rt-logo.png" class="w-32 h-auto grayscale brightness-150" alt="RT Logo" onerror="this.style.display='none'">
+            <div class="mt-auto bg-slate-900/40 border border-slate-700/30 rounded-[2rem] p-4 flex justify-center items-center h-24">
+                <img src="rt-logo.png" class="h-12 w-auto grayscale brightness-150 opacity-50" alt="RT Logo" onerror="this.style.display='none'">
             </div>
         </div>
 
-        <div class="col-span-5 flex flex-col gap-6">
+        <div class="col-span-8 flex flex-col gap-6 h-full min-w-0">
             
-            <div class="bg-slate-900/40 backdrop-blur-md border border-slate-700/30 rounded-[2rem] p-6">
-                <div class="text-[10px] font-mono text-slate-500 tracking-widest uppercase mb-4 border-b border-slate-800 pb-3">5 Day Forecast</div>
-                <div id="forecast-container" class="flex justify-between items-center">
-                    <script>
-                        for(let i=1; i<=5; i++) {
-                            document.write(`
-                            <div id="forecast-slot-${i}" class="flex flex-col items-center gap-1.5 w-16">
-                                <span id="forecast-day-${i}-name" class="text-[10px] font-mono text-slate-500">--</span>
-                                <div id="forecast-day-${i}-icon" class="w-8 h-8 text-slate-400 my-1"></div>
-                                <span id="forecast-day-${i}-temp" class="font-mono text-sm text-white">--°</span>
-                                <span id="forecast-day-${i}-precip" class="text-[9px] font-mono text-blue-400/80">💧--%</span>
-                                <span id="forecast-day-${i}-cloud" class="text-[9px] font-mono text-slate-500">☁️--%</span>
-                                <span id="forecast-day-${i}-uv" class="text-[8px] font-mono text-orange-500/70 uppercase tracking-tighter">UV:--</span>
-                            </div>`);
-                        }
-                    </script>
+            <div class="flex-none bg-slate-900/40 border border-slate-700/30 rounded-[2rem] p-6 flex flex-col">
+                <div id="alerts-container" class="hidden w-full bg-red-900/50 border border-red-500/50 rounded-xl p-4 mb-4 flex items-center gap-3 text-red-200">
+                    <svg class="w-6 h-6 flex-shrink-0 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                    <span id="alerts-text" class="font-bold text-sm tracking-wide"></span>
                 </div>
+                
+                <div class="text-xs font-mono text-slate-500 tracking-widest uppercase mb-4 border-b border-slate-800 pb-3">5 Day Forecast</div>
+                <div id="forecast-container" class="flex justify-between items-stretch w-full gap-4">
+                    </div>
             </div>
 
-            <div class="bg-slate-900/40 backdrop-blur-md border border-slate-700/30 rounded-[2rem] p-6 flex-1 flex flex-col min-h-0">
-                <div class="text-[10px] font-mono text-slate-500 tracking-widest uppercase mb-4 border-b border-slate-800 pb-3 flex justify-between items-center">
-                    <span>Sports Telemetry</span>
-                    <span class="text-blue-500/60 animate-pulse">LIVE</span>
+            <div class="flex-1 bg-slate-900/40 border border-slate-700/30 rounded-[2rem] p-6 flex flex-col min-h-0">
+                <div class="text-xs font-mono text-slate-500 tracking-widest uppercase mb-4 border-b border-slate-800 pb-3 flex justify-between items-center">
+                    <span>Sports Feed</span>
                 </div>
-                <div class="flex flex-col gap-3 overflow-hidden flex-1">
-                    
-                    <script>
-                        const teamConfigs = [
-                            {id: '15'}, {id: '9'}, {id: '10'}, {id: '8'},
-                            {id: '275-fb'}, {id: '135-fb'}, {id: '275-mbb'}, {id: '275-wbb'}
-                        ];
-                        teamConfigs.forEach((t, index) => {
-                            if(index === 4) document.write(`<div class="h-px bg-slate-800/50 my-1"></div>`);
-                            document.write(`
-                            <div id="sports-card-${t.id}" class="bg-slate-900/40 border-slate-800 border rounded-xl p-3 flex justify-between items-center hidden">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center overflow-hidden shrink-0">
-                                        <img id="sports-logo-${t.id}" src="" class="w-6 h-6 object-contain hidden">
-                                    </div>
-                                    <div class="flex flex-col">
-                                        <div class="flex items-baseline gap-2">
-                                            <span id="sports-name-${t.id}" class="font-bold text-sm text-slate-200"></span>
-                                            <span id="sports-record-${t.id}" class="text-[9px] font-mono text-slate-500"></span>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <span id="sports-opp-${t.id}" class="text-[10px] text-slate-400"></span>
-                                            <span id="sports-prev-${t.id}" class="text-[9px] font-mono text-slate-600"></span>
-                                            <span id="sports-broadcast-${t.id}" class="text-[8px] font-mono bg-slate-800 text-slate-300 px-1 py-0.5 rounded hidden"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="text-right flex flex-col items-end">
-                                    <span id="sports-score-${t.id}" class="font-mono text-sm text-white">--</span>
-                                    <span id="sports-status-${t.id}" class="text-[9px] font-mono text-slate-500 uppercase mt-0.5">--</span>
-                                </div>
-                            </div>`);
-                        });
-                    </script>
-                </div>
+                <div id="sports-feed-container" class="flex flex-col overflow-hidden flex-1 gap-0">
+                    </div>
             </div>
+
         </div>
 
-        <div class="col-span-4 flex flex-col gap-6">
-            <div class="bg-slate-900/40 backdrop-blur-md border border-slate-700/30 rounded-[2rem] flex-1 overflow-hidden flex items-center justify-center relative shadow-inner p-2">
-                <img src="tony-column.png" class="w-full h-full object-cover rounded-[1.5rem]" alt="Hardware Display" onerror="this.style.display='none'">
-                
+        <div class="col-span-4 flex flex-col gap-6 h-full">
+            <div class="bg-slate-900/40 border border-slate-700/30 rounded-[2rem] flex-1 overflow-hidden flex items-center justify-center relative p-4">
+                <img src="tony-column.png" class="w-full h-full object-contain rounded-[1.5rem]" alt="Hardware Display" onerror="this.style.display='none'">
                 <div class="absolute inset-0 flex items-center justify-center -z-10">
-                    <span class="text-[10px] font-mono text-slate-700 tracking-widest uppercase">IMAGE SIGNAL LOST</span>
+                    <span class="text-xs font-mono text-slate-700 tracking-widest uppercase">IMAGE SIGNAL LOST</span>
                 </div>
             </div>
         </div>
