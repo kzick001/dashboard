@@ -1,5 +1,5 @@
 /**
- * ATMOS V1.1 - Logic Controller (Phase 3 - Hardened)
+ * ATMOS V1.2 - Advanced Logic Controller (Phase 2)
  * Architecture: Vanilla JS Module Pattern
  */
 
@@ -11,8 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     lon: -93.3666,
     endpoints: {
       telemetry: 'https://kzick-weather.askozicki.workers.dev/',
-      alerts: `https://api.weather.gov/alerts/active?point=44.9483,-93.3666`,
-      rainviewer: 'https://api.rainviewer.com/public/weather-maps.json'
+      alerts: `https://api.weather.gov/alerts/active?point=44.9483,-93.3666`
     },
     dom: {
       grid: document.getElementById('dashboard-grid')
@@ -22,15 +21,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const STATE = {
     weatherCode: 1000,
     isThunderstorm: false,
-    radar: { layers: [], timestamps: [], currentFrame: 0, intervalId: null, isPlaying: true, speed: 600 }
+    radar: { layers: [], timestamps: [], currentFrame: 0, intervalId: null, isPlaying: true, speed: 800 },
+    freshness: { timestamp: null, intervalId: null }
   };
 
   // --- 2. UTILITIES & ICONS ---
   const safeVal = (val) => val != null ? Math.round(val) : '--';
   
   const formatTime = (iso) => new Intl.DateTimeFormat('en-US', { hour: 'numeric', timeZone: 'America/Chicago' }).format(new Date(iso));
-  
   const formatDay = (iso) => new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'America/Chicago' }).format(new Date(iso));
+  const formatMonthDay = (iso) => new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', timeZone: 'America/Chicago' }).format(new Date(iso));
 
   const getIcon = (code) => {
     const icons = {
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         animation: 200,
         ghostClass: 'sortable-ghost',
         dragClass: 'sortable-drag',
-        filter: 'button, details, summary, .leaflet-control, canvas, a', // Prevents trapping UI interaction
+        filter: 'button, details, summary, .leaflet-control, canvas, a', // Prevents UI interaction traps
         preventOnFilter: false,
         delay: L.Browser.mobile ? 200 : 0, 
         delayOnTouchOnly: true,
@@ -76,11 +76,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // --- 4. NETWORK ENGINE ---
+  // --- 4. NETWORK & FRESHNESS ENGINE ---
   const NetworkEngine = {
     fetch: async () => {
       const cache = localStorage.getItem('atmos_data');
-      if (cache) HydrationEngine.render(JSON.parse(cache));
+      if (cache && !STATE.freshness.timestamp) HydrationEngine.render(JSON.parse(cache));
+
+      // Update UI to show fetching state
+      const refreshBtn = document.getElementById('manual-refresh-btn');
+      refreshBtn.classList.add('animate-spin', 'text-blue-400');
 
       try {
         const [cfRes, nwsRes] = await Promise.all([
@@ -95,14 +99,41 @@ document.addEventListener('DOMContentLoaded', () => {
         if (nwsRes.ok) { try { nwsData = await nwsRes.json(); } catch(e){} }
         
         const payload = { telemetry: cfData.data, alerts: nwsData.features || [] };
+        
+        // Prevent "Poisoned Cache" scenario
+        const hasValidData = payload.telemetry?.timelines?.find(x => x.timestep === 'current');
+        if (!hasValidData) throw new Error('Malformed Telemetry Data Payload');
+        
         localStorage.setItem('atmos_data', JSON.stringify(payload));
+        
         HydrationEngine.render(payload);
+        NetworkEngine.updateFreshness(true);
+
       } catch (err) {
         console.error("Fetch Error:", err);
-        if (!cache) {
-          document.getElementById('weather-desc').innerText = 'Data offline. Retrying...';
-        }
+        if (!cache) document.getElementById('weather-desc').innerText = 'Data offline. Retrying...';
+      } finally {
+        setTimeout(() => refreshBtn.classList.remove('animate-spin', 'text-blue-400'), 500);
       }
+    },
+    updateFreshness: (reset = false) => {
+      if (reset) {
+        STATE.freshness.timestamp = Date.now();
+        if (STATE.freshness.intervalId) clearInterval(STATE.freshness.intervalId);
+        STATE.freshness.intervalId = setInterval(() => NetworkEngine.updateFreshness(), 60000);
+      }
+      
+      if (!STATE.freshness.timestamp) return;
+      
+      const diffMins = Math.floor((Date.now() - STATE.freshness.timestamp) / 60000);
+      const textEl = document.getElementById('last-updated-text');
+      
+      if (diffMins === 0) textEl.innerText = "Updated: Just now";
+      else textEl.innerText = `Updated: ${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+
+      // Live Clock
+      const clockEl = document.getElementById('live-clock');
+      if (clockEl) clockEl.innerText = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(new Date());
     }
   };
 
@@ -119,28 +150,40 @@ document.addEventListener('DOMContentLoaded', () => {
       const dews = next24.map(h => Math.round(h.values.dewPoint));
       const precip = next24.map(h => h.values.precipitationProbability || 0);
 
+      // Dynamic styling for the "Current Hour" dot
+      const pointRadii = temps.map((_, i) => i === 0 ? 6 : 0);
+      const pointBgColors = temps.map((_, i) => i === 0 ? '#ffffff' : 'transparent');
+      const pointBorderColors = temps.map((_, i) => i === 0 ? '#60A5FA' : 'transparent');
+
       currentChart = new Chart(ctx, {
         type: 'line',
         data: {
           labels: labels,
           datasets: [
             {
-              label: 'Temperature (°F)', data: temps, borderColor: '#60A5FA', backgroundColor: '#60A5FA',
-              tension: 0.4, yAxisID: 'y', borderWidth: 2, pointRadius: 0
+              label: 'Temp (°F)', data: temps, borderColor: '#60A5FA', backgroundColor: '#60A5FA',
+              pointRadius: pointRadii, pointBackgroundColor: pointBgColors, pointBorderColor: pointBorderColors, pointBorderWidth: 3,
+              tension: 0.4, yAxisID: 'y', borderWidth: 2
             },
             {
               label: 'Dew Point', data: dews, borderColor: '#94A3B8', borderDash: [5, 5],
-              tension: 0.4, yAxisID: 'y', borderWidth: 2, pointRadius: 0
+              pointRadius: 0, tension: 0.4, yAxisID: 'y', borderWidth: 2
             },
             {
-              type: 'bar', label: 'Precip Chance (%)', data: precip, backgroundColor: 'rgba(56, 189, 248, 0.2)',
+              type: 'bar', label: 'Precip Chance (%)', data: precip, backgroundColor: 'rgba(56, 189, 248, 0.15)',
               yAxisID: 'y1', barPercentage: 1.0, categoryPercentage: 1.0
             }
           ]
         },
         options: {
           responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-          plugins: { legend: { display: false } },
+          plugins: { 
+            legend: { 
+              display: true, 
+              position: 'top',
+              labels: { color: '#94A3B8', boxWidth: 12, usePointStyle: true, font: { weight: 'bold' } }
+            } 
+          },
           scales: {
             x: { grid: { display: false }, ticks: { color: '#94A3B8', maxTicksLimit: 8 } },
             y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94A3B8' } },
@@ -151,9 +194,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // --- 6. RADAR ENGINE (RAINVIEWER) ---
+  // --- 6. RADAR ENGINE (IEM REVERT + SMOOTHING) ---
   const RadarEngine = {
-    init: async () => {
+    init: () => {
       const map = L.map('radar-map', {
         center: [CONFIG.lat, CONFIG.lon], zoom: 7, zoomControl: true,
         scrollWheelZoom: false, dragging: !L.Browser.mobile, tap: !L.Browser.mobile
@@ -162,38 +205,37 @@ document.addEventListener('DOMContentLoaded', () => {
       L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
       L.circleMarker([CONFIG.lat, CONFIG.lon], { color: '#38bdf8', radius: 6, weight: 2, fillOpacity: 0.5 }).addTo(map);
 
-      try {
-        const res = await fetch(CONFIG.endpoints.rainviewer);
-        const meta = await res.json();
-        const timestamps = meta.radar.past; 
+      // IEM 5-minute increments (last 50 mins)
+      const offsets = ['50', '45', '40', '35', '30', '25', '20', '15', '10', '05'];
+      STATE.radar.timestamps = offsets;
+      
+      STATE.radar.layers = offsets.map(offset => {
+        return L.tileLayer(`https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913-m${offset}m/{z}/{x}/{y}.png`, {
+          opacity: 0, transparent: true, zIndex: 400
+        }).addTo(map);
+      });
 
-        STATE.radar.timestamps = timestamps;
-        STATE.radar.layers = timestamps.map(ts => {
-          return L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/${ts}/256/{z}/{x}/{y}/2/1_1.png`, {
-            opacity: 0, transparent: true, zIndex: 400
-          }).addTo(map);
-        });
-
-        RadarEngine.startLoop();
-        RadarEngine.bindControls();
-
-      } catch (e) {
-        console.error("Radar Init Failed", e);
-      }
+      RadarEngine.startLoop();
+      RadarEngine.bindControls();
     },
     startLoop: () => {
       const timeLabel = document.getElementById('radar-time-label');
       
       const tick = () => {
+        // Fade out old layer
         STATE.radar.layers[STATE.radar.currentFrame].setOpacity(0);
+        // Advance
         STATE.radar.currentFrame = (STATE.radar.currentFrame + 1) % STATE.radar.layers.length;
+        // Fade in new layer (CSS handles the smoothing transition)
         STATE.radar.layers[STATE.radar.currentFrame].setOpacity(0.7);
         
-        const date = new Date(STATE.radar.timestamps[STATE.radar.currentFrame] * 1000);
-        timeLabel.innerText = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' }).format(date);
+        // Update Time UI
+        const offsetStr = STATE.radar.timestamps[STATE.radar.currentFrame];
+        timeLabel.innerText = `-${offsetStr} mins`;
       };
 
       if(STATE.radar.intervalId) clearInterval(STATE.radar.intervalId);
+      // Run loop (slowed slightly to allow CSS opacity transition to complete)
       STATE.radar.intervalId = setInterval(tick, STATE.radar.speed);
     },
     bindControls: () => {
@@ -212,15 +254,23 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       speedBtn.addEventListener('click', () => {
-        STATE.radar.speed = STATE.radar.speed === 600 ? 300 : 600;
-        speedBtn.innerText = STATE.radar.speed === 600 ? '1x Speed' : '2x Speed';
+        STATE.radar.speed = STATE.radar.speed === 800 ? 400 : 800;
+        speedBtn.innerText = STATE.radar.speed === 800 ? '1x Speed' : '2x Speed';
         if(STATE.radar.isPlaying) RadarEngine.startLoop();
       });
     }
   };
 
-  // --- 7. DOM HYDRATION ENGINE ---
+  // --- 7. DOM HYDRATION & THEME ENGINE ---
   const HydrationEngine = {
+    updateTheme: (code) => {
+      const metaTheme = document.getElementById('meta-theme');
+      let hex = '#0f172a'; // Default dark slate
+      if (code === 1000) hex = '#0284c7'; // Clear: Sky-600
+      else if (code >= 1100 && code < 1200) hex = '#1e293b'; // Rain: Slate-800
+      else if (code >= 5000) hex = '#475569'; // Snow: Slate-600
+      metaTheme.setAttribute('content', hex);
+    },
     render: (data) => {
       if (!data || !data.telemetry) return;
       const t = data.telemetry.timelines;
@@ -233,20 +283,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
       STATE.weatherCode = current.weatherCode;
       STATE.isThunderstorm = current.weatherCode >= 1101 && current.precipitationIntensity > 0.1;
+      
+      HydrationEngine.updateTheme(STATE.weatherCode);
 
+      // Hero Mapping
       const dom = (id) => document.getElementById(id);
       dom('weather-desc').innerText = mapDesc(current.weatherCode);
       dom('hero-icon').innerHTML = getIcon(current.weatherCode);
       dom('current-temp').innerHTML = `${safeVal(current.temperature)}&deg;`;
       dom('temp-high').innerHTML = `H: ${safeVal(daily[0].values.temperatureMax)}&deg;`;
       dom('temp-low').innerHTML = `L: ${safeVal(daily[0].values.temperatureMin)}&deg;`;
-      dom('current-feels').innerText = safeVal(current.temperatureApparent);
       
       dom('current-wind').innerText = `${safeVal(current.windSpeed)} mph`;
       dom('current-humidity').innerText = `${safeVal(current.humidity)}%`;
       dom('current-dew').innerHTML = `${safeVal(current.dewPoint)}&deg;`;
       dom('current-pressure').innerText = current.pressureSurfaceLevel ? `${current.pressureSurfaceLevel} inHg` : '--';
 
+      // Alerts Mapping
       const alertMod = dom('module-alerts');
       if (data.alerts && data.alerts.length > 0) {
         alertMod.classList.remove('hidden');
@@ -258,22 +311,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (hourly) ChartEngine.render(hourly);
 
+      // Extended Forecast (5-Day Horizontal)
       if (daily) {
-        dom('extended-container').innerHTML = daily.slice(1, 8).map(day => {
+        dom('extended-container').innerHTML = daily.slice(1, 6).map(day => {
           const v = day.values;
           const isPrecip = v.precipitationProbability > 20;
           return `
-            <div class="flex items-center justify-between py-2 border-b border-slate-700/50 last:border-0">
-              <span class="w-12 font-medium text-slate-300">${formatDay(day.startTime)}</span>
-              <div class="w-8 h-8 text-slate-400">${getIcon(v.weatherCode)}</div>
-              <span class="w-12 text-xs font-bold text-blue-400 text-center">${isPrecip ? Math.round(v.precipitationProbability)+'%' : ''}</span>
-              <div class="flex items-center gap-3 w-24 justify-end font-medium">
-                <span class="text-slate-400">${Math.round(v.temperatureMin)}&deg;</span>
-                <div class="w-16 h-1.5 rounded-full bg-slate-700 relative overflow-hidden">
-                  <div class="absolute inset-y-0 bg-gradient-to-r from-blue-500 to-orange-400 rounded-full w-full"></div>
-                </div>
+            <div class="flex flex-col items-center justify-between p-4 bg-slate-800/40 rounded-xl border border-slate-700/50 min-w-[85px] flex-1">
+              <span class="font-bold text-slate-300 uppercase text-xs">${formatDay(day.startTime)}</span>
+              <span class="text-[10px] text-slate-500 mb-2 whitespace-nowrap">${formatMonthDay(day.startTime)}</span>
+              <div class="w-10 h-10 text-slate-400 mb-2">${getIcon(v.weatherCode)}</div>
+              <div class="flex gap-2 font-bold text-sm">
                 <span class="text-slate-100">${Math.round(v.temperatureMax)}&deg;</span>
+                <span class="text-slate-500">${Math.round(v.temperatureMin)}&deg;</span>
               </div>
+              <span class="text-[10px] font-bold text-blue-400 mt-2">${isPrecip ? Math.round(v.precipitationProbability)+'%' : '--'}</span>
             </div>
           `;
         }).join('');
@@ -290,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const resize = () => { cw = canvas.width = window.innerWidth; ch = canvas.height = window.innerHeight; };
       window.addEventListener('resize', resize);
-      resize(); // Init variables immediately
+      resize(); 
 
       for (let i = 0; i < 300; i++) particles.push({ x: Math.random() * cw, y: Math.random() * ch, l: Math.random() * 25 + 10, s: Math.random() * 20 + 15 });
 
@@ -300,7 +352,11 @@ document.addEventListener('DOMContentLoaded', () => {
           ctx.strokeStyle = 'rgba(147, 197, 253, 0.2)'; ctx.lineWidth = 2; ctx.beginPath();
           for (let p of particles) {
             ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y + p.l);
-            p.y += p.s; if (p.y > ch) p.y = -p.l;
+            p.y += p.s; 
+            if (p.y > ch) { 
+              p.y = -p.l; 
+              p.x = Math.random() * cw; // Device Rotation Fix
+            }
           }
           ctx.stroke();
         }
@@ -318,8 +374,12 @@ document.addEventListener('DOMContentLoaded', () => {
   StorageEngine.initDragAndDrop();
   CanvasEngine.init();
   RadarEngine.init();
+  
+  // Initial Fetch & Bind Manual Refresh
   NetworkEngine.fetch();
-
+  document.getElementById('manual-refresh-btn').addEventListener('click', NetworkEngine.fetch);
+  
+  // Auto-fetch every 5 minutes
   setInterval(NetworkEngine.fetch, 300000); 
 
 });
