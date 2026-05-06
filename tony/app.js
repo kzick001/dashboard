@@ -26,7 +26,7 @@ const FORMATTERS = {
 
 function cacheDOM() {
     const ids = [
-        'comp-hour', 'comp-minute', 'comp-date', 'sys-status-dot', 'sys-status-text',
+        'comp-hour', 'comp-minute', 'comp-ampm', 'comp-date', 'sys-status-dot', 'sys-status-text',
         'current-icon', 'current-temp', 'high-temp', 'low-temp', 'wind-speed',
         'dew-point', 'aqi-value', 'aqi-ring', 'sunrise-time', 'sunset-time',
         'alerts-container', 'alerts-text', 'forecast-container', 'sports-feed-container'
@@ -45,8 +45,8 @@ function updateClock() {
     const ampm = timeParts.find(p => p.type === 'dayPeriod')?.value || '';
     
     if (DOM['comp-hour'].textContent !== hour) DOM['comp-hour'].textContent = hour;
-    const minuteStr = `${minute} ${ampm}`.trim();
-    if (DOM['comp-minute'].textContent !== minuteStr) DOM['comp-minute'].textContent = minuteStr;
+    if (DOM['comp-minute'].textContent !== minute) DOM['comp-minute'].textContent = minute;
+    if (DOM['comp-ampm'] && DOM['comp-ampm'].textContent !== ampm) DOM['comp-ampm'].textContent = ampm;
     
     const dateStr = FORMATTERS.date.format(now).toUpperCase();
     if (DOM['comp-date'].textContent !== dateStr) DOM['comp-date'].textContent = dateStr;
@@ -128,7 +128,6 @@ async function updateWeather() {
     const daily = timelines.find(t => t.timestep === '1d')?.intervals;
     const airnow = payload.airnow;
 
-    // Build AQI forecast dictionary { 'YYYY-MM-DD': maxAQI }
     const aqiForecastMap = {};
     if (airnow && airnow.forecast) {
         airnow.forecast.forEach(f => {
@@ -140,7 +139,6 @@ async function updateWeather() {
         });
     }
 
-    // Process Current Weather
     if (current) {
         DOM['current-temp'].textContent = `${Math.round(current.temperature)}°`;
         DOM['dew-point'].textContent = `${Math.round(current.dewPoint)}°`;
@@ -148,7 +146,6 @@ async function updateWeather() {
         DOM['current-icon'].innerHTML = getIconSVG(current.weatherCode);
     }
 
-    // Process Current AQI
     if (airnow) {
         const currentAqi = airnow.primaryAQI || 0;
         DOM['aqi-value'].textContent = currentAqi > 0 ? currentAqi : '--';
@@ -171,7 +168,6 @@ async function updateWeather() {
         renderAlerts();
     }
 
-    // Process Forecast
     if (daily && daily.length > 0) {
         const today = daily[0].values;
         DOM['high-temp'].textContent = `${Math.round(today.temperatureMax)}°`;
@@ -210,6 +206,8 @@ async function updateSports() {
     if (!data || !data.teams) return;
 
     const now = Date.now();
+    const safeScore = (s) => (typeof s === 'object' && s !== null) ? (s.value || s.displayValue || s.display_value || '?') : s;
+
     const sorted = Object.values(data.teams).map(team => {
         let weight = 4;
         let state = 'OFFSEASON';
@@ -217,10 +215,7 @@ async function updateSports() {
         const nextTime = team._meta.next_game_time_ms;
         const lastFetch = team._meta.last_fetched;
 
-        if (hasLive || team.status === 'LIVE' || team.status === 'IN PROGRESS') {
-            weight = 1;
-            state = 'LIVE';
-        } else if (team.status === 'FINAL') {
+        if (team.status === 'FINAL') {
             const isRecent = (now - lastFetch) < CONFIG.BASK_DURATION_MS;
             const notImminent = nextTime === 0 || (nextTime - now) > CONFIG.BASK_CUTOFF_MS;
             if (isRecent && notImminent) {
@@ -233,7 +228,10 @@ async function updateSports() {
                 weight = 4;
                 state = 'OFFSEASON';
             }
-        } else if (team.status === 'PRE-GAME') {
+        } else if (hasLive || team.status === 'LIVE' || team.status === 'IN PROGRESS') {
+            weight = 1;
+            state = 'LIVE';
+        } else if (team.status === 'PRE-GAME' || team.status === 'SCHEDULED') {
             weight = 3;
             state = 'UPCOMING';
         }
@@ -262,7 +260,7 @@ async function updateSports() {
                     </div>
                 </div>
                 <div class="flex flex-col items-end">
-                    <span class="text-2xl font-mono text-white">${ls.away_abbrev} ${ls.away_score} - ${ls.home_abbrev} ${ls.home_score}</span>
+                    <span class="text-2xl font-mono text-white">${ls.away_abbrev} ${safeScore(ls.away_score)} - ${ls.home_abbrev} ${safeScore(ls.home_score)}</span>
                     <span class="text-xs font-mono text-blue-400 animate-pulse mt-1">PERIOD ${ls.period} • ${ls.clock}</span>
                 </div>
             `;
@@ -277,7 +275,7 @@ async function updateSports() {
                     </div>
                 </div>
                 <div class="flex flex-col items-end">
-                    <span class="text-xl font-mono text-white">${hasPrev ? team.previous_game.result + ' ' + team.previous_game.score : '--'}</span>
+                    <span class="text-xl font-mono text-white">${hasPrev ? team.previous_game.result + ' ' + safeScore(team.previous_game.score) : '--'}</span>
                     <span class="text-xs font-mono text-slate-500 mt-1">FINAL ${hasPrev ? 'vs ' + team.previous_game.opponent : ''}</span>
                 </div>
             `;
@@ -309,7 +307,7 @@ async function updateSports() {
                     </div>
                 </div>
                 <div class="flex flex-col items-end">
-                    <span class="text-xs font-mono text-slate-500">${hasPrev ? 'LAST: ' + team.previous_game.result + ' ' + team.previous_game.score + ' vs ' + team.previous_game.opponent : 'OFFSEASON'}</span>
+                    <span class="text-xs font-mono text-slate-500">${hasPrev ? 'LAST: ' + team.previous_game.result + ' ' + safeScore(team.previous_game.score) + ' vs ' + team.previous_game.opponent : 'OFFSEASON'}</span>
                 </div>
             `;
         }
