@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tony Kiosk V0.4.2</title>
+    <title>Tony Kiosk V0.4.3</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 10 C20 10, 15 20, 15 20 C15 20, 25 25, 32 18 C39 25, 49 20, 49 20 C49 20, 44 10, 32 10 Z' fill='%2322c55e'/><circle cx='22' cy='30' r='10' fill='%23e30b5d'/><circle cx='42' cy='30' r='10' fill='%23e30b5d'/><circle cx='26' cy='45' r='10' fill='%23e30b5d'/><circle cx='38' cy='45' r='10' fill='%23e30b5d'/><circle cx='32' cy='52' r='10' fill='%23e30b5d'/><circle cx='32' cy='35' r='14' fill='%23e30b5d'/><text x='32' y='48' font-family='sans-serif' font-size='36' font-weight='bold' fill='%23fde047' text-anchor='middle'>T</text></svg>">
     
@@ -49,7 +49,7 @@
     </div>
 
     <div class="z-10 flex justify-between items-center mb-8 border-b border-slate-800/60 pb-4 flex-none">
-        <div class="text-[10px] font-mono tracking-[0.3em] text-slate-500 uppercase">Raspberry Tony // V0.4.2 Hotfix</div>
+        <div class="text-[10px] font-mono tracking-[0.3em] text-slate-500 uppercase">Raspberry Tony // V0.4.3 Stable</div>
         <div class="flex items-center gap-2">
             <span id="sys-status-dot" class="text-green-500 animate-blink">●</span> 
             <span id="sys-status-text" class="text-[10px] font-mono text-slate-400 uppercase tracking-widest">System Online</span>
@@ -71,11 +71,13 @@
 
             <div class="bg-slate-900/40 border border-slate-700/30 rounded-[2rem] p-8 flex flex-col shadow-xl">
                 <div class="text-xs font-mono text-slate-500 tracking-widest uppercase mb-4 text-center">Current Conditions</div>
-                <div class="flex items-end justify-center gap-6">
-                    <span id="low-temp" class="text-4xl font-mono text-blue-500/80 pb-2">--°</span>
-                    <div id="current-icon" class="w-20 h-20 text-slate-200 mb-2"></div>
-                    <span id="current-temp" class="text-[8rem] font-light text-white leading-none tracking-tighter mx-6">--°</span>
-                    <span id="high-temp" class="text-4xl font-mono text-red-500/80 pb-2">--°</span>
+                <div class="flex items-center justify-between w-full px-4">
+                    <span id="low-temp" class="text-4xl font-mono text-blue-500/80">--°</span>
+                    <div class="flex flex-col items-center">
+                        <div id="current-icon" class="w-16 h-16 text-slate-200 mb-2"></div>
+                        <span id="current-temp" class="text-[8rem] font-light text-white leading-none tracking-tighter">--°</span>
+                    </div>
+                    <span id="high-temp" class="text-4xl font-mono text-red-500/80">--°</span>
                 </div>
             </div>
 
@@ -120,7 +122,7 @@
             </div>
 
             <div class="mt-auto bg-slate-900/40 border border-slate-700/30 rounded-[2rem] p-4 flex justify-center items-center h-24">
-                <img src="rt-logo.png" class="h-12 w-auto grayscale brightness-150 opacity-50" alt="RT Logo" onerror="this.style.display='none'">
+                <img src="rt-logo.png" class="h-12 w-auto grayscale brightness-150 opacity-80" alt="RT Logo" onerror="this.style.display='none'">
             </div>
         </div>
 
@@ -141,7 +143,7 @@
                 <div class="text-xs font-mono text-slate-500 tracking-widest uppercase mb-4 border-b border-slate-800 pb-3 flex justify-between items-center">
                     <span>Sports Feed</span>
                 </div>
-                <div id="sports-feed-container" class="flex flex-col overflow-hidden flex-1 gap-0">
+                <div id="sports-feed-container" class="grid grid-cols-3 gap-4 overflow-y-auto flex-1 content-start">
                     </div>
             </div>
 
