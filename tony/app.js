@@ -201,6 +201,31 @@ async function updateWeather() {
     }
 }
 
+function isOffseason(sportKey) {
+    const deadZones = {
+        'NFL': { start: '02-20', end: '07-15' },
+        'NCAAF': { start: '01-20', end: '08-15' },
+        'NBA': { start: '06-25', end: '09-30' },
+        'NHL': { start: '06-25', end: '09-15' },
+        'MLB': { start: '11-10', end: '02-15' },
+        'WNBA': { start: '11-01', end: '04-15' },
+        'NCAAMBB': { start: '04-15', end: '10-15' },
+        'NCAAMHOK': { start: '04-15', end: '09-15' }
+    };
+
+    const range = deadZones[sportKey];
+    if (!range) return false;
+
+    const now = new Date();
+    const today = String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+
+    if (range.start <= range.end) {
+        return today >= range.start && today <= range.end;
+    } else {
+        return today >= range.start || today <= range.end;
+    }
+}
+
 async function updateSports() {
     const data = await fetchWithRetry(CONFIG.SPORTS_URL, 2, 1000);
     if (!data || !data.teams) return;
@@ -214,6 +239,10 @@ async function updateSports() {
         const hasLive = team.current_game && team.current_game.live_state;
         const nextTime = team._meta.next_game_time_ms;
         const lastFetch = team._meta.last_fetched;
+
+        if (isOffseason(team.sport)) {
+            return { ...team, weight: 4, state: 'OFFSEASON' };
+        }
 
         if (team.status === 'FINAL') {
             const isRecent = (now - lastFetch) < CONFIG.BASK_DURATION_MS;
@@ -244,70 +273,84 @@ async function updateSports() {
         const div = document.createElement('div');
         const hasPrev = team.previous_game;
         const hasCur = team.current_game && team.current_game.opponent;
+        const scoreSize = (team.sport === 'NBA' || team.sport === 'WNBA') ? 'text-lg' : 'text-xl';
+
+        const logoHtml = `<div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0"><img src="${team.logo_url}" class="w-7 h-7 object-contain" onerror="this.style.display='none'"></div>`;
 
         if (team.state === 'LIVE') {
-            div.className = 'py-4 px-4 bg-slate-800/40 border border-slate-700 rounded-xl flex items-center mb-3 justify-between';
+            div.className = 'bg-slate-800/60 border border-slate-600 rounded-xl p-4 flex flex-col justify-between h-48 shadow-lg shadow-black/20';
             const ls = team.current_game.live_state;
             div.innerHTML = `
-                <div class="flex items-center gap-4">
-                    <img src="${team.logo_url}" class="w-12 h-12 object-contain bg-slate-800 rounded-full p-1" onerror="this.style.display='none'">
-                    <div class="flex flex-col">
-                        <span class="font-bold text-white text-lg">${team.team_name.toUpperCase()}</span>
+                <div class="flex justify-between items-start mb-2">
+                    ${logoHtml}
+                    <div class="flex flex-col items-end">
                         <div class="flex items-center gap-2">
-                            <span class="text-slate-400 text-xs font-mono">${team.team_record}</span>
-                            <span class="text-slate-500 text-[10px]">vs ${team.current_game.opponent} • ${team.current_game.network}</span>
+                            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                            <span class="text-[10px] font-mono text-red-400 font-bold tracking-widest uppercase">Live</span>
                         </div>
+                        ${hasCur && team.current_game.network ? `<span class="px-2 py-[1px] bg-slate-700/50 border border-slate-600 rounded text-[9px] font-mono text-slate-300 mt-1.5 tracking-wider">${team.current_game.network}</span>` : ''}
                     </div>
                 </div>
-                <div class="flex flex-col items-end">
-                    <span class="text-2xl font-mono text-white">${ls.away_abbrev} ${safeScore(ls.away_score)} - ${ls.home_abbrev} ${safeScore(ls.home_score)}</span>
-                    <span class="text-xs font-mono text-blue-400 animate-pulse mt-1">PERIOD ${ls.period} • ${ls.clock}</span>
+                <div class="flex flex-col mb-auto mt-2">
+                    <span class="text-sm font-bold text-white truncate tracking-wide">${team.team_name.toUpperCase()}</span>
+                    <span class="text-[10px] font-mono text-slate-400">${team.team_record}</span>
+                </div>
+                <div class="flex flex-col mt-4 pt-3 border-t border-slate-700/50">
+                    <span class="${scoreSize} font-mono font-bold text-white tracking-tighter">${ls.away_abbrev} ${safeScore(ls.away_score)} <span class="text-slate-500 font-normal mx-0.5">-</span> ${ls.home_abbrev} ${safeScore(ls.home_score)}</span>
+                    <span class="text-[10px] font-mono text-cyan-400 mt-1 font-semibold tracking-wide">PERIOD ${ls.period} • ${ls.clock}</span>
                 </div>
             `;
         } else if (team.state === 'BASK') {
-            div.className = 'py-3 px-4 border-b border-slate-800 flex items-center justify-between';
+            div.className = 'bg-slate-800/40 border border-slate-700 rounded-xl p-4 flex flex-col justify-between h-48';
             div.innerHTML = `
-                <div class="flex items-center gap-4">
-                    <img src="${team.logo_url}" class="w-10 h-10 object-contain bg-slate-800 rounded-full p-1" onerror="this.style.display='none'">
-                    <div class="flex flex-col">
-                        <span class="text-slate-200 text-base font-semibold">${team.team_name.toUpperCase()}</span>
-                        <span class="text-slate-400 text-xs font-mono">${team.team_record}</span>
+                <div class="flex justify-between items-start mb-2">
+                    ${logoHtml}
+                    <div class="flex flex-col items-end">
+                        <span class="text-[10px] font-mono text-slate-400 tracking-widest uppercase">Final</span>
                     </div>
                 </div>
-                <div class="flex flex-col items-end">
-                    <span class="text-xl font-mono text-white">${hasPrev ? team.previous_game.result + ' ' + safeScore(team.previous_game.score) : '--'}</span>
-                    <span class="text-xs font-mono text-slate-500 mt-1">FINAL ${hasPrev ? 'vs ' + team.previous_game.opponent : ''}</span>
+                <div class="flex flex-col mb-auto mt-2">
+                    <span class="text-sm font-bold text-slate-200 truncate tracking-wide">${team.team_name.toUpperCase()}</span>
+                    <span class="text-[10px] font-mono text-slate-400">${team.team_record}</span>
+                </div>
+                <div class="flex flex-col mt-4 pt-3 border-t border-slate-700/50">
+                    <span class="${scoreSize} font-mono font-semibold text-white tracking-tighter">${hasPrev ? team.previous_game.result + ' ' + safeScore(team.previous_game.score) : '--'}</span>
+                    <span class="text-[9px] font-mono text-slate-400 mt-1 uppercase tracking-wide">Final: ${hasPrev ? 'vs ' + team.previous_game.opponent : '--'}</span>
                 </div>
             `;
         } else if (team.state === 'UPCOMING') {
-            div.className = 'py-3 px-4 border-b border-slate-800 flex items-center justify-between';
+            div.className = 'bg-slate-800/40 border border-slate-700 rounded-xl p-4 flex flex-col justify-between h-48';
             div.innerHTML = `
-                <div class="flex items-center gap-4">
-                    <img src="${team.logo_url}" class="w-10 h-10 object-contain bg-slate-800 rounded-full p-1" onerror="this.style.display='none'">
-                    <div class="flex flex-col">
-                        <span class="text-slate-200 text-base font-semibold">${team.team_name.toUpperCase()}</span>
-                        <div class="flex items-center gap-2">
-                            <span class="text-slate-400 text-xs font-mono">${team.team_record}</span>
-                            <span class="text-slate-500 text-[10px]">vs ${hasCur ? team.current_game.opponent + ' • ' + team.current_game.network : 'TBD'}</span>
-                        </div>
+                <div class="flex justify-between items-start mb-2">
+                    ${logoHtml}
+                    <div class="flex flex-col items-end">
+                        <span class="text-[10px] font-mono text-slate-400 tracking-widest uppercase">${hasCur ? team.current_game.display_date + ' • ' + team.current_game.display_time : 'TBD'}</span>
+                        ${hasCur && team.current_game.network ? `<span class="px-2 py-[1px] bg-slate-700/50 border border-slate-600 rounded text-[9px] font-mono text-slate-300 mt-1.5 tracking-wider">${team.current_game.network}</span>` : ''}
                     </div>
                 </div>
-                <div class="flex flex-col items-end">
-                    <span class="text-sm font-mono text-slate-400">${hasCur ? team.current_game.display_date + ' • ' + team.current_game.display_time : 'TBD'}</span>
+                <div class="flex flex-col mb-auto mt-2">
+                    <span class="text-sm font-bold text-slate-200 truncate tracking-wide">${team.team_name.toUpperCase()}</span>
+                    <span class="text-[10px] font-mono text-slate-400">${team.team_record}</span>
+                </div>
+                <div class="flex flex-col mt-4 pt-3 border-t border-slate-700/50">
+                    <span class="text-sm font-mono font-semibold text-white tracking-tight uppercase">vs ${hasCur ? team.current_game.opponent : 'TBD'}</span>
+                    <span class="text-[9px] font-mono text-slate-400 mt-1 uppercase tracking-wide">Last: ${hasPrev ? team.previous_game.result + ' ' + safeScore(team.previous_game.score) + ' vs ' + team.previous_game.opponent : '--'}</span>
                 </div>
             `;
         } else {
-            div.className = 'py-2 px-4 border-b border-slate-800/50 flex items-center justify-between opacity-50 grayscale';
+            div.className = 'bg-slate-800/30 border border-slate-800 rounded-xl p-4 flex flex-col justify-between h-48 opacity-60 grayscale-[80%] transition-all hover:opacity-100 hover:grayscale-0';
             div.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <img src="${team.logo_url}" class="w-8 h-8 object-contain bg-slate-800 rounded-full p-1" onerror="this.style.display='none'">
-                    <div class="flex flex-col">
-                        <span class="text-slate-400 text-sm font-semibold">${team.team_name.toUpperCase()}</span>
-                        <span class="text-slate-500 text-[10px] font-mono">${team.team_record}</span>
-                    </div>
+                <div class="flex justify-between items-start mb-2">
+                    <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0"><img src="${team.logo_url}" class="w-7 h-7 object-contain opacity-50" onerror="this.style.display='none'"></div>
+                    <span class="text-[10px] font-mono text-slate-500 tracking-widest uppercase">Offseason</span>
                 </div>
-                <div class="flex flex-col items-end">
-                    <span class="text-xs font-mono text-slate-500">${hasPrev ? 'LAST: ' + team.previous_game.result + ' ' + safeScore(team.previous_game.score) + ' vs ' + team.previous_game.opponent : 'OFFSEASON'}</span>
+                <div class="flex flex-col mb-auto mt-2">
+                    <span class="text-sm font-bold text-slate-300 truncate tracking-wide">${team.team_name.toUpperCase()}</span>
+                    <span class="text-[10px] font-mono text-slate-500">${team.team_record}</span>
+                </div>
+                <div class="flex flex-col mt-4 pt-3 border-t border-slate-800/50">
+                    <span class="text-xs font-mono text-slate-500 tracking-tight">--</span>
+                    <span class="text-[9px] font-mono text-slate-400 mt-1 uppercase tracking-wide">Last: ${hasPrev ? team.previous_game.result + ' ' + safeScore(team.previous_game.score) + ' vs ' + team.previous_game.opponent : '--'}</span>
                 </div>
             `;
         }
