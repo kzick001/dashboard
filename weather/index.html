@@ -1,141 +1,153 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Atmos</title>
   
-  <meta name="theme-color" id="meta-theme" content="#0f172a">
-
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
-
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='70' r='30' fill='%231e293b'/%3E%3Cpath d='M 10 70 A 40 40 0 0 1 90 70' fill='none' stroke='%2306b6d4' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E">
   
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Atmos%20Weather%22%2C%22short_name%22%3A%22Atmos%22%2C%22display%22%3A%22standalone%22%2C%22theme_color%22%3A%22%230f172a%22%2C%22background_color%22%3A%22%230f172a%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20100%20100'%253E%253Ccircle%20cx%3D'50'%20cy%3D'70'%20r%3D'30'%20fill%3D'%25231e293b'%2F%253E%253Cpath%20d%3D'M%2010%2070%20A%2040%2040%200%200%201%2090%2070'%20fill%3D'none'%20stroke%3D'%252306b6d4'%20stroke-width%3D'8'%20stroke-linecap%3D'round'%2F%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+  <link href="https://unpkg.com/maplibre-gl@3.3.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@3.3.1/dist/maplibre-gl.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
   <link rel="stylesheet" href="styles.css">
-
-  <style>
-    /* Forces native crossfading when JS updates Leaflet layer opacities */
-    .leaflet-layer {
-      transition: opacity 0.6s ease-in-out;
-    }
-  </style>
 </head>
-<body class="p-4 md:p-6 min-h-screen flex flex-col items-center bg-slate-900 text-slate-50 antialiased overflow-x-hidden relative">
+<body class="bg-slate-900 text-slate-50 antialiased overflow-x-hidden min-h-screen pt-safe pb-safe selection:bg-cyan-500/30 font-inter">
 
-  <canvas id="weather-canvas"></canvas>
+  <div class="fixed inset-0 z-[-1] radial-bg"></div>
 
-  <header class="w-full max-w-6xl flex justify-between items-center mb-6 relative z-10 glass-panel px-5 py-3 sm:px-6 sm:py-4">
-    <div class="flex items-center gap-2 sm:gap-3">
-      <svg class="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"></path></svg>
-      <h1 class="text-lg sm:text-xl font-bold tracking-widest uppercase">Atmos</h1>
+  <header class="w-full max-w-6xl mx-auto flex justify-between items-center p-4 sm:p-6 mb-2 relative z-10">
+    <div class="flex items-center gap-3">
+      <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="70" r="30" fill="#1e293b"></circle><path d="M 10 70 A 40 40 0 0 1 90 70" fill="none" stroke="#06b6d4" stroke-width="8" stroke-linecap="round"></path></svg>
+      <h1 class="text-2xl font-extrabold tracking-widest uppercase bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">Atmos</h1>
     </div>
-    <div class="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-4 text-[10px] sm:text-xs font-bold text-slate-400 tracking-widest uppercase text-right">
-      <span id="live-clock" class="hidden sm:block">--:--</span>
-      <span id="last-updated-text" class="text-blue-300">Updated: Just now</span>
-      <button id="manual-refresh-btn" class="hover:text-white transition-colors cursor-pointer focus:outline-none p-2 -mr-2 sm:-my-2" aria-label="Refresh Data">
-        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-      </button>
+    <div class="text-xs font-mono text-slate-400 flex items-center gap-4">
+      <span id="ui-freshness">Syncing...</span>
     </div>
   </header>
 
-  <main id="dashboard-grid" class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10 flex-grow">
+  <section class="w-full max-w-6xl mx-auto px-4 sm:px-6 mb-6 z-20 relative hidden" id="alerts-wrapper">
+    <details class="glass-panel group transition-all w-full haptic-trigger" id="alerts-details">
+      <summary class="p-4 font-bold text-red-500 list-none flex justify-between items-center outline-none cursor-pointer">
+        <span class="flex items-center gap-3 uppercase tracking-wider text-sm">
+          <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+          Active Alerts
+        </span>
+        <span class="text-slate-400 group-open:rotate-180 transition-transform duration-300">▼</span>
+      </summary>
+      <div id="alerts-content" class="p-4 pt-0 text-sm text-slate-300 border-t border-red-500/20 mt-2"></div>
+    </details>
+  </section>
+
+  <main id="dashboard-grid" class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 sm:px-6 pb-12 relative z-10">
     
-    <section data-id="module-alerts" id="module-alerts" class="col-span-1 lg:col-span-3 hidden cursor-pointer">
-      <details class="glass-panel group transition-all w-full">
-        <summary class="p-4 font-bold text-red-400 list-none flex justify-between items-center outline-none">
-          <span id="alert-title" class="flex items-center gap-3">
-            <svg class="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-            Loading Alerts...
-          </span>
-          <span class="text-sm text-slate-400 group-open:rotate-180 transition-transform duration-300">▼</span>
-        </summary>
-        <div id="alert-description" class="p-4 pt-0 text-sm text-slate-300 border-t border-red-500/30 mt-2 leading-relaxed whitespace-pre-wrap break-words"></div>
-      </details>
-    </section>
-
-    <section data-id="module-hero" id="module-hero" class="glass-panel p-6 col-span-1 min-h-[350px] flex flex-col justify-between">
-      <div class="grid grid-cols-2 gap-4 h-full">
-        <div class="flex flex-col justify-between">
-          <div>
-            <h2 class="text-[10px] font-bold text-slate-400 tracking-widest uppercase">St. Louis Park, MN</h2>
-            <div class="mt-2 inline-block px-2 py-1 rounded bg-blue-500/20 border border-blue-500/30 text-blue-300 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap" id="weather-desc">Initializing</div>
-          </div>
-          <div class="mt-4">
-            <div class="text-7xl xl:text-8xl font-bold tracking-tighter" id="current-temp">--&deg;</div>
-            <div class="flex gap-3 text-sm font-bold text-slate-400 mt-2">
-              <span id="temp-high" class="text-slate-200">H: --&deg;</span>
-              <span id="temp-low">L: --&deg;</span>
-            </div>
+    <section data-id="mod-hero" class="glass-panel p-6 col-span-1 flex flex-col justify-between min-h-[360px] cursor-grab">
+      <div class="flex justify-between items-start">
+        <div>
+          <h2 class="text-[10px] font-bold text-slate-400 tracking-widest uppercase">St. Louis Park, MN</h2>
+          <div class="text-6xl font-extrabold tracking-tighter mt-3" id="ui-temp">--&deg;</div>
+          <div class="flex gap-3 text-sm font-bold text-slate-400 mt-1">
+            <span id="ui-high" class="text-slate-200">H: --&deg;</span>
+            <span id="ui-low">L: --&deg;</span>
           </div>
         </div>
-
-        <div class="flex flex-col justify-between items-end">
-          <div id="hero-icon" class="w-24 h-24 text-slate-100 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-            </div>
-          
-          <div class="grid grid-cols-2 gap-2 w-full mt-4">
-            <div class="bg-slate-800/50 p-2 rounded-lg border border-slate-700/50 flex flex-col justify-center">
-              <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Wind</p>
-              <p class="text-sm font-bold mt-0.5" id="current-wind">--</p>
-            </div>
-            <div class="bg-slate-800/50 p-2 rounded-lg border border-slate-700/50 flex flex-col justify-center">
-              <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Humidity</p>
-              <p class="text-sm font-bold mt-0.5" id="current-humidity">--</p>
-            </div>
-            <div class="bg-slate-800/50 p-2 rounded-lg border border-slate-700/50 flex flex-col justify-center">
-              <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Pressure</p>
-              <p class="text-sm font-bold mt-0.5" id="current-pressure">--</p>
-            </div>
-            <div class="bg-slate-800/50 p-2 rounded-lg border border-slate-700/50 flex flex-col justify-center">
-              <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Dew Pt</p>
-              <p class="text-sm font-bold mt-0.5" id="current-dew">--</p>
-            </div>
+        <div id="ui-icon" class="w-32 h-32 text-cyan-400 drop-shadow-[0_0_20px_rgba(6,182,212,0.3)] flex justify-center items-center">
           </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 w-full mt-6">
+        <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-700/50">
+          <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Wind</p>
+          <p class="text-base font-bold" id="ui-wind">--</p>
+        </div>
+        <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-700/50">
+          <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Humidity</p>
+          <p class="text-base font-bold" id="ui-humidity">--</p>
+        </div>
+        <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-700/50">
+          <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Pressure</p>
+          <p class="text-base font-bold" id="ui-pressure">--</p>
+        </div>
+        <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-700/50">
+          <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Dew Point</p>
+          <p class="text-base font-bold" id="ui-dew">--</p>
         </div>
       </div>
     </section>
 
-    <section data-id="module-radar" id="module-radar" class="glass-panel col-span-1 lg:col-span-2 relative overflow-hidden flex flex-col p-1 min-h-[350px]">
-      <div class="radar-controls absolute bottom-4 left-4 z-[1000] bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-full border border-slate-700 flex items-center gap-4 shadow-lg shadow-black/50">
-        <button id="radar-play-btn" class="text-slate-200 hover:text-white focus:outline-none flex items-center gap-2">
-          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
-          <span class="text-xs font-bold tracking-widest uppercase">Pause</span>
-        </button>
-        <div class="w-px h-4 bg-slate-600"></div>
-        <button id="radar-speed-btn" class="text-xs font-bold tracking-widest uppercase text-slate-400 hover:text-white transition-colors focus:outline-none">
-          1x Speed
-        </button>
-        <span id="radar-time-label" class="text-xs font-mono text-blue-300 ml-2">--:--</span>
+    <section data-id="mod-aqi" class="glass-panel p-6 col-span-1 flex flex-col justify-between min-h-[360px] cursor-grab">
+      <h2 class="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Air Quality</h2>
+      <div class="flex-grow flex flex-col justify-center items-center relative">
+        <svg class="w-40 h-40 transform -rotate-90" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8"></circle>
+          <circle id="aqi-gauge" cx="50" cy="50" r="45" fill="none" stroke="#22c55e" stroke-width="8" stroke-dasharray="283" stroke-dashoffset="283" stroke-linecap="round" class="transition-all duration-1000"></circle>
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center pt-2">
+          <span class="text-5xl font-extrabold" id="ui-aqi-val">--</span>
+          <span class="text-xs font-bold uppercase tracking-wider mt-1" id="ui-aqi-cat">Loading</span>
+        </div>
       </div>
-      <div id="radar-map" class="flex-grow rounded-[14px] bg-slate-800"></div>
+      <div class="flex justify-between items-end border-t border-slate-700/50 pt-4 mt-2">
+        <div>
+          <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Reporting Area</p>
+          <p class="text-sm font-bold" id="ui-aqi-area">--</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Primary Pollutant</p>
+          <p class="text-sm font-bold text-slate-200" id="ui-aqi-pollutant">--</p>
+        </div>
+      </div>
     </section>
 
-    <section data-id="module-hourly" id="module-hourly" class="glass-panel p-6 col-span-1 lg:col-span-3 min-h-[300px] flex flex-col">
-      <h2 class="text-xs font-bold tracking-widest text-slate-400 mb-4 uppercase">Hourly Trends</h2>
-      <div class="relative flex-grow w-full h-full">
+    <section data-id="mod-radar" id="radar-module" class="glass-panel col-span-1 lg:col-span-2 md:row-span-2 lg:row-span-1 relative overflow-hidden flex flex-col min-h-[360px] cursor-grab transition-colors duration-500">
+      <div class="absolute top-4 right-4 z-[1000] bg-slate-900/80 backdrop-blur border border-slate-700 p-3 rounded-2xl shadow-xl flex items-center gap-3">
+        <div class="relative w-12 h-12 flex items-center justify-center">
+          <svg viewBox="0 0 36 36" class="w-12 h-12 absolute -rotate-90">
+            <circle stroke-dasharray="100, 100" r="16" cx="18" cy="18" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="4"></circle>
+            <circle id="doom-gauge" stroke-dasharray="0, 100" r="16" cx="18" cy="18" fill="none" stroke="#ef4444" stroke-width="4" class="transition-all duration-1000"></circle>
+          </svg>
+          <span id="doom-val" class="font-mono text-sm font-bold text-white">--</span>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-[9px] font-bold tracking-widest uppercase text-slate-400">Doom Index</span>
+          <span id="doom-status" class="text-xs font-bold text-slate-200 uppercase">Calculating</span>
+        </div>
+      </div>
+
+      <div class="absolute bottom-6 left-6 z-[1000] bg-slate-900/90 backdrop-blur px-4 py-2 rounded-full border border-slate-700 flex items-center gap-4 haptic-trigger" id="radar-controls">
+        <button id="btn-play" class="text-white focus:outline-none">▶</button>
+        <span id="radar-time" class="text-xs font-mono text-cyan-400">-50 mins</span>
+      </div>
+
+      <div id="map" class="w-full h-full absolute inset-0 z-0"></div>
+    </section>
+
+    <section data-id="mod-chart" class="glass-panel p-6 col-span-1 md:col-span-2 lg:col-span-2 min-h-[300px] flex flex-col cursor-grab">
+      <h2 class="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-4">24-Hour Trajectory</h2>
+      <div class="relative flex-grow w-full">
         <canvas id="hourly-chart"></canvas>
       </div>
     </section>
 
-    <section data-id="module-extended" id="module-extended" class="glass-panel p-6 col-span-1 lg:col-span-3">
-      <h2 class="text-xs font-bold tracking-widest text-slate-400 mb-6 uppercase">5-Day Outlook</h2>
-      <div id="extended-container" class="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+    <section data-id="mod-5day" class="glass-panel p-6 col-span-1 lg:col-span-3 cursor-grab">
+      <h2 class="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-6">5-Day Outlook</h2>
+      <div id="outlook-container" class="grid grid-cols-2 sm:grid-cols-5 gap-4">
         </div>
     </section>
 
   </main>
 
-  <footer class="w-full max-w-6xl mt-8 text-center text-[10px] font-bold tracking-widest uppercase text-slate-500 relative z-10 pb-4">
-    <p>Data provided by <a href="https://www.weather.gov/" class="text-slate-400 hover:text-white" target="_blank">NWS</a> &middot; Telemetry by Cloudflare &middot; Radar by IEM</p>
-  </footer>
-
-  <script src="app.js" defer></script>
+  <script src="app.js"></script>
 </body>
 </html>
