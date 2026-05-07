@@ -1,436 +1,521 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dev Sports v1.2.3</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏟️</text></svg>">
+    <title>Sports Tracker // Cupertino</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9H4.5a2.5 2.5 0 0 1 0-5H6'/><path d='M18 9h1.5a2.5 2.5 0 0 0 0-5H18'/><path d='M4 22h16'/><path d='M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22'/><path d='M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22'/><path d='M18 2H6v7a6 6 0 0 0 12 0V2Z'/></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { 
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] }
+                }
+            }
+        }
+    </script>
+    
     <style>
-        /* Cupertino 2050 Design System */
-        :root {
-            --bg-color: #000000;
-            --text-primary: #F5F5F7;
-            --text-secondary: #86868B;
-            --text-tertiary: #515154;
-            --card-bg: rgba(255, 255, 255, 0.04);
-            --card-border: rgba(255, 255, 255, 0.08);
-            --accent-live: #FF3B30;
-            --accent-live-glow: rgba(255, 59, 48, 0.15);
-            --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            font-family: var(--font-stack);
-            -webkit-font-smoothing: antialiased;
-            padding: 32px;
-            overflow-x: hidden;
-        }
-
-        /* Header / App Bar */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            margin-bottom: 32px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--card-border);
-        }
-
-        h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            letter-spacing: -0.02em;
-        }
-
-        .version {
-            font-size: 0.85rem;
-            color: var(--text-tertiary);
-            margin-left: 8px;
-            font-weight: 400;
-        }
-
-        #last-updated {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            font-variant-numeric: tabular-nums;
-        }
-
-        /* Grid Layout */
-        #sports-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
-            gap: 24px;
-        }
-
-        /* Card Architecture */
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 24px;
-            padding: 24px;
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            display: flex;
-            flex-direction: column;
-            min-height: 280px;
-            transition: all 0.3s ease;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .card.live {
-            border-color: rgba(255, 59, 48, 0.4);
-            box-shadow: 0 0 32px var(--accent-live-glow), inset 0 0 16px var(--accent-live-glow);
-        }
-
-        .card.final {
-            opacity: 0.6;
-        }
-
-        /* Offseason Shelf Architecture */
-        .card.offseason {
-            min-height: 80px;
-            flex-direction: row;
-            align-items: center;
-            opacity: 0.4;
-            padding: 16px 24px;
-            align-self: start; 
+        body { 
+            background-color: #000000; 
+            color: #f8fafc; 
+            font-family: 'Inter', sans-serif; 
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, transparent 70%);
         }
         
-        .card.offseason .card-header {
-            margin-bottom: 0;
-            width: 100%;
-            align-items: center;
+        /* Cupertino 2050 Glass Cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
         }
-
-        .card.offseason .card-body, 
-        .card.offseason .card-footer {
-            display: none; 
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
         }
-
-        .card.offseason .team-logo {
-            width: 36px;
-            height: 36px;
-            opacity: 0.5;
+        
+        .glass-card.live-border {
+            border-color: rgba(239, 68, 68, 0.4);
+            background: linear-gradient(180deg, rgba(239, 68, 68, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
         }
-
-        /* Tier 1: Header */
-        .card-header {
-            display: flex;
-            justify-content: flex-start; /* Align everything tightly to the left */
-            align-items: flex-start;
-            gap: 16px; /* Create a fixed, intentional space between text and logo */
-            margin-bottom: auto;
-            width: 100%; 
-        }
-
-        /* Indestructible Flexbox constraints for text */
-        .header-text {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            min-width: 0; 
-            /* Remove flex-grow so it doesn't push the logo away */
-        }
-
-        .sport-badge {
-            font-size: 0.65rem;
-            color: var(--text-tertiary);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-weight: 700;
-            margin-bottom: 2px;
-        }
-
-        .team-name {
-            font-size: 1.1rem;
-            font-weight: 700;
-            letter-spacing: -0.01em;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .team-record {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .team-logo {
-            width: 48px;
-            height: 48px;
-            object-fit: contain;
-            flex-shrink: 0; /* Critical: Prevents the logo from turning into a 1px sliver */
-            filter: drop-shadow(0px 4px 12px rgba(255,255,255,0.15));
-        }
-
-        /* Tier 2: Main Body */
-        .card-body {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 24px 0;
-            text-align: center;
-        }
-
-        .matchup {
-            font-size: 1rem;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-weight: 500;
-        }
-
-        /* Minimalist Scoreboard Styles */
-        .scoreboard {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            margin-bottom: 12px;
-        }
-
-        .score-number {
-            font-size: 3.5rem;
-            font-weight: 700;
-            font-variant-numeric: tabular-nums;
-            line-height: 1;
-        }
-
-        .score-divider {
-            color: var(--text-tertiary);
-            margin: 0 20px;
-            font-size: 2rem;
-            font-weight: 300;
-        }
-
-        .live-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--accent-live);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 8px;
-        }
-
-        .pulse {
-            width: 6px;
-            height: 6px;
-            background-color: var(--accent-live);
-            border-radius: 50%;
-            animation: pulse-animation 2s infinite;
-        }
-
-        @keyframes pulse-animation {
-            0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); }
-            70% { box-shadow: 0 0 0 6px rgba(255, 59, 48, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
-        }
-
-        .game-context {
-            font-size: 0.9rem;
-            color: var(--text-primary);
-            font-weight: 500;
-        }
-
-        .game-subcontext {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-
-        /* Pre-Game Styles */
-        .time-display {
-            font-size: 2.2rem;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .network-display {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-
-        /* Tier 3: Footer */
-        .card-footer {
-            margin-top: auto;
-            padding-top: 16px;
-            border-top: 1px solid var(--card-border);
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            text-align: left;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        
+        /* Accordion Styling */
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col font-sans text-slate-200 antialiased selection:bg-white/20">
 
-    <header>
-        <h1>Dev Sports<span class="version">v1.2.3</span></h1>
-        <div id="last-updated">Updating...</div>
-    </header>
+    <div class="fixed top-0 w-full px-8 py-4 flex justify-between items-center z-50 border-b border-white/10 bg-black/50 backdrop-blur-xl">
+        <a href="index.html" class="text-[11px] font-bold text-white/60 hover:text-white transition-colors tracking-widest flex items-center gap-2 p-3 -ml-3">
+            <span>&larr;</span> LAUNCHPAD
+        </a>
+        <div class="flex items-center gap-3 text-white/60 font-mono text-[10px] uppercase tracking-widest" id="last-updated">
+            <span class="animate-pulse text-green-500">●</span> SYNCING...
+        </div>
+    </div>
 
-    <main id="sports-grid">
+    <div class="flex-1 flex flex-col items-center px-6 w-full pt-32 pb-20 relative z-10">
+
+        <header class="mb-12 text-center w-full max-w-7xl">
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-2 text-white/90">Sports Telemetry</h1>
+        </header>
+
+        <main class="w-full max-w-7xl flex flex-col gap-8">
+            
+            <details class="group relative glass-card overflow-hidden" open>
+                <summary class="flex justify-between items-center font-semibold cursor-pointer p-6 relative z-10 border-b border-white/5">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-white/10 p-2.5 rounded-xl border border-white/10 text-white/80">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                            </svg>
+                        </div>
+                        <span class="text-white/90 tracking-wide text-xl">Professional</span>
+                    </div>
+                    <span class="transition-transform duration-300 group-open:rotate-180 text-white/40">
+                        <svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24"><polyline points="6 9 12 15 18 9"/></svg>
+                    </span>
+                </summary>
+                <div class="relative z-10 bg-black/20">
+                    <div id="pro-feed" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-6">
+                        <div class="col-span-full p-12 text-center text-sm font-mono text-white/40 animate-pulse">Establishing uplink...</div>
+                    </div>
+                </div>
+            </details>
+
+            <details class="group relative glass-card overflow-hidden" open>
+                <summary class="flex justify-between items-center font-semibold cursor-pointer p-6 relative z-10 border-b border-white/5">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-white/10 p-2.5 rounded-xl border border-white/10 text-white/80">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14v7" />
+                            </svg>
+                        </div>
+                        <span class="text-white/90 tracking-wide text-xl">Collegiate</span>
+                    </div>
+                    <span class="transition-transform duration-300 group-open:rotate-180 text-white/40">
+                        <svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24"><polyline points="6 9 12 15 18 9"/></svg>
+                    </span>
+                </summary>
+                <div class="relative z-10 bg-black/20">
+                    <div id="college-feed" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-6">
+                        <div class="col-span-full p-12 text-center text-sm font-mono text-white/40 animate-pulse">Establishing uplink...</div>
+                    </div>
+                </div>
+            </details>
+
+            <div id="ncaa-container" class="transition-all duration-500">
+                <details id="ncaa-details" class="group relative glass-card overflow-hidden">
+                    <summary id="ncaa-summary" class="flex justify-between items-center font-semibold cursor-pointer p-6 relative z-10 border-b border-white/5">
+                        <div class="flex items-center gap-4">
+                            <div class="bg-white/10 p-2.5 rounded-xl border border-white/10 text-white/80">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2v20"/><path d="M5.5 5.5a9.5 9.5 0 0 1 0 13"/><path d="M18.5 5.5a9.5 9.5 0 0 0 0 13"/>
+                                </svg>
+                            </div>
+                            <span id="ncaa-title" class="text-white/90 tracking-wide text-xl">March Madness</span>
+                        </div>
+                        <span class="transition-transform duration-300 group-open:rotate-180 text-white/40">
+                            <svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24"><polyline points="6 9 12 15 18 9"/></svg>
+                        </span>
+                    </summary>
+                    <div class="p-0 relative z-10 bg-black/20">
+                        <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/5">
+                            <div>
+                                <h3 class="font-bold p-3 bg-white/5 text-xs font-mono text-white/60 text-center uppercase tracking-widest border-b border-white/5">Men's Bracket</h3>
+                                <div id="ncaa-mens-feed" class="max-h-[500px] overflow-y-auto p-4 flex flex-col gap-4">
+                                    <div class="p-6 text-center text-sm font-mono text-white/40 animate-pulse">Awaiting bracket...</div>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="font-bold p-3 bg-white/5 text-xs font-mono text-white/60 text-center uppercase tracking-widest border-b border-white/5">Women's Bracket</h3>
+                                <div id="ncaa-womens-feed" class="max-h-[500px] overflow-y-auto p-4 flex flex-col gap-4">
+                                    <div class="p-6 text-center text-sm font-mono text-white/40 animate-pulse">Awaiting bracket...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+            </div>
+
         </main>
+    </div>
 
     <script>
         const WORKER_URL = 'https://pi-sports-edge.askozicki.workers.dev/';
-        const REFRESH_RATE_MS = 60000; // 60 seconds
-        let lastRenderedTeamsHash = "";
+        const REFRESH_RATE_MS = 60000; 
 
-        // Fallback data for testing the UI
-        const MOCK_DATA = {
-            last_updated: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-            teams: {
-                "NFL_MIN": {
-                    sport: "NFL", team_name: "Minnesota Vikings", team_record: "7-2", status: "LIVE",
-                    logo_url: "https://a.espncdn.com/i/teamlogos/nfl/500/min.png",
-                    previous_game: { opponent: "DET", result: "W", score: "28-10", display_date: "Oct 24" },
-                    current_game: { opponent: "GB", live_state: { home_abbrev: "GB", away_abbrev: "MIN", home_score: "14", away_score: "21", period: "3rd QTR", clock: "10:45", context: "3rd & 4" } },
-                    _meta: { last_fetched: Date.now() }
-                }
-            }
-        };
+        // SVGs
+        const svgFootball = `<svg class="w-4 h-4 inline-block text-white/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.32 18.68A12.04 12.04 0 0 0 18.68 5.32 12.04 12.04 0 0 0 5.32 18.68Z"/><path d="m14.5 10.5-5 5"/><path d="m10.5 9.5-1 1"/><path d="m14.5 13.5-1 1"/></svg>`;
+        const svgBasketball = `<svg class="w-4 h-4 inline-block text-white/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2v20"/><path d="M5.5 5.5a9.5 9.5 0 0 1 0 13"/><path d="M18.5 5.5a9.5 9.5 0 0 0 0 13"/></svg>`;
+        const svgBaseball = `<svg class="w-4 h-4 inline-block text-white/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M6.5 4.5a9 9 0 0 1 0 15"/><path d="M17.5 4.5a9 9 0 0 0 0 15"/></svg>`;
+        const svgHockey = `<svg class="w-4 h-4 inline-block text-white/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l11-11 2 2-11 11H4v-2z"/><path d="M7 21h3"/><path d="M20 18l-11-11-2 2 11 11h2v-2z"/><path d="M14 21h3"/><circle cx="12" cy="16" r="2" fill="currentColor" stroke="none"/></svg>`;
 
-        async function fetchSportsData() {
-            try {
-                const response = await fetch(WORKER_URL);
-                if (!response.ok) throw new Error('Network response was not ok');
-                const data = await response.json();
-                
-                renderDashboard(data.teams ? data : MOCK_DATA); 
-            } catch (error) {
-                console.warn('Worker fetch failed, using fallback mock data for UI testing.', error);
-                MOCK_DATA.last_updated = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + " (Offline Mode)";
-                renderDashboard(MOCK_DATA);
+        // Configurations
+        const proConfig = [
+            { id: 'min-nfl', name: 'Minnesota Vikings', league: 'nfl', icon: svgFootball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/15/schedule' },
+            { id: 'gb-nfl', name: 'Green Bay Packers', league: 'nfl', icon: svgFootball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/9/schedule' },
+            { id: 'min-nba', name: 'Minnesota Timberwolves', league: 'nba', icon: svgBasketball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/16/schedule' },
+            { id: 'min-wnba', name: 'Minnesota Lynx', league: 'wnba', icon: svgBasketball, gender: 'W', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/teams/14/schedule' },
+            { id: 'min-mlb', name: 'Minnesota Twins', league: 'mlb', icon: svgBaseball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/10/schedule' },
+            { id: 'min-nhl', name: 'Minnesota Wild', league: 'nhl', icon: svgHockey, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/teams/30/schedule' },
+            { id: 'mil-nba', name: 'Milwaukee Bucks', league: 'nba', icon: svgBasketball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/15/schedule' },
+            { id: 'mil-mlb', name: 'Milwaukee Brewers', league: 'mlb', icon: svgBaseball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/8/schedule' },
+            { id: 'min-pwhl', name: 'Minnesota Frost', league: 'pwhl', icon: svgHockey, gender: 'W', url: 'https://site.api.espn.com/apis/site/v2/sports/hockey/pwhl/teams/4/schedule' }
+        ];
+
+        const collegeConfig = [
+            { name: 'Wisconsin Football', league: 'college-football', icon: svgFootball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/275/schedule' },
+            { name: 'Minnesota Football', league: 'college-football', icon: svgFootball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/135/schedule' },
+            { name: 'Wisconsin Basketball', league: 'mens-college-basketball', icon: svgBasketball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/275/schedule' },
+            { name: 'Minnesota Basketball', league: 'mens-college-basketball', icon: svgBasketball, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/135/schedule' },
+            { name: 'Wisconsin Basketball', league: 'womens-college-basketball', icon: svgBasketball, gender: 'W', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/teams/275/schedule' },
+            { name: 'Minnesota Basketball', league: 'womens-college-basketball', icon: svgBasketball, gender: 'W', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/teams/135/schedule' },
+            { name: 'Wisconsin Hockey', league: 'mens-college-hockey', icon: svgHockey, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/hockey/mens-college-hockey/teams/275/schedule' },
+            { name: 'Minnesota Hockey', league: 'mens-college-hockey', icon: svgHockey, gender: 'M', url: 'https://site.api.espn.com/apis/site/v2/sports/hockey/mens-college-hockey/teams/135/schedule' }
+        ];
+
+        let standingsCache = {};
+
+        // 1. Offseason Iron Dome Trap
+        function isOffseason(leagueId) {
+            const deadZones = {
+                'nfl': { start: '02-20', end: '07-15' },
+                'college-football': { start: '01-20', end: '08-15' },
+                'nba': { start: '06-25', end: '09-30' },
+                'nhl': { start: '06-25', end: '09-15' },
+                'pwhl': { start: '06-01', end: '11-01' },
+                'mlb': { start: '11-10', end: '02-15' },
+                'wnba': { start: '11-01', end: '04-15' },
+                'mens-college-basketball': { start: '04-15', end: '10-15' },
+                'womens-college-basketball': { start: '04-15', end: '10-15' },
+                'mens-college-hockey': { start: '04-15', end: '09-15' },
+                'womens-college-hockey': { start: '04-15', end: '09-15' }
+            };
+
+            const range = deadZones[leagueId];
+            if (!range) return false;
+
+            const now = new Date();
+            const today = String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+
+            if (range.start <= range.end) {
+                return today >= range.start && today <= range.end;
+            } else {
+                return today >= range.start || today <= range.end;
             }
         }
 
-        function renderDashboard(data) {
-            const localSyncTime = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-            document.getElementById('last-updated').innerText = `API: ${data.last_updated} • Ping: ${localSyncTime}`;
+        const safeScore = (s) => (typeof s === 'object' && s !== null) ? (s.value || s.displayValue || '-') : s;
+
+        // Fetch standings to patch records missing from schedule endpoint
+        async function fetchAllStandings() {
+            const leagues = [
+                { id: 'nfl', sport: 'football' }, { id: 'nba', sport: 'basketball' },
+                { id: 'wnba', sport: 'basketball' }, { id: 'mlb', sport: 'baseball' }, 
+                { id: 'nhl', sport: 'hockey' }, { id: 'mens-college-basketball', sport: 'basketball' },
+                { id: 'womens-college-basketball', sport: 'basketball' }
+            ];
+            for (const lg of leagues) {
+                try {
+                    const resp = await fetch(`https://site.api.espn.com/apis/v2/sports/${lg.sport}/${lg.id}/standings`);
+                    standingsCache[lg.id] = await resp.json();
+                } catch (e) {}
+            }
+        }
+
+        function getRecord(teamData, leagueId) {
+            let record = teamData?.records?.[0]?.summary || teamData?.team?.record?.items?.[0]?.summary || teamData?.team?.record?.summary;
+            if (record) return record;
             
-            const currentTeamsHash = JSON.stringify(data.teams);
-            if (currentTeamsHash === lastRenderedTeamsHash) return;
-            lastRenderedTeamsHash = currentTeamsHash;
-
-            const grid = document.getElementById('sports-grid');
-            let htmlString = '';
-
-            const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-            const now = Date.now();
-
-           // 1. Filter out Ghost data (and catch V1.0 flat-schema ghosts)
-            const validTeams = Object.values(data.teams).filter(team => {
-                if (!team._meta) return false; // Destroy flat-schema ghosts immediately
-                return (now - team._meta.last_fetched <= TWENTY_FOUR_HOURS);
-            });
-
-            // 2. Sort by urgency
-            validTeams.sort((a, b) => {
-                const getPriority = (t) => {
-                    if (t.status === 'LIVE') return 1;
-                    const days = t._meta?.next_game_time_ms ? (t._meta.next_game_time_ms - now) / 86400000 : 999;
-                    const isOff = t.status === 'PRE-GAME' && (days > 14 || !t.current_game?.opponent || t.current_game?.opponent === 'TBD');
-                    if (isOff) return 4;
-                    if (t.status === 'PRE-GAME') return 2;
-                    return 3; // FINAL
-                };
-                return getPriority(a) - getPriority(b);
-            });
-
-            // 3. Render
-            validTeams.forEach(team => {
-                const isLive = team.status === 'LIVE';
-                const isFinal = team.status === 'FINAL';
-                const cg = team.current_game || team; 
-                const prev = team.previous_game || null;
-
-                const daysUntilGame = team._meta?.next_game_time_ms ? (team._meta.next_game_time_ms - now) / 86400000 : 999;
-                const isOffseason = team.status === 'PRE-GAME' && (daysUntilGame > 14 || !cg.opponent || cg.opponent === 'TBD');
-
-                let bodyHtml = '';
-                if (isLive && cg.live_state) {
-                    bodyHtml = `
-                        <div class="live-badge"><div class="pulse"></div> LIVE</div>
-                        <div class="matchup">${cg.live_state.away_abbrev || 'AWAY'} @ ${cg.live_state.home_abbrev || 'HOME'}</div>
-                        <div class="scoreboard">
-                            <span class="score-number">${cg.live_state.away_score}</span>
-                            <span class="score-divider">-</span>
-                            <span class="score-number">${cg.live_state.home_score}</span>
-                        </div>
-                        <div class="game-context">${cg.live_state.clock} • ${cg.live_state.period}</div>
-                        ${cg.live_state.context ? `<div class="game-subcontext">${cg.live_state.context}</div>` : ''}
-                    `;
-                } else if (isFinal && cg.live_state) {
-                    bodyHtml = `
-                        <div class="matchup">FINAL • ${cg.live_state.away_abbrev || 'AWAY'} @ ${cg.live_state.home_abbrev || 'HOME'}</div>
-                        <div class="scoreboard">
-                            <span class="score-number">${cg.live_state.away_score}</span>
-                            <span class="score-divider">-</span>
-                            <span class="score-number">${cg.live_state.home_score}</span>
-                        </div>
-                        <div class="game-subcontext">${cg.display_date || 'Today'}</div>
-                    `;
-                } else if (!isOffseason) {
-                    bodyHtml = `
-                        <div class="matchup">Next vs ${cg.opponent}</div>
-                        <div class="time-display">${cg.display_time || '--:--'}</div>
-                        <div class="network-display">${cg.display_date || 'TBD'} ${cg.network && cg.network !== 'TBD' ? `• ${cg.network}` : ''}</div>
-                    `;
+            const data = standingsCache[leagueId];
+            if (!data || !teamData?.team?.id) return '';
+            
+            function search(obj) {
+                if (record) return; 
+                if (!obj || typeof obj !== 'object') return;
+                if (obj.team && String(obj.team.id) === String(teamData.team.id)) {
+                    const stats = obj.stats || [];
+                    const overall = stats.find(s => s.name === 'overall') || stats.find(s => s.type === 'overall') || stats[0];
+                    if (overall) record = overall.displayValue || overall.summary || '';
+                    return;
                 }
+                if (Array.isArray(obj)) { for (let item of obj) search(item); } 
+                else { for (let key in obj) search(obj[key]); }
+            }
+            search(data);
+            return record;
+        }
 
-                let footerHtml = '';
-                if (prev) {
-                    footerHtml = `<div class="card-footer">PREV: ${prev.result} ${prev.score} vs ${prev.opponent} (${prev.display_date})</div>`;
-                } else {
-                    footerHtml = `<div class="card-footer">PREV: Data not available</div>`;
-                }
-
-                // Compile Card - On Error now falls back to a transparent empty pixel to preserve layout width
-                htmlString += `
-                    <div class="card ${isLive ? 'live' : ''} ${isFinal ? 'final' : ''} ${isOffseason ? 'offseason' : ''}">
-                        <div class="card-header">
-                            <div class="header-text">
-                                <span class="sport-badge">${team.sport || 'SPORT'}</span>
-                                <span class="team-name">${team.team_name}</span>
-                                <span class="team-record">${team.team_record}</span>
+        // 2. Normalizer Adapter & Renderer
+        function createCupertinoCard(config, rawData) {
+            // Check Offseason Trap First
+            if (isOffseason(config.league)) {
+                return {
+                    weight: 4,
+                    html: `
+                        <div class="glass-card p-5 flex flex-col justify-between h-48 opacity-40 grayscale-[80%] hover:opacity-100 hover:grayscale-0">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center gap-2">${config.icon} <span class="text-sm font-semibold text-white/80">${config.name}</span></div>
+                                <span class="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[9px] font-mono text-white/40 uppercase tracking-widest">Offseason</span>
                             </div>
-                            <img src="${team.logo_url || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='}" class="team-logo" alt="${team.team_name} logo" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='">
+                            <div class="flex flex-col mt-auto pt-3 border-t border-white/5">
+                                <span class="text-[9px] font-mono text-white/30 uppercase tracking-widest text-center mt-2">Data Dormant</span>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            ${bodyHtml}
+                    `
+                };
+            }
+
+            const teamEvents = rawData.events.filter(e => {
+                const comps = e?.competitions?.[0]?.competitors || [];
+                return comps.length > 0; 
+            });
+
+            if (teamEvents.length === 0) return { weight: 5, html: '' };
+
+            const now = new Date();
+            let event = teamEvents.find(e => e.status?.type?.state === 'in') || 
+                        teamEvents.reduce((closest, current) => {
+                            const cDate = new Date(current.competitions?.[0]?.date || 0);
+                            const clDate = new Date(closest.competitions?.[0]?.date || 0);
+                            return Math.abs(cDate - now) < Math.abs(clDate - now) ? current : closest;
+                        }, teamEvents[0]);
+
+            const comp = event?.competitions?.[0];
+            if (!comp) return { weight: 5, html: '' };
+
+            const gameDate = new Date(comp.date);
+            const daysDiff = (gameDate - now) / (1000 * 60 * 60 * 24);
+            
+            const state = comp.status?.type?.state || 'pre';
+            const isLive = state === 'in';
+            const isFinal = state === 'post';
+            
+            let weight = 3; // Default Upcoming
+            if (isLive) weight = 1;
+            else if (isFinal && daysDiff > -2) weight = 2; // Bask (Played within last 48 hrs)
+            else if (daysDiff < -2) weight = 4; // Should be offseason trap, fallback catch
+
+            const comps = comp.competitors || [];
+            const home = comps.find(c => c?.homeAway === 'home') || comps[0];
+            const away = comps.find(c => c?.homeAway === 'away') || comps[1];
+
+            // UI Data Extraction
+            const venue = comp.notes?.[0]?.headline || comp.venue?.fullName || 'TBD Venue';
+            const displayDate = isLive ? 'LIVE NOW' : gameDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: '2-digit' }).toUpperCase();
+            const displayTime = gameDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            
+            let statusPill = `<span class="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[9px] font-mono text-white/60 uppercase tracking-widest">${isFinal ? 'FINAL' : displayTime}</span>`;
+            if (isLive) {
+                statusPill = `<div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span><span class="text-[10px] font-mono text-red-400 font-bold tracking-widest uppercase">Live</span></div>`;
+            }
+
+            const scoreSize = (config.league.includes('nba') || config.league.includes('basketball')) ? 'text-xl' : 'text-2xl';
+
+            const renderTeamRow = (t) => {
+                const logo = t?.team?.logos?.[0]?.href;
+                const name = t?.team?.shortDisplayName || t?.team?.displayName || 'TBA';
+                const record = getRecord(t, config.league);
+                const score = parseScoreLocal(t);
+                const isWinner = t?.winner;
+                
+                return `
+                    <div class="flex justify-between items-center group/team">
+                        <div class="flex items-center gap-3">
+                            ${logo ? `<img src="${logo}" class="w-7 h-7 object-contain drop-shadow-md">` : `<div class="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-[8px] font-bold text-white/50">${t?.team?.abbreviation || '?'}</div>`}
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold ${isWinner ? 'text-white' : 'text-white/80'}">${name}</span>
+                                <span class="text-[10px] font-mono text-white/40">${record}</span>
+                            </div>
                         </div>
-                        ${footerHtml}
+                        <span class="${scoreSize} font-mono ${isWinner ? 'text-white font-bold' : 'text-white/50 font-medium'}">${score}</span>
                     </div>
                 `;
-            });
+            };
 
-            grid.innerHTML = htmlString;
+            function parseScoreLocal(t) {
+                if (state === 'pre' || t?.score == null) return '-';
+                return safeScore(t.score);
+            }
+
+            const html = `
+                <div class="glass-card p-5 flex flex-col justify-between h-48 ${isLive ? 'live-border' : ''}">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-2">
+                            ${config.icon} <span class="text-sm font-semibold text-white/90 tracking-wide">${config.name}</span>
+                            ${config.gender === 'W' ? '<span class="px-1 py-[1px] bg-fuchsia-500/20 text-fuchsia-300 rounded text-[8px] font-mono border border-fuchsia-500/30">W</span>' : ''}
+                        </div>
+                        ${statusPill}
+                    </div>
+                    
+                    <div class="flex flex-col gap-2.5 mb-auto">
+                        ${renderTeamRow(away)}
+                        ${renderTeamRow(home)}
+                    </div>
+                    
+                    <div class="flex justify-between items-center mt-3 pt-3 border-t border-white/5 text-[9px] font-mono uppercase tracking-widest text-white/40">
+                        <span class="truncate pr-2">${displayDate} <span class="text-white/20 mx-1">|</span> ${venue}</span>
+                        ${isLive && comp.status?.type?.shortDetail ? `<span class="text-cyan-400 font-bold shrink-0">${comp.status.type.shortDetail}</span>` : ''}
+                    </div>
+                </div>
+            `;
+
+            return { weight, html };
         }
 
-        fetchSportsData();
-        setInterval(fetchSportsData, REFRESH_RATE_MS);
+        // 3. Hybrid Fetch Engine
+        async function fetchFeedGroup(configArray, containerId) {
+            const container = document.getElementById(containerId);
+            try {
+                // 1. Map Configs
+                const results = await Promise.all(configArray.map(async (config) => {
+                    // Pre-Fetch Trap
+                    if (isOffseason(config.league)) return createCupertinoCard(config, null);
 
+                    try {
+                        const resp = await fetch(config.url);
+                        if (!resp.ok) throw new Error('ESPN fail');
+                        const data = await resp.json();
+                        return createCupertinoCard(config, data);
+                    } catch (e) {
+                        return { weight: 5, html: '' }; 
+                    }
+                }));
+
+                const valid = results.filter(r => r.html !== '').sort((a, b) => a.weight - b.weight);
+                container.innerHTML = valid.map(r => r.html).join('') || '<div class="col-span-full p-12 text-center text-sm font-mono text-white/40 border border-white/5 rounded-2xl border-dashed">No active telemetry</div>';
+                
+                document.getElementById('last-updated').innerHTML = `<span class="text-white/40">SYNCED: ${new Date().toLocaleTimeString()}</span>`;
+            } catch (e) {
+                container.innerHTML = '<div class="col-span-full p-12 text-center text-sm font-mono text-red-500/60 bg-red-500/5 rounded-2xl border border-red-500/20">Telemetry failure</div>';
+            }
+        }
+
+        // 4. NCAA Bypass Engine (Match Cupertino Aesthetics)
+        function checkNCAAWindow() {
+            const container = document.getElementById('ncaa-container');
+            const details = document.getElementById('ncaa-details');
+            const title = document.getElementById('ncaa-title');
+            
+            const now = new Date();
+            const year = now.getFullYear();
+            const activeStart = new Date(year, 2, 10); // March 10
+            const activeEnd = new Date(year, 3, 15);   // April 15
+            
+            if (now < activeStart || now > activeEnd) {
+                container.classList.add('opacity-40', 'grayscale-[80%]', 'pointer-events-none');
+                title.innerHTML += ' <span class="text-[9px] font-mono text-white/40 ml-3 border border-white/10 px-1.5 py-0.5 rounded tracking-widest bg-white/5">OFFSEASON</span>';
+                return false;
+            }
+            return true;
+        }
+
+        async function fetchNCAATournament(gender, containerId) {
+            const container = document.getElementById(containerId);
+            try {
+                const now = new Date();
+                const d = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+                const url = `https://site.api.espn.com/apis/site/v2/sports/basketball/${gender}-college-basketball/scoreboard?dates=${d}`;
+                
+                const resp = await fetch(url);
+                const data = await resp.json();
+                
+                if (!data?.events || data.events.length === 0) {
+                    container.innerHTML = '<div class="p-6 text-center text-xs font-mono text-white/30 border border-white/5 rounded-xl border-dashed">No bracket activity today</div>';
+                    return;
+                }
+                
+                let targetGames = data.events.sort((a, b) => {
+                    const sA = a.status?.type?.state; const sB = b.status?.type?.state;
+                    if (sA === 'in' && sB !== 'in') return -1;
+                    if (sA !== 'in' && sB === 'in') return 1;
+                    return new Date(a.date) - new Date(b.date);
+                });
+
+                container.innerHTML = targetGames.map(event => {
+                    const comp = event.competitions?.[0];
+                    if (!comp) return '';
+                    const home = comp.competitors?.find(c => c.homeAway === 'home');
+                    const away = comp.competitors?.find(c => c.homeAway === 'away');
+                    if (!home || !away) return '';
+
+                    const state = comp.status?.type?.state;
+                    const isLive = state === 'in';
+                    const isPre = state === 'pre';
+                    
+                    const time = new Date(comp.date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                    let statusPill = `<span class="text-[9px] font-mono text-white/50 tracking-widest uppercase">${isPre ? time : comp.status?.type?.shortDetail}</span>`;
+                    if (isLive) statusPill = `<span class="text-[9px] font-mono text-red-400 font-bold tracking-widest uppercase bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded animate-pulse">Live</span>`;
+
+                    const renderTeam = (t) => `
+                        <div class="flex items-center gap-3">
+                            ${t.curatedRank?.current < 26 ? `<span class="text-[9px] text-white/80 font-mono bg-white/10 px-1.5 py-0.5 rounded border border-white/20">${t.curatedRank.current}</span>` : ''}
+                            <span class="text-sm font-bold ${t.winner ? 'text-white' : 'text-white/70'}">${t.team?.shortDisplayName || 'TBA'}</span>
+                        </div>
+                        <span class="text-lg font-mono ${t.winner ? 'font-bold text-white' : 'font-medium text-white/50'}">${isPre ? '-' : (safeScore(t.score) || '-')}</span>
+                    `;
+
+                    return `
+                        <div class="glass-card p-4 flex flex-col gap-3 ${isLive ? 'live-border' : ''}">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-[10px] font-mono text-white/40 uppercase truncate max-w-[200px] tracking-wide">${event.shortName}</span>
+                                ${statusPill}
+                            </div>
+                            <div class="flex flex-col gap-2 w-full">
+                                <div class="flex justify-between items-center">${renderTeam(away)}</div>
+                                <div class="flex justify-between items-center">${renderTeam(home)}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                container.innerHTML = '<div class="p-4 text-center text-xs font-mono text-red-500/60 border border-red-500/10 rounded-xl bg-red-500/5">Link failed</div>';
+            }
+        }
+
+        // Boot Sequence
+        async function initializeSports() {
+            await fetchAllStandings();
+            fetchFeedGroup(proConfig, 'pro-feed');
+            fetchFeedGroup(collegeConfig, 'college-feed');
+            
+            if (checkNCAAWindow()) {
+                fetchNCAATournament('mens', 'ncaa-mens-feed');
+                fetchNCAATournament('womens', 'ncaa-womens-feed');
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", initializeSports);
+        
+        setInterval(() => {
+            fetchFeedGroup(proConfig, 'pro-feed');
+            fetchFeedGroup(collegeConfig, 'college-feed');
+            
+            if (checkNCAAWindow()) {
+                fetchNCAATournament('mens', 'ncaa-mens-feed');
+                fetchNCAATournament('womens', 'ncaa-womens-feed');
+            }
+        }, REFRESH_RATE_MS);
+        
+        setInterval(fetchAllStandings, 3600000);
     </script>
 </body>
 </html>
