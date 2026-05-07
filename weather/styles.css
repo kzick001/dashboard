@@ -1,116 +1,81 @@
 /* ==========================================================================
-   ATMOS V1.1 - Visual Engine (Phase 2)
+   ATMOS V4 - Cupertino 2050 Design System (Phase 3)
    ========================================================================== */
 
-/* --------------------------------------------------------------------------
-   1. Environment & Background
-   -------------------------------------------------------------------------- */
+:root {
+  --glass-bg: rgba(30, 41, 59, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.08);
+}
+
 body {
-  /* Prevent horizontal scroll bounce on mobile */
-  overflow-x: hidden;
-  /* Smooth out the UI for dragging interactions */
-  overscroll-behavior-y: none;
+  margin: 0;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none; /* Prevents PWA pull-to-refresh bounce */
 }
 
-#weather-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -1; /* Strictly trap canvas behind the UI */
-  pointer-events: none; /* Allow clicks to pass through to the DOM */
+/* Spatial Radial Background */
+.radial-bg {
+  background: 
+    radial-gradient(circle at 15% 50%, rgba(6, 182, 212, 0.08), transparent 50%),
+    radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.08), transparent 50%),
+    #0f172a;
 }
 
-/* --------------------------------------------------------------------------
-   2. Glassmorphism Architecture
-   -------------------------------------------------------------------------- */
+/* Smart Glass Tiles */
 .glass-panel {
-  background: rgba(30, 41, 59, 0.65); /* Tailwind slate-800 equivalent */
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px); /* Safari support */
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  /* Ensure smooth transitions for the accordion elements */
-  transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.4);
+  border-radius: 24px;
 }
 
-/* --------------------------------------------------------------------------
-   3. Drag & Drop Tactile States (SortableJS)
-   -------------------------------------------------------------------------- */
-/* The placeholder left behind when an item is picked up */
+/* Haptic Tactile Cues */
+.haptic-trigger:active {
+  transform: scale(0.98);
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* SortableJS States */
 .sortable-ghost {
-  opacity: 0.3;
-  background: rgba(51, 65, 85, 0.5); /* Lighter slate for contrast */
-  border: 2px dashed rgba(148, 163, 184, 0.4);
-  backdrop-filter: none; /* Turn off blur for performance during drag */
+  opacity: 0.4;
+  border: 2px dashed rgba(6, 182, 212, 0.5);
+  background: rgba(15, 23, 42, 0.5);
 }
 
-/* The actual element currently being dragged by the cursor */
 .sortable-drag {
   opacity: 1 !important;
-  cursor: grabbing !important;
+  transform: scale(1.02) translateY(-5px);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
-  transform: scale(1.02); /* Slight pop out effect */
+  cursor: grabbing !important;
 }
 
-/* Set grab cursor on the sections to indicate they can be moved */
-#dashboard-grid > section {
-  cursor: grab;
+/* Doom Index & Radar Pulse */
+@keyframes threat-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); border-color: rgba(239, 68, 68, 0.5); }
+  70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); border-color: rgba(255, 255, 255, 0.08); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); border-color: rgba(255, 255, 255, 0.08); }
 }
 
-/* --------------------------------------------------------------------------
-   4. Radar UI & Leaflet Overrides
-   -------------------------------------------------------------------------- */
-/* Force the radar container to behave within the grid */
-#radar-map {
-  width: 100%;
-  height: 100%;
-  border-radius: 0.8rem;
-  z-index: 1; /* Keep below our custom controls */
+.radar-pulse {
+  animation: threat-pulse 2.5s infinite cubic-bezier(0.66, 0, 0, 1);
 }
 
-/* Strip default Leaflet cruft for a cleaner UI */
-.leaflet-control-attribution {
-  display: none !important;
+/* Details Accordion Reset */
+details > summary { 
+  list-style: none; 
+}
+details > summary::-webkit-details-marker { 
+  display: none; 
 }
 
-/* Style the native zoom buttons to match our glass theme */
-.leaflet-control-zoom {
-  border: none !important;
-  margin-top: 1rem !important;
-  margin-left: 1rem !important;
+/* MapLibre Overrides */
+.maplibregl-control-container { 
+  display: none; /* Hide default controls/watermarks for sleek dashboard UI */
 }
 
-.leaflet-control-zoom a {
-  background: rgba(30, 41, 59, 0.8) !important;
-  color: #f8fafc !important; /* text-slate-50 */
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.leaflet-control-zoom a:hover {
-  background: rgba(51, 65, 85, 0.9) !important; /* hover state */
-}
-
-/* --------------------------------------------------------------------------
-   5. Utilities & Resets
-   -------------------------------------------------------------------------- */
-/* Hide scrollbars on horizontal/vertical scrolling ribbons while keeping functionality */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
-}
-
-/* Ensure native details/summary tags don't show the default ugly arrow */
-details > summary {
-  list-style: none;
-}
-details > summary::-webkit-details-marker {
-  display: none;
-}
+/* Note: Chart Canvas Overrides removed. 
+  Chart.js requires native browser anti-aliasing for smooth bezier curves 
+  and crisp typography on high-DPI/Retina screens.
+*/
