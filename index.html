@@ -2,29 +2,33 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Launchpad V2.2.3</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Launchpad V2.3.1 (Cupertino)</title>
     
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f172a">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23000000'/><text x='50' y='55' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='65' font-weight='200' fill='%23ffffff'>K</text></svg>">
     
-   <script src="vault-config.js"></script>
+    <script src="vault-config.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    
+    <script src="https://bernardo-castilho.github.io/DragDropTouch/DragDropTouch.js"></script>
+    
     <script>
         tailwind.config = { 
             darkMode: 'class',
             theme: {
                 extend: {
-                    colors: {
-                        brand: {
-                            400: 'var(--brand-400)',
-                            500: 'var(--brand-500)',
-                            800: 'var(--brand-800)',
-                            900: 'var(--brand-900)',
-                        }
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
                     },
-                    transitionTimingFunction: {
-                        'spring': 'cubic-bezier(0.175, 0.885, 0.32, 1.1)',
-                    }
+                    colors: {
+                        brand: { 400: 'var(--brand-400)', 500: 'var(--brand-500)', 800: 'var(--brand-800)', 900: 'var(--brand-900)' }
+                    },
+                    transitionTimingFunction: { 'spring': 'cubic-bezier(0.175, 0.885, 0.32, 1.1)' }
                 }
             }
         }
@@ -37,51 +41,54 @@
             --brand-500: #06b6d4; 
             --brand-800: #155e75; 
             --brand-900: #164e63; 
-            --glow-color: 6, 182, 212; /* Cyan Core */
-            --glass-bg: rgba(255, 255, 255, 0.04); /* +10% Contrast */
+            --glow-color: 6, 182, 212; 
+            --glass-bg: rgba(30, 41, 59, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.08);
         }
 
         body { 
-            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
             background-color: #000000; 
             transition: filter 0.5s ease-in-out, background-color 0.5s ease; 
             overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
         }
 
-        /* SMART GLASS TILE ENGINE */
+        /* Spatial Radial Background */
+        .radial-bg {
+            background: 
+                radial-gradient(circle at 15% 50%, rgba(6, 182, 212, 0.08), transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.08), transparent 50%),
+                #0f172a;
+        }
+
+        /* Smart Glass Engine */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.4);
+        }
+
         .app-tile {
             position: relative;
-            background: var(--glass-bg);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            /* 10% Cyan ambient glow */
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8), 0 0 15px rgba(var(--glow-color), 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
             transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1), border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
             cursor: pointer;
         }
 
-        /* DYNAMIC MOUSE SHINE */
+        /* Dynamic Mouse Shine */
         .app-tile::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(
-                600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
-                rgba(var(--glow-color), 0.15), 
-                transparent 40%
-            );
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            pointer-events: none;
-            z-index: 1;
-            border-radius: inherit;
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(var(--glow-color), 0.15), transparent 40%);
+            opacity: 0; transition: opacity 0.5s ease; pointer-events: none; z-index: 1; border-radius: inherit;
         }
 
         .app-tile:hover {
             transform: translateY(-4px) scale(1.02);
             border-color: rgba(var(--glow-color), 0.3);
-            background: rgba(255, 255, 255, 0.06);
-            /* 50% Cyan Bloom */
-            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.8), 0 0 40px rgba(var(--glow-color), 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            background: rgba(30, 41, 59, 0.6);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.8), 0 0 40px rgba(var(--glow-color), 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
             z-index: 20;
         }
         
@@ -89,35 +96,25 @@
 
         /* THE MATRIX OVERRIDE HIJACK */
         body.matrix-mode {
-            --brand-400: #00ff00;
-            --brand-500: #00dd00;
-            --brand-800: #005500;
-            --brand-900: #002200;
-            --glow-color: 0, 255, 0; /* Phosphor Green Hijack */
+            --brand-400: #00ff00; --brand-500: #00dd00; --brand-800: #005500; --brand-900: #002200; --glow-color: 0, 255, 0; 
             background: #000000 !important;
         }
+        body.matrix-mode .radial-bg { background: #000000; }
 
-        body.matrix-mode .app-tile, 
-        body.matrix-mode #modalContent,
-        body.matrix-mode #weather-anchor {
+        body.matrix-mode .glass-panel {
             background: #000000 !important;
             backdrop-filter: none !important;
             border-color: #00ff0044 !important;
             box-shadow: 0 0 15px rgba(0, 255, 0, 0.1) !important;
         }
 
-        body.matrix-mode .app-tile:hover, body.matrix-mode #weather-anchor:hover {
+        body.matrix-mode .app-tile:hover {
             border-color: #00ff00 !important;
             box-shadow: 0 0 25px rgba(0, 255, 0, 0.4) !important;
         }
 
-        body.matrix-mode .app-tile *, 
-        body.matrix-mode #modalContent *,
-        body.matrix-mode header *,
-        body.matrix-mode #weather-anchor *,
-        body.matrix-mode #complicationPill * {
-            color: #00ff00 !important;
-            text-shadow: 0 0 8px rgba(0, 255, 0, 0.5) !important;
+        body.matrix-mode .glass-panel *, body.matrix-mode header * {
+            color: #00ff00 !important; text-shadow: 0 0 8px rgba(0, 255, 0, 0.5) !important;
         }
 
         /* OVERRIDE TOGGLE UI */
@@ -126,13 +123,12 @@
         .toggle-checkbox:checked + .toggle-label { background-color: #00ff00; box-shadow: 0 0 12px rgba(0, 255, 0, 0.5); }
 
         /* WEATHER DRAWER ACCELERATION */
-        #weather-drawer-inner {
-            display: grid;
-            grid-template-rows: 0fr;
-            transition: grid-template-rows 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1);
-        }
+        #weather-drawer-inner { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1); }
         #weather-drawer-inner.expanded { grid-template-rows: 1fr; }
         .drawer-content { min-height: 0; overflow: hidden; }
+
+        /* Haptic Interaction Cues */
+        .haptic-trigger:active { transform: scale(0.95); transition: transform 0.1s; }
 
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -140,19 +136,20 @@
         ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
     </style>
 </head>
-<body class="bg-[#000000] bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-cyan-900/10 via-[#000000] to-black min-h-screen flex flex-col text-slate-300 antialiased selection:bg-brand-500/30 selection:text-white">
+<body class="min-h-screen flex flex-col text-slate-300 antialiased selection:bg-brand-500/30 selection:text-white">
 
+    <div class="fixed inset-0 z-[-1] radial-bg"></div>
     <canvas id="matrixCanvas" class="fixed inset-0 w-full h-full pointer-events-none opacity-0 z-0 transition-opacity duration-700"></canvas>
 
     <div id="mainUI" class="flex flex-col flex-1 w-full relative z-10 transition-opacity duration-1000">
         
         <div class="fixed top-0 w-full px-8 py-4 flex justify-between items-center z-50 bg-black/40 backdrop-blur-2xl border-b border-white/5">
             <div class="flex items-center gap-4 font-mono text-[10px] uppercase tracking-[0.2em] cursor-default select-none text-slate-500">
-                <span>KZICK // OS V2.2.3</span>
+                <span>KZICK // OS V2.3.1 (CUPERTINO)</span>
             </div>
             
             <div class="flex items-center gap-6">
-                <div class="flex items-center">
+                <div class="flex items-center haptic-trigger">
                     <span class="mr-3 text-[9px] font-mono text-slate-500 uppercase tracking-[0.2em]">OVERRIDE</span>
                     <div class="relative inline-block w-8 h-4 align-middle select-none">
                         <input type="checkbox" id="overrideToggle" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-black border border-white/20 appearance-none cursor-pointer z-10 top-0 m-auto"/>
@@ -170,28 +167,28 @@
 
             <main id="springboard" class="w-full max-w-5xl grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8 mb-8">
                 
-                <a href="https://mail.google.com/" data-id="email" target="_blank" draggable="true" class="app-tile group flex flex-col items-center justify-center p-6 rounded-[2rem] backdrop-blur-3xl overflow-hidden aspect-square">
+                <a href="https://mail.google.com/" data-id="email" target="_blank" draggable="true" class="app-tile glass-panel group flex flex-col items-center justify-center p-6 rounded-[2rem] overflow-hidden aspect-square haptic-trigger">
                     <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
                         <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                         <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">Email</span>
                     </div>
                 </a>
 
-                <a href="https://calendar.google.com/" data-id="calendar" target="_blank" draggable="true" class="app-tile group flex flex-col items-center justify-center p-6 rounded-[2rem] backdrop-blur-3xl overflow-hidden aspect-square">
+                <a href="https://calendar.google.com/" data-id="calendar" target="_blank" draggable="true" class="app-tile glass-panel group flex flex-col items-center justify-center p-6 rounded-[2rem] overflow-hidden aspect-square haptic-trigger">
                     <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
                         <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">Calendar</span>
                     </div>
                 </a>
 
-                <a href="live-forge/index.html" data-id="liveforge" draggable="true" class="app-tile group flex flex-col items-center justify-center p-6 rounded-[2rem] backdrop-blur-3xl overflow-hidden aspect-square">
+                <a href="live-forge/index.html" data-id="liveforge" draggable="true" class="app-tile glass-panel group flex flex-col items-center justify-center p-6 rounded-[2rem] overflow-hidden aspect-square haptic-trigger">
                     <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
                         <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
                         <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">LiveForge</span>
                     </div>
                 </a>
 
-                <a href="sports.html" data-id="sports" draggable="true" class="app-tile group flex flex-col items-center justify-center p-6 rounded-[2rem] backdrop-blur-3xl overflow-hidden aspect-square">
+                <a href="sports.html" data-id="sports" draggable="true" class="app-tile glass-panel group flex flex-col items-center justify-center p-6 rounded-[2rem] overflow-hidden aspect-square haptic-trigger">
                     <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
                         <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24">
                             <ellipse cx="12" cy="12" rx="10" ry="6" transform="rotate(-45 12 12)" stroke-linecap="round" stroke-linejoin="round"/>
@@ -201,21 +198,21 @@
                     </div>
                 </a>
 
-                <a href="flow-lab/index.html" data-id="sonicforge" draggable="true" class="app-tile group flex flex-col items-center justify-center p-6 rounded-[2rem] backdrop-blur-3xl overflow-hidden aspect-square">
+                <a href="flow-lab/index.html" data-id="sonicforge" draggable="true" class="app-tile glass-panel group flex flex-col items-center justify-center p-6 rounded-[2rem] overflow-hidden aspect-square haptic-trigger">
                     <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
                         <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
                         <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">Sonic Forge</span>
                     </div>
                 </a>
 
-                <div data-id="vault" data-folder="vault" draggable="true" class="app-tile group flex flex-col items-center justify-center p-6 rounded-[2rem] backdrop-blur-3xl overflow-hidden aspect-square">
+                <div data-id="vault" draggable="true" class="app-tile glass-panel group flex flex-col items-center justify-center p-6 rounded-[2rem] aspect-square haptic-trigger">
                     <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full pointer-events-none">
                         <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"></path></svg>
                         <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">Vault</span>
                     </div>
                 </div>
 
-                <div data-id="gems" data-folder="multiplexer" draggable="true" class="app-tile group flex flex-col items-center justify-center p-6 rounded-[2rem] backdrop-blur-3xl overflow-hidden aspect-square">
+                <div data-id="gems" data-folder="multiplexer" draggable="true" class="app-tile glass-panel group flex flex-col items-center justify-center p-6 rounded-[2rem] overflow-hidden aspect-square haptic-trigger">
                     <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full pointer-events-none">
                         <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                             <path d="M6 2L2 8l10 14L22 8l-4-6H6z"/>
@@ -226,12 +223,12 @@
                 </div>
             </main>
 
-            <div id="weather-anchor" class="w-full max-w-5xl app-tile rounded-[2rem] backdrop-blur-3xl p-6 sm:p-8 cursor-default flex flex-col">
+            <div id="weather-anchor" class="w-full max-w-5xl glass-panel rounded-[2rem] p-6 sm:p-8 cursor-default flex flex-col">
                 <div class="flex justify-between items-start w-full relative z-10 mb-4">
                     <div>
                         <h2 class="text-xl sm:text-2xl font-light text-slate-200 tracking-wide">Atmospherics</h2>
                     </div>
-                    <button id="weatherToggleBtn" class="text-slate-500 hover:text-cyan-400 transition-colors focus:outline-none p-2" title="Toggle Telemetry">
+                    <button id="weatherToggleBtn" class="haptic-trigger text-slate-500 hover:text-cyan-400 transition-colors focus:outline-none p-2" title="Toggle Telemetry">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
                 </div>
@@ -262,10 +259,10 @@
 
     <div id="folderModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
         <div id="modalBackdrop" class="absolute inset-0 bg-black/70 backdrop-blur-md cursor-pointer transition-opacity"></div>
-        <div id="modalContent" class="relative w-[90%] max-w-2xl bg-[#0a0a0a]/90 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] shadow-2xl p-8 transform scale-95 transition-transform duration-300">
+        <div id="modalContent" class="glass-panel relative w-[90%] max-w-2xl transform scale-95 transition-transform duration-300 p-8">
             <div class="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
                 <h3 id="modalTitle" class="text-2xl font-light tracking-wide text-white">Folder</h3>
-                <button id="closeModalBtn" class="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors focus:outline-none">
+                <button id="closeModalBtn" class="haptic-trigger p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors focus:outline-none">
                     <svg class="w-6 h-6 text-slate-400 hover:text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -274,24 +271,28 @@
     </div>
 
     <div class="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 flex flex-col items-end gap-1 z-50 cursor-default select-none pointer-events-none">
-        <div id="complicationPill" class="flex items-center gap-5 px-6 py-4 bg-black/60 backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.8)] transition-all duration-300 pointer-events-auto">
-            
+        <div id="complicationPill" class="glass-panel flex items-center gap-5 px-6 py-4 rounded-[2rem] shadow-[0_0_30px_rgba(0,0,0,0.8)] transition-all duration-300 pointer-events-auto">
             <div class="flex flex-col items-end border-r border-white/10 pr-5">
                 <div id="localTime" class="text-4xl sm:text-5xl font-light tracking-tighter text-white drop-shadow-md">...</div>
                 <div id="localDate" class="text-xs font-mono text-cyan-400/80 tracking-widest uppercase mt-1">...</div>
             </div>
-
             <div id="comp-temp" class="text-3xl sm:text-4xl font-light text-white/90 drop-shadow-md tracking-tighter min-w-[3rem] text-center">
-                --&deg;
+                --°
             </div>
-
         </div>
     </div>
 
     <script>
+        // Haptic Engine
+        const triggerHaptic = (type = 'light') => {
+            if (!navigator.vibrate) return;
+            if (type === 'light') navigator.vibrate([30]);
+            if (type === 'heavy') navigator.vibrate([60]);
+        };
+
         // --- 0. HYDRATE LAYOUT ---
         (function() {
-            const savedLayout = localStorage.getItem('kzick_layout_v2.2.2');
+            const savedLayout = localStorage.getItem('kzick_layout_v2.3');
             if (savedLayout) {
                 try {
                     const order = JSON.parse(savedLayout);
@@ -315,18 +316,16 @@
         })();
 
         // --- 1. LOCAL CHRONOMETER & DATE ---
+        const dateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+        
         function updateClock() {
             const now = new Date();
             let h = now.getHours();
             const m = String(now.getMinutes()).padStart(2, '0');
             const ampm = h >= 12 ? 'PM' : 'AM';
-            h = h % 12;
-            h = h ? h : 12;
+            h = h % 12; h = h ? h : 12;
             document.getElementById('localTime').textContent = `${h}:${m} ${ampm}`;
-            
-            document.getElementById('localDate').textContent = new Intl.DateTimeFormat('en-US', {
-                month: 'short', day: '2-digit', year: 'numeric'
-            }).format(now);
+            document.getElementById('localDate').textContent = dateFormatter.format(now);
         }
         updateClock(); 
         setInterval(updateClock, 1000);
@@ -335,10 +334,8 @@
         document.addEventListener('mousemove', e => {
             document.querySelectorAll('.app-tile').forEach(tile => {
                 const rect = tile.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                tile.style.setProperty('--mouse-x', `${x}px`);
-                tile.style.setProperty('--mouse-y', `${y}px`);
+                tile.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+                tile.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
             });
         });
 
@@ -348,20 +345,15 @@
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン'.split('');
         let matrixWidth, matrixHeight, columns;
         let drops = [];
-        let matrixActive = false;
-        let ghostActive = false;
-        let lastDrawTime = 0;
-        let fpsInterval = 1000 / 30; 
+        let matrixActive = false, ghostActive = false;
+        let lastDrawTime = 0, fpsInterval = 1000 / 30; 
         let ghostTimer;
 
         function initMatrix() {
             const dpr = window.devicePixelRatio || 1;
-            matrixWidth = window.innerWidth;
-            matrixHeight = window.innerHeight;
-            canvas.width = matrixWidth * dpr;
-            canvas.height = matrixHeight * dpr;
+            matrixWidth = window.innerWidth; matrixHeight = window.innerHeight;
+            canvas.width = matrixWidth * dpr; canvas.height = matrixHeight * dpr;
             ctx.scale(dpr, dpr);
-            
             columns = Math.floor(matrixWidth / 20);
             drops = [];
             for(let i = 0; i < columns; i++) drops[i] = Math.random() * -100;
@@ -370,17 +362,13 @@
         function drawMatrix(timestamp) {
             if (!matrixActive && !ghostActive) return;
             requestAnimationFrame(drawMatrix);
-            
             const delta = timestamp - lastDrawTime;
             if (delta > fpsInterval) {
                 lastDrawTime = timestamp - (delta % fpsInterval);
-                
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; 
                 ctx.fillRect(0, 0, matrixWidth, matrixHeight);
-                
                 ctx.fillStyle = matrixActive ? '#00ff00' : 'rgba(6, 182, 212, 1)'; 
                 ctx.font = '15pt monospace';
-                
                 for(let i = 0; i < drops.length; i++) {
                     const text = chars[Math.floor(Math.random() * chars.length)];
                     ctx.fillText(text, i * 20, drops[i] * 20);
@@ -390,87 +378,59 @@
             }
         }
 
+        let resizeTimeout;
         window.addEventListener('resize', () => { 
-            if(matrixActive || ghostActive) initMatrix(); 
+            if(matrixActive || ghostActive) {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(initMatrix, 200); 
+            }
         });
 
         const overrideToggle = document.getElementById('overrideToggle');
         overrideToggle.checked = false; 
         overrideToggle.addEventListener('change', (e) => {
+            triggerHaptic('heavy');
             if(e.target.checked) {
                 document.body.classList.add('matrix-mode');
-                canvas.style.opacity = '1';
-                matrixActive = true;
-                fpsInterval = 1000 / 30; 
-                initMatrix();
-                requestAnimationFrame(drawMatrix);
+                canvas.style.opacity = '1'; matrixActive = true; fpsInterval = 1000 / 30; 
+                initMatrix(); requestAnimationFrame(drawMatrix);
             } else {
                 document.body.classList.remove('matrix-mode');
                 if (!ghostActive) {
-                    canvas.style.opacity = '0';
-                    matrixActive = false;
+                    canvas.style.opacity = '0'; matrixActive = false;
                     setTimeout(() => { ctx.clearRect(0, 0, matrixWidth, matrixHeight); }, 700);
                 } else {
-                    matrixActive = false;
-                    canvas.style.opacity = '0.5'; 
+                    matrixActive = false; canvas.style.opacity = '0.5'; 
                 }
             }
         });
 
         function triggerGhostProtocol() {
             if (document.hidden) return; 
-            ghostActive = true;
-            document.getElementById('mainUI').style.opacity = '0.3';
-            
+            ghostActive = true; document.getElementById('mainUI').style.opacity = '0.3';
             if (!matrixActive) {
-                canvas.style.opacity = '0.5';
-                fpsInterval = 1000 / 15; 
-                initMatrix();
-                requestAnimationFrame(drawMatrix);
+                canvas.style.opacity = '0.5'; fpsInterval = 1000 / 15; 
+                initMatrix(); requestAnimationFrame(drawMatrix);
             }
         }
 
         function resetGhostTimer() {
             if (ghostActive) {
-                ghostActive = false;
-                document.getElementById('mainUI').style.opacity = '1';
+                ghostActive = false; document.getElementById('mainUI').style.opacity = '1';
                 if (!matrixActive) {
                     canvas.style.opacity = '0';
                     setTimeout(() => { if(!matrixActive && !ghostActive) ctx.clearRect(0, 0, matrixWidth, matrixHeight); }, 700);
-                } else {
-                    canvas.style.opacity = '1';
-                    fpsInterval = 1000 / 30;
-                }
+                } else { canvas.style.opacity = '1'; fpsInterval = 1000 / 30; }
             }
-            clearTimeout(ghostTimer);
-            ghostTimer = setTimeout(triggerGhostProtocol, 300000); 
+            clearTimeout(ghostTimer); ghostTimer = setTimeout(triggerGhostProtocol, 300000); 
         }
 
-        ['mousemove', 'keydown', 'touchstart'].forEach(evt => 
-            document.addEventListener(evt, resetGhostTimer, { passive: true })
-        );
+        ['mousemove', 'keydown', 'touchstart'].forEach(evt => document.addEventListener(evt, resetGhostTimer, { passive: true }));
         resetGhostTimer();
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                clearTimeout(ghostTimer);
-            } else {
-                resetGhostTimer();
-            }
-        });
-
+        document.addEventListener('visibilitychange', () => { if (document.hidden) clearTimeout(ghostTimer); else resetGhostTimer(); });
 
         // --- 4. MODAL UI ---
         const folderData = {
-            'vault': {
-                title: 'Secure Vault',
-                links: [
-                    { name: '/src/dashboard', url: 'https://github.com/kzick001/dashboard/tree/main' },
-                    { name: '/src/undead-barrage', url: 'https://github.com/kzick001/undead-barrage' },
-                    { name: 'Audio Array', url: 'https://open.spotify.com/' },
-                    { name: 'G-Drive Encrypted', url: 'https://drive.google.com/drive/folders/1sQ5Z4Lp_7fcM0W7W4effQdT0BLQWEuSm' }
-                ]
-            },
             'multiplexer': {
                 title: 'Gems Array', 
                 links: [
@@ -496,12 +456,13 @@
         const modalLinks = document.getElementById('modalLinks');
         
         function openModal(folderId) {
+            triggerHaptic('light');
             const data = folderData[folderId];
             if (!data) return;
             
             modalTitle.textContent = data.title;
             modalLinks.innerHTML = data.links.map(link => `
-                <a href="${link.url}" target="_blank" class="px-4 py-3 rounded-xl text-base font-medium text-slate-300 bg-white/5 hover:bg-white/10 hover:text-white transition-all flex items-center justify-between border border-white/5 hover:border-white/20">
+                <a href="${link.url}" target="_blank" class="px-4 py-3 rounded-xl text-base font-medium text-slate-300 bg-white/5 hover:bg-white/10 hover:text-white transition-all flex items-center justify-between border border-white/5 hover:border-white/20 haptic-trigger">
                     ${link.name} <span class="text-slate-500 text-xs">↗</span>
                 </a>
             `).join('');
@@ -523,7 +484,7 @@
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
 
-        document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+        document.getElementById('closeModalBtn').addEventListener('click', () => { triggerHaptic(); closeModal(); });
         document.getElementById('modalBackdrop').addEventListener('click', closeModal);
 
         // --- 5. NATIVE DRAG & DROP PERSISTENCE ---
@@ -534,6 +495,7 @@
         board.addEventListener('dragstart', e => {
             const tile = e.target.closest('.app-tile');
             if(!tile) return;
+            triggerHaptic('light');
             isDragging = true;
             draggedItem = tile;
             e.dataTransfer.effectAllowed = 'move';
@@ -541,10 +503,7 @@
             setTimeout(() => draggedItem.style.opacity = '0.4', 0);
         });
 
-        board.addEventListener('dragover', e => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-        });
+        board.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
 
         board.addEventListener('drop', e => {
             e.preventDefault();
@@ -558,9 +517,10 @@
                 else targetItem.before(draggedItem);
                 
                 const newOrder = Array.from(board.children).map(t => t.getAttribute('data-id'));
-                localStorage.setItem('kzick_layout_v2.2.2', JSON.stringify(newOrder));
+                localStorage.setItem('kzick_layout_v2.3', JSON.stringify(newOrder));
             }
             if(draggedItem) draggedItem.style.opacity = '1';
+            triggerHaptic('heavy');
         });
 
         board.addEventListener('dragend', () => {
@@ -575,23 +535,15 @@
             if (folderTile) openModal(folderTile.getAttribute('data-folder'));
         });
 
-
-       // --- 5.5 DYNAMIC VAULT ENGINE (SURGICAL OVERRIDE) ---
+       // --- 5.5 DYNAMIC VAULT ENGINE ---
         (function initDynamicVault() {
             if (!window.KzickVaultManifest) return;
-
             const vaultTile = document.querySelector('[data-id="vault"]');
             if (!vaultTile) return;
 
-            // 1. Hijack existing tile parameters (Remove old modal tie-in, fix overflow clipping)
-            vaultTile.removeAttribute('data-folder');
-            vaultTile.classList.remove('overflow-hidden'); 
-            vaultTile.style.overflow = 'visible'; 
-
-            // 2. Machine the UI Payload (0fr to 1fr hack)
             let payload = `
             <div id="vault-dropdown" class="absolute top-[105%] left-0 w-64 sm:w-72 z-50 grid transition-all duration-500 origin-top" style="grid-template-rows: 0fr; opacity: 0; pointer-events: none; transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.1);">
-                <div class="overflow-hidden min-h-0 bg-[#0a0a0a]/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8)] flex flex-col text-left">
+                <div class="glass-panel overflow-hidden min-h-0 rounded-2xl flex flex-col text-left">
                     <div class="p-3">`;
 
             window.KzickVaultManifest.forEach(group => {
@@ -600,7 +552,7 @@
                         <span class="block px-3 py-1 text-[10px] font-mono text-cyan-400/80 uppercase tracking-widest">${group.category}</span>
                         <div class="flex flex-col gap-1 mt-1">
                             ${group.links.map(link => `
-                                <a href="${link.url}" target="_blank" class="px-3 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex justify-between items-center group/link">
+                                <a href="${link.url}" target="_blank" class="haptic-trigger px-3 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex justify-between items-center group/link">
                                     ${link.text}
                                     <span class="text-slate-600 group-hover/link:text-cyan-400 transition-colors text-xs">↗</span>
                                 </a>
@@ -610,24 +562,22 @@
             });
 
             payload += `</div></div></div>`;
-
-            // 3. Synchronous Injection
             vaultTile.insertAdjacentHTML('beforeend', payload);
 
-            // 4. Mount Event Delegation & Spring Physics
             const dropdown = document.getElementById('vault-dropdown');
             let isVaultOpen = false;
 
             vaultTile.addEventListener('click', (e) => {
-                if (typeof isDragging !== 'undefined' && isDragging) return; // Respect global drag constraints
-                if (e.target.closest('a')) return; // Let actual links route normally
+                if (typeof isDragging !== 'undefined' && isDragging) return; 
+                if (e.target.closest('a')) return; 
 
+                triggerHaptic('light');
                 isVaultOpen = !isVaultOpen;
                 if (isVaultOpen) {
                     dropdown.style.gridTemplateRows = '1fr';
                     dropdown.style.opacity = '1';
                     dropdown.style.pointerEvents = 'auto';
-                    vaultTile.style.borderColor = 'rgba(6, 182, 212, 0.5)'; // Apply cyan active glow
+                    vaultTile.style.borderColor = 'rgba(6, 182, 212, 0.5)'; 
                 } else {
                     dropdown.style.gridTemplateRows = '0fr';
                     dropdown.style.opacity = '0';
@@ -636,7 +586,6 @@
                 }
             });
 
-            // 5. Environmental Cleanup (Click outside to close)
             document.addEventListener('click', (e) => {
                 if (isVaultOpen && !vaultTile.contains(e.target)) {
                     isVaultOpen = false;
@@ -648,9 +597,9 @@
             });
         })();
 
-        // --- 6. SECURE TOMORROW.IO PROTOCOL PIPELINE ---
+        // --- 6. SECURE ATMOS PROTOCOL PIPELINE ---
         (async function initWeatherPipeline() {
-            const CACHE_KEY = 'kzick_weather_v2.2.2';
+            const CACHE_KEY = 'atmos_weather_v2.3';
             const TTL = 5 * 60 * 1000; 
             const weatherContainer = document.getElementById('weatherContainer');
             
@@ -660,47 +609,47 @@
                 4201: '🌧', 5000: '❄️', 5001: '❄️', 5100: '❄️', 8000: '⛈'
             };
 
+            const safeVal = (val) => val != null ? Math.round(val) : '--';
+
             document.getElementById('weatherToggleBtn').addEventListener('click', () => {
+                triggerHaptic('light');
                 document.getElementById('weather-drawer-inner').classList.toggle('expanded');
             });
 
-            function renderWeather(data) {
+            function renderWeather(payload) {
                 try {
-                    const timelines = data?.data?.timelines || data?.timelines;
-                    if (!timelines) throw new Error("Invalid schema");
+                    const data = payload.data || payload.telemetry || payload; 
+                    const timelines = data?.timelines;
+                    if (!timelines || !Array.isArray(timelines)) throw new Error("Invalid schema");
                     
-                    const daily = timelines.daily || [];
-                    if (!daily.length) throw new Error("No daily data available");
+                    const dailyData = timelines.find(t => t.timestep === '1d')?.intervals;
+                    const currentData = timelines.find(t => t.timestep === 'current')?.intervals[0]?.values;
+                    if (!dailyData || !dailyData.length) throw new Error("No daily data available");
 
-                    // Inject current temperature into complication pill
-                    const minutely = timelines.minutely || [];
-                    const hourly = timelines.hourly || [];
-                    const currentVals = minutely[0]?.values || hourly[0]?.values || daily[0]?.values || {};
-                    const currentTemp = Math.round(currentVals.temperature || daily[0]?.values?.temperatureMax || 0);
+                    // Complication Pill
+                    const currentTemp = safeVal(currentData?.temperature || dailyData[0]?.values?.temperatureMax);
                     const compTempEl = document.getElementById('comp-temp');
-                    if (compTempEl) compTempEl.innerHTML = `${currentTemp}&deg;`;
+                    if (compTempEl) compTempEl.innerHTML = `${currentTemp}°`;
 
                     // UI Expansion - 6 Days Panoramic
                     let html = '<div class="flex gap-4 sm:gap-8 w-full justify-between items-center px-2">';
                     
-                    for (let i = 0; i < 6 && i < daily.length; i++) {
-                        const vals = daily[i].values;
+                    for (let i = 0; i < 6 && i < dailyData.length; i++) {
+                        const vals = dailyData[i].values;
                         const dCode = vals.weatherCodeMax || vals.weatherCodeMin || vals.weatherCode || 1100;
                         const icon = codeMap[dCode] || '🌤';
                         
-                        let dayLabel = 'UNK';
-                        if (i === 0) {
-                            dayLabel = 'TODAY';
-                        } else {
-                            const rawTime = daily[i].startTime || daily[i].time;
-                            const date = rawTime ? new Date(rawTime) : new Date(Date.now() + (i * 86400000));
+                        let dayLabel = i === 0 ? 'TODAY' : 'UNK';
+                        if (i !== 0) {
+                            const date = new Date(dailyData[i].startTime);
                             if (!isNaN(date.getTime())) {
                                 dayLabel = new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(date);
                             }
                         }
 
-                        const maxT = Math.round(vals.temperatureMax || vals.temperature);
-                        const minT = Math.round(vals.temperatureMin || vals.temperature - 10);
+                        // Robust fallback to prevent NaN injections
+                        const maxT = safeVal(vals.temperatureMax ?? vals.temperature);
+                        const minT = safeVal(vals.temperatureMin ?? (vals.temperature ? vals.temperature - 10 : null));
                         const isToday = i === 0 ? 'text-cyan-400 font-bold' : 'text-slate-500 font-medium';
 
                         html += `
@@ -716,16 +665,17 @@
                     weatherContainer.innerHTML = html + '</div>';
 
                     // Populate Drawer (Today's Telemetry)
-                    const tVals = daily[0].values;
-                    document.getElementById('dt-low').textContent = `${Math.round(tVals.temperatureMin || 0)}°`;
-                    document.getElementById('dt-dew').textContent = `${Math.round(tVals.dewPointAvg || 0)}°`;
-                    document.getElementById('dt-rh').textContent = `${Math.round(tVals.humidityAvg || 0)}%`;
-                    document.getElementById('dt-precip').textContent = `${Math.round(tVals.precipitationProbabilityAvg || 0)}%`;
-                    document.getElementById('dt-wind').textContent = `${Math.round(tVals.windSpeedAvg || 0)} mph`;
-                    document.getElementById('dt-gust').textContent = `${Math.round(tVals.windGustMax || 0)} mph`;
-                    document.getElementById('dt-dir').textContent = `${Math.round(tVals.windDirectionAvg || 0)}°`;
+                    const tVals = dailyData[0].values;
+                    document.getElementById('dt-low').textContent = `${safeVal(tVals.temperatureMin)}°`;
+                    document.getElementById('dt-dew').textContent = `${safeVal(currentData?.dewPoint ?? tVals.dewPointAvg)}°`;
+                    document.getElementById('dt-rh').textContent = `${safeVal(currentData?.humidity ?? tVals.humidityAvg)}%`;
+                    document.getElementById('dt-precip').textContent = `${safeVal(tVals.precipitationProbabilityAvg)}%`;
                     
-                    const aqi = tVals.epaPrimaryAQI ?? tVals.epaIndex ?? '--';
+                    document.getElementById('dt-wind').textContent = `${safeVal(currentData?.windSpeed ?? tVals.windSpeedAvg)} mph`;
+                    document.getElementById('dt-gust').textContent = `${safeVal(currentData?.windGust ?? tVals.windGustMax)} mph`;
+                    document.getElementById('dt-dir').textContent = `${safeVal(currentData?.windDirection ?? tVals.windDirectionAvg)}°`;
+                    
+                    const aqi = payload.airnow?.primaryAQI ?? tVals.epaPrimaryAQI ?? '--';
                     document.getElementById('dt-aqi').textContent = aqi;
 
                 } catch(e) {
