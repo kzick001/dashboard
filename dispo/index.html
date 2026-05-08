@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Menu Scraper Proxy</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; padding: 20px; }
+    input, button, textarea { 
+      font-family: monospace; 
+      background: #222; 
+      color: #0f0; 
+      border: 1px solid #444; 
+      padding: 10px; 
+      margin-bottom: 10px; 
+      width: 100%; 
+      box-sizing: border-box; 
+    }
+    button { cursor: pointer; background: #333; font-weight: bold; }
+    button:hover { background: #444; }
+    textarea { height: 60vh; resize: vertical; }
+    .controls { display: flex; gap: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Passthrough Scraper</h2>
+  <div class="controls">
+    <input type="text" id="targetUrl" placeholder="Enter target URL..." />
+    <button id="fetchBtn" style="width: 20%;">Fetch</button>
+  </div>
+  <button id="copyBtn">Copy Output</button>
+  <textarea id="output" readonly></textarea>
+
+  <script>
+    const WORKER_URL = "https://dispo.askozicki.workers.dev";
+    const SECRET = "stoner@4data#7HEIST";
+
+    document.getElementById('fetchBtn').addEventListener('click', async () => {
+      const target = document.getElementById('targetUrl').value;
+      const output = document.getElementById('output');
+      if (!target) return;
+
+      output.value = "Executing proxy fetch...";
+      
+      try {
+        const res = await fetch(`${WORKER_URL}?target=${encodeURIComponent(target)}`, {
+          headers: { "X-Proxy-Secret": SECRET }
+        });
+        
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        output.value = await res.text();
+      } catch (e) {
+        output.value = "Error: " + e.message;
+      }
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      const output = document.getElementById('output');
+      output.select();
+      navigator.clipboard.writeText(output.value);
+    });
+  </script>
+</body>
+</html>
