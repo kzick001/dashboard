@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Menu Scraper Proxy - POST Engine</title>
+  <title>DISPO DATA HEIST V0.2.1</title>
   <style>
     body { font-family: monospace; background: #111; color: #eee; padding: 20px; }
     select, button, textarea { 
@@ -89,20 +89,24 @@
           method: "POST",
           headers: { 
             "X-Proxy-Secret": SECRET,
-            // We tell our worker we are sending JSON
             "Content-Type": "application/json" 
           },
           body: JSON.stringify(targetConfig.payload)
         });
         
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        // NEW ERROR HANDLING LOGIC
+        // If the worker returns a 500, we read the exact crash report it sent
+        if (!res.ok) {
+          const errorPayload = await res.text();
+          throw new Error(`Worker returned status ${res.status}:\n\n${errorPayload}`);
+        }
         
-        // Parse the response so we can pretty-print it
         const jsonResponse = await res.json();
         output.value = JSON.stringify(jsonResponse, null, 2);
         
       } catch (e) {
-        output.value = "Error: " + e.message;
+        // This prints the detailed crash report to the screen
+        output.value = "CRITICAL FAILURE:\n\n" + e.message;
       }
     });
 
