@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Menu Scraper Proxy</title>
+  <title>Menu Scraper Proxy - POST Engine</title>
   <style>
     body { font-family: monospace; background: #111; color: #eee; padding: 20px; }
-    input, button, textarea { 
+    select, button, textarea { 
       font-family: monospace; 
       background: #222; 
       color: #0f0; 
@@ -19,35 +19,88 @@
     button:hover { background: #444; }
     textarea { height: 60vh; resize: vertical; }
     .controls { display: flex; gap: 10px; }
+    select { flex-grow: 1; }
   </style>
 </head>
 <body>
-  <h2>Passthrough Scraper</h2>
+  <h2>Passthrough Scraper - v2</h2>
   <div class="controls">
-    <input type="text" id="targetUrl" placeholder="Enter target URL..." />
-    <button id="fetchBtn" style="width: 20%;">Fetch</button>
+    <select id="dispensary">
+      <option value="" disabled selected>Select Target Dispensary...</option>
+      <option value="greengoods">Green Goods (Store 3812 - Flower)</option>
+      <option value="rise">Rise (Store 4635 - All Inventory)</option>
+    </select>
+    <button id="fetchBtn" style="width: 20%;">Fetch Inventory</button>
   </div>
-  <button id="copyBtn">Copy Output</button>
-  <textarea id="output" readonly></textarea>
+  <button id="copyBtn">Copy Raw JSON</button>
+  <textarea id="output" readonly placeholder="Waiting for query..."></textarea>
 
   <script>
     const WORKER_URL = "https://dispo.askozicki.workers.dev";
     const SECRET = "stoner@4data#7HEIST";
 
-    document.getElementById('fetchBtn').addEventListener('click', async () => {
-      const target = document.getElementById('targetUrl').value;
-      const output = document.getElementById('output');
-      if (!target) return;
+    // Pre-configured targets and their specific POST payloads
+    const targets = {
+      greengoods: {
+        url: "https://dmerch.iheartjane.com/v2/multi?jdm_api_key=ce5f15c9-3d09-441d-9bfd-26e87aff5925",
+        payload: {
+          "app_mode": "framelessEmbed",
+          "num_columns": 1,
+          "search_attributes": ["*"],
+          "store_id": 3812,
+          "placements": [
+            {
+              "page_size": 100,
+              "placement": "menu_inline_table",
+              "search_filter": "(kind:\"flower\" OR root_types:\"flower\")",
+              "search_sort": "recommendation"
+            }
+          ],
+          "type": "custom"
+        }
+      },
+      rise: {
+        url: "https://search.iheartjane.com/1/indexes/*/queries",
+        payload: {
+          "requests": [
+            {
+              "indexName": "menu-products-production",
+              "params": "filters=store_id = 4635&hitsPerPage=100&page=0"
+            }
+          ]
+        }
+      }
+    };
 
-      output.value = "Executing proxy fetch...";
+    document.getElementById('fetchBtn').addEventListener('click', async () => {
+      const selection = document.getElementById('dispensary').value;
+      const output = document.getElementById('output');
+      
+      if (!selection) {
+        output.value = "Error: Please select a target dispensary from the dropdown.";
+        return;
+      }
+
+      const targetConfig = targets[selection];
+      output.value = `Executing POST payload to ${selection} via worker...\n\nTarget URL: ${targetConfig.url}\n\nPlease wait...`;
       
       try {
-        const res = await fetch(`${WORKER_URL}?target=${encodeURIComponent(target)}`, {
-          headers: { "X-Proxy-Secret": SECRET }
+        const res = await fetch(`${WORKER_URL}?target=${encodeURIComponent(targetConfig.url)}`, {
+          method: "POST",
+          headers: { 
+            "X-Proxy-Secret": SECRET,
+            // We tell our worker we are sending JSON
+            "Content-Type": "application/json" 
+          },
+          body: JSON.stringify(targetConfig.payload)
         });
         
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        output.value = await res.text();
+        
+        // Parse the response so we can pretty-print it
+        const jsonResponse = await res.json();
+        output.value = JSON.stringify(jsonResponse, null, 2);
+        
       } catch (e) {
         output.value = "Error: " + e.message;
       }
