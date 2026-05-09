@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Menu Scraper Proxy - v0.2 (Interactive UI)</title>
+  <title>Menu Scraper Proxy - v0.3 (Omni-Dashboard)</title>
   <style>
     body { font-family: monospace; background: #111; color: #eee; padding: 20px; }
-    select, button { 
+    select, button, input { 
       font-family: monospace; background: #222; color: #0f0; border: 1px solid #444; 
       padding: 10px; margin-bottom: 10px; box-sizing: border-box; 
     }
@@ -15,18 +15,20 @@
     #downloadBtn:hover { background: #9b59b6; }
     
     .controls { display: flex; gap: 10px; margin-bottom: 5px; }
-    select { flex-grow: 1; }
+    select, input { flex-grow: 1; }
     
-    /* New Filter Bar Styles */
+    /* Advanced Filter Bar */
     .filter-bar { 
-        display: none; /* Hidden until data loads */
+        display: none; 
+        flex-wrap: wrap;
         gap: 10px; 
         background: #1a1a1a; 
-        padding: 10px; 
+        padding: 15px; 
         border: 1px solid #333;
         margin-bottom: 15px;
     }
-    .filter-bar select { margin-bottom: 0; background: #111; color: #fff; }
+    .filter-bar > * { flex: 1 1 200px; margin-bottom: 0; background: #111; color: #fff; }
+    .search-row { width: 100%; display: flex; gap: 10px; margin-bottom: 10px; }
     
     table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
     th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
@@ -35,10 +37,11 @@
     .type-sativa { color: #f39c12; font-weight: bold; }
     .type-indica { color: #9b59b6; font-weight: bold; }
     .type-hybrid { color: #3498db; font-weight: bold; }
+    .price-tag { color: #2ecc71; font-weight: bold; }
   </style>
 </head>
 <body>
-  <h2>Passthrough Scraper - v0.2</h2>
+  <h2>Passthrough Omni-Dashboard - v0.3</h2>
   
   <div class="controls">
     <select id="dispensary">
@@ -46,27 +49,31 @@
       <option value="greengoods">Green Goods (Store 3812)</option>
       <option value="rise">Rise (Store 4635)</option>
     </select>
-    <button id="fetchBtn">Fetch Data</button>
+    <button id="fetchBtn">Fetch Entire Menu</button>
     <button id="downloadBtn">Raw JSON</button>
   </div>
   
   <div id="status" style="margin-bottom: 15px; color: #aaa;">Waiting for command...</div>
 
   <div class="filter-bar" id="filterBar">
+    <div class="search-row">
+        <input type="text" id="searchBar" placeholder="Search strains, brands, or keywords (e.g. 'rosin')...">
+    </div>
     <select id="filterCategory">
       <option value="All">All Categories</option>
-      <option value="Flower">Flower & Pre-rolls</option>
-      <option value="Extract">Extracts & Concentrates</option>
-    </select>
+      </select>
+    <select id="filterBrand">
+      <option value="All">All Brands</option>
+      </select>
     <select id="filterType">
       <option value="All">All Types</option>
-      <option value="Indica">Indica Only</option>
-      <option value="Sativa">Sativa Only</option>
-      <option value="Hybrid">Hybrid Only</option>
+      <option value="Indica">Indica</option>
+      <option value="Sativa">Sativa</option>
+      <option value="Hybrid">Hybrid</option>
     </select>
     <select id="sortBy">
       <option value="thc-desc">Sort: THC (High to Low)</option>
-      <option value="thc-asc">Sort: THC (Low to High)</option>
+      <option value="price-asc">Sort: Price (Low to High)</option>
       <option value="name-asc">Sort: Name (A-Z)</option>
     </select>
   </div>
@@ -74,11 +81,13 @@
   <table id="resultsTable" style="display: none;">
     <thead>
       <tr>
-        <th>Strain / Product Name</th>
+        <th>Strain / Product</th>
+        <th>Brand</th>
         <th>Category</th>
         <th>Type</th>
         <th>Size</th>
         <th>THC %</th>
+        <th>Price</th>
       </tr>
     </thead>
     <tbody id="tableBody"></tbody>
@@ -89,7 +98,7 @@
     const SECRET = "stoner@4data#7HEIST";
     
     let lastFetchedRawData = null; 
-    let currentInventory = []; // Holds the active UI data for sorting/filtering
+    let currentInventory = []; 
 
     const targets = {
       greengoods: {
@@ -100,19 +109,19 @@
           "num_columns": 1,
           "search_attributes": ["*"],
           "store_id": 3812,
-          "placements": [{"disable_ads": false, "page_size": 100, "placement": "menu_inline_table", "search_filter": "", "search_sort": "recommendation"}],
+          "placements": [{"disable_ads": false, "page_size": 1000, "placement": "menu_inline_table", "search_filter": "", "search_sort": "recommendation"}],
           "type": "custom"
         }
       },
       rise: {
         url: "https://search.iheartjane.com/1/indexes/*/queries",
-        payload: { "requests": [{ "indexName": "menu-products-production", "params": "filters=store_id = 4635&hitsPerPage=100&page=0" }] }
+        payload: { "requests": [{ "indexName": "menu-products-production", "params": "filters=store_id = 4635&hitsPerPage=1000&page=0" }] } // Increased to 1000 to get full menu
       }
     };
 
     const weightDictionary = { "gram": "1g", "eighth": "3.5g", "quarter": "7g", "half": "14g", "ounce": "28g" };
 
-    // --- PARSER ENGINE ---
+    // --- PARSER ENGINE (ALL DATA) ---
     function parseInventory(data, source) {
       let unifiedArray = [];
 
@@ -125,23 +134,22 @@
 
       if (unifiedArray.length === 0) throw new Error("Product array was empty.");
 
-      const targetedArray = unifiedArray.filter(item => {
-        const kind = (item.kind || "").toLowerCase();
-        const rootStr = (item.root_types || []).join(" ").toLowerCase();
-        const isTargetKind = kind === "flower" || kind === "pre-roll" || kind === "extract" || kind === "concentrate";
-        const isRosin = rootStr.includes("rosin") || rootStr.includes("extract");
-        return isTargetKind || isRosin;
-      });
+      // BOUNCER REMOVED. We process everything.
+      return unifiedArray.map(item => {
+        let finalStrainName = item.strain || item.name || "Unknown Product";
+        let brand = item.brand || "Unknown Brand";
+        
+        // Dynamic Category Mapping
+        let rawKind = item.kind || item.product_category || "Uncategorized";
+        const categoryDisplay = rawKind.charAt(0).toUpperCase() + rawKind.slice(1);
 
-      return targetedArray.map(item => {
-        let finalStrainName = item.strain;
-        if (!finalStrainName || finalStrainName.toLowerCase() === "no strain" || finalStrainName.toLowerCase() === "none") {
-            finalStrainName = item.name || "Unknown Product";
-        }
+        // Deep text search for Type (Indica/Sativa)
+        const deepText = [item.kind, item.category, item.strain_type, ...(item.root_types || []), item.name, item.store_notes].join(" ").toLowerCase();
+        let typeDisplay = "Hybrid"; 
+        if (deepText.includes("indica") && !deepText.includes("sativa")) typeDisplay = "Indica";
+        if (deepText.includes("sativa") && !deepText.includes("indica")) typeDisplay = "Sativa";
 
-        const categoryDisplay = (item.kind || "Unknown").charAt(0).toUpperCase() + (item.kind || "").slice(1);
-        const typeDisplay = (item.category || "Hybrid").charAt(0).toUpperCase() + (item.category || "hybrid").slice(1);
-
+        // Size Hunter
         let sizes = "N/A";
         if (item.available_weights && item.available_weights.length > 0) {
           sizes = item.available_weights.map(w => weightDictionary[w] || w).join(", ");
@@ -153,7 +161,7 @@
           if (sizeMatch && sizeMatch[1]) sizes = sizeMatch[1];
         }
 
-        // Numeric THC Extraction for sorting
+        // THC Numeric Math
         let thc = "N/A";
         let thcNumber = 0;
         if (item.percent_thc) {
@@ -162,23 +170,56 @@
         } else if (item.product_percent_thc) {
           thcNumber = parseFloat(item.product_percent_thc);
           thc = item.product_percent_thc + "%";
+        } else {
+          const notes = item.store_notes || item.description || "";
+          const thcMatch = notes.match(/THC\s*:?\s*([\d.]+)/i);
+          if (thcMatch && thcMatch[1]) {
+              thcNumber = parseFloat(thcMatch[1]);
+              thc = thcMatch[1] + "%";
+          }
         }
 
-        // Standardize Extract naming for the UI filter
-        let masterCategory = "Flower";
-        if (categoryDisplay.toLowerCase().includes("extract") || categoryDisplay.toLowerCase().includes("concentrate") || categoryDisplay.toLowerCase().includes("rosin")) {
-            masterCategory = "Extract";
-        }
+        // Price Extraction
+        let priceNumber = parseFloat(item.bucket_price || item.price || 0);
+        let priceDisplay = priceNumber > 0 ? `$${priceNumber}` : "N/A";
+
+        // Full search string for the search bar
+        let searchString = `${finalStrainName} ${brand} ${categoryDisplay} ${typeDisplay} ${deepText}`.toLowerCase();
 
         return {
           strain: finalStrainName,
+          brand: brand,
           category: categoryDisplay,
-          masterCategory: masterCategory, // Used for the dropdown filter
           type: typeDisplay,
           sizes: sizes,
           thc: thc,
-          thcNumber: thcNumber // Used purely for sorting math
+          thcNumber: thcNumber,
+          price: priceDisplay,
+          priceNumber: priceNumber,
+          searchString: searchString
         };
+      });
+    }
+
+    // --- DYNAMIC DROPDOWN BUILDER ---
+    function buildDropdowns() {
+      const catSelect = document.getElementById('filterCategory');
+      const brandSelect = document.getElementById('filterBrand');
+      
+      // Reset dropdowns
+      catSelect.innerHTML = '<option value="All">All Categories</option>';
+      brandSelect.innerHTML = '<option value="All">All Brands</option>';
+
+      // Extract unique categories and brands
+      const uniqueCats = [...new Set(currentInventory.map(i => i.category))].sort();
+      const uniqueBrands = [...new Set(currentInventory.map(i => i.brand))].sort();
+
+      uniqueCats.forEach(cat => {
+          if(cat) catSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+      });
+      
+      uniqueBrands.forEach(brand => {
+          if(brand) brandSelect.innerHTML += `<option value="${brand}">${brand}</option>`;
       });
     }
 
@@ -186,21 +227,30 @@
     function applyFiltersAndRender() {
       if (currentInventory.length === 0) return;
 
+      const searchTerm = document.getElementById('searchBar').value.toLowerCase();
       const catFilter = document.getElementById('filterCategory').value;
+      const brandFilter = document.getElementById('filterBrand').value;
       const typeFilter = document.getElementById('filterType').value;
       const sortPref = document.getElementById('sortBy').value;
 
       // 1. Filter the Data
       let processedData = currentInventory.filter(item => {
-        let matchCat = (catFilter === "All") || (item.masterCategory === catFilter);
+        let matchSearch = searchTerm === "" || item.searchString.includes(searchTerm);
+        let matchCat = (catFilter === "All") || (item.category === catFilter);
+        let matchBrand = (brandFilter === "All") || (item.brand === brandFilter);
         let matchType = (typeFilter === "All") || (item.type === typeFilter);
-        return matchCat && matchType;
+        return matchSearch && matchCat && matchBrand && matchType;
       });
 
       // 2. Sort the Data
       processedData.sort((a, b) => {
         if (sortPref === "thc-desc") return b.thcNumber - a.thcNumber;
-        if (sortPref === "thc-asc") return a.thcNumber - b.thcNumber;
+        if (sortPref === "price-asc") {
+            // Handle N/A prices
+            if (a.priceNumber === 0) return 1;
+            if (b.priceNumber === 0) return -1;
+            return a.priceNumber - b.priceNumber;
+        }
         if (sortPref === "name-asc") return a.strain.localeCompare(b.strain);
         return 0;
       });
@@ -214,20 +264,24 @@
         const row = document.createElement('tr');
         row.innerHTML = `
           <td><strong>${item.strain}</strong></td>
+          <td style="color: #bbb;">${item.brand}</td>
           <td style="color: #aaa;">${item.category}</td>
           <td class="type-${item.type.toLowerCase()}">${item.type}</td>
           <td>${item.sizes}</td>
           <td>${item.thc}</td>
+          <td class="price-tag">${item.price}</td>
         `;
         tbody.appendChild(row);
       });
 
       table.style.display = 'table';
-      document.getElementById('status').innerText = `Displaying ${processedData.length} products.`;
+      document.getElementById('status').innerText = `Displaying ${processedData.length} total products.`;
     }
 
-    // Bind Event Listeners to the Dropdowns
+    // Bind Event Listeners
+    document.getElementById('searchBar').addEventListener('input', applyFiltersAndRender);
     document.getElementById('filterCategory').addEventListener('change', applyFiltersAndRender);
+    document.getElementById('filterBrand').addEventListener('change', applyFiltersAndRender);
     document.getElementById('filterType').addEventListener('change', applyFiltersAndRender);
     document.getElementById('sortBy').addEventListener('change', applyFiltersAndRender);
 
@@ -238,7 +292,7 @@
       
       if (!selection) return;
 
-      statusDiv.innerText = `Punching through ${selection} API...`;
+      statusDiv.innerText = `Pulling entire ${selection} menu...`;
       document.getElementById('resultsTable').style.display = 'none';
       document.getElementById('filterBar').style.display = 'none';
       document.getElementById('downloadBtn').style.display = 'none';
@@ -258,10 +312,13 @@
         const rawJson = await res.json();
         lastFetchedRawData = rawJson; 
         
-        statusDiv.innerText = "Data acquired. Normalizing payload...";
+        statusDiv.innerText = "Data acquired. Normalizing entire catalog...";
         
-        // Save to global state and trigger the render pipeline
+        // Save to global state
         currentInventory = parseInventory(rawJson, selection);
+        
+        // Generate dropdowns based on actual data
+        buildDropdowns();
         
         // Show controls and render
         document.getElementById('filterBar').style.display = 'flex';
@@ -280,7 +337,7 @@
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(lastFetchedRawData, null, 2));
       const downloadAnchorNode = document.createElement('a');
       downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", `${dispensaryName}_raw_inventory.json`);
+      downloadAnchorNode.setAttribute("download", `${dispensaryName}_omni_inventory.json`);
       document.body.appendChild(downloadAnchorNode);
       downloadAnchorNode.click();
       downloadAnchorNode.remove();
