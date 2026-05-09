@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Menu Scaper V0.1 STABLE</title>
+  <title>Menu Scraper Proxy - v0.2 (Interactive UI)</title>
   <style>
     body { font-family: monospace; background: #111; color: #eee; padding: 20px; }
     select, button { 
@@ -13,31 +13,63 @@
     button:hover { background: #444; }
     #downloadBtn { background: #8e44ad; color: #fff; border-color: #9b59b6; display: none; }
     #downloadBtn:hover { background: #9b59b6; }
-    .controls { display: flex; gap: 10px; }
+    
+    .controls { display: flex; gap: 10px; margin-bottom: 5px; }
     select { flex-grow: 1; }
     
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+    /* New Filter Bar Styles */
+    .filter-bar { 
+        display: none; /* Hidden until data loads */
+        gap: 10px; 
+        background: #1a1a1a; 
+        padding: 10px; 
+        border: 1px solid #333;
+        margin-bottom: 15px;
+    }
+    .filter-bar select { margin-bottom: 0; background: #111; color: #fff; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
     th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
-    th { color: #0f0; border-bottom: 2px solid #0f0; text-transform: uppercase; }
+    th { color: #0f0; border-bottom: 2px solid #0f0; text-transform: uppercase; background: #1a1a1a; }
     tr:hover { background: #222; }
-    .type-sativa { color: #f39c12; }
-    .type-indica { color: #9b59b6; }
-    .type-hybrid { color: #3498db; }
+    .type-sativa { color: #f39c12; font-weight: bold; }
+    .type-indica { color: #9b59b6; font-weight: bold; }
+    .type-hybrid { color: #3498db; font-weight: bold; }
   </style>
 </head>
 <body>
-  <h2>Passthrough Scraper - v8 (Size Hunter)</h2>
+  <h2>Passthrough Scraper - v0.2</h2>
+  
   <div class="controls">
     <select id="dispensary">
       <option value="" disabled selected>Select Target Dispensary...</option>
       <option value="greengoods">Green Goods (Store 3812)</option>
       <option value="rise">Rise (Store 4635)</option>
     </select>
-    <button id="fetchBtn">Fetch & Parse</button>
-    <button id="downloadBtn">Download Raw JSON</button>
+    <button id="fetchBtn">Fetch Data</button>
+    <button id="downloadBtn">Raw JSON</button>
   </div>
   
   <div id="status" style="margin-bottom: 15px; color: #aaa;">Waiting for command...</div>
+
+  <div class="filter-bar" id="filterBar">
+    <select id="filterCategory">
+      <option value="All">All Categories</option>
+      <option value="Flower">Flower & Pre-rolls</option>
+      <option value="Extract">Extracts & Concentrates</option>
+    </select>
+    <select id="filterType">
+      <option value="All">All Types</option>
+      <option value="Indica">Indica Only</option>
+      <option value="Sativa">Sativa Only</option>
+      <option value="Hybrid">Hybrid Only</option>
+    </select>
+    <select id="sortBy">
+      <option value="thc-desc">Sort: THC (High to Low)</option>
+      <option value="thc-asc">Sort: THC (Low to High)</option>
+      <option value="name-asc">Sort: Name (A-Z)</option>
+    </select>
+  </div>
   
   <table id="resultsTable" style="display: none;">
     <thead>
@@ -55,7 +87,9 @@
   <script>
     const WORKER_URL = "https://dispo.askozicki.workers.dev";
     const SECRET = "stoner@4data#7HEIST";
+    
     let lastFetchedRawData = null; 
+    let currentInventory = []; // Holds the active UI data for sorting/filtering
 
     const targets = {
       greengoods: {
@@ -66,13 +100,7 @@
           "num_columns": 1,
           "search_attributes": ["*"],
           "store_id": 3812,
-          "placements": [{
-            "disable_ads": false, 
-            "page_size": 100, 
-            "placement": "menu_inline_table",
-            "search_filter": "", 
-            "search_sort": "recommendation"
-          }],
+          "placements": [{"disable_ads": false, "page_size": 100, "placement": "menu_inline_table", "search_filter": "", "search_sort": "recommendation"}],
           "type": "custom"
         }
       },
@@ -82,14 +110,9 @@
       }
     };
 
-    const weightDictionary = {
-      "gram": "1g",
-      "eighth": "3.5g",
-      "quarter": "7g",
-      "half": "14g",
-      "ounce": "28g"
-    };
+    const weightDictionary = { "gram": "1g", "eighth": "3.5g", "quarter": "7g", "half": "14g", "ounce": "28g" };
 
+    // --- PARSER ENGINE ---
     function parseInventory(data, source) {
       let unifiedArray = [];
 
@@ -100,22 +123,17 @@
         unifiedArray = products.map(p => p.search_attributes).filter(Boolean);
       }
 
-      if (unifiedArray.length === 0) {
-        throw new Error("Data was fetched, but the product array was empty.");
-      }
+      if (unifiedArray.length === 0) throw new Error("Product array was empty.");
 
       const targetedArray = unifiedArray.filter(item => {
         const kind = (item.kind || "").toLowerCase();
         const rootStr = (item.root_types || []).join(" ").toLowerCase();
-        
         const isTargetKind = kind === "flower" || kind === "pre-roll" || kind === "extract" || kind === "concentrate";
-        const isRosin = rootStr.includes("rosin");
-        
+        const isRosin = rootStr.includes("rosin") || rootStr.includes("extract");
         return isTargetKind || isRosin;
       });
 
       return targetedArray.map(item => {
-        
         let finalStrainName = item.strain;
         if (!finalStrainName || finalStrainName.toLowerCase() === "no strain" || finalStrainName.toLowerCase() === "none") {
             finalStrainName = item.name || "Unknown Product";
@@ -124,50 +142,75 @@
         const categoryDisplay = (item.kind || "Unknown").charAt(0).toUpperCase() + (item.kind || "").slice(1);
         const typeDisplay = (item.category || "Hybrid").charAt(0).toUpperCase() + (item.category || "hybrid").slice(1);
 
-        // --- THE SIZE HUNTER ---
         let sizes = "N/A";
-        
-        // 1. Check official array (Used for raw Flower)
         if (item.available_weights && item.available_weights.length > 0) {
           sizes = item.available_weights.map(w => weightDictionary[w] || w).join(", ");
-        } 
-        // 2. Fallback to 'amount' field (Used for Pre-rolls/Extracts)
-        else if (item.amount) {
+        } else if (item.amount) {
           sizes = item.amount;
-        } 
-        // 3. Final Fallback: Scan the product name for brackets/parentheses with weights
-        else {
+        } else {
           const rawName = item.name || "";
-          // Looks for numbers followed by g, mg, or oz inside or outside brackets. (e.g. [1g], 0.5g)
           const sizeMatch = rawName.match(/(?:\[|\()?(\d*\.?\d+\s*(?:g|mg|oz))(?:\]|\))?/i);
-          if (sizeMatch && sizeMatch[1]) {
-            sizes = sizeMatch[1];
-          }
+          if (sizeMatch && sizeMatch[1]) sizes = sizeMatch[1];
         }
 
+        // Numeric THC Extraction for sorting
         let thc = "N/A";
+        let thcNumber = 0;
         if (item.percent_thc) {
+          thcNumber = parseFloat(item.percent_thc);
           thc = item.percent_thc + "%";
         } else if (item.product_percent_thc) {
+          thcNumber = parseFloat(item.product_percent_thc);
           thc = item.product_percent_thc + "%";
+        }
+
+        // Standardize Extract naming for the UI filter
+        let masterCategory = "Flower";
+        if (categoryDisplay.toLowerCase().includes("extract") || categoryDisplay.toLowerCase().includes("concentrate") || categoryDisplay.toLowerCase().includes("rosin")) {
+            masterCategory = "Extract";
         }
 
         return {
           strain: finalStrainName,
           category: categoryDisplay,
+          masterCategory: masterCategory, // Used for the dropdown filter
           type: typeDisplay,
           sizes: sizes,
-          thc: thc
+          thc: thc,
+          thcNumber: thcNumber // Used purely for sorting math
         };
       });
     }
 
-    function renderTable(leanData) {
+    // --- UI RENDER & FILTER ENGINE ---
+    function applyFiltersAndRender() {
+      if (currentInventory.length === 0) return;
+
+      const catFilter = document.getElementById('filterCategory').value;
+      const typeFilter = document.getElementById('filterType').value;
+      const sortPref = document.getElementById('sortBy').value;
+
+      // 1. Filter the Data
+      let processedData = currentInventory.filter(item => {
+        let matchCat = (catFilter === "All") || (item.masterCategory === catFilter);
+        let matchType = (typeFilter === "All") || (item.type === typeFilter);
+        return matchCat && matchType;
+      });
+
+      // 2. Sort the Data
+      processedData.sort((a, b) => {
+        if (sortPref === "thc-desc") return b.thcNumber - a.thcNumber;
+        if (sortPref === "thc-asc") return a.thcNumber - b.thcNumber;
+        if (sortPref === "name-asc") return a.strain.localeCompare(b.strain);
+        return 0;
+      });
+
+      // 3. Render to Table
       const tbody = document.getElementById('tableBody');
       const table = document.getElementById('resultsTable');
       tbody.innerHTML = ''; 
 
-      leanData.forEach(item => {
+      processedData.forEach(item => {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td><strong>${item.strain}</strong></td>
@@ -179,20 +222,26 @@
         tbody.appendChild(row);
       });
 
-      table.style.display = 'table'; 
+      table.style.display = 'table';
+      document.getElementById('status').innerText = `Displaying ${processedData.length} products.`;
     }
 
+    // Bind Event Listeners to the Dropdowns
+    document.getElementById('filterCategory').addEventListener('change', applyFiltersAndRender);
+    document.getElementById('filterType').addEventListener('change', applyFiltersAndRender);
+    document.getElementById('sortBy').addEventListener('change', applyFiltersAndRender);
+
+    // --- MASTER FETCH ENGINE ---
     document.getElementById('fetchBtn').addEventListener('click', async () => {
       const selection = document.getElementById('dispensary').value;
       const statusDiv = document.getElementById('status');
-      const downloadBtn = document.getElementById('downloadBtn');
       
       if (!selection) return;
 
       statusDiv.innerText = `Punching through ${selection} API...`;
       document.getElementById('resultsTable').style.display = 'none';
-      downloadBtn.style.display = 'none';
-      lastFetchedRawData = null; 
+      document.getElementById('filterBar').style.display = 'none';
+      document.getElementById('downloadBtn').style.display = 'none';
       
       try {
         const res = await fetch(`${WORKER_URL}?target=${encodeURIComponent(targets[selection].url)}`, {
@@ -211,11 +260,13 @@
         
         statusDiv.innerText = "Data acquired. Normalizing payload...";
         
-        const leanInventory = parseInventory(rawJson, selection);
-        renderTable(leanInventory);
+        // Save to global state and trigger the render pipeline
+        currentInventory = parseInventory(rawJson, selection);
         
-        statusDiv.innerText = `Success: Displaying ${leanInventory.length} targeted products.`;
-        downloadBtn.style.display = 'inline-block'; 
+        // Show controls and render
+        document.getElementById('filterBar').style.display = 'flex';
+        document.getElementById('downloadBtn').style.display = 'inline-block'; 
+        applyFiltersAndRender();
         
       } catch (e) {
         statusDiv.innerText = "CRITICAL FAILURE: " + e.message;
@@ -225,11 +276,9 @@
 
     document.getElementById('downloadBtn').addEventListener('click', () => {
       if (!lastFetchedRawData) return;
-      
       const dispensaryName = document.getElementById('dispensary').value;
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(lastFetchedRawData, null, 2));
       const downloadAnchorNode = document.createElement('a');
-      
       downloadAnchorNode.setAttribute("href", dataStr);
       downloadAnchorNode.setAttribute("download", `${dispensaryName}_raw_inventory.json`);
       document.body.appendChild(downloadAnchorNode);
