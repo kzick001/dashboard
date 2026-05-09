@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Menu Scraper Proxy - Phase 6 (Unified Normalizer)</title>
+  <title>Menu Scraper Proxy - Phase 6.2 (Omni-Scanner + Export)</title>
   <style>
     body { font-family: monospace; background: #111; color: #eee; padding: 20px; }
     select, button { 
@@ -11,6 +11,8 @@
     }
     button { cursor: pointer; background: #333; font-weight: bold; width: 20%; }
     button:hover { background: #444; }
+    #downloadBtn { background: #8e44ad; color: #fff; border-color: #9b59b6; display: none; }
+    #downloadBtn:hover { background: #9b59b6; }
     .controls { display: flex; gap: 10px; }
     select { flex-grow: 1; }
     
@@ -24,7 +26,7 @@
   </style>
 </head>
 <body>
-  <h2>Passthrough Scraper - v6 (Unified Engine)</h2>
+  <h2>Passthrough Scraper - v6.2 (Export Enabled)</h2>
   <div class="controls">
     <select id="dispensary">
       <option value="" disabled selected>Select Target Dispensary...</option>
@@ -32,6 +34,7 @@
       <option value="rise">Rise (Store 4635)</option>
     </select>
     <button id="fetchBtn">Fetch & Parse</button>
+    <button id="downloadBtn">Download Raw JSON</button>
   </div>
   
   <div id="status" style="margin-bottom: 15px; color: #aaa;">Waiting for command...</div>
@@ -52,6 +55,7 @@
   <script>
     const WORKER_URL = "https://dispo.askozicki.workers.dev";
     const SECRET = "stoner@4data#7HEIST";
+    let lastFetchedRawData = null; // Global variable to hold the black box data
 
     const targets = {
       greengoods: {
@@ -89,7 +93,6 @@
     function parseInventory(data, source) {
       let unifiedArray = [];
 
-      // 1. THE NORMALIZER: Strip the API envelopes so both dispensaries share one format
       if (source === 'rise') {
         unifiedArray = data.results?.[0]?.hits || data.hits || [];
       } else if (source === 'greengoods') {
@@ -98,40 +101,44 @@
       }
 
       if (unifiedArray.length === 0) {
-        throw new Error("Data was fetched, but the product array was empty. The dispensary menu might be offline.");
+        throw new Error("Data was fetched, but the product array was empty.");
       }
 
-      // 2. THE BOUNCER: Flawless classification using explicit backend data
       const targetedArray = unifiedArray.filter(item => {
-        const kind = (item.kind || "").toLowerCase();
-        return kind === "flower" || kind === "extract";
+        const classStr = [item.kind, item.category, ...(item.root_types || [])].join(" ").toLowerCase();
+        
+        const isFlowerOrExtract = classStr.includes("flower") || classStr.includes("extract") || classStr.includes("rosin");
+        const isBanned = classStr.includes("vape") || classStr.includes("cartridge") || classStr.includes("edible");
+        
+        return isFlowerOrExtract && !isBanned;
       });
 
-      // 3. THE MAPPER: Extract explicit integers and defined categories
       return targetedArray.map(item => {
-        
-        // Fix "No Strain" naming
         let finalStrainName = item.strain;
         if (!finalStrainName || finalStrainName.toLowerCase() === "no strain" || finalStrainName.toLowerCase() === "none") {
             finalStrainName = item.name || "Unknown Product";
         }
 
-        // Format explicit Kind
-        const categoryDisplay = (item.kind || "Unknown").charAt(0).toUpperCase() + (item.kind || "").slice(1);
+        const deepText = [item.kind, item.category, item.strain_type, ...(item.root_types || []), item.name].join(" ").toLowerCase();
+        
+        const categoryDisplay = (deepText.includes("rosin") || deepText.includes("extract")) ? "Extract" : "Flower";
+        
+        let typeDisplay = "Hybrid"; 
+        if (deepText.includes("indica") && !deepText.includes("sativa")) typeDisplay = "Indica";
+        if (deepText.includes("sativa") && !deepText.includes("indica")) typeDisplay = "Sativa";
 
-        // Format explicit Category (Indica/Sativa/Hybrid)
-        const typeDisplay = (item.category || "Hybrid").charAt(0).toUpperCase() + (item.category || "hybrid").slice(1);
-
-        // Extract Sizes
         let sizes = "N/A";
         if (item.available_weights && item.available_weights.length > 0) {
           sizes = item.available_weights.map(w => weightDictionary[w] || w).join(", ");
         }
 
-        // Extract explicit THC integer
         let thc = "N/A";
         if (item.percent_thc) {
           thc = item.percent_thc + "%";
+        } else {
+          const notes = item.store_notes || item.description || "";
+          const thcMatch = notes.match(/THC\s*:?\s*([\d.]+)/i);
+          if (thcMatch && thcMatch[1]) thc = thcMatch[1] + "%";
         }
 
         return {
@@ -164,14 +171,18 @@
       table.style.display = 'table'; 
     }
 
+    // Main Fetch Engine
     document.getElementById('fetchBtn').addEventListener('click', async () => {
       const selection = document.getElementById('dispensary').value;
       const statusDiv = document.getElementById('status');
+      const downloadBtn = document.getElementById('downloadBtn');
       
       if (!selection) return;
 
       statusDiv.innerText = `Punching through ${selection} API...`;
       document.getElementById('resultsTable').style.display = 'none';
+      downloadBtn.style.display = 'none'; // Hide download button while fetching
+      lastFetchedRawData = null; // Clear old data
       
       try {
         const res = await fetch(`${WORKER_URL}?target=${encodeURIComponent(targets[selection].url)}`, {
@@ -186,17 +197,35 @@
         }
         
         const rawJson = await res.json();
-        statusDiv.innerText = "Data acquired. Normalizing payload...";
+        lastFetchedRawData = rawJson; // Save the black box data
+        
+        statusDiv.innerText = "Data acquired. Omni-scanning payload...";
         
         const leanInventory = parseInventory(rawJson, selection);
         renderTable(leanInventory);
         
         statusDiv.innerText = `Success: Displaying ${leanInventory.length} targeted products.`;
+        downloadBtn.style.display = 'inline-block'; // Reveal the download button!
         
       } catch (e) {
         statusDiv.innerText = "CRITICAL FAILURE: " + e.message;
         statusDiv.style.color = "red";
       }
+    });
+
+    // File Generator Engine
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      if (!lastFetchedRawData) return;
+      
+      const dispensaryName = document.getElementById('dispensary').value;
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(lastFetchedRawData, null, 2));
+      const downloadAnchorNode = document.createElement('a');
+      
+      downloadAnchorNode.setAttribute("href", dataStr);
+      downloadAnchorNode.setAttribute("download", `${dispensaryName}_raw_inventory.json`);
+      document.body.appendChild(downloadAnchorNode);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
     });
   </script>
 </body>
