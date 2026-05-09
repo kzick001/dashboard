@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Menu Scraper Proxy - Phase 7 (Master Filter)</title>
+  <title>Menu Scraper Proxy - Phase 8 (Size Hunter)</title>
   <style>
     body { font-family: monospace; background: #111; color: #eee; padding: 20px; }
     select, button { 
@@ -26,7 +26,7 @@
   </style>
 </head>
 <body>
-  <h2>Passthrough Scraper - v7 (Master Filter)</h2>
+  <h2>Passthrough Scraper - v8 (Size Hunter)</h2>
   <div class="controls">
     <select id="dispensary">
       <option value="" disabled selected>Select Target Dispensary...</option>
@@ -93,7 +93,6 @@
     function parseInventory(data, source) {
       let unifiedArray = [];
 
-      // 1. THE NORMALIZER: Standardizes the nested arrays from both APIs
       if (source === 'rise') {
         unifiedArray = data.results?.[0]?.hits || data.hits || [];
       } else if (source === 'greengoods') {
@@ -105,41 +104,47 @@
         throw new Error("Data was fetched, but the product array was empty.");
       }
 
-      // 2. THE MASTER BOUNCER: Safely accepts Flower, Pre-rolls, and Extracts
       const targetedArray = unifiedArray.filter(item => {
         const kind = (item.kind || "").toLowerCase();
         const rootStr = (item.root_types || []).join(" ").toLowerCase();
         
-        // Explicitly accept pre-rolls and concentrates as valid inventory
         const isTargetKind = kind === "flower" || kind === "pre-roll" || kind === "extract" || kind === "concentrate";
-        // Catch-all for rosin if it is buried in the root tags
         const isRosin = rootStr.includes("rosin");
         
         return isTargetKind || isRosin;
       });
 
-      // 3. THE MAPPER: Maps explicit backend fields without messy text-parsing
       return targetedArray.map(item => {
         
-        // Strain Name Fallback
         let finalStrainName = item.strain;
         if (!finalStrainName || finalStrainName.toLowerCase() === "no strain" || finalStrainName.toLowerCase() === "none") {
             finalStrainName = item.name || "Unknown Product";
         }
 
-        // Clean Category Formatting (e.g. "Pre-roll", "Flower")
         const categoryDisplay = (item.kind || "Unknown").charAt(0).toUpperCase() + (item.kind || "").slice(1);
-        
-        // Database-Level Type Classification (Indica/Sativa/Hybrid)
         const typeDisplay = (item.category || "Hybrid").charAt(0).toUpperCase() + (item.category || "hybrid").slice(1);
 
-        // Size Translator
+        // --- THE SIZE HUNTER ---
         let sizes = "N/A";
+        
+        // 1. Check official array (Used for raw Flower)
         if (item.available_weights && item.available_weights.length > 0) {
           sizes = item.available_weights.map(w => weightDictionary[w] || w).join(", ");
+        } 
+        // 2. Fallback to 'amount' field (Used for Pre-rolls/Extracts)
+        else if (item.amount) {
+          sizes = item.amount;
+        } 
+        // 3. Final Fallback: Scan the product name for brackets/parentheses with weights
+        else {
+          const rawName = item.name || "";
+          // Looks for numbers followed by g, mg, or oz inside or outside brackets. (e.g. [1g], 0.5g)
+          const sizeMatch = rawName.match(/(?:\[|\()?(\d*\.?\d+\s*(?:g|mg|oz))(?:\]|\))?/i);
+          if (sizeMatch && sizeMatch[1]) {
+            sizes = sizeMatch[1];
+          }
         }
 
-        // Explicit THC Integration (No RegEx needed)
         let thc = "N/A";
         if (item.percent_thc) {
           thc = item.percent_thc + "%";
