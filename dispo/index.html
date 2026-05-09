@@ -2,118 +2,209 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Menu Scraper Proxy - POST Engine</title>
+  <title>Menu Scraper Proxy - Phase 4 (Targeted)</title>
   <style>
     body { font-family: monospace; background: #111; color: #eee; padding: 20px; }
-    select, button, textarea { 
-      font-family: monospace; 
-      background: #222; 
-      color: #0f0; 
-      border: 1px solid #444; 
-      padding: 10px; 
-      margin-bottom: 10px; 
-      width: 100%; 
-      box-sizing: border-box; 
+    select, button { 
+      font-family: monospace; background: #222; color: #0f0; border: 1px solid #444; 
+      padding: 10px; margin-bottom: 10px; box-sizing: border-box; 
     }
-    button { cursor: pointer; background: #333; font-weight: bold; }
+    button { cursor: pointer; background: #333; font-weight: bold; width: 20%; }
     button:hover { background: #444; }
-    textarea { height: 60vh; resize: vertical; }
     .controls { display: flex; gap: 10px; }
     select { flex-grow: 1; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
+    th { color: #0f0; border-bottom: 2px solid #0f0; text-transform: uppercase; }
+    tr:hover { background: #222; }
+    .type-sativa { color: #f39c12; }
+    .type-indica { color: #9b59b6; }
+    .type-hybrid { color: #3498db; }
   </style>
 </head>
 <body>
-  <h2>Passthrough Scraper - v2</h2>
+  <h2>Passthrough Scraper - v4 (Targeted Parsing)</h2>
   <div class="controls">
     <select id="dispensary">
       <option value="" disabled selected>Select Target Dispensary...</option>
-      <option value="greengoods">Green Goods (Store 3812 - Flower)</option>
-      <option value="rise">Rise (Store 4635 - All Inventory)</option>
+      <option value="greengoods">Green Goods (Store 3812)</option>
+      <option value="rise">Rise (Store 4635)</option>
     </select>
-    <button id="fetchBtn" style="width: 20%;">Fetch Inventory</button>
+    <button id="fetchBtn">Fetch & Parse</button>
   </div>
-  <button id="copyBtn">Copy Raw JSON</button>
-  <textarea id="output" readonly placeholder="Waiting for query..."></textarea>
+  
+  <div id="status" style="margin-bottom: 15px; color: #aaa;">Waiting for command...</div>
+  
+  <table id="resultsTable" style="display: none;">
+    <thead>
+      <tr>
+        <th>Strain / Product Name</th>
+        <th>Category</th>
+        <th>Type</th>
+        <th>Size</th>
+        <th>THC %</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
 
   <script>
     const WORKER_URL = "https://dispo.askozicki.workers.dev";
     const SECRET = "stoner@4data#7HEIST";
 
-    // Pre-configured targets and their specific POST payloads
     const targets = {
       greengoods: {
-        url: "https://dmerch.iheartjane.com/v2/multi?jdm_api_key=ce5f15c9-3d09-441d-9bfd-26e87aff5925",
+        // Updated URL with source and version params
+        url: "https://dmerch.iheartjane.com/v2/multi?jdm_api_key=ce5f15c9-3d09-441d-9bfd-26e87aff5925&jdm_source=monolith&jdm_version=2.16.0",
         payload: {
           "app_mode": "framelessEmbed",
+          "jane_device_id": "iYQZXwVq21hz9ZKd3VYgM", // Added mock device ID
           "num_columns": 1,
           "search_attributes": ["*"],
           "store_id": 3812,
-          "placements": [
-            {
-              "page_size": 100,
-              "placement": "menu_inline_table",
-              "search_filter": "(kind:\"flower\" OR root_types:\"flower\")",
-              "search_sort": "recommendation"
-            }
-          ],
+          "placements": [{
+            "disable_ads": false, 
+            "page_size": 100, 
+            "placement": "menu_inline_table",
+            "search_filter": "", 
+            "search_sort": "recommendation"
+          }],
           "type": "custom"
         }
       },
       rise: {
         url: "https://search.iheartjane.com/1/indexes/*/queries",
-        payload: {
-          "requests": [
-            {
-              "indexName": "menu-products-production",
-              "params": "filters=store_id = 4635&hitsPerPage=100&page=0"
-            }
-          ]
-        }
+        payload: { "requests": [{ "indexName": "menu-products-production", "params": "filters=store_id = 4635&hitsPerPage=100&page=0" }] }
       }
     };
 
+    const weightDictionary = {
+      "gram": "1g",
+      "eighth": "3.5g",
+      "quarter": "7g",
+      "half": "14g",
+      "ounce": "28g"
+    };
+
+    function parseInventory(data, source) {
+      let rawArray = [];
+      if (source === 'rise' && data.results && data.results[0].hits) {
+        rawArray = data.results[0].hits;
+      } else if (source === 'greengoods' && data.length > 0 && data[0].hits) {
+        rawArray = data[0].hits;
+      }
+
+      // 1. THE BOUNCER: Filter out anything that isn't Flower or Rosin
+      const targetedArray = rawArray.filter(item => {
+        const root = (item.root_types || []).join(" ").toLowerCase();
+        const kind = (item.kind || "").toLowerCase();
+        const name = (item.name || "").toLowerCase();
+        
+        const isFlower = root.includes("flower") || kind.includes("flower");
+        const isRosin = root.includes("rosin") || kind.includes("rosin") || name.includes("rosin");
+        
+        return isFlower || isRosin;
+      });
+
+      // 2. THE MAPPER: Extract the clean data
+      return targetedArray.map(item => {
+        const notes = item.store_notes || item.description || ""; 
+        const notesLower = notes.toLowerCase();
+
+        // --- Determine exact category for display ---
+        let category = "Flower";
+        if ((item.root_types || []).join(" ").toLowerCase().includes("rosin") || (item.name || "").toLowerCase().includes("rosin")) {
+            category = "Rosin";
+        }
+
+        // --- Extract Type (Indica/Sativa/Hybrid) ---
+        let type = "Hybrid"; 
+        if (notesLower.includes("sativa") || (item.root_types && item.root_types.includes("sativa"))) type = "Sativa";
+        else if (notesLower.includes("indica") || (item.root_types && item.root_types.includes("indica"))) type = "Indica";
+
+        // --- Extract Sizes ---
+        let sizes = "N/A";
+        if (item.available_weights && item.available_weights.length > 0) {
+          sizes = item.available_weights.map(w => weightDictionary[w] || w).join(", ");
+        }
+
+        // --- Extract THC ---
+        let thc = "N/A";
+        const thcMatch = notes.match(/THC\s*:?\s*([\d.]+)/i);
+        if (thcMatch && thcMatch[1]) {
+          thc = thcMatch[1] + "%";
+        }
+
+        // --- Fix the "No Strain" Error ---
+        let finalStrainName = item.strain;
+        if (!finalStrainName || finalStrainName.toLowerCase() === "no strain" || finalStrainName.toLowerCase() === "none") {
+            finalStrainName = item.name || "Unknown Product";
+        }
+
+        return {
+          strain: finalStrainName,
+          category: category,
+          type: type,
+          sizes: sizes,
+          thc: thc
+        };
+      });
+    }
+
+    function renderTable(leanData) {
+      const tbody = document.getElementById('tableBody');
+      const table = document.getElementById('resultsTable');
+      tbody.innerHTML = ''; 
+
+      leanData.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>${item.strain}</strong></td>
+          <td style="color: #aaa;">${item.category}</td>
+          <td class="type-${item.type.toLowerCase()}">${item.type}</td>
+          <td>${item.sizes}</td>
+          <td>${item.thc}</td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      table.style.display = 'table'; 
+    }
+
     document.getElementById('fetchBtn').addEventListener('click', async () => {
       const selection = document.getElementById('dispensary').value;
-      const output = document.getElementById('output');
+      const statusDiv = document.getElementById('status');
       
-      if (!selection) {
-        output.value = "Error: Please select a target dispensary from the dropdown.";
-        return;
-      }
+      if (!selection) return;
 
-      const targetConfig = targets[selection];
-      output.value = `Executing POST payload to ${selection} via worker...\n\nTarget URL: ${targetConfig.url}\n\nPlease wait...`;
+      statusDiv.innerText = `Punching through ${selection} API...`;
+      document.getElementById('resultsTable').style.display = 'none';
       
       try {
-        const res = await fetch(`${WORKER_URL}?target=${encodeURIComponent(targetConfig.url)}`, {
+        const res = await fetch(`${WORKER_URL}?target=${encodeURIComponent(targets[selection].url)}`, {
           method: "POST",
-          headers: { 
-            "X-Proxy-Secret": SECRET,
-            "Content-Type": "application/json" 
-          },
-          body: JSON.stringify(targetConfig.payload)
+          headers: { "X-Proxy-Secret": SECRET, "Content-Type": "application/json" },
+          body: JSON.stringify(targets[selection].payload)
         });
         
-        // NEW ERROR HANDLING LOGIC
-        // If the worker returns a 500, we read the exact crash report it sent
         if (!res.ok) {
-          const errorPayload = await res.text();
-          throw new Error(`Worker returned status ${res.status}:\n\n${errorPayload}`);
+          const errText = await res.text();
+          throw new Error(`Worker Crash ${res.status}: ${errText}`);
         }
         
-        const jsonResponse = await res.json();
-        output.value = JSON.stringify(jsonResponse, null, 2);
+        const rawJson = await res.json();
+        statusDiv.innerText = "Data acquired. Purging non-flower/rosin products...";
+        
+        const leanInventory = parseInventory(rawJson, selection);
+        renderTable(leanInventory);
+        
+        statusDiv.innerText = `Success: Displaying ${leanInventory.length} targeted products.`;
         
       } catch (e) {
-        // This prints the detailed crash report to the screen
-        output.value = "CRITICAL FAILURE:\n\n" + e.message;
+        statusDiv.innerText = "CRITICAL FAILURE: " + e.message;
+        statusDiv.style.color = "red";
       }
-    });
-
-    document.getElementById('copyBtn').addEventListener('click', () => {
-      const output = document.getElementById('output');
-      output.select();
-      navigator.clipboard.writeText(output.value);
     });
   </script>
 </body>
