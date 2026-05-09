@@ -5,8 +5,8 @@ export const greenGoodsConfig = {
 
 // --- TUNED GREEN GOODS MATH ENGINE ---
 function parseWeightToGrams(amountStr, arrayWeights) {
+    // 2. Friction Point Fixed: Safely check for Arrays before running array methods
     if (Array.isArray(arrayWeights)) {
-        // Expanded lexicon for dmerch API
         if (arrayWeights.includes("eighth") || arrayWeights.includes("eighth ounce")) return 3.5;
         if (arrayWeights.includes("quarter") || arrayWeights.includes("quarter ounce")) return 7.0;
         if (arrayWeights.includes("half") || arrayWeights.includes("half ounce")) return 14.0;
@@ -17,6 +17,7 @@ function parseWeightToGrams(amountStr, arrayWeights) {
     }
 
     if (!amountStr) return null;
+    // 1. Flow Blocker Fixed: Coerce to String to prevent TypeError crashes
     const str = String(amountStr).toLowerCase();
     const parsed = parseFloat(str);
     
@@ -45,21 +46,43 @@ export function normalizeGreenGoods(data) {
 
         const brand = item.brand || "Unknown";
         const desc = item.store_notes || item.description || "";
-        const roots = (item.root_types || []).join(" ");
-        const omni = `${finalStrainName} ${brand} ${item.kind} ${item.category} ${roots} ${desc}`.toLowerCase();
+        const kind = (item.kind || "").toLowerCase();
+        const rootStr = (item.root_types || []).join(" ").toLowerCase();
+        const omni = `${finalStrainName} ${brand} ${kind} ${item.category} ${rootStr} ${desc}`.toLowerCase();
 
-        // Expanded Tier 1 (Catches "merch" and "clothing")
+        // High-Signal Primary Classification
         let t1 = "Other";
-        if (omni.includes("flower")) t1 = "Flower";
-        if (omni.includes("vape") || omni.includes("cartridge") || omni.includes("pen")) t1 = "Vape";
-        if (omni.includes("extract") || omni.includes("concentrate") || omni.includes("rosin") || omni.includes("resin") || omni.includes("shatter")) t1 = "Extract";
-        if (omni.includes("preroll") || omni.includes("pre-roll") || omni.includes("pre roll")) t1 = "Pre-Roll";
-        if (omni.includes("edible") || omni.includes("gummy") || omni.includes("chocolate") || omni.includes("beverage")) t1 = "Edible";
-        if (omni.includes("topical") || omni.includes("lotion") || omni.includes("balm") || omni.includes("salve")) t1 = "Topical";
-        if (omni.includes("tincture") || omni.includes("drops")) t1 = "Tincture";
-        if (omni.includes("gear") || omni.includes("apparel") || omni.includes("paper") || omni.includes("lighter") || omni.includes("glass") || omni.includes("battery") || omni.includes("merch") || omni.includes("clothing")) t1 = "Gear";
+        if (kind === "flower" || rootStr.includes("flower")) {
+            t1 = "Flower";
+        } else if (kind === "vape" || rootStr.includes("vape")) {
+            t1 = "Vape";
+        } else if (kind === "extract" || kind === "concentrate" || rootStr.includes("extract")) {
+            t1 = "Extract";
+        } else if (kind === "preroll" || kind === "pre-roll" || rootStr.includes("pre-roll")) {
+            t1 = "Pre-Roll";
+        } else if (kind === "edible" || rootStr.includes("edible")) {
+            t1 = "Edible";
+        } else if (kind === "topical" || rootStr.includes("topical")) {
+            t1 = "Topical";
+        } else if (kind === "tincture" || rootStr.includes("tincture")) {
+            t1 = "Tincture";
+        } else if (kind === "gear" || kind === "merch" || rootStr.includes("gear") || rootStr.includes("merch")) {
+            t1 = "Gear";
+        }
+        
+        // Low-Signal Fallback
+        if (t1 === "Other") {
+            if (omni.includes("flower")) t1 = "Flower";
+            else if (omni.includes("vape") || omni.includes("cartridge") || /\bpen\b/.test(omni)) t1 = "Vape"; 
+            else if (omni.includes("extract") || omni.includes("concentrate") || omni.includes("rosin") || omni.includes("resin") || omni.includes("shatter")) t1 = "Extract";
+            else if (omni.includes("preroll") || omni.includes("pre-roll") || omni.includes("pre roll")) t1 = "Pre-Roll";
+            else if (omni.includes("edible") || omni.includes("gummy") || omni.includes("chocolate") || omni.includes("beverage")) t1 = "Edible";
+            else if (omni.includes("topical") || omni.includes("lotion") || omni.includes("balm") || omni.includes("salve")) t1 = "Topical";
+            else if (omni.includes("tincture") || omni.includes("drops")) t1 = "Tincture";
+            else if (omni.includes("gear") || omni.includes("apparel") || omni.includes("paper") || omni.includes("lighter") || omni.includes("glass") || omni.includes("battery") || omni.includes("clothing")) t1 = "Gear";
+        }
 
-        // Expanded Tier 2
+        // Sub-Categorization Waterfall
         let t2 = t1;
         if (t1 === "Vape") {
             if (omni.includes("rosin") || omni.includes("solventless")) t2 = "Rosin Vape";
@@ -96,8 +119,8 @@ export function normalizeGreenGoods(data) {
             sizesDisplay = amountStr; 
         }
 
-        // Redundant lexicon overrides removed.
-        // parseWeightToGrams handles this logic upstream.
+        // 3. Polish Fixed: Redundant lexicon overrides removed.
+        // parseWeightToGrams handles this logic upstream entirely.
 
         const price = parseFloat(item.bucket_price || item.price || 0);
         let ppg = 0;
@@ -113,12 +136,8 @@ export function normalizeGreenGoods(data) {
 
         // Deep Data Construction
         const badges = [...new Set((item.compound_names || []).map(c => c.value).filter(Boolean))];
-        
-        // NEW: Inject CBD into the badges if it exists
         const cbdNum = parseFloat(item.percent_cbd || item.product_percent_cbd || 0);
-        if (cbdNum > 0) {
-            badges.unshift(`CBD: ${cbdNum}%`); // Puts it at the front of the list
-        }
+        if (cbdNum > 0) badges.unshift(`CBD: ${cbdNum}%`); 
 
         const hasDeepData = badges.length > 0 || desc.length > 20;
 
