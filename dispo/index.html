@@ -56,7 +56,8 @@
     button { background: var(--glass); cursor: pointer; font-weight: 500; }
     button:hover { background: var(--glass-hover); border-color: rgba(255,255,255,0.3); }
     button.primary { background: var(--accent); color: #fff; border-color: transparent; }
-    button.primary:hover { background: #6461ff; box-shadow: 0 0 15px rgba(94, 92, 230, 0.4); }
+    button.primary:hover:not(:disabled) { background: #6461ff; box-shadow: 0 0 15px rgba(94, 92, 230, 0.4); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* Column Manager Dropdown */
     .col-manager { position: relative; }
@@ -101,8 +102,8 @@
     
     tr.details-row { display: none; background: rgba(0,0,0,0.3); }
     tr.details-row.open { display: table-row; }
-    .details-content { padding: 20px 40px; font-size: 13px; line-height: 1.6; color: #aaa; }
-    .terp-badge { display: inline-block; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 4px 10px; border-radius: 20px; margin: 0 5px 5px 0; font-size: 11px; color: #fff;}
+    .details-content { padding: 20px 40px; font-size: 13px; line-height: 1.6; color: #aaa; word-break: break-word; overflow-wrap: break-word; }
+    .terp-badge { display: inline-block; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 4px 10px; border-radius: 20px; margin: 0 5px 5px 0; font-size: 11px; color: #fff; text-transform: capitalize;}
     
     #status { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; text-align: center; }
   </style>
@@ -132,7 +133,7 @@
   </div>
 
   <div class="glass dashboard-panel" id="filterBar" style="display: none;">
-    <input type="text" id="searchBar" placeholder="Search omni-string (strain, brand, rosin, genetics)...">
+    <input type="text" id="searchBar" placeholder="Search omni-string (strain, brand, rosin, apparel)...">
     
     <select id="filterTier1">
       <option value="All">All Master Categories</option>
@@ -184,8 +185,6 @@
     
     let rawInventory = null; 
     let cleanInventory = []; 
-    
-    // Sort State
     let currentSort = { col: 'thc', dir: 'desc' };
 
     const targets = {
@@ -209,34 +208,45 @@
 
       if (!amountStr) return null;
       const str = amountStr.toLowerCase();
-      if (str.includes("mg")) return parseFloat(str) / 1000;
-      if (str.includes("g")) return parseFloat(str);
-      if (str.includes("oz")) return parseFloat(str) * 28.35;
+      const parsed = parseFloat(str);
+      
+      if (isNaN(parsed)) return null; 
+
+      if (str.includes("mg")) return parsed / 1000;
+      if (str.includes("oz")) return parsed * 28.35;
+      if (str.includes("g")) return parsed;
       return null;
     }
 
-    // --- THE TAXONOMY ENGINE (V0.4 Lossless) ---
+    // --- THE TAXONOMY ENGINE ---
     function normalizeInventory(data, source) {
       let unifiedArray = (source === 'rise') ? (data.results?.[0]?.hits || data.hits || []) : (data.placements?.[0]?.products.map(p => p.search_attributes).filter(Boolean) || []);
       if (unifiedArray.length === 0) throw new Error("Dataset is empty.");
 
       return unifiedArray.map(item => {
-        // 1. The Omni-String Fingerprint
-        const name = item.strain || item.name || "Unknown";
+        let finalStrainName = item.strain;
+        if (!finalStrainName || finalStrainName.toLowerCase() === "no strain" || finalStrainName.toLowerCase() === "none") {
+            finalStrainName = item.name;
+        }
+        if (!finalStrainName || finalStrainName.toLowerCase() === "no strain") {
+            finalStrainName = "Unknown Product";
+        }
+
         const brand = item.brand || "Unknown";
         const desc = item.store_notes || item.description || "";
         const roots = (item.root_types || []).join(" ");
-        const omni = `${name} ${brand} ${item.kind} ${item.category} ${roots} ${desc}`.toLowerCase();
+        const omni = `${finalStrainName} ${brand} ${item.kind} ${item.category} ${roots} ${desc}`.toLowerCase();
 
-        // 2. Master Categories (Tier 1)
         let t1 = "Other";
         if (omni.includes("flower")) t1 = "Flower";
         if (omni.includes("vape") || omni.includes("cartridge") || omni.includes("pen")) t1 = "Vape";
         if (omni.includes("extract") || omni.includes("concentrate") || omni.includes("rosin") || omni.includes("resin") || omni.includes("shatter")) t1 = "Extract";
-        if (omni.includes("preroll") || omni.includes("pre-roll")) t1 = "Pre-Roll";
-        if (omni.includes("edible") || omni.includes("gummy") || omni.includes("chocolate")) t1 = "Edible";
+        if (omni.includes("preroll") || omni.includes("pre-roll") || omni.includes("pre roll")) t1 = "Pre-Roll";
+        if (omni.includes("edible") || omni.includes("gummy") || omni.includes("chocolate") || omni.includes("beverage")) t1 = "Edible";
+        if (omni.includes("topical") || omni.includes("lotion") || omni.includes("balm") || omni.includes("salve")) t1 = "Topical";
+        if (omni.includes("tincture") || omni.includes("drops")) t1 = "Tincture";
+        if (omni.includes("gear") || omni.includes("apparel") || omni.includes("paper") || omni.includes("lighter") || omni.includes("glass") || omni.includes("battery")) t1 = "Gear";
 
-        // 3. Keyword Waterfall (Tier 2)
         let t2 = t1;
         if (t1 === "Vape") {
             if (omni.includes("rosin") || omni.includes("solventless")) t2 = "Rosin Vape";
@@ -244,7 +254,7 @@
             else if (omni.includes("distillate") || omni.includes("botanical") || omni.includes("bdt")) t2 = "Distillate Vape";
             else t2 = "Standard Vape";
         } else if (t1 === "Flower") {
-            if (name.toLowerCase().includes("shake") || name.toLowerCase().includes("trim") || name.toLowerCase().includes("ground")) t2 = "Shake / Trim";
+            if (finalStrainName.toLowerCase().includes("shake") || finalStrainName.toLowerCase().includes("trim") || finalStrainName.toLowerCase().includes("ground")) t2 = "Shake / Trim";
             else t2 = "Premium / Smalls";
         } else if (t1 === "Pre-Roll") {
             if (omni.includes("infused") || omni.includes("diamond") || omni.includes("hash hole")) t2 = "Infused Pre-Roll";
@@ -252,29 +262,38 @@
         } else if (t1 === "Extract") {
             if (omni.includes("rosin") || omni.includes("solventless")) t2 = "Live Rosin";
             else t2 = "Standard Extract";
+        } else if (t1 === "Gear") {
+            if (omni.includes("apparel") || omni.includes("shirt") || omni.includes("hat") || omni.includes("hoodie")) t2 = "Apparel";
+            else if (omni.includes("paper") || omni.includes("wrap") || omni.includes("cone")) t2 = "Papers / Wraps";
+            else t2 = "Accessories";
         }
 
-        // 4. Indica/Sativa Logic
         let type = "Hybrid"; 
         if (omni.includes("indica") && !omni.includes("sativa")) type = "Indica";
         if (omni.includes("sativa") && !omni.includes("indica")) type = "Sativa";
 
-        // 5. Math Engine (Weights & PPG)
-        const sizeFallbackMatch = name.match(/(?:\[|\()?(\d*\.?\d+\s*(?:g|mg|oz))(?:\]|\))?/i);
+        const sizeFallbackMatch = finalStrainName.match(/(?:\[|\()?(\d*\.?\d+\s*(?:g|mg|oz|pk))(?:\]|\))?/i);
         const amountStr = item.amount || (sizeFallbackMatch ? sizeFallbackMatch[1] : null);
         const weightGrams = parseWeightToGrams(amountStr, item.available_weights);
         
+        let sizesDisplay = "N/A";
+        if (weightGrams) {
+            sizesDisplay = `${weightGrams}g`; 
+        } else if (amountStr) {
+            sizesDisplay = amountStr; 
+        }
+
+        if (item.available_weights && item.available_weights.includes("eighth")) sizesDisplay = "3.5g";
+        if (item.available_weights && item.available_weights.includes("quarter")) sizesDisplay = "7g";
+        if (item.available_weights && item.available_weights.includes("half")) sizesDisplay = "14g";
+        if (item.available_weights && item.available_weights.includes("ounce")) sizesDisplay = "28g";
+
         const price = parseFloat(item.bucket_price || item.price || 0);
         let ppg = 0;
         if (price > 0 && weightGrams && weightGrams > 0) {
             ppg = price / weightGrams;
         }
 
-        let sizesDisplay = weightGrams ? `${weightGrams}g` : "N/A";
-        if (item.available_weights && item.available_weights.includes("eighth")) sizesDisplay = "3.5g";
-        if (item.available_weights && item.available_weights.includes("quarter")) sizesDisplay = "7g";
-
-        // 6. THC extraction
         let thcNum = 0;
         if (item.percent_thc) thcNum = parseFloat(item.percent_thc);
         else if (item.product_percent_thc) thcNum = parseFloat(item.product_percent_thc);
@@ -283,12 +302,11 @@
           if (match && match[1]) thcNum = parseFloat(match[1]);
         }
 
-        // 7. Deep Data Payload (For Accordion)
-        const terpenes = (item.compound_names || []).map(c => c.value).filter(Boolean);
+        const terpenes = [...new Set((item.compound_names || []).map(c => c.value).filter(Boolean))];
         const hasDeepData = terpenes.length > 0 || desc.length > 20;
 
         return {
-          strain: name, brand: brand,
+          strain: finalStrainName, brand: brand,
           t1: t1, t2: t2, type: type,
           size: sizesDisplay, weight: weightGrams,
           thcNum: thcNum, thcDisplay: thcNum > 0 ? `${thcNum}%` : "N/A",
@@ -312,7 +330,6 @@
       const tbody = document.getElementById('tableBody');
       tbody.innerHTML = ''; 
 
-      // Gather Filters
       const search = document.getElementById('searchBar').value.toLowerCase();
       const t1F = document.getElementById('filterTier1').value;
       const typeF = document.getElementById('filterType').value;
@@ -325,7 +342,7 @@
 
       // Execute Sort
       data.sort((a, b) => {
-        let valA = a.thcNum, valB = b.thcNum; // default
+        let valA = a.thcNum, valB = b.thcNum; 
         if(currentSort.col === 'strain') { valA = a.strain; valB = b.strain; }
         if(currentSort.col === 'brand') { valA = a.brand; valB = b.brand; }
         if(currentSort.col === 'subcat') { valA = a.t2; valB = b.t2; }
@@ -341,7 +358,6 @@
 
       // Render Rows
       data.forEach((item, index) => {
-        // Main Row
         const tr = document.createElement('tr');
         tr.className = 'main-row';
         
@@ -361,7 +377,6 @@
         `;
         tbody.appendChild(tr);
 
-        // Hidden Deep Data Row
         if (item.deepData.has) {
             const detailRow = document.createElement('tr');
             detailRow.id = `detail-${index}`;
@@ -379,12 +394,10 @@
       });
 
       document.getElementById('status').innerText = `LUCID ACTIVE | ${data.length} records displayed.`;
-      applyColumnVisibility(); // Enforce column toggles after re-render
+      applyColumnVisibility(); 
     }
 
     // --- INTERACTIVE UX CONTROLS ---
-    
-    // Accordion Toggle
     window.toggleRow = function(index) {
         const row = document.getElementById(`detail-${index}`);
         const btn = row.previousElementSibling.querySelector('.btn-expand');
@@ -399,7 +412,6 @@
         }
     }
 
-    // Header Sorting
     document.querySelectorAll('th.sortable').forEach(th => {
       th.addEventListener('click', () => {
         const col = th.getAttribute('data-sort');
@@ -407,18 +419,14 @@
             currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
         } else {
             currentSort.col = col;
-            currentSort.dir = 'desc'; // Default new sorts to desc (best for THC/Price)
+            currentSort.dir = 'desc'; 
         }
-        
-        // Update UI indicators
         document.querySelectorAll('th').forEach(h => h.classList.remove('sort-active'));
         th.classList.add('sort-active');
-        
         renderTable();
       });
     });
 
-    // Column Manager
     const viewBtn = document.getElementById('viewBtn');
     const colDropdown = document.getElementById('colDropdown');
     viewBtn.addEventListener('click', () => colDropdown.style.display = colDropdown.style.display === 'flex' ? 'none' : 'flex');
@@ -432,18 +440,21 @@
     }
     document.querySelectorAll('.col-toggle').forEach(cb => cb.addEventListener('change', applyColumnVisibility));
 
-    // Listeners
     document.getElementById('searchBar').addEventListener('input', renderTable);
     document.getElementById('filterTier1').addEventListener('change', renderTable);
     document.getElementById('filterType').addEventListener('change', renderTable);
 
     // --- FETCH & EXPORT CORE ---
-    document.getElementById('fetchBtn').addEventListener('click', async () => {
+    document.getElementById('fetchBtn').addEventListener('click', async (e) => {
       const sel = document.getElementById('dispensary').value;
       const statusDiv = document.getElementById('status');
+      const btn = e.target;
       if (!sel) return;
 
+      btn.disabled = true;
+      btn.innerText = "Ingesting...";
       statusDiv.innerText = `Establishing connection to ${sel}...`;
+      statusDiv.style.color = "var(--text-muted)";
       document.getElementById('tableWrapper').style.display = 'none';
       document.getElementById('filterBar').style.display = 'none';
       
@@ -464,13 +475,15 @@
         document.getElementById('filterBar').style.display = 'flex';
         document.getElementById('tableWrapper').style.display = 'block';
         
-        // Initial clean render
         document.querySelector('th[data-sort="thc"]').classList.add('sort-active');
         renderTable();
         
       } catch (e) {
         statusDiv.innerText = "CRITICAL FAILURE: " + e.message;
         statusDiv.style.color = "#ff453a";
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Ingest & Normalize";
       }
     });
 
@@ -479,15 +492,17 @@
       if (!mode || !rawInventory) { e.target.value = ""; return; }
       
       const dataToExport = mode === 'raw' ? rawInventory : cleanInventory;
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport, null, 2));
+      const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
-      anchor.setAttribute("href", dataStr);
+      anchor.setAttribute("href", url);
       anchor.setAttribute("download", `lucid_${document.getElementById('dispensary').value}_${mode}.json`);
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
+      URL.revokeObjectURL(url);
       
-      e.target.value = ""; // Reset dropdown
+      e.target.value = ""; 
     });
   </script>
 </body>
