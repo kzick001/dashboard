@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Menu Scraper Proxy - Phase 3 (Parser)</title>
+  <title>Menu Scraper Proxy - Phase 4 (Filtered)</title>
   <style>
     body { font-family: monospace; background: #111; color: #eee; padding: 20px; }
     select, button { 
@@ -14,7 +14,6 @@
     .controls { display: flex; gap: 10px; }
     select { flex-grow: 1; }
     
-    /* New Table Styles */
     table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
     th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
     th { color: #0f0; border-bottom: 2px solid #0f0; text-transform: uppercase; }
@@ -25,12 +24,12 @@
   </style>
 </head>
 <body>
-  <h2>Passthrough Scraper - v3 (Parser)</h2>
+  <h2>Passthrough Scraper - v4 (Targeted Parsing)</h2>
   <div class="controls">
     <select id="dispensary">
       <option value="" disabled selected>Select Target Dispensary...</option>
-      <option value="greengoods">Green Goods (Store 3812 - Flower)</option>
-      <option value="rise">Rise (Store 4635 - All Inventory)</option>
+      <option value="greengoods">Green Goods (Store 3812)</option>
+      <option value="rise">Rise (Store 4635)</option>
     </select>
     <button id="fetchBtn">Fetch & Parse</button>
   </div>
@@ -40,7 +39,8 @@
   <table id="resultsTable" style="display: none;">
     <thead>
       <tr>
-        <th>Strain</th>
+        <th>Strain / Product Name</th>
+        <th>Category</th>
         <th>Type</th>
         <th>Size</th>
         <th>THC %</th>
@@ -64,7 +64,8 @@
           "store_id": 3812,
           "placements": [{
             "disable_ads": false, "page_size": 100, "placement": "menu_inline_table",
-            "search_filter": "(kind:\"flower\" OR root_types:\"flower\")", "search_sort": "recommendation"
+            "search_filter": "", // Removed the payload filter so we can handle it entirely in JS
+            "search_sort": "recommendation"
           }],
           "type": "custom"
         }
@@ -75,7 +76,6 @@
       }
     };
 
-    // Dictionary to translate Jane's text weights into actual grams
     const weightDictionary = {
       "gram": "1g",
       "eighth": "3.5g",
@@ -85,23 +85,38 @@
     };
 
     function parseInventory(data, source) {
-      // 1. Isolate the array based on which API we hit
       let rawArray = [];
       if (source === 'rise' && data.results && data.results[0].hits) {
         rawArray = data.results[0].hits;
       } else if (source === 'greengoods' && data.length > 0 && data[0].hits) {
-        // dmerch API structure varies slightly, usually wrapped in an array
         rawArray = data[0].hits;
       }
 
-      // 2. Loop through the heavy data and map it to our lean structure
-      return rawArray.map(item => {
-        // Fallback string if notes are empty to prevent crashes
+      // 1. THE BOUNCER: Filter out anything that isn't Flower or Rosin
+      const targetedArray = rawArray.filter(item => {
+        const root = (item.root_types || []).join(" ").toLowerCase();
+        const kind = (item.kind || "").toLowerCase();
+        const name = (item.name || "").toLowerCase();
+        
+        const isFlower = root.includes("flower") || kind.includes("flower");
+        const isRosin = root.includes("rosin") || kind.includes("rosin") || name.includes("rosin");
+        
+        return isFlower || isRosin;
+      });
+
+      // 2. THE MAPPER: Extract the clean data
+      return targetedArray.map(item => {
         const notes = item.store_notes || item.description || ""; 
         const notesLower = notes.toLowerCase();
 
-        // --- Extract Type ---
-        let type = "Hybrid"; // Default
+        // --- Determine exact category for display ---
+        let category = "Flower";
+        if ((item.root_types || []).join(" ").toLowerCase().includes("rosin") || (item.name || "").toLowerCase().includes("rosin")) {
+            category = "Rosin";
+        }
+
+        // --- Extract Type (Indica/Sativa/Hybrid) ---
+        let type = "Hybrid"; 
         if (notesLower.includes("sativa") || (item.root_types && item.root_types.includes("sativa"))) type = "Sativa";
         else if (notesLower.includes("indica") || (item.root_types && item.root_types.includes("indica"))) type = "Indica";
 
@@ -111,16 +126,22 @@
           sizes = item.available_weights.map(w => weightDictionary[w] || w).join(", ");
         }
 
-        // --- Extract THC (The RegEx Hunter) ---
-        // Looks for "THC", an optional colon, spaces, numbers/decimals, and an optional %
+        // --- Extract THC ---
         let thc = "N/A";
         const thcMatch = notes.match(/THC\s*:?\s*([\d.]+)/i);
         if (thcMatch && thcMatch[1]) {
           thc = thcMatch[1] + "%";
         }
 
+        // --- Fix the "No Strain" Error ---
+        let finalStrainName = item.strain;
+        if (!finalStrainName || finalStrainName.toLowerCase() === "no strain" || finalStrainName.toLowerCase() === "none") {
+            finalStrainName = item.name || "Unknown Product";
+        }
+
         return {
-          strain: item.strain || item.name || "Unknown Strain",
+          strain: finalStrainName,
+          category: category,
           type: type,
           sizes: sizes,
           thc: thc
@@ -131,12 +152,13 @@
     function renderTable(leanData) {
       const tbody = document.getElementById('tableBody');
       const table = document.getElementById('resultsTable');
-      tbody.innerHTML = ''; // Clear old results
+      tbody.innerHTML = ''; 
 
       leanData.forEach(item => {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td><strong>${item.strain}</strong></td>
+          <td style="color: #aaa;">${item.category}</td>
           <td class="type-${item.type.toLowerCase()}">${item.type}</td>
           <td>${item.sizes}</td>
           <td>${item.thc}</td>
@@ -144,17 +166,14 @@
         tbody.appendChild(row);
       });
 
-      table.style.display = 'table'; // Show the table
+      table.style.display = 'table'; 
     }
 
     document.getElementById('fetchBtn').addEventListener('click', async () => {
       const selection = document.getElementById('dispensary').value;
       const statusDiv = document.getElementById('status');
       
-      if (!selection) {
-        statusDiv.innerText = "Error: Select a dispensary.";
-        return;
-      }
+      if (!selection) return;
 
       statusDiv.innerText = `Punching through ${selection} API...`;
       document.getElementById('resultsTable').style.display = 'none';
@@ -172,14 +191,12 @@
         }
         
         const rawJson = await res.json();
-        statusDiv.innerText = "Data acquired. Parsing...";
+        statusDiv.innerText = "Data acquired. Purging non-flower/rosin products...";
         
-        // Feed the raw data to our parser
         const leanInventory = parseInventory(rawJson, selection);
-        
-        // Render the UI
         renderTable(leanInventory);
-        statusDiv.innerText = `Success: Displaying ${leanInventory.length} products.`;
+        
+        statusDiv.innerText = `Success: Displaying ${leanInventory.length} targeted products.`;
         
       } catch (e) {
         statusDiv.innerText = "CRITICAL FAILURE: " + e.message;
