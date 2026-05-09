@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Menu Scraper Proxy - Phase 6.2 (Omni-Scanner + Export)</title>
+  <title>Menu Scraper Proxy - Phase 7 (Master Filter)</title>
   <style>
     body { font-family: monospace; background: #111; color: #eee; padding: 20px; }
     select, button { 
@@ -26,7 +26,7 @@
   </style>
 </head>
 <body>
-  <h2>Passthrough Scraper - v6.2 (Export Enabled)</h2>
+  <h2>Passthrough Scraper - v7 (Master Filter)</h2>
   <div class="controls">
     <select id="dispensary">
       <option value="" disabled selected>Select Target Dispensary...</option>
@@ -55,7 +55,7 @@
   <script>
     const WORKER_URL = "https://dispo.askozicki.workers.dev";
     const SECRET = "stoner@4data#7HEIST";
-    let lastFetchedRawData = null; // Global variable to hold the black box data
+    let lastFetchedRawData = null; 
 
     const targets = {
       greengoods: {
@@ -93,6 +93,7 @@
     function parseInventory(data, source) {
       let unifiedArray = [];
 
+      // 1. THE NORMALIZER: Standardizes the nested arrays from both APIs
       if (source === 'rise') {
         unifiedArray = data.results?.[0]?.hits || data.hits || [];
       } else if (source === 'greengoods') {
@@ -104,41 +105,46 @@
         throw new Error("Data was fetched, but the product array was empty.");
       }
 
+      // 2. THE MASTER BOUNCER: Safely accepts Flower, Pre-rolls, and Extracts
       const targetedArray = unifiedArray.filter(item => {
-        const classStr = [item.kind, item.category, ...(item.root_types || [])].join(" ").toLowerCase();
+        const kind = (item.kind || "").toLowerCase();
+        const rootStr = (item.root_types || []).join(" ").toLowerCase();
         
-        const isFlowerOrExtract = classStr.includes("flower") || classStr.includes("extract") || classStr.includes("rosin");
-        const isBanned = classStr.includes("vape") || classStr.includes("cartridge") || classStr.includes("edible");
+        // Explicitly accept pre-rolls and concentrates as valid inventory
+        const isTargetKind = kind === "flower" || kind === "pre-roll" || kind === "extract" || kind === "concentrate";
+        // Catch-all for rosin if it is buried in the root tags
+        const isRosin = rootStr.includes("rosin");
         
-        return isFlowerOrExtract && !isBanned;
+        return isTargetKind || isRosin;
       });
 
+      // 3. THE MAPPER: Maps explicit backend fields without messy text-parsing
       return targetedArray.map(item => {
+        
+        // Strain Name Fallback
         let finalStrainName = item.strain;
         if (!finalStrainName || finalStrainName.toLowerCase() === "no strain" || finalStrainName.toLowerCase() === "none") {
             finalStrainName = item.name || "Unknown Product";
         }
 
-        const deepText = [item.kind, item.category, item.strain_type, ...(item.root_types || []), item.name].join(" ").toLowerCase();
+        // Clean Category Formatting (e.g. "Pre-roll", "Flower")
+        const categoryDisplay = (item.kind || "Unknown").charAt(0).toUpperCase() + (item.kind || "").slice(1);
         
-        const categoryDisplay = (deepText.includes("rosin") || deepText.includes("extract")) ? "Extract" : "Flower";
-        
-        let typeDisplay = "Hybrid"; 
-        if (deepText.includes("indica") && !deepText.includes("sativa")) typeDisplay = "Indica";
-        if (deepText.includes("sativa") && !deepText.includes("indica")) typeDisplay = "Sativa";
+        // Database-Level Type Classification (Indica/Sativa/Hybrid)
+        const typeDisplay = (item.category || "Hybrid").charAt(0).toUpperCase() + (item.category || "hybrid").slice(1);
 
+        // Size Translator
         let sizes = "N/A";
         if (item.available_weights && item.available_weights.length > 0) {
           sizes = item.available_weights.map(w => weightDictionary[w] || w).join(", ");
         }
 
+        // Explicit THC Integration (No RegEx needed)
         let thc = "N/A";
         if (item.percent_thc) {
           thc = item.percent_thc + "%";
-        } else {
-          const notes = item.store_notes || item.description || "";
-          const thcMatch = notes.match(/THC\s*:?\s*([\d.]+)/i);
-          if (thcMatch && thcMatch[1]) thc = thcMatch[1] + "%";
+        } else if (item.product_percent_thc) {
+          thc = item.product_percent_thc + "%";
         }
 
         return {
@@ -171,7 +177,6 @@
       table.style.display = 'table'; 
     }
 
-    // Main Fetch Engine
     document.getElementById('fetchBtn').addEventListener('click', async () => {
       const selection = document.getElementById('dispensary').value;
       const statusDiv = document.getElementById('status');
@@ -181,8 +186,8 @@
 
       statusDiv.innerText = `Punching through ${selection} API...`;
       document.getElementById('resultsTable').style.display = 'none';
-      downloadBtn.style.display = 'none'; // Hide download button while fetching
-      lastFetchedRawData = null; // Clear old data
+      downloadBtn.style.display = 'none';
+      lastFetchedRawData = null; 
       
       try {
         const res = await fetch(`${WORKER_URL}?target=${encodeURIComponent(targets[selection].url)}`, {
@@ -197,15 +202,15 @@
         }
         
         const rawJson = await res.json();
-        lastFetchedRawData = rawJson; // Save the black box data
+        lastFetchedRawData = rawJson; 
         
-        statusDiv.innerText = "Data acquired. Omni-scanning payload...";
+        statusDiv.innerText = "Data acquired. Normalizing payload...";
         
         const leanInventory = parseInventory(rawJson, selection);
         renderTable(leanInventory);
         
         statusDiv.innerText = `Success: Displaying ${leanInventory.length} targeted products.`;
-        downloadBtn.style.display = 'inline-block'; // Reveal the download button!
+        downloadBtn.style.display = 'inline-block'; 
         
       } catch (e) {
         statusDiv.innerText = "CRITICAL FAILURE: " + e.message;
@@ -213,7 +218,6 @@
       }
     });
 
-    // File Generator Engine
     document.getElementById('downloadBtn').addEventListener('click', () => {
       if (!lastFetchedRawData) return;
       
