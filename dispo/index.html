@@ -2,345 +2,492 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Menu Scraper Proxy - v0.3 (Omni-Dashboard)</title>
+  <title>LUCID | Dispo Directory</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
   <style>
-    body { font-family: monospace; background: #111; color: #eee; padding: 20px; }
-    select, button, input { 
-      font-family: monospace; background: #222; color: #0f0; border: 1px solid #444; 
-      padding: 10px; margin-bottom: 10px; box-sizing: border-box; 
+    :root {
+      --bg: #0a0a0c;
+      --glass: rgba(255, 255, 255, 0.03);
+      --glass-hover: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.06);
+      --text-main: #f5f5f7;
+      --text-muted: #86868b;
+      --accent: #5e5ce6; /* Cupertino Purple */
+      --indica: #bf5af2;
+      --sativa: #ff9f0a;
+      --hybrid: #32ade6;
+      --price: #30d158;
     }
-    button { cursor: pointer; background: #333; font-weight: bold; width: 20%; }
-    button:hover { background: #444; }
-    #downloadBtn { background: #8e44ad; color: #fff; border-color: #9b59b6; display: none; }
-    #downloadBtn:hover { background: #9b59b6; }
-    
-    .controls { display: flex; gap: 10px; margin-bottom: 5px; }
-    select, input { flex-grow: 1; }
-    
-    /* Advanced Filter Bar */
-    .filter-bar { 
-        display: none; 
-        flex-wrap: wrap;
-        gap: 10px; 
-        background: #1a1a1a; 
-        padding: 15px; 
-        border: 1px solid #333;
-        margin-bottom: 15px;
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      margin: 0; padding: 30px;
+      -webkit-font-smoothing: antialiased;
     }
-    .filter-bar > * { flex: 1 1 200px; margin-bottom: 0; background: #111; color: #fff; }
-    .search-row { width: 100%; display: flex; gap: 10px; margin-bottom: 10px; }
+
+    /* Typography */
+    .header-container { text-align: center; margin-bottom: 40px; }
+    h1 { font-size: 48px; font-weight: 700; letter-spacing: 4px; margin: 0; color: #fff; }
+    h3 { font-size: 14px; font-weight: 300; letter-spacing: 6px; margin: 5px 0 0 0; color: var(--text-muted); text-transform: uppercase; }
+
+    /* Glassmorphism Classes */
+    .glass {
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+    }
+
+    /* Controls & Inputs */
+    .dashboard-panel { padding: 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
+    select, input, button {
+      font-family: 'Inter', sans-serif; font-size: 14px;
+      background: rgba(0,0,0,0.4); color: var(--text-main);
+      border: 1px solid var(--glass-border); border-radius: 8px;
+      padding: 12px 16px; outline: none; transition: all 0.2s ease;
+    }
+    input { flex-grow: 1; min-width: 250px; }
+    select:hover, input:hover { border-color: rgba(255,255,255,0.2); }
+    input:focus { border-color: var(--accent); }
     
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
-    th { color: #0f0; border-bottom: 2px solid #0f0; text-transform: uppercase; background: #1a1a1a; }
-    tr:hover { background: #222; }
-    .type-sativa { color: #f39c12; font-weight: bold; }
-    .type-indica { color: #9b59b6; font-weight: bold; }
-    .type-hybrid { color: #3498db; font-weight: bold; }
-    .price-tag { color: #2ecc71; font-weight: bold; }
+    button { background: var(--glass); cursor: pointer; font-weight: 500; }
+    button:hover { background: var(--glass-hover); border-color: rgba(255,255,255,0.3); }
+    button.primary { background: var(--accent); color: #fff; border-color: transparent; }
+    button.primary:hover { background: #6461ff; box-shadow: 0 0 15px rgba(94, 92, 230, 0.4); }
+
+    /* Column Manager Dropdown */
+    .col-manager { position: relative; }
+    .col-dropdown {
+      position: absolute; top: 110%; right: 0; width: 200px;
+      padding: 15px; display: none; flex-direction: column; gap: 10px;
+      z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .col-dropdown label { display: flex; align-items: center; gap: 10px; font-size: 13px; cursor: pointer; }
+    .col-dropdown input[type="checkbox"] { accent-color: var(--accent); margin: 0; padding: 0; }
+
+    /* The Table */
+    .table-container { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid var(--glass-border); }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+    th, td { padding: 16px; border-bottom: 1px solid var(--glass-border); }
+    
+    th { 
+      background: rgba(255,255,255,0.02); color: var(--text-muted); 
+      font-weight: 500; text-transform: uppercase; font-size: 12px; letter-spacing: 1px;
+      cursor: pointer; transition: color 0.2s; user-select: none;
+    }
+    th:hover { color: #fff; }
+    th.sort-active { color: var(--accent); }
+
+    tr { transition: background 0.2s; }
+    tr.main-row:hover { background: var(--glass-hover); }
+    
+    /* Type Colors */
+    .type-sativa { color: var(--sativa); }
+    .type-indica { color: var(--indica); }
+    .type-hybrid { color: var(--hybrid); }
+    .price-tag { color: var(--price); font-weight: 500; }
+    .muted { color: var(--text-muted); font-size: 13px; }
+
+    /* Accordion Details */
+    .btn-expand { 
+      background: none; border: none; color: var(--text-muted); font-size: 18px; 
+      cursor: pointer; padding: 0 10px; line-height: 1; transition: color 0.2s;
+    }
+    .btn-expand:hover { color: #fff; }
+    .btn-expand.disabled { opacity: 0.2; cursor: default; }
+    
+    tr.details-row { display: none; background: rgba(0,0,0,0.3); }
+    tr.details-row.open { display: table-row; }
+    .details-content { padding: 20px 40px; font-size: 13px; line-height: 1.6; color: #aaa; }
+    .terp-badge { display: inline-block; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 4px 10px; border-radius: 20px; margin: 0 5px 5px 0; font-size: 11px; color: #fff;}
+    
+    #status { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; text-align: center; }
   </style>
 </head>
 <body>
-  <h2>Passthrough Omni-Dashboard - v0.3</h2>
+
+  <div class="header-container">
+    <h1>LUCID</h1>
+    <h3>Dispo Directory</h3>
+  </div>
   
-  <div class="controls">
+  <div id="status">Systems nominal. Awaiting target selection.</div>
+
+  <div class="glass dashboard-panel">
     <select id="dispensary">
-      <option value="" disabled selected>Select Target Dispensary...</option>
+      <option value="" disabled selected>Select Target Database...</option>
       <option value="greengoods">Green Goods (Store 3812)</option>
       <option value="rise">Rise (Store 4635)</option>
     </select>
-    <button id="fetchBtn">Fetch Entire Menu</button>
-    <button id="downloadBtn">Raw JSON</button>
+    <button id="fetchBtn" class="primary">Ingest & Normalize</button>
+    
+    <div style="flex-grow: 1;"></div> <select id="exportSelect">
+      <option value="" disabled selected>Export Data...</option>
+      <option value="raw">Download Raw JSON</option>
+      <option value="clean">Download Normalized JSON</option>
+    </select>
   </div>
-  
-  <div id="status" style="margin-bottom: 15px; color: #aaa;">Waiting for command...</div>
 
-  <div class="filter-bar" id="filterBar">
-    <div class="search-row">
-        <input type="text" id="searchBar" placeholder="Search strains, brands, or keywords (e.g. 'rosin')...">
-    </div>
-    <select id="filterCategory">
-      <option value="All">All Categories</option>
+  <div class="glass dashboard-panel" id="filterBar" style="display: none;">
+    <input type="text" id="searchBar" placeholder="Search omni-string (strain, brand, rosin, genetics)...">
+    
+    <select id="filterTier1">
+      <option value="All">All Master Categories</option>
       </select>
-    <select id="filterBrand">
-      <option value="All">All Brands</option>
-      </select>
+    
     <select id="filterType">
       <option value="All">All Types</option>
       <option value="Indica">Indica</option>
       <option value="Sativa">Sativa</option>
       <option value="Hybrid">Hybrid</option>
     </select>
-    <select id="sortBy">
-      <option value="thc-desc">Sort: THC (High to Low)</option>
-      <option value="price-asc">Sort: Price (Low to High)</option>
-      <option value="name-asc">Sort: Name (A-Z)</option>
-    </select>
+
+    <div class="col-manager">
+      <button id="viewBtn">View Options ▾</button>
+      <div class="glass col-dropdown" id="colDropdown">
+        <label><input type="checkbox" class="col-toggle" value="col-brand" checked> Brand</label>
+        <label><input type="checkbox" class="col-toggle" value="col-cat" checked> Classification</label>
+        <label><input type="checkbox" class="col-toggle" value="col-type" checked> Type</label>
+        <label><input type="checkbox" class="col-toggle" value="col-size" checked> Size</label>
+        <label><input type="checkbox" class="col-toggle" value="col-thc" checked> THC %</label>
+        <label><input type="checkbox" class="col-toggle" value="col-price" checked> Price</label>
+        <label><input type="checkbox" class="col-toggle" value="col-ppg" checked> Price/g</label>
+      </div>
+    </div>
   </div>
   
-  <table id="resultsTable" style="display: none;">
-    <thead>
-      <tr>
-        <th>Strain / Product</th>
-        <th>Brand</th>
-        <th>Category</th>
-        <th>Type</th>
-        <th>Size</th>
-        <th>THC %</th>
-        <th>Price</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
+  <div class="table-container" id="tableWrapper" style="display: none;">
+    <table id="resultsTable">
+      <thead>
+        <tr>
+          <th style="width: 40px;"></th>
+          <th class="sortable" data-sort="strain">Strain / Product ↕</th>
+          <th class="sortable col-brand" data-sort="brand">Brand ↕</th>
+          <th class="sortable col-cat" data-sort="subcat">Classification ↕</th>
+          <th class="sortable col-type" data-sort="type">Type ↕</th>
+          <th class="col-size">Size</th>
+          <th class="sortable col-thc" data-sort="thc">THC % ↕</th>
+          <th class="sortable col-price" data-sort="price">Price ↕</th>
+          <th class="sortable col-ppg" data-sort="ppg">Price/g ↕</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
 
   <script>
     const WORKER_URL = "https://dispo.askozicki.workers.dev";
     const SECRET = "stoner@4data#7HEIST";
     
-    let lastFetchedRawData = null; 
-    let currentInventory = []; 
+    let rawInventory = null; 
+    let cleanInventory = []; 
+    
+    // Sort State
+    let currentSort = { col: 'thc', dir: 'desc' };
 
     const targets = {
       greengoods: {
         url: "https://dmerch.iheartjane.com/v2/multi?jdm_api_key=ce5f15c9-3d09-441d-9bfd-26e87aff5925&jdm_source=monolith&jdm_version=2.16.0",
-        payload: {
-          "app_mode": "framelessEmbed",
-          "jane_device_id": "iYQZXwVq21hz9ZKd3VYgM",
-          "num_columns": 1,
-          "search_attributes": ["*"],
-          "store_id": 3812,
-          "placements": [{"disable_ads": false, "page_size": 1000, "placement": "menu_inline_table", "search_filter": "", "search_sort": "recommendation"}],
-          "type": "custom"
-        }
+        payload: { "app_mode": "framelessEmbed", "jane_device_id": "iYQZXwVq21hz9ZKd3VYgM", "num_columns": 1, "search_attributes": ["*"], "store_id": 3812, "placements": [{"disable_ads": false, "page_size": 1000, "placement": "menu_inline_table", "search_filter": "", "search_sort": "recommendation"}], "type": "custom" }
       },
       rise: {
         url: "https://search.iheartjane.com/1/indexes/*/queries",
-        payload: { "requests": [{ "indexName": "menu-products-production", "params": "filters=store_id = 4635&hitsPerPage=1000&page=0" }] } // Increased to 1000 to get full menu
+        payload: { "requests": [{ "indexName": "menu-products-production", "params": "filters=store_id = 4635&hitsPerPage=1000&page=0" }] }
       }
     };
 
-    const weightDictionary = { "gram": "1g", "eighth": "3.5g", "quarter": "7g", "half": "14g", "ounce": "28g" };
+    // --- QUANTITATIVE MATH ENGINE ---
+    function parseWeightToGrams(amountStr, arrayWeights) {
+      if (arrayWeights && arrayWeights.includes("eighth")) return 3.5;
+      if (arrayWeights && arrayWeights.includes("quarter")) return 7.0;
+      if (arrayWeights && arrayWeights.includes("half")) return 14.0;
+      if (arrayWeights && arrayWeights.includes("ounce")) return 28.0;
+      if (arrayWeights && arrayWeights.includes("gram")) return 1.0;
 
-    // --- PARSER ENGINE (ALL DATA) ---
-    function parseInventory(data, source) {
-      let unifiedArray = [];
+      if (!amountStr) return null;
+      const str = amountStr.toLowerCase();
+      if (str.includes("mg")) return parseFloat(str) / 1000;
+      if (str.includes("g")) return parseFloat(str);
+      if (str.includes("oz")) return parseFloat(str) * 28.35;
+      return null;
+    }
 
-      if (source === 'rise') {
-        unifiedArray = data.results?.[0]?.hits || data.hits || [];
-      } else if (source === 'greengoods') {
-        const products = data.placements?.[0]?.products || [];
-        unifiedArray = products.map(p => p.search_attributes).filter(Boolean);
-      }
+    // --- THE TAXONOMY ENGINE (V0.4 Lossless) ---
+    function normalizeInventory(data, source) {
+      let unifiedArray = (source === 'rise') ? (data.results?.[0]?.hits || data.hits || []) : (data.placements?.[0]?.products.map(p => p.search_attributes).filter(Boolean) || []);
+      if (unifiedArray.length === 0) throw new Error("Dataset is empty.");
 
-      if (unifiedArray.length === 0) throw new Error("Product array was empty.");
-
-      // BOUNCER REMOVED. We process everything.
       return unifiedArray.map(item => {
-        let finalStrainName = item.strain || item.name || "Unknown Product";
-        let brand = item.brand || "Unknown Brand";
+        // 1. The Omni-String Fingerprint
+        const name = item.strain || item.name || "Unknown";
+        const brand = item.brand || "Unknown";
+        const desc = item.store_notes || item.description || "";
+        const roots = (item.root_types || []).join(" ");
+        const omni = `${name} ${brand} ${item.kind} ${item.category} ${roots} ${desc}`.toLowerCase();
+
+        // 2. Master Categories (Tier 1)
+        let t1 = "Other";
+        if (omni.includes("flower")) t1 = "Flower";
+        if (omni.includes("vape") || omni.includes("cartridge") || omni.includes("pen")) t1 = "Vape";
+        if (omni.includes("extract") || omni.includes("concentrate") || omni.includes("rosin") || omni.includes("resin") || omni.includes("shatter")) t1 = "Extract";
+        if (omni.includes("preroll") || omni.includes("pre-roll")) t1 = "Pre-Roll";
+        if (omni.includes("edible") || omni.includes("gummy") || omni.includes("chocolate")) t1 = "Edible";
+
+        // 3. Keyword Waterfall (Tier 2)
+        let t2 = t1;
+        if (t1 === "Vape") {
+            if (omni.includes("rosin") || omni.includes("solventless")) t2 = "Rosin Vape";
+            else if (omni.includes("live resin") || omni.includes("cured resin") || omni.includes("llr")) t2 = "Resin Vape";
+            else if (omni.includes("distillate") || omni.includes("botanical") || omni.includes("bdt")) t2 = "Distillate Vape";
+            else t2 = "Standard Vape";
+        } else if (t1 === "Flower") {
+            if (name.toLowerCase().includes("shake") || name.toLowerCase().includes("trim") || name.toLowerCase().includes("ground")) t2 = "Shake / Trim";
+            else t2 = "Premium / Smalls";
+        } else if (t1 === "Pre-Roll") {
+            if (omni.includes("infused") || omni.includes("diamond") || omni.includes("hash hole")) t2 = "Infused Pre-Roll";
+            else t2 = "Standard Pre-Roll";
+        } else if (t1 === "Extract") {
+            if (omni.includes("rosin") || omni.includes("solventless")) t2 = "Live Rosin";
+            else t2 = "Standard Extract";
+        }
+
+        // 4. Indica/Sativa Logic
+        let type = "Hybrid"; 
+        if (omni.includes("indica") && !omni.includes("sativa")) type = "Indica";
+        if (omni.includes("sativa") && !omni.includes("indica")) type = "Sativa";
+
+        // 5. Math Engine (Weights & PPG)
+        const sizeFallbackMatch = name.match(/(?:\[|\()?(\d*\.?\d+\s*(?:g|mg|oz))(?:\]|\))?/i);
+        const amountStr = item.amount || (sizeFallbackMatch ? sizeFallbackMatch[1] : null);
+        const weightGrams = parseWeightToGrams(amountStr, item.available_weights);
         
-        // Dynamic Category Mapping
-        let rawKind = item.kind || item.product_category || "Uncategorized";
-        const categoryDisplay = rawKind.charAt(0).toUpperCase() + rawKind.slice(1);
-
-        // Deep text search for Type (Indica/Sativa)
-        const deepText = [item.kind, item.category, item.strain_type, ...(item.root_types || []), item.name, item.store_notes].join(" ").toLowerCase();
-        let typeDisplay = "Hybrid"; 
-        if (deepText.includes("indica") && !deepText.includes("sativa")) typeDisplay = "Indica";
-        if (deepText.includes("sativa") && !deepText.includes("indica")) typeDisplay = "Sativa";
-
-        // Size Hunter
-        let sizes = "N/A";
-        if (item.available_weights && item.available_weights.length > 0) {
-          sizes = item.available_weights.map(w => weightDictionary[w] || w).join(", ");
-        } else if (item.amount) {
-          sizes = item.amount;
-        } else {
-          const rawName = item.name || "";
-          const sizeMatch = rawName.match(/(?:\[|\()?(\d*\.?\d+\s*(?:g|mg|oz))(?:\]|\))?/i);
-          if (sizeMatch && sizeMatch[1]) sizes = sizeMatch[1];
+        const price = parseFloat(item.bucket_price || item.price || 0);
+        let ppg = 0;
+        if (price > 0 && weightGrams && weightGrams > 0) {
+            ppg = price / weightGrams;
         }
 
-        // THC Numeric Math
-        let thc = "N/A";
-        let thcNumber = 0;
-        if (item.percent_thc) {
-          thcNumber = parseFloat(item.percent_thc);
-          thc = item.percent_thc + "%";
-        } else if (item.product_percent_thc) {
-          thcNumber = parseFloat(item.product_percent_thc);
-          thc = item.product_percent_thc + "%";
-        } else {
-          const notes = item.store_notes || item.description || "";
-          const thcMatch = notes.match(/THC\s*:?\s*([\d.]+)/i);
-          if (thcMatch && thcMatch[1]) {
-              thcNumber = parseFloat(thcMatch[1]);
-              thc = thcMatch[1] + "%";
-          }
+        let sizesDisplay = weightGrams ? `${weightGrams}g` : "N/A";
+        if (item.available_weights && item.available_weights.includes("eighth")) sizesDisplay = "3.5g";
+        if (item.available_weights && item.available_weights.includes("quarter")) sizesDisplay = "7g";
+
+        // 6. THC extraction
+        let thcNum = 0;
+        if (item.percent_thc) thcNum = parseFloat(item.percent_thc);
+        else if (item.product_percent_thc) thcNum = parseFloat(item.product_percent_thc);
+        else {
+          const match = desc.match(/THC\s*:?\s*([\d.]+)/i);
+          if (match && match[1]) thcNum = parseFloat(match[1]);
         }
 
-        // Price Extraction
-        let priceNumber = parseFloat(item.bucket_price || item.price || 0);
-        let priceDisplay = priceNumber > 0 ? `$${priceNumber}` : "N/A";
-
-        // Full search string for the search bar
-        let searchString = `${finalStrainName} ${brand} ${categoryDisplay} ${typeDisplay} ${deepText}`.toLowerCase();
+        // 7. Deep Data Payload (For Accordion)
+        const terpenes = (item.compound_names || []).map(c => c.value).filter(Boolean);
+        const hasDeepData = terpenes.length > 0 || desc.length > 20;
 
         return {
-          strain: finalStrainName,
-          brand: brand,
-          category: categoryDisplay,
-          type: typeDisplay,
-          sizes: sizes,
-          thc: thc,
-          thcNumber: thcNumber,
-          price: priceDisplay,
-          priceNumber: priceNumber,
-          searchString: searchString
+          strain: name, brand: brand,
+          t1: t1, t2: t2, type: type,
+          size: sizesDisplay, weight: weightGrams,
+          thcNum: thcNum, thcDisplay: thcNum > 0 ? `${thcNum}%` : "N/A",
+          priceNum: price, priceDisplay: price > 0 ? `$${price}` : "N/A",
+          ppgNum: ppg, ppgDisplay: ppg > 0 ? `$${ppg.toFixed(2)}/g` : "N/A",
+          omni: omni,
+          deepData: { has: hasDeepData, desc: desc, terps: terpenes }
         };
       });
     }
 
-    // --- DYNAMIC DROPDOWN BUILDER ---
-    function buildDropdowns() {
-      const catSelect = document.getElementById('filterCategory');
-      const brandSelect = document.getElementById('filterBrand');
-      
-      // Reset dropdowns
-      catSelect.innerHTML = '<option value="All">All Categories</option>';
-      brandSelect.innerHTML = '<option value="All">All Brands</option>';
-
-      // Extract unique categories and brands
-      const uniqueCats = [...new Set(currentInventory.map(i => i.category))].sort();
-      const uniqueBrands = [...new Set(currentInventory.map(i => i.brand))].sort();
-
-      uniqueCats.forEach(cat => {
-          if(cat) catSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
-      });
-      
-      uniqueBrands.forEach(brand => {
-          if(brand) brandSelect.innerHTML += `<option value="${brand}">${brand}</option>`;
-      });
+    // --- UI ENGINE ---
+    function updateTier1Dropdown() {
+      const select = document.getElementById('filterTier1');
+      select.innerHTML = '<option value="All">All Master Categories</option>';
+      const unique = [...new Set(cleanInventory.map(i => i.t1))].sort();
+      unique.forEach(c => select.innerHTML += `<option value="${c}">${c}</option>`);
     }
 
-    // --- UI RENDER & FILTER ENGINE ---
-    function applyFiltersAndRender() {
-      if (currentInventory.length === 0) return;
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = ''; 
 
-      const searchTerm = document.getElementById('searchBar').value.toLowerCase();
-      const catFilter = document.getElementById('filterCategory').value;
-      const brandFilter = document.getElementById('filterBrand').value;
-      const typeFilter = document.getElementById('filterType').value;
-      const sortPref = document.getElementById('sortBy').value;
+      // Gather Filters
+      const search = document.getElementById('searchBar').value.toLowerCase();
+      const t1F = document.getElementById('filterTier1').value;
+      const typeF = document.getElementById('filterType').value;
 
-      // 1. Filter the Data
-      let processedData = currentInventory.filter(item => {
-        let matchSearch = searchTerm === "" || item.searchString.includes(searchTerm);
-        let matchCat = (catFilter === "All") || (item.category === catFilter);
-        let matchBrand = (brandFilter === "All") || (item.brand === brandFilter);
-        let matchType = (typeFilter === "All") || (item.type === typeFilter);
-        return matchSearch && matchCat && matchBrand && matchType;
+      let data = cleanInventory.filter(item => {
+        return (search === "" || item.omni.includes(search)) &&
+               (t1F === "All" || item.t1 === t1F) &&
+               (typeF === "All" || item.type === typeF);
       });
 
-      // 2. Sort the Data
-      processedData.sort((a, b) => {
-        if (sortPref === "thc-desc") return b.thcNumber - a.thcNumber;
-        if (sortPref === "price-asc") {
-            // Handle N/A prices
-            if (a.priceNumber === 0) return 1;
-            if (b.priceNumber === 0) return -1;
-            return a.priceNumber - b.priceNumber;
-        }
-        if (sortPref === "name-asc") return a.strain.localeCompare(b.strain);
+      // Execute Sort
+      data.sort((a, b) => {
+        let valA = a.thcNum, valB = b.thcNum; // default
+        if(currentSort.col === 'strain') { valA = a.strain; valB = b.strain; }
+        if(currentSort.col === 'brand') { valA = a.brand; valB = b.brand; }
+        if(currentSort.col === 'subcat') { valA = a.t2; valB = b.t2; }
+        if(currentSort.col === 'type') { valA = a.type; valB = b.type; }
+        if(currentSort.col === 'thc') { valA = a.thcNum; valB = b.thcNum; }
+        if(currentSort.col === 'price') { valA = a.priceNum || 9999; valB = b.priceNum || 9999; }
+        if(currentSort.col === 'ppg') { valA = a.ppgNum || 9999; valB = b.ppgNum || 9999; }
+
+        if (valA < valB) return currentSort.dir === 'asc' ? -1 : 1;
+        if (valA > valB) return currentSort.dir === 'asc' ? 1 : -1;
         return 0;
       });
 
-      // 3. Render to Table
-      const tbody = document.getElementById('tableBody');
-      const table = document.getElementById('resultsTable');
-      tbody.innerHTML = ''; 
-
-      processedData.forEach(item => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
+      // Render Rows
+      data.forEach((item, index) => {
+        // Main Row
+        const tr = document.createElement('tr');
+        tr.className = 'main-row';
+        
+        const btnHtml = item.deepData.has ? `<button class="btn-expand" onclick="toggleRow(${index})">[+]</button>` : `<button class="btn-expand disabled">[-]</button>`;
+        const terpBadges = item.deepData.terps.map(t => `<span class="terp-badge">${t}</span>`).join('');
+        
+        tr.innerHTML = `
+          <td>${btnHtml}</td>
           <td><strong>${item.strain}</strong></td>
-          <td style="color: #bbb;">${item.brand}</td>
-          <td style="color: #aaa;">${item.category}</td>
-          <td class="type-${item.type.toLowerCase()}">${item.type}</td>
-          <td>${item.sizes}</td>
-          <td>${item.thc}</td>
-          <td class="price-tag">${item.price}</td>
+          <td class="col-brand muted">${item.brand}</td>
+          <td class="col-cat">${item.t2}</td>
+          <td class="col-type type-${item.type.toLowerCase()}">${item.type}</td>
+          <td class="col-size">${item.size}</td>
+          <td class="col-thc">${item.thcDisplay}</td>
+          <td class="col-price price-tag">${item.priceDisplay}</td>
+          <td class="col-ppg muted">${item.ppgDisplay}</td>
         `;
-        tbody.appendChild(row);
+        tbody.appendChild(tr);
+
+        // Hidden Deep Data Row
+        if (item.deepData.has) {
+            const detailRow = document.createElement('tr');
+            detailRow.id = `detail-${index}`;
+            detailRow.className = 'details-row';
+            detailRow.innerHTML = `
+                <td colspan="9">
+                    <div class="details-content">
+                        ${terpBadges ? `<div style="margin-bottom:10px;">${terpBadges}</div>` : ''}
+                        <div>${item.deepData.desc.replace(/\n/g, '<br>')}</div>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(detailRow);
+        }
       });
 
-      table.style.display = 'table';
-      document.getElementById('status').innerText = `Displaying ${processedData.length} total products.`;
+      document.getElementById('status').innerText = `LUCID ACTIVE | ${data.length} records displayed.`;
+      applyColumnVisibility(); // Enforce column toggles after re-render
     }
 
-    // Bind Event Listeners
-    document.getElementById('searchBar').addEventListener('input', applyFiltersAndRender);
-    document.getElementById('filterCategory').addEventListener('change', applyFiltersAndRender);
-    document.getElementById('filterBrand').addEventListener('change', applyFiltersAndRender);
-    document.getElementById('filterType').addEventListener('change', applyFiltersAndRender);
-    document.getElementById('sortBy').addEventListener('change', applyFiltersAndRender);
+    // --- INTERACTIVE UX CONTROLS ---
+    
+    // Accordion Toggle
+    window.toggleRow = function(index) {
+        const row = document.getElementById(`detail-${index}`);
+        const btn = row.previousElementSibling.querySelector('.btn-expand');
+        if (row.classList.contains('open')) {
+            row.classList.remove('open');
+            btn.innerText = '[+]';
+            btn.style.color = "var(--text-muted)";
+        } else {
+            row.classList.add('open');
+            btn.innerText = '[-]';
+            btn.style.color = "var(--accent)";
+        }
+    }
 
-    // --- MASTER FETCH ENGINE ---
-    document.getElementById('fetchBtn').addEventListener('click', async () => {
-      const selection = document.getElementById('dispensary').value;
-      const statusDiv = document.getElementById('status');
-      
-      if (!selection) return;
-
-      statusDiv.innerText = `Pulling entire ${selection} menu...`;
-      document.getElementById('resultsTable').style.display = 'none';
-      document.getElementById('filterBar').style.display = 'none';
-      document.getElementById('downloadBtn').style.display = 'none';
-      
-      try {
-        const res = await fetch(`${WORKER_URL}?target=${encodeURIComponent(targets[selection].url)}`, {
-          method: "POST",
-          headers: { "X-Proxy-Secret": SECRET, "Content-Type": "application/json" },
-          body: JSON.stringify(targets[selection].payload)
-        });
-        
-        if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(`Worker Crash ${res.status}: ${errText}`);
+    // Header Sorting
+    document.querySelectorAll('th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const col = th.getAttribute('data-sort');
+        if (currentSort.col === col) {
+            currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort.col = col;
+            currentSort.dir = 'desc'; // Default new sorts to desc (best for THC/Price)
         }
         
-        const rawJson = await res.json();
-        lastFetchedRawData = rawJson; 
+        // Update UI indicators
+        document.querySelectorAll('th').forEach(h => h.classList.remove('sort-active'));
+        th.classList.add('sort-active');
         
-        statusDiv.innerText = "Data acquired. Normalizing entire catalog...";
+        renderTable();
+      });
+    });
+
+    // Column Manager
+    const viewBtn = document.getElementById('viewBtn');
+    const colDropdown = document.getElementById('colDropdown');
+    viewBtn.addEventListener('click', () => colDropdown.style.display = colDropdown.style.display === 'flex' ? 'none' : 'flex');
+    
+    function applyColumnVisibility() {
+        document.querySelectorAll('.col-toggle').forEach(checkbox => {
+            const className = checkbox.value;
+            const elements = document.querySelectorAll(`.${className}`);
+            elements.forEach(el => el.style.display = checkbox.checked ? '' : 'none');
+        });
+    }
+    document.querySelectorAll('.col-toggle').forEach(cb => cb.addEventListener('change', applyColumnVisibility));
+
+    // Listeners
+    document.getElementById('searchBar').addEventListener('input', renderTable);
+    document.getElementById('filterTier1').addEventListener('change', renderTable);
+    document.getElementById('filterType').addEventListener('change', renderTable);
+
+    // --- FETCH & EXPORT CORE ---
+    document.getElementById('fetchBtn').addEventListener('click', async () => {
+      const sel = document.getElementById('dispensary').value;
+      const statusDiv = document.getElementById('status');
+      if (!sel) return;
+
+      statusDiv.innerText = `Establishing connection to ${sel}...`;
+      document.getElementById('tableWrapper').style.display = 'none';
+      document.getElementById('filterBar').style.display = 'none';
+      
+      try {
+        const res = await fetch(`${WORKER_URL}?target=${encodeURIComponent(targets[sel].url)}`, {
+          method: "POST", headers: { "X-Proxy-Secret": SECRET, "Content-Type": "application/json" },
+          body: JSON.stringify(targets[sel].payload)
+        });
         
-        // Save to global state
-        currentInventory = parseInventory(rawJson, selection);
+        if (!res.ok) throw new Error(`Link Severed [${res.status}]: ` + await res.text());
         
-        // Generate dropdowns based on actual data
-        buildDropdowns();
+        rawInventory = await res.json();
+        statusDiv.innerText = "Data ingested. Running Lossless Taxonomy Engine...";
         
-        // Show controls and render
+        cleanInventory = normalizeInventory(rawInventory, sel);
+        updateTier1Dropdown();
+        
         document.getElementById('filterBar').style.display = 'flex';
-        document.getElementById('downloadBtn').style.display = 'inline-block'; 
-        applyFiltersAndRender();
+        document.getElementById('tableWrapper').style.display = 'block';
+        
+        // Initial clean render
+        document.querySelector('th[data-sort="thc"]').classList.add('sort-active');
+        renderTable();
         
       } catch (e) {
         statusDiv.innerText = "CRITICAL FAILURE: " + e.message;
-        statusDiv.style.color = "red";
+        statusDiv.style.color = "#ff453a";
       }
     });
 
-    document.getElementById('downloadBtn').addEventListener('click', () => {
-      if (!lastFetchedRawData) return;
-      const dispensaryName = document.getElementById('dispensary').value;
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(lastFetchedRawData, null, 2));
-      const downloadAnchorNode = document.createElement('a');
-      downloadAnchorNode.setAttribute("href", dataStr);
-      downloadAnchorNode.setAttribute("download", `${dispensaryName}_omni_inventory.json`);
-      document.body.appendChild(downloadAnchorNode);
-      downloadAnchorNode.click();
-      downloadAnchorNode.remove();
+    document.getElementById('exportSelect').addEventListener('change', (e) => {
+      const mode = e.target.value;
+      if (!mode || !rawInventory) { e.target.value = ""; return; }
+      
+      const dataToExport = mode === 'raw' ? rawInventory : cleanInventory;
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport, null, 2));
+      const anchor = document.createElement('a');
+      anchor.setAttribute("href", dataStr);
+      anchor.setAttribute("download", `lucid_${document.getElementById('dispensary').value}_${mode}.json`);
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      
+      e.target.value = ""; // Reset dropdown
     });
   </script>
 </body>
