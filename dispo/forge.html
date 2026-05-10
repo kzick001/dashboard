@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>LUCID Forge | Taxonomy Trainer v1.2.3</title>
+  <title>LUCID Forge | Taxonomy Trainer v1.3.1</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none'><path d='M32 52 L32 12 M32 52 L12 26 M32 52 L52 26' stroke='%2330d158' stroke-width='6' stroke-linecap='round'/><circle cx='32' cy='52' r='6' fill='%2330d158'/><circle cx='32' cy='12' r='6' fill='%2330d158'/><circle cx='12' cy='26' r='6' fill='%2330d158'/><circle cx='52' cy='26' r='6' fill='%2330d158'/></svg>">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #0a0a0c; --glass: rgba(255, 255, 255, 0.03); --glass-hover: rgba(255, 255, 255, 0.08);
       --glass-border: rgba(255, 255, 255, 0.06); --text-main: #f5f5f7; --text-muted: #86868b;
-      --accent: #5e5ce6; --success: #30d158; --danger: #ff453a;
+      --accent: #5e5ce6; --success: #30d158; --danger: #ff453a; --warning: #ff9500;
     }
     * { box-sizing: border-box; }
     body {
@@ -37,20 +37,26 @@
       font-family: 'Inter', sans-serif; font-size: 14px; width: 100%;
       background: rgba(0,0,0,0.4); color: var(--text-main);
       border: 1px solid var(--glass-border); border-radius: 10px;
-      padding: 12px; margin-bottom: 10px; outline: none; appearance: none;
+      padding: 12px; margin-bottom: 10px; outline: none; appearance: auto;
     }
-      input[type=text], input[type=number], input[type=checkbox] { appearance: auto; }
-
     
-    button { background: var(--glass); cursor: pointer; font-weight: 500; transition: 0.2s; }
+    button { background: var(--glass); cursor: pointer; font-weight: 500; transition: 0.2s; appearance: none; }
     button:active { transform: scale(0.98); }
     button.primary { background: var(--accent); color: #fff; border: none; font-size: 15px; padding: 14px; box-shadow: 0 4px 15px rgba(94, 92, 230, 0.3); }
     button.danger { background: var(--danger); color: #fff; border: none; font-size: 15px; padding: 14px; box-shadow: 0 4px 15px rgba(255, 69, 58, 0.2); }
-    button.success { background: var(--success); color: #000; border: none; }
+    button.success { background: var(--success); color: #000; border: none; font-size: 15px; padding: 14px; }
     button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
     button.icon-btn { width: auto; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; margin: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; }
     button.icon-btn.active { background: var(--accent); color: #fff; }
     
+    /* Unsaved Export Pulse Animation */
+    @keyframes pulseWarning {
+      0% { box-shadow: 0 0 0 0 rgba(255, 149, 0, 0.6); }
+      70% { box-shadow: 0 0 0 10px rgba(255, 149, 0, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 149, 0, 0); }
+    }
+    .btn-warning { background: var(--warning) !important; color: #000 !important; animation: pulseWarning 2s infinite; font-weight: 700; border: none; }
+
     .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
     .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; height: 100%; cursor: pointer; }
 
@@ -61,17 +67,18 @@
 
     .scroll-box { background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px; font-size: 12px; color: #aaa; height: 100px; overflow-y: auto; margin-bottom: 15px; line-height: 1.5; word-wrap: break-word; overflow-wrap: break-word; }
     
-    /* Responsive Geometry for Bulk List */
-    .bulk-list { height: calc(100vh - 460px); min-height: 250px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--glass-border); padding: 10px; margin-bottom: 15px; }
-    
-    .bulk-row { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.02); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.03); transition: 0.3s ease; }
+    .bulk-list { height: calc(100vh - 540px); min-height: 250px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--glass-border); padding: 10px; margin-bottom: 15px; }
+    .bulk-row { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.02); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.03); transition: background-color 0.4s ease, border-color 0.4s ease; }
     .bulk-row input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin: 0; accent-color: var(--accent); }
-    .bulk-row .context-col { flex: 0.4; overflow: hidden; }
-    .bulk-row .context { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px; }
+    .bulk-row .context-col { flex: 0.4; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+    .bulk-row .context { font-size: 12px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px; }
     .bulk-row .input-col { flex: 0.6; }
-    .bulk-row input[type="text"] { margin-bottom: 0; padding: 8px; font-size: 14px; border-color: rgba(255,255,255,0.1); }
+    .bulk-row input[type="text"] { margin-bottom: 0; padding: 8px; font-size: 14px; border-color: rgba(255,255,255,0.1); transition: background-color 0.3s ease; }
 
-    /* Fluid Form Rows */
+    /* Taxonomy Pills */
+    .pills-container { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+    .pill { display: inline-block; background: rgba(255,255,255,0.08); padding: 3px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; color: #bbb; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid rgba(255,255,255,0.05); }
+
     .form-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
     .form-row > div { flex: 1; min-width: 140px; }
     
@@ -86,7 +93,7 @@
 
   <div class="header">
     <h1>LUCID FORGE</h1>
-    <h3>Taxonomy Trainer v1.2.3</h3>
+    <h3>Taxonomy Trainer v1.3.1</h3>
   </div>
 
   <div class="panel" id="loadPanel">
@@ -100,7 +107,7 @@
   <div id="workspace" class="hidden" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
     
     <div class="mode-toggle">
-      <button id="btnBulkMode" class="mode-btn active">Bulk Mode (The 80%)</button>
+      <button id="btnBulkMode" class="mode-btn active">Bulk Mode (A La Carte)</button>
       <button id="btnFocusMode" class="mode-btn">Focus Mode (The 20%)</button>
     </div>
 
@@ -139,12 +146,12 @@
     </div>
 
     <div class="panel" id="bulkPanel">
-      <h4 style="margin:0 0 15px 0; color:var(--accent);">Master Tags</h4>
+      <h4 style="margin:0 0 15px 0; color:var(--accent);">A La Carte Batching (Blank = Keep Existing)</h4>
       
       <div class="form-row">
         <div>
-          <label class="label">True Brand</label>
-          <input type="text" id="bulkBrand" list="brandOptions">
+          <label class="label">Override Brand</label>
+          <input type="text" id="bulkBrand" list="brandOptions" placeholder="Keep Existing">
         </div>
         <div>
           <label class="label">Master Cat</label>
@@ -157,21 +164,29 @@
         <div>
           <label class="label">Type</label>
           <select id="bulkType">
+            <option value="">-- Keep Existing --</option>
             <option value="Indica">Indica</option><option value="Sativa">Sativa</option><option value="Hybrid">Hybrid</option><option value="N/A">N/A</option>
           </select>
         </div>
         <div style="flex:0.4; min-width: 80px;">
           <label class="label">Count</label>
-          <input type="number" id="bulkUnitCount" min="1" value="1">
+          <input type="number" id="bulkUnitCount" min="1" placeholder="Keep">
         </div>
         <div style="flex:0.8;">
-          <label class="label">Per-Unit Size</label>
-          <input type="text" id="bulkUnitSize" list="sizeOptions">
+          <label class="label">Override Size</label>
+          <input type="text" id="bulkUnitSize" list="sizeOptions" placeholder="Keep Existing">
         </div>
       </div>
 
-      <h4 style="margin:20px 0 10px 0; font-size:13px; color:var(--text-main); font-weight: 500;" id="bulkCountHeader">
-        </h4>
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
+        <h4 style="margin:0; font-size:13px; color:var(--text-main); font-weight: 500;" id="bulkCountHeader">
+          </h4>
+        
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <input type="text" id="findReplaceText" placeholder="Text to delete (e.g. '1g Vape')..." style="margin: 0; padding: 6px 10px; font-size: 12px; width: 200px;">
+          <button id="runFindReplaceBtn" class="primary" style="margin: 0; padding: 6px 12px; font-size: 12px;">Scrub Text</button>
+        </div>
+      </div>
       
       <div class="bulk-list" id="bulkListContainer">
         </div>
@@ -217,11 +232,11 @@
         </div>
         <div style="flex: 0.5; min-width: 80px;">
           <label class="label">Count</label>
-          <input type="number" id="focusUnitCount" min="1" value="1">
+          <input type="number" id="focusUnitCount" min="1" placeholder="API">
         </div>
         <div>
           <label class="label">Per-Unit Size</label>
-          <input type="text" id="focusUnitSize" list="sizeOptions">
+          <input type="text" id="focusUnitSize" list="sizeOptions" placeholder="API Default">
         </div>
       </div>
 
@@ -248,6 +263,7 @@
     let currentIndex = 0;
     let currentMode = 'bulk'; 
     let isLocked = false; 
+    let hasUnsavedChanges = false;
     let dictionary = JSON.parse(localStorage.getItem('lucid_dictionary')) || {};
 
     const t2Map = {
@@ -261,7 +277,6 @@
 
     // --- AUTO SCRUBBER ---
     function scrubItem(brand, strain) {
-      // 1. Flow Blocker Fixed: Type Coercion Crash on Scraping
       let cleanBrand = String(brand || "Unknown").trim();
       let rawStrain = String(strain || "Unknown Product").trim();
       let extractedSize = "";
@@ -272,27 +287,52 @@
         extractedSize = match[1];
         rawStrain = rawStrain.replace(regex, '');
       }
-
       let cleanStrain = rawStrain.toLowerCase().replace(/\b[a-z]/g, letter => letter.toUpperCase()).trim();
       return { cleanBrand, cleanStrain, extractedSize };
     }
 
     const generateSlug = (brand, strain) => `${brand}-${strain}`.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+    // --- UNSAVED WARNING LOGIC ---
+    function setUnsaved(status) {
+      hasUnsavedChanges = status;
+      const btn = document.getElementById('exportBtn');
+      if (status) {
+        btn.classList.add('btn-warning');
+        btn.innerText = "Download Master Dictionary (Unsaved Changes)";
+      } else {
+        btn.classList.remove('btn-warning');
+        btn.innerText = "Download Master Dictionary";
+      }
+    }
 
     // --- SETUP & UI RENDERING ---
     function populateDropdowns() {
-      const t1Html = Object.keys(t2Map).map(k => `<option value="${k}">${k}</option>`).join('');
-      document.getElementById('bulkT1').innerHTML = t1Html;
-      document.getElementById('focusT1').innerHTML = t1Html;
+      const bulkT1Html = '<option value="">-- Keep Existing --</option>' + Object.keys(t2Map).map(k => `<option value="${k}">${k}</option>`).join('');
+      document.getElementById('bulkT1').innerHTML = bulkT1Html;
       
-      const brands = new Set(fullInventory.map(i => i.brand?.trim()).filter(Boolean));
+      const focusT1Html = Object.keys(t2Map).map(k => `<option value="${k}">${k}</option>`).join('');
+      document.getElementById('focusT1').innerHTML = focusT1Html;
+      
+      const brands = new Set(fullInventory.map(i => String(i.brand || "").trim()).filter(Boolean));
       document.getElementById('brandOptions').innerHTML = Array.from(brands).map(b => `<option value="${b}">`).join('');
     }
 
     function syncT2(modePrefix, val) {
       const t2Select = document.getElementById(`${modePrefix}T2`);
-      const options = t2Map[val] || ["Other"];
-      t2Select.innerHTML = options.map(o => `<option value="${o}">${o}</option>`).join('');
+      
+      if (modePrefix === 'bulk') {
+        if (val === "") {
+          t2Select.innerHTML = '<option value="">-- Keep Existing --</option>';
+          return;
+        }
+        const options = t2Map[val] || ["Other"];
+        t2Select.innerHTML = '<option value="">-- Keep Existing --</option>' + options.map(o => `<option value="${o}">${o}</option>`).join('');
+      } else {
+        const options = t2Map[val] || ["Other"];
+        t2Select.innerHTML = options.map(o => `<option value="${o}">${o}</option>`).join('');
+      }
       
       if (['Gear', 'Tincture', 'Topical'].includes(val)) {
         if(modePrefix === 'focus') document.getElementById('focusStrain').value = "N/A";
@@ -343,13 +383,12 @@
       document.getElementById('progressBar').style.width = `${pct}%`;
     }
 
-    // --- BULK MODE LOGIC ---
+    // --- BULK MODE LOGIC (A LA CARTE) ---
     function renderBulkMode() {
       const container = document.getElementById('bulkListContainer');
       const header = document.getElementById('bulkCountHeader');
       const btnCommit = document.getElementById('commitBulkBtn');
 
-      // 3. Polish Fixed: Orphaned UI on Empty Queue
       if (workingList.length === 0) {
         header.innerHTML = `<span>0 Items in Queue</span>`;
         container.innerHTML = `<p style="color:#aaa; text-align:center; padding: 40px 0;">No items match this filter.</p>`;
@@ -359,39 +398,48 @@
       }
 
       header.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap: 15px;">
           <label style="cursor:pointer; display:flex; align-items:center; gap:8px;">
             <input type="checkbox" id="selectAllBulk" checked style="width:16px; height:16px; margin:0; accent-color:var(--accent);">
             Select All
           </label>
-          <span>${workingList.length} Items in Queue</span>
+          <span style="color: var(--text-muted); font-size: 11px;">(${workingList.length} in Queue)</span>
         </div>
       `;
 
-      // Pre-fill Master Form based on the first item in the queue
-      const first = workingList[0];
-      const scrubbed = scrubItem(first.brand, first.strain);
-      
-      document.getElementById('bulkBrand').value = scrubbed.cleanBrand;
-      document.getElementById('bulkT1').value = first.t1;
-      syncT2('bulk', first.t1);
-      document.getElementById('bulkT2').value = first.t2;
-      document.getElementById('bulkType').value = first.type;
-      document.getElementById('bulkUnitSize').value = scrubbed.extractedSize || first.size || "";
-
-      // Build List Rows
+      // Build List Rows with Live Pills
       let html = '';
       workingList.forEach((item, idx) => {
         const s = scrubItem(item.brand, item.strain);
         const slug = generateSlug(item.brand, item.strain);
-        const isCompleted = !!dictionary[slug];
+        const saved = dictionary[slug];
+        
+        const isCompleted = !!saved;
         const badge = isCompleted ? `<span class="badge">SAVED</span>` : '';
+        
+        // Active State for Pills
+        const activeT1 = saved ? saved.t1 : item.t1;
+        const activeT2 = saved ? saved.t2 : item.t2;
+        const activeType = saved ? saved.type : item.type;
+        const activeCount = saved && saved.unitCount ? saved.unitCount : "";
+        const activeSize = saved && saved.unitSize ? saved.unitSize : "";
+        let sizeDisp = "API Default";
+        if (activeSize) sizeDisp = activeCount > 1 ? `${activeCount}x ${activeSize}` : activeSize;
+
+        const pillsHtml = `
+          <div class="pills-container">
+            <span class="pill">${activeT1}</span>
+            <span class="pill">${activeT2}</span>
+            <span class="pill">${activeType}</span>
+            <span class="pill">${sizeDisp}</span>
+          </div>`;
 
         html += `
           <div class="bulk-row" id="bulkRow_${idx}">
             <input type="checkbox" class="bulk-row-check" data-idx="${idx}" checked>
             <div class="context-col">
               <div class="context">${badge} ${item.brand || "?"} - ${item.strain || "?"}</div>
+              ${pillsHtml}
             </div>
             <div class="input-col">
               <input type="text" id="bulkItemStrain_${idx}" data-origbrand="${item.brand}" data-origstrain="${item.strain}" value="${s.cleanStrain}">
@@ -422,6 +470,30 @@
       btn.disabled = checkedCount === 0;
     }
 
+    // THE TYPO NUKE (Find & Replace)
+    document.getElementById('findReplaceText').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') document.getElementById('runFindReplaceBtn').click();
+    });
+
+    document.getElementById('runFindReplaceBtn').addEventListener('click', () => {
+      const findText = document.getElementById('findReplaceText').value;
+      if (!findText) return;
+      const regex = new RegExp(escapeRegExp(findText), 'gi'); 
+      
+      const checkedBoxes = document.querySelectorAll('.bulk-row-check:checked');
+      checkedBoxes.forEach(cb => {
+        const idx = cb.getAttribute('data-idx');
+        const rowInput = document.getElementById(`bulkItemStrain_${idx}`);
+        rowInput.value = rowInput.value.replace(regex, '').trim();
+        
+        rowInput.style.backgroundColor = 'rgba(94, 92, 230, 0.3)';
+        setTimeout(() => { rowInput.style.backgroundColor = 'rgba(0,0,0,0.4)'; }, 400);
+      });
+      
+      document.getElementById('findReplaceText').value = ""; // clear after run
+    });
+
+    // A LA CARTE COMMIT
     document.getElementById('commitBulkBtn').addEventListener('click', (e) => {
       const checkedBoxes = document.querySelectorAll('.bulk-row-check:checked');
       if(checkedBoxes.length === 0) return;
@@ -435,43 +507,61 @@
       const mT1 = document.getElementById('bulkT1').value;
       const mT2 = document.getElementById('bulkT2').value;
       const mType = document.getElementById('bulkType').value;
-      const mCount = parseInt(document.getElementById('bulkUnitCount').value) || 1;
+      const mCountRaw = document.getElementById('bulkUnitCount').value;
       const mSize = document.getElementById('bulkUnitSize').value.trim();
+      const keepCount = (mCountRaw === "");
 
       const rowsToFlash = [];
 
       checkedBoxes.forEach(cb => {
         const idx = cb.getAttribute('data-idx');
         const rowInput = document.getElementById(`bulkItemStrain_${idx}`);
+        const item = workingList[idx]; 
         const rowDiv = document.getElementById(`bulkRow_${idx}`);
         
         const origBrand = rowInput.getAttribute('data-origbrand');
         const origStrain = rowInput.getAttribute('data-origstrain');
         const slug = generateSlug(origBrand, origStrain);
         const finalStrain = rowInput.value.trim();
+        
+        const saved = dictionary[slug];
+
+        // Resolving A La Carte Options
+        const finalBrand = mBrand !== "" ? mBrand : (saved ? saved.brand : item.brand);
+        const finalT1 = mT1 !== "" ? mT1 : (saved ? saved.t1 : item.t1);
+        const finalT2 = mT2 !== "" ? mT2 : (saved ? saved.t2 : item.t2);
+        const finalType = mType !== "" ? mType : (saved ? saved.type : item.type);
+        const finalCount = keepCount ? (saved ? saved.unitCount : "") : parseInt(mCountRaw);
+        const finalSize = mSize !== "" ? mSize : (saved ? saved.unitSize : "");
 
         dictionary[slug] = {
-          t1: mT1, t2: mT2, type: mType, 
-          brand: mBrand, strain: finalStrain, 
-          unitCount: mCount, unitSize: mSize
+          t1: finalT1, t2: finalT2, type: finalType, 
+          brand: finalBrand, strain: finalStrain, 
+          unitCount: finalCount, unitSize: finalSize
         };
         
         rowsToFlash.push(rowDiv);
       });
 
       localStorage.setItem('lucid_dictionary', JSON.stringify(dictionary));
+      setUnsaved(true);
+
+      // Reset Master Form after successful commit
+      document.getElementById('bulkBrand').value = "";
+      document.getElementById('bulkT1').value = "";
+      syncT2('bulk', "");
+      document.getElementById('bulkType').value = "";
+      document.getElementById('bulkUnitCount').value = "";
+      document.getElementById('bulkUnitSize').value = "";
       
-      // The Overwrite Flash Visual
       rowsToFlash.forEach(row => {
         row.style.backgroundColor = 'rgba(48, 209, 88, 0.2)'; 
         row.style.borderColor = 'var(--success)';
       });
 
-      // Brief delay so user sees the success flash before the DOM re-renders
+      // Timeout fires applyFilters() which rebuilds the DOM safely
       setTimeout(() => {
         applyFilters(); 
-        btn.disabled = false;
-        btn.innerText = originalText;
       }, 350);
     });
 
@@ -492,6 +582,7 @@
 
       const item = workingList[currentIndex];
       const scrubbed = scrubItem(item.brand, item.strain);
+      const saved = dictionary[generateSlug(item.brand, item.strain)];
       
       let descText = `Original: ${item.brand} - ${item.strain}\nAI Guess: ${item.t1} -> ${item.t2}\n\n`;
       descText += item.deepData?.desc || "No description.";
@@ -503,8 +594,10 @@
         syncT2('focus', document.getElementById('focusT1').value);
         document.getElementById('focusT2').value = item.t2;
         document.getElementById('focusType').value = item.type;
-        document.getElementById('focusUnitSize').value = scrubbed.extractedSize || item.size || "";
-        document.getElementById('focusUnitCount').value = 1;
+        
+        // Populate blanks or pre-existing
+        document.getElementById('focusUnitSize').value = saved?.unitSize || scrubbed.extractedSize || "";
+        document.getElementById('focusUnitCount').value = saved?.unitCount || "";
       }
       
       document.getElementById('focusStrain').value = scrubbed.cleanStrain;
@@ -513,6 +606,7 @@
     document.getElementById('saveNextBtn').addEventListener('click', () => {
       const item = workingList[currentIndex];
       const slug = generateSlug(item.brand, item.strain);
+      const rawCount = document.getElementById('focusUnitCount').value;
 
       dictionary[slug] = {
         t1: document.getElementById('focusT1').value,
@@ -520,11 +614,12 @@
         type: document.getElementById('focusType').value,
         brand: document.getElementById('focusBrand').value.trim(),
         strain: document.getElementById('focusStrain').value.trim(),
-        unitCount: parseInt(document.getElementById('focusUnitCount').value) || 1,
+        unitCount: rawCount === "" ? "" : parseInt(rawCount),
         unitSize: document.getElementById('focusUnitSize').value.trim()
       };
 
       localStorage.setItem('lucid_dictionary', JSON.stringify(dictionary));
+      setUnsaved(true);
       currentIndex++;
       renderFocusMode();
       updateGlobalProgress();
@@ -534,6 +629,7 @@
       const item = workingList[currentIndex];
       dictionary[generateSlug(item.brand, item.strain)] = { t1: "Junk" };
       localStorage.setItem('lucid_dictionary', JSON.stringify(dictionary));
+      setUnsaved(true);
       currentIndex++;
       renderFocusMode();
       updateGlobalProgress();
@@ -577,7 +673,6 @@
           populateDropdowns();
           applyFilters();
         } catch (err) { 
-          // 2. Friction Point Fixed: File Input Deadlock
           alert("Error parsing JSON file. Please check the file formatting."); 
           e.target.value = ''; 
         }
@@ -595,6 +690,7 @@
       searchTimeout = setTimeout(applyFilters, 300);
     });
 
+    // Handle Unsaved Export Reset
     document.getElementById('exportBtn').addEventListener('click', () => {
       const blob = new Blob([JSON.stringify(dictionary, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -605,6 +701,8 @@
       anchor.click();
       anchor.remove();
       URL.revokeObjectURL(url);
+      
+      setUnsaved(false); // Reset the warning pulse
     });
 
   </script>
