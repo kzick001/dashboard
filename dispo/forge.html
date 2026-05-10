@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>LUCID Forge | Data Trainer</title>
+  <title>LUCID Forge | Taxonomy Trainer v1.2.1</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none'><path d='M32 52 L32 12 M32 52 L12 26 M32 52 L52 26' stroke='%2330d158' stroke-width='6' stroke-linecap='round'/><circle cx='32' cy='52' r='6' fill='%2330d158'/><circle cx='32' cy='12' r='6' fill='%2330d158'/><circle cx='12' cy='26' r='6' fill='%2330d158'/><circle cx='52' cy='26' r='6' fill='%2330d158'/></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
   <style>
@@ -19,18 +19,22 @@
       display: flex; flex-direction: column; align-items: center; min-height: 100vh;
     }
     
-    .header { width: 100%; max-width: 500px; text-align: center; margin-bottom: 20px; }
+    .header { width: 100%; max-width: 600px; text-align: center; margin-bottom: 15px; }
     h1 { font-size: 28px; font-weight: 700; letter-spacing: 2px; margin: 0; }
     h3 { font-size: 11px; font-weight: 300; letter-spacing: 4px; margin: 5px 0 0 0; color: var(--text-muted); text-transform: uppercase; }
     
+    .mode-toggle { display: flex; max-width: 600px; width: 100%; background: rgba(0,0,0,0.5); border-radius: 12px; padding: 4px; margin-bottom: 15px; border: 1px solid var(--glass-border); }
+    .mode-btn { flex: 1; padding: 10px; background: transparent; border: none; color: var(--text-muted); font-weight: 500; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+    .mode-btn.active { background: var(--glass-hover); color: var(--text-main); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
     .panel {
       background: var(--glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
       border: 1px solid var(--glass-border); border-radius: 16px;
-      width: 100%; max-width: 500px; padding: 20px; margin-bottom: 15px;
+      width: 100%; max-width: 600px; padding: 20px; margin-bottom: 15px;
     }
 
     select, input, button {
-      font-family: 'Inter', sans-serif; font-size: 15px; width: 100%;
+      font-family: 'Inter', sans-serif; font-size: 14px; width: 100%;
       background: rgba(0,0,0,0.4); color: var(--text-main);
       border: 1px solid var(--glass-border); border-radius: 10px;
       padding: 12px; margin-bottom: 10px; outline: none; appearance: none;
@@ -39,29 +43,32 @@
     
     button { background: var(--glass); cursor: pointer; font-weight: 500; transition: 0.2s; }
     button:active { transform: scale(0.98); }
-    button.primary { background: var(--accent); color: #fff; border: none; font-size: 16px; padding: 16px; box-shadow: 0 4px 15px rgba(94, 92, 230, 0.3); }
-    button.danger { background: var(--danger); color: #fff; border: none; font-size: 16px; padding: 16px; flex-basis: 35%; box-shadow: 0 4px 15px rgba(255, 69, 58, 0.2); }
+    button.primary { background: var(--accent); color: #fff; border: none; font-size: 15px; padding: 14px; box-shadow: 0 4px 15px rgba(94, 92, 230, 0.3); }
+    button.danger { background: var(--danger); color: #fff; border: none; font-size: 15px; padding: 14px; box-shadow: 0 4px 15px rgba(255, 69, 58, 0.2); }
     button.success { background: var(--success); color: #000; border: none; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+    button.icon-btn { width: auto; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; margin: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    button.icon-btn.active { background: var(--accent); color: #fff; }
     
     .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
     .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; height: 100%; cursor: pointer; }
 
-    .progress-container { width: 100%; max-width: 500px; margin-bottom: 15px; }
+    .progress-container { width: 100%; max-width: 600px; margin-bottom: 15px; }
     .progress-text { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
     .progress-bar-bg { width: 100%; height: 6px; background: var(--glass-border); border-radius: 3px; overflow: hidden; }
     .progress-bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s ease; }
 
-    .scroll-box {
-      background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px;
-      padding: 12px; font-size: 12px; color: #aaa; height: 100px; overflow-y: auto; margin-bottom: 15px; line-height: 1.5;
-    }
+    .scroll-box { background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px; font-size: 12px; color: #aaa; height: 100px; overflow-y: auto; margin-bottom: 15px; line-height: 1.5; word-wrap: break-word; overflow-wrap: break-word; }
+    
+    .bulk-list { max-height: 350px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--glass-border); padding: 10px; margin-bottom: 15px; }
+    .bulk-row { background: rgba(255,255,255,0.02); border-radius: 8px; padding: 10px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.03); }
+    .bulk-row .context { font-size: 11px; color: var(--text-muted); margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bulk-row input { margin-bottom: 0; padding: 8px; font-size: 13px; border-color: rgba(255,255,255,0.1); }
 
-    .form-row { display: flex; gap: 10px; }
+    .form-row { display: flex; gap: 10px; align-items: flex-end; }
     .form-row > div { flex: 1; }
     .label { font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 4px; display: block; padding-left: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
-    
-    .action-bar { display: flex; gap: 10px; margin-top: 5px; }
-
+    .action-bar { display: flex; gap: 10px; margin-top: 10px; }
     .hidden { display: none !important; }
   </style>
 </head>
@@ -69,11 +76,11 @@
 
   <div class="header">
     <h1>LUCID FORGE</h1>
-    <h3>Data Trainer v1.1</h3>
+    <h3>Taxonomy Trainer v1.2.1</h3>
   </div>
 
   <div class="panel" id="loadPanel">
-    <p style="font-size: 14px; color: #aaa; margin-top: 0;">Upload a <strong>Cleaned JSON</strong> file from the dashboard.</p>
+    <p style="font-size: 14px; color: #aaa; margin-top: 0; text-align: center;">Upload a Cleaned JSON file.</p>
     <div class="file-upload-wrapper">
       <button>Select JSON File...</button>
       <input type="file" id="jsonUpload" accept=".json">
@@ -82,6 +89,11 @@
 
   <div id="workspace" class="hidden" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
     
+    <div class="mode-toggle">
+      <button id="btnBulkMode" class="mode-btn active">Bulk Mode</button>
+      <button id="btnFocusMode" class="mode-btn">Focus Mode</button>
+    </div>
+
     <div class="panel" style="padding: 15px;">
       <div class="form-row">
         <div>
@@ -96,92 +108,121 @@
           </select>
         </div>
         <div>
-          <select id="filterStatus">
-            <option value="pending">Pending Only</option>
-            <option value="all">Show All</option>
-            <option value="completed">Completed Only</option>
-          </select>
+          <input type="text" id="filterSearch" placeholder="Search Brand or Strain..." style="margin-bottom:0;">
         </div>
       </div>
     </div>
 
     <div class="progress-container">
       <div class="progress-text">
-        <span id="progressCount">0 / 0</span>
+        <span id="progressCount">0 / 0 Verified</span>
         <span id="progressPercent">0%</span>
       </div>
       <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar"></div></div>
     </div>
 
-    <div class="panel" id="cardPanel">
+    <div class="panel" id="bulkPanel">
+      <h4 style="margin:0 0 15px 0; color:var(--accent);">Master Tags (Applies to all below)</h4>
       
-      <div class="scroll-box" id="cardDesc">Loading description...</div>
+      <div class="form-row">
+        <div>
+          <label class="label">True Brand</label>
+          <input type="text" id="bulkBrand" list="brandOptions">
+        </div>
+        <div style="flex:0.4;">
+          <label class="label">Count</label>
+          <input type="number" id="bulkUnitCount" min="1" value="1">
+        </div>
+        <div style="flex:0.6;">
+          <label class="label">Size</label>
+          <input type="text" id="bulkUnitSize" list="sizeOptions">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div>
+          <label class="label">Master Cat</label>
+          <select id="bulkT1"></select>
+        </div>
+        <div>
+          <label class="label">Sub-Cat</label>
+          <select id="bulkT2"></select>
+        </div>
+        <div>
+          <label class="label">Type</label>
+          <select id="bulkType">
+            <option value="Indica">Indica</option><option value="Sativa">Sativa</option><option value="Hybrid">Hybrid</option><option value="N/A">N/A</option>
+          </select>
+        </div>
+      </div>
+
+      <h4 style="margin:15px 0 10px 0; font-size:12px; color:var(--text-muted); text-transform:uppercase;" id="bulkCountHeader">Review Items (0)</h4>
+      <div class="bulk-list" id="bulkListContainer">
+        </div>
+      
+      <button class="primary" id="commitBulkBtn">Commit All Items</button>
+    </div>
+
+    <div class="panel hidden" id="focusPanel">
+      <div class="scroll-box" id="cardDesc">Loading...</div>
 
       <div class="form-row">
         <div>
           <label class="label">True Brand</label>
-          <input type="text" id="inputBrand">
+          <input type="text" id="focusBrand" list="brandOptions">
         </div>
         <div>
-          <label class="label">True Strain Name</label>
-          <input type="text" id="inputStrain">
+          <label class="label">True Strain</label>
+          <input type="text" id="focusStrain">
         </div>
       </div>
 
       <div class="form-row">
         <div>
           <label class="label">Master Category</label>
-          <select id="inputT1"></select>
+          <select id="focusT1"></select>
         </div>
         <div>
           <label class="label">Sub-Category</label>
-          <select id="inputT2"></select>
+          <select id="focusT2"></select>
+        </div>
+        <div style="flex:0.2;">
+           <label class="label" title="Lock Settings">📌</label>
+           <button class="icon-btn" id="lockSettingsBtn">🔓</button>
         </div>
       </div>
 
       <div class="form-row">
         <div>
-          <label class="label">Type (Genetics)</label>
-          <select id="inputType">
-            <option value="Indica">Indica</option>
-            <option value="Sativa">Sativa</option>
-            <option value="Hybrid">Hybrid</option>
-            <option value="N/A">N/A</option>
+          <label class="label">Type</label>
+          <select id="focusType">
+            <option value="Indica">Indica</option><option value="Sativa">Sativa</option><option value="Hybrid">Hybrid</option><option value="N/A">N/A</option>
           </select>
         </div>
         <div style="flex: 0.5;">
           <label class="label">Count</label>
-          <input type="number" id="inputUnitCount" min="1" value="1">
+          <input type="number" id="focusUnitCount" min="1" value="1">
         </div>
         <div>
           <label class="label">Per-Unit Size</label>
-          <input type="text" id="inputUnitSize" list="sizeOptions" placeholder="e.g. 0.35g">
-          <datalist id="sizeOptions">
-            <option value="N/A">
-            <option value="0.3g">
-            <option value="0.35g">
-            <option value="0.5g">
-            <option value="0.7g">
-            <option value="0.75g">
-            <option value="1.0g">
-            <option value="1.5g">
-            <option value="2.0g">
-            <option value="2.5g">
-            <option value="3.5g">
-            <option value="7.0g">
-            <option value="14.0g">
-            <option value="28.0g">
-          </datalist>
+          <input type="text" id="focusUnitSize" list="sizeOptions">
         </div>
       </div>
 
       <div class="action-bar">
-        <button class="danger" id="junkBtn">Junk</button>
-        <button class="primary" id="saveNextBtn" style="flex: 1; margin-bottom: 10px;">Approve & Next</button>
+        <button class="danger" id="junkBtn" style="flex-basis:25%;">Junk</button>
+        <button class="primary" id="saveNextBtn" style="flex: 1; margin-bottom: 0;">Approve & Next</button>
       </div>
     </div>
 
-    <button class="success" id="exportBtn" style="max-width: 500px;">Download Master Dictionary</button>
+    <button class="success" id="exportBtn" style="max-width: 600px; margin-top: 15px;">Download Master Dictionary</button>
+    
+    <datalist id="brandOptions"></datalist>
+    <datalist id="sizeOptions">
+      <option value="N/A"><option value="0.3g"><option value="0.35g"><option value="0.5g">
+      <option value="0.75g"><option value="1.0g"><option value="2.0g"><option value="3.5g">
+      <option value="7.0g"><option value="14.0g"><option value="28.0g">
+    </datalist>
   </div>
 
   <script>
@@ -189,114 +230,257 @@
     let fullInventory = [];
     let workingList = [];
     let currentIndex = 0;
-    
-    // Load dictionary from local storage so you never lose progress
+    let currentMode = 'bulk'; 
+    let isLocked = false; 
     let dictionary = JSON.parse(localStorage.getItem('lucid_dictionary')) || {};
 
-    // --- REFINED TAXONOMY MAP ---
     const t2Map = {
       "Flower": ["Premium", "Smalls / Popcorn", "Mixed Bud", "Grind / Shake"],
       "Pre-Roll": ["Standard Pre-Roll", "Infused Pre-Roll", "Blunt / Cannagar"],
       "Vape": ["Standard Vape", "Distillate Vape", "Resin Vape", "Rosin Vape"],
       "Extract": ["Standard Extract", "Live Rosin"],
-      "Edible": ["Edible"],
-      "Topical": ["Topical"],
-      "Tincture": ["Tincture"],
-      "Gear": ["Apparel", "Papers / Wraps", "Accessories"],
-      "Junk": ["Junk"],
-      "Other": ["Other"]
+      "Edible": ["Edible"], "Topical": ["Topical"], "Tincture": ["Tincture"],
+      "Gear": ["Apparel", "Papers / Wraps", "Accessories"], "Junk": ["Junk"], "Other": ["Other"]
     };
 
-    // --- UTILS ---
-    const generateSlug = (brand, strain) => {
-      return `${brand}-${strain}`.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-    };
+    // --- AUTO SCRUBBER ---
+    function scrubItem(brand, strain) {
+      let cleanBrand = (brand || "Unknown").trim();
+      let rawStrain = (strain || "Unknown Product").trim();
+      let extractedSize = "";
 
-    // --- UI LOGIC ---
-    function populateT1() {
-      const t1Select = document.getElementById('inputT1');
-      t1Select.innerHTML = Object.keys(t2Map).map(k => `<option value="${k}">${k}</option>`).join('');
-    }
-
-    function populateT2(selectedT1) {
-      const t2Select = document.getElementById('inputT2');
-      const options = t2Map[selectedT1] || ["Other"];
-      t2Select.innerHTML = options.map(o => `<option value="${o}">${o}</option>`).join('');
-    }
-
-    // Listener to cascade T1 -> T2 and Auto-Override Strain
-    document.getElementById('inputT1').addEventListener('change', (e) => {
-      const val = e.target.value;
-      populateT2(val);
-      
-      // Auto-N/A logic for non-flower/vape items
-      if (['Gear', 'Tincture', 'Topical'].includes(val)) {
-        document.getElementById('inputStrain').value = "N/A";
-        document.getElementById('inputType').value = "N/A";
-        document.getElementById('inputUnitSize').value = "N/A";
+      const regex = /\s*[-|\[|\(]?\s*(\d+\.?\d*\s*(?:mg|g|pk|oz))\s*[\]|\)]?$/i;
+      const match = rawStrain.match(regex);
+      if (match) {
+        extractedSize = match[1];
+        rawStrain = rawStrain.replace(regex, '');
       }
-    });
+
+      let cleanStrain = rawStrain.toLowerCase().replace(/\b[a-z]/g, letter => letter.toUpperCase()).trim();
+      return { cleanBrand, cleanStrain, extractedSize };
+    }
+
+    const generateSlug = (brand, strain) => `${brand}-${strain}`.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+
+    // --- SETUP & UI RENDERING ---
+    function populateDropdowns() {
+      const t1Html = Object.keys(t2Map).map(k => `<option value="${k}">${k}</option>`).join('');
+      document.getElementById('bulkT1').innerHTML = t1Html;
+      document.getElementById('focusT1').innerHTML = t1Html;
+      
+      const brands = new Set(fullInventory.map(i => i.brand?.trim()).filter(Boolean));
+      document.getElementById('brandOptions').innerHTML = Array.from(brands).map(b => `<option value="${b}">`).join('');
+    }
+
+    function syncT2(modePrefix, val) {
+      const t2Select = document.getElementById(`${modePrefix}T2`);
+      const options = t2Map[val] || ["Other"];
+      t2Select.innerHTML = options.map(o => `<option value="${o}">${o}</option>`).join('');
+      
+      if (['Gear', 'Tincture', 'Topical'].includes(val)) {
+        if(modePrefix === 'focus') document.getElementById('focusStrain').value = "N/A";
+        document.getElementById(`${modePrefix}Type`).value = "N/A";
+        document.getElementById(`${modePrefix}UnitSize`).value = "N/A";
+      }
+    }
+
+    document.getElementById('bulkT1').addEventListener('change', (e) => syncT2('bulk', e.target.value));
+    document.getElementById('focusT1').addEventListener('change', (e) => syncT2('focus', e.target.value));
 
     function applyFilters() {
       const fT1 = document.getElementById('filterT1').value;
-      const fStatus = document.getElementById('filterStatus').value;
+      const search = document.getElementById('filterSearch').value.toLowerCase();
 
       workingList = fullInventory.filter(item => {
         const slug = generateSlug(item.brand, item.strain);
-        const isCompleted = !!dictionary[slug];
-        
-        let passT1 = (fT1 === 'All' || item.t1 === fT1);
-        let passStatus = true;
-        if (fStatus === 'pending') passStatus = !isCompleted;
-        if (fStatus === 'completed') passStatus = isCompleted;
+        if (dictionary[slug]) return false;
 
-        return passT1 && passStatus;
+        let passT1 = (fT1 === 'All' || item.t1 === fT1);
+        let passSearch = true;
+        if (search) {
+          const combo = `${item.brand} ${item.strain}`.toLowerCase();
+          passSearch = combo.includes(search);
+        }
+        return passT1 && passSearch;
       });
 
       currentIndex = 0;
-      renderCard();
+      updateProgress();
+      
+      if (currentMode === 'bulk') renderBulkMode();
+      else renderFocusMode();
     }
 
-    function renderCard() {
+    function updateProgress() {
       const completedCount = Object.keys(dictionary).length;
       const totalCount = fullInventory.length;
       const pct = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
-      
       document.getElementById('progressCount').innerText = `${completedCount} / ${totalCount} Verified`;
       document.getElementById('progressPercent').innerText = `${pct}%`;
       document.getElementById('progressBar').style.width = `${pct}%`;
+    }
 
-      if (workingList.length === 0 || currentIndex >= workingList.length) {
-        document.getElementById('cardPanel').innerHTML = `<h2 style="text-align:center; padding: 40px 0;">All items in this filter are verified! 🎉</h2>`;
+    // --- BULK MODE LOGIC ---
+    function renderBulkMode() {
+      const container = document.getElementById('bulkListContainer');
+      document.getElementById('bulkCountHeader').innerText = `Review Items (${workingList.length})`;
+      
+      if (workingList.length === 0) {
+        container.innerHTML = `<p style="color:#aaa; text-align:center;">No pending items found.</p>`;
         return;
       }
 
-      const item = workingList[currentIndex];
-      const slug = generateSlug(item.brand, item.strain);
+      const first = workingList[0];
+      const scrubbed = scrubItem(first.brand, first.strain);
       
-      // Populate Desc box with context
-      let descText = `Original: ${item.brand} - ${item.strain}\nGuess: ${item.t1} -> ${item.t2}\n\n`;
-      descText += item.deepData?.desc || "No description provided.";
-      if (item.deepData?.terps?.length > 0) descText = `Terps: ${item.deepData.terps.join(', ')}\n\n` + descText;
-      document.getElementById('cardDesc').innerText = descText;
+      document.getElementById('bulkBrand').value = scrubbed.cleanBrand;
+      document.getElementById('bulkT1').value = first.t1;
+      syncT2('bulk', first.t1);
+      document.getElementById('bulkT2').value = first.t2;
+      document.getElementById('bulkType').value = first.type;
+      document.getElementById('bulkUnitSize').value = scrubbed.extractedSize || first.size || "";
 
-      const saved = dictionary[slug];
-      
-      // Populate Form
-      document.getElementById('inputBrand').value = saved ? saved.brand : item.brand;
-      document.getElementById('inputStrain').value = saved ? saved.strain : item.strain;
-
-      const targetT1 = saved ? saved.t1 : (Object.keys(t2Map).includes(item.t1) ? item.t1 : "Other");
-      document.getElementById('inputT1').value = targetT1;
-      populateT2(targetT1);
-      document.getElementById('inputT2').value = saved ? saved.t2 : item.t2;
-      document.getElementById('inputType').value = saved ? saved.type : item.type;
-      
-      document.getElementById('inputUnitCount').value = saved?.unitCount || 1;
-      document.getElementById('inputUnitSize').value = saved?.unitSize || item.size || "";
+      let html = '';
+      workingList.forEach((item, idx) => {
+        const s = scrubItem(item.brand, item.strain);
+        html += `
+          <div class="bulk-row">
+            <div class="context">${item.brand || "?"} - ${item.strain || "?"}</div>
+            <input type="text" id="bulkItemStrain_${idx}" data-origbrand="${item.brand}" data-origstrain="${item.strain}" value="${s.cleanStrain}">
+          </div>
+        `;
+      });
+      container.innerHTML = html;
     }
 
-    // --- EVENT LISTENERS ---
+    document.getElementById('commitBulkBtn').addEventListener('click', (e) => {
+      if(workingList.length === 0) return;
+      
+      const btn = e.target;
+      const originalText = btn.innerText;
+      btn.disabled = true;
+      btn.innerText = "Committing...";
+
+      const mBrand = document.getElementById('bulkBrand').value.trim();
+      const mT1 = document.getElementById('bulkT1').value;
+      const mT2 = document.getElementById('bulkT2').value;
+      const mType = document.getElementById('bulkType').value;
+      const mCount = parseInt(document.getElementById('bulkUnitCount').value) || 1;
+      const mSize = document.getElementById('bulkUnitSize').value.trim();
+
+      workingList.forEach((item, idx) => {
+        const rowInput = document.getElementById(`bulkItemStrain_${idx}`);
+        const origBrand = rowInput.getAttribute('data-origbrand');
+        const origStrain = rowInput.getAttribute('data-origstrain');
+        const slug = generateSlug(origBrand, origStrain);
+        const finalStrain = rowInput.value.trim();
+
+        dictionary[slug] = {
+          t1: mT1, t2: mT2, type: mType, 
+          brand: mBrand, strain: finalStrain, 
+          unitCount: mCount, unitSize: mSize
+        };
+      });
+
+      localStorage.setItem('lucid_dictionary', JSON.stringify(dictionary));
+      applyFilters(); 
+      
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.innerText = originalText;
+      }, 300);
+    });
+
+    // --- FOCUS MODE LOGIC ---
+    function renderFocusMode() {
+      const btnApprove = document.getElementById('saveNextBtn');
+      const btnJunk = document.getElementById('junkBtn');
+
+      if (workingList.length === 0 || currentIndex >= workingList.length) {
+        document.getElementById('cardDesc').innerText = "All items in this filter are verified! 🎉";
+        btnApprove.disabled = true;
+        btnJunk.disabled = true;
+        return;
+      }
+
+      btnApprove.disabled = false;
+      btnJunk.disabled = false;
+
+      const item = workingList[currentIndex];
+      const scrubbed = scrubItem(item.brand, item.strain);
+      
+      let descText = `Original: ${item.brand} - ${item.strain}\nAI Guess: ${item.t1} -> ${item.t2}\n\n`;
+      descText += item.deepData?.desc || "No description.";
+      document.getElementById('cardDesc').innerText = descText;
+
+      if (!isLocked) {
+        document.getElementById('focusBrand').value = scrubbed.cleanBrand;
+        document.getElementById('focusT1').value = Object.keys(t2Map).includes(item.t1) ? item.t1 : "Other";
+        syncT2('focus', document.getElementById('focusT1').value);
+        document.getElementById('focusT2').value = item.t2;
+        document.getElementById('focusType').value = item.type;
+        document.getElementById('focusUnitSize').value = scrubbed.extractedSize || item.size || "";
+        document.getElementById('focusUnitCount').value = 1;
+      }
+      
+      document.getElementById('focusStrain').value = scrubbed.cleanStrain;
+    }
+
+    document.getElementById('saveNextBtn').addEventListener('click', () => {
+      const item = workingList[currentIndex];
+      const slug = generateSlug(item.brand, item.strain);
+
+      dictionary[slug] = {
+        t1: document.getElementById('focusT1').value,
+        t2: document.getElementById('focusT2').value,
+        type: document.getElementById('focusType').value,
+        brand: document.getElementById('focusBrand').value.trim(),
+        strain: document.getElementById('focusStrain').value.trim(),
+        unitCount: parseInt(document.getElementById('focusUnitCount').value) || 1,
+        unitSize: document.getElementById('focusUnitSize').value.trim()
+      };
+
+      localStorage.setItem('lucid_dictionary', JSON.stringify(dictionary));
+      currentIndex++;
+      renderFocusMode();
+      updateProgress();
+    });
+
+    document.getElementById('junkBtn').addEventListener('click', () => {
+      const item = workingList[currentIndex];
+      dictionary[generateSlug(item.brand, item.strain)] = { t1: "Junk" };
+      localStorage.setItem('lucid_dictionary', JSON.stringify(dictionary));
+      currentIndex++;
+      renderFocusMode();
+      updateProgress();
+    });
+
+    document.getElementById('lockSettingsBtn').addEventListener('click', (e) => {
+      isLocked = !isLocked;
+      e.target.innerText = isLocked ? "🔒" : "🔓";
+      e.target.classList.toggle('active');
+    });
+
+    // Mode Toggles & Debounced Search
+    document.getElementById('btnBulkMode').addEventListener('click', () => {
+      currentMode = 'bulk';
+      document.getElementById('btnBulkMode').classList.add('active');
+      document.getElementById('btnFocusMode').classList.remove('active');
+      document.getElementById('bulkPanel').classList.remove('hidden');
+      document.getElementById('focusPanel').classList.add('hidden');
+      applyFilters();
+    });
+
+    document.getElementById('btnFocusMode').addEventListener('click', () => {
+      currentMode = 'focus';
+      document.getElementById('btnFocusMode').classList.add('active');
+      document.getElementById('btnBulkMode').classList.remove('active');
+      document.getElementById('focusPanel').classList.remove('hidden');
+      document.getElementById('bulkPanel').classList.add('hidden');
+      applyFilters();
+    });
+
+    // Event Listeners
     document.getElementById('jsonUpload').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -306,46 +490,20 @@
           fullInventory = JSON.parse(event.target.result);
           document.getElementById('loadPanel').classList.add('hidden');
           document.getElementById('workspace').classList.remove('hidden');
-          populateT1();
+          populateDropdowns();
           applyFilters();
-        } catch (err) {
-          alert("Error parsing JSON file. Make sure it's the Cleaned JSON export.");
-        }
+        } catch (err) { alert("Error parsing JSON file."); }
       };
       reader.readAsText(file);
     });
 
     document.getElementById('filterT1').addEventListener('change', applyFilters);
-    document.getElementById('filterStatus').addEventListener('change', applyFilters);
-
-    document.getElementById('saveNextBtn').addEventListener('click', () => {
-      const item = workingList[currentIndex];
-      const slug = generateSlug(item.brand, item.strain);
-
-      dictionary[slug] = {
-        t1: document.getElementById('inputT1').value,
-        t2: document.getElementById('inputT2').value,
-        type: document.getElementById('inputType').value,
-        brand: document.getElementById('inputBrand').value,
-        strain: document.getElementById('inputStrain').value,
-        unitCount: parseInt(document.getElementById('inputUnitCount').value) || 1,
-        unitSize: document.getElementById('inputUnitSize').value
-      };
-
-      localStorage.setItem('lucid_dictionary', JSON.stringify(dictionary));
-      currentIndex++;
-      renderCard();
-    });
-
-    document.getElementById('junkBtn').addEventListener('click', () => {
-      const item = workingList[currentIndex];
-      const slug = generateSlug(item.brand, item.strain);
-      
-      // Fast save as junk
-      dictionary[slug] = { t1: "Junk" };
-      localStorage.setItem('lucid_dictionary', JSON.stringify(dictionary));
-      currentIndex++;
-      renderCard();
+    
+    // Debounced search input
+    let searchTimeout;
+    document.getElementById('filterSearch').addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(applyFilters, 300);
     });
 
     document.getElementById('exportBtn').addEventListener('click', () => {
