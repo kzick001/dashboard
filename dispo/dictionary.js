@@ -1,163 +1,203 @@
 // dictionary.js
 export const LUCID_MAP = {
   // ==========================================
-  // GREEN GOODS MASTER DICTIONARY
+  // GREEN GOODS & RISE MASTER DICTIONARY V2
   // ==========================================
-  "boundary-waters-pineapple-orange-burst-1000mg": {
-    "t1": "Vape",
-    "t2": "Distillate Vape",
-    "type": "Hybrid"
-  },
-  "boundary-waters-galactic-grape-1000mg": {
-    "t1": "Vape",
-    "t2": "Distillate Vape",
-    "type": "Hybrid"
-  },
-  "boundary-waters-citrus-circus-1000mg": {
-    "t1": "Vape",
-    "t2": "Distillate Vape",
-    "type": "Hybrid"
-  },
-  "boundary-waters-you-betcha-blueberry-10pk": {
-    "t1": "Edible",
-    "t2": "Edible",
-    "type": "Indica"
-  },
-  "boundary-waters-twin-cities-cherry-10pk": {
-    "t1": "Edible",
-    "t2": "Edible",
-    "type": "Sativa"
-  },
-  "boundary-waters-peaches-and-cream-500mg": {
-    "t1": "Vape",
-    "t2": "Distillate Vape",
-    "type": "Hybrid"
-  },
-  "boundary-waters-cranberry-pomegranate-1000mg": {
-    "t1": "Vape",
-    "t2": "Distillate Vape",
-    "type": "Sativa"
-  },
-  "vireo-garlic-death": {
-    "t1": "Flower",
-    "t2": "Premium / Smalls",
-    "type": "Hybrid"
-  },
-  "vireo-a-ai-sherbert-1g": {
-    "t1": "Pre-Roll",
-    "t2": "Standard Pre-Roll",
-    "type": "Hybrid"
-  },
-  "vireo-ice-cream-cake-87-1000mg": {
-    "t1": "Vape",
-    "t2": "Distillate Vape",
-    "type": "Indica"
-  },
-  "vireo-rso-oil-indica-2g": {
-    "t1": "Extract",
-    "t2": "Standard Extract",
-    "type": "Indica"
-  },
-  "vireo-sour-blueberry-nano-10pk": {
-    "t1": "Edible",
-    "t2": "Edible",
-    "type": "N/A"
-  },
-  "vireo-honey-apple-nano-10pk": {
-    "t1": "Edible",
-    "t2": "Edible",
-    "type": "N/A"
-  },
-  "vireo-yellow-distillate-vaporizer-cartridge-1000mg": {
-    "t1": "Vape",
-    "t2": "Distillate Vape",
-    "type": "Hybrid"
-  },
-
-  // ==========================================
-  // RISE MASTER DICTIONARY
-  // ==========================================
-  "shine-animal-face": {
-    "t1": "Flower",
-    "t2": "Shake / Trim",
-    "type": "Indica"
-  },
-  "shine-animal-scout": {
-    "t1": "Flower",
-    "t2": "Shake / Trim",
-    "type": "Indica"
-  },
-  "shine-bananaconda": {
-    "t1": "Flower",
-    "t2": "Shake / Trim",
-    "type": "Hybrid"
-  },
-  "beboe-flower-is-female-3d-embroidered-grey-os": {
-    "t1": "Gear",
-    "t2": "Apparel",
-    "type": "N/A"
-  },
-  "beboe-flower-is-female-hoodie-orchid-2xl": {
-    "t1": "Gear",
-    "t2": "Apparel",
-    "type": "N/A"
-  },
-  "beboe-flower-is-female-hoodie-orchid-m": {
-    "t1": "Gear",
-    "t2": "Apparel",
-    "type": "N/A"
-  },
-  "beboe-flower-is-female-hoodie-orchid-s": {
-    "t1": "Gear",
-    "t2": "Apparel",
-    "type": "N/A"
-  },
-  "beboe-flower-is-female-hoodie-orchid-xl": {
-    "t1": "Gear",
-    "t2": "Apparel",
-    "type": "N/A"
-  },
-  "rythm-mineral-wash-animal-scout-black-3xl": {
-    "t1": "Gear",
-    "t2": "Apparel",
-    "type": "Hybrid"
-  },
-  "rythm-mineral-wash-animal-scout-black-l": {
-    "t1": "Gear",
-    "t2": "Apparel",
-    "type": "Hybrid"
-  },
-  "rythm-mineral-wash-animal-scout-black-m": {
-    "t1": "Gear",
-    "t2": "Apparel",
-    "type": "Hybrid"
-  },
-  "rythm-mineral-wash-animal-scout-black-s": {
-    "t1": "Gear",
-    "t2": "Apparel",
-    "type": "Hybrid"
-  },
-  "rythm-velcroz": {
-    "t1": "Flower",
-    "t2": "Premium / Smalls",
-    "type": "Hybrid"
-  },
-  "rythm-vintage-animal-face-heavyweight-washed-purple-2xl": {
-    "t1": "Gear",
-    "t2": "Apparel",
-    "type": "Hybrid"
-  },
-  "rythm-vintage-animal-face-heavyweight-washed-purple-s": {
-    "t1": "Gear",
-    "t2": "Apparel",
-    "type": "Hybrid"
-  },
-  "sireel-4-frit-multi-marbles": {
-    "t1": "Gear",
-    "t2": "Accessories",
-    "type": "N/A"
-  }
-  
-  // Note: As you use LUCID Forge to classify more items, 
-  // you can simply paste the new JSON blocks directly into this object.
-};
+  "boundary-waters-pineapple-orange-burst-1000mg": { "t1": "Vape", "t2": "Distillate Vape", "type": "Hybrid", "brand": "Boundary Waters", "strain": "Pineapple Orange Burst", "unitCount": "", "unitSize": "" },
+  "boundary-waters-galactic-grape-1000mg": { "t1": "Vape", "t2": "Distillate Vape", "type": "Indica", "brand": "Boundary Waters", "strain": "Galactic Grape", "unitCount": "", "unitSize": "" },
+  "boundary-waters-citrus-circus-1000mg": { "t1": "Vape", "t2": "Distillate Vape", "type": "Hybrid", "brand": "Boundary Waters", "strain": "Citrus Circus", "unitCount": "", "unitSize": "" },
+  "boundary-waters-you-betcha-blueberry-10pk": { "t1": "Edible", "t2": "Edible", "type": "Indica", "brand": "Boundary Waters", "strain": "You Betcha Blueberry", "unitCount": 10, "unitSize": "" },
+  "boundary-waters-twin-cities-cherry-10pk": { "t1": "Edible", "t2": "Edible", "type": "Sativa", "brand": "Boundary Waters", "strain": "Twin Cities Cherry", "unitCount": 10, "unitSize": "" },
+  "boundary-waters-peaches-and-cream-500mg": { "t1": "Vape", "t2": "Distillate Vape", "type": "Hybrid", "brand": "Boundary Waters", "strain": "Peaches And Cream", "unitCount": "", "unitSize": "" },
+  "boundary-waters-cranberry-pomegranate-1000mg": { "t1": "Vape", "t2": "Distillate Vape", "type": "Sativa", "brand": "Boundary Waters", "strain": "Cranberry Pomegranate", "unitCount": "", "unitSize": "" },
+  "boundary-waters-guava-lava-1000mg": { "t1": "Vape", "t2": "Distillate Vape", "type": "Sativa", "brand": "Boundary Waters", "strain": "Guava Lava", "unitCount": "", "unitSize": "" },
+  "boundary-waters-peaches-and-cream-1000mg": { "t1": "Vape", "t2": "Distillate Vape", "type": "Hybrid", "brand": "Boundary Waters", "strain": "Peaches And Cream", "unitCount": "", "unitSize": "" },
+  "boundary-waters-guava-lava-300mg": { "t1": "Vape", "t2": "Distillate Vape", "type": "Sativa", "brand": "Boundary Waters", "strain": "Guava Lava", "unitCount": "", "unitSize": "" },
+  "boundary-waters-minnesota-mulberry-10pk": { "t1": "Edible", "t2": "Edible", "type": "Hybrid", "brand": "Boundary Waters", "strain": "Minnesota Mulberry", "unitCount": 10, "unitSize": "" },
+  "boundary-waters-boundary-waters-cannabis-co-khaki-crewneck-medium": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Boundary Waters", "strain": "Boundary Waters Cannabis Co Khaki Crewneck - Medium", "unitCount": "", "unitSize": "" },
+  "boundary-waters-boundary-waters-cannabis-co-khaki-crewneck-3xl": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Boundary Waters", "strain": "Boundary Waters Cannabis Co Khaki Crewneck - 3xl", "unitCount": "", "unitSize": "" },
+  "simple-indica-disposable-2000mg": { "t1": "Vape", "t2": "Resin Vape", "type": "Indica", "brand": "Simple", "strain": "Indica - Disposable", "unitCount": "", "unitSize": "" },
+  "simple-blue-dream": { "t1": "Flower", "t2": "Smalls / Popcorn", "type": "Sativa", "brand": "Simple", "strain": "Blue Dream", "unitCount": "", "unitSize": "" },
+  "simple-minnesota-cough": { "t1": "Flower", "t2": "Smalls / Popcorn", "type": "Sativa", "brand": "Simple", "strain": "Minnesota Cough", "unitCount": "", "unitSize": "" },
+  "simple-hybrid-disposable-2000mg": { "t1": "Vape", "t2": "Resin Vape", "type": "Hybrid", "brand": "Simple", "strain": "Generic Hybrid", "unitCount": "", "unitSize": "" },
+  "simple-durban-dream": { "t1": "Flower", "t2": "Smalls / Popcorn", "type": "Sativa", "brand": "Simple", "strain": "Durban Dream", "unitCount": "", "unitSize": "" },
+  "simple-gator-breath": { "t1": "Flower", "t2": "Smalls / Popcorn", "type": "Hybrid", "brand": "Simple", "strain": "Gator Breath", "unitCount": "", "unitSize": "" },
+  "simple-sour-jack": { "t1": "Flower", "t2": "Smalls / Popcorn", "type": "Sativa", "brand": "Simple", "strain": "Sour Jack", "unitCount": "", "unitSize": "" },
+  "simple-sativa-disposable-2000mg": { "t1": "Vape", "t2": "Resin Vape", "type": "Sativa", "brand": "Simple", "strain": "Sativa - Generic", "unitCount": "", "unitSize": "" },
+  "simple-gmo-pie": { "t1": "Flower", "t2": "Smalls / Popcorn", "type": "Indica", "brand": "Simple", "strain": "Gmo Pie", "unitCount": "", "unitSize": "" },
+  "simple-blue-runtz": { "t1": "Flower", "t2": "Smalls / Popcorn", "type": "Indica", "brand": "Simple", "strain": "Blue Runtz", "unitCount": "", "unitSize": "" },
+  "simple-znow-flakes": { "t1": "Flower", "t2": "Smalls / Popcorn", "type": "Indica", "brand": "Simple", "strain": "Znow Flakes", "unitCount": "", "unitSize": "" },
+  "simple-pave": { "t1": "Flower", "t2": "Smalls / Popcorn", "type": "Hybrid", "brand": "Simple", "strain": "Pave", "unitCount": "", "unitSize": "" },
+  "simple-hellcat-15": { "t1": "Flower", "t2": "Smalls / Popcorn", "type": "Sativa", "brand": "Simple", "strain": "Hellcat #15", "unitCount": "", "unitSize": "" },
+  "vireo-gator-breath": { "t1": "Flower", "t2": "Mixed Bud", "type": "Hybrid", "brand": "Vireo", "strain": "Gator Breath", "unitCount": "", "unitSize": "" },
+  "vireo-minnesota-cough": { "t1": "Flower", "t2": "Mixed Bud", "type": "Sativa", "brand": "Vireo", "strain": "Minnesota Cough", "unitCount": "", "unitSize": "" },
+  "vireo-sour-jack": { "t1": "Flower", "t2": "Mixed Bud", "type": "Sativa", "brand": "Vireo", "strain": "Sour Jack", "unitCount": "", "unitSize": "" },
+  "vireo-la-kush-cake": { "t1": "Flower", "t2": "Mixed Bud", "type": "Hybrid", "brand": "Vireo", "strain": "La Kush Cake", "unitCount": "", "unitSize": "" },
+  "vireo-pineapple-max-thc-30pk": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "Vireo", "strain": "Pineapple Max-Thc", "unitCount": 30, "unitSize": "" },
+  "vireo-gator-breath-1g": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Hybrid", "brand": "Vireo", "strain": "Gator Breath", "unitCount": 2, "unitSize": "0.5g" },
+  "vireo-blue-runtz": { "t1": "Flower", "t2": "Mixed Bud", "type": "Indica", "brand": "Vireo", "strain": "Blue Runtz", "unitCount": "", "unitSize": "" },
+  "vireo-blue-dream-1g": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Sativa", "brand": "Vireo", "strain": "Blue Dream", "unitCount": 2, "unitSize": "0.5g" },
+  "vireo-durban-dream": { "t1": "Flower", "t2": "Mixed Bud", "type": "Sativa", "brand": "Vireo", "strain": "Durban Dream", "unitCount": "", "unitSize": "" },
+  "vireo-concord-grape-10pk": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "Vireo", "strain": "Concord Grape", "unitCount": 10, "unitSize": "" },
+  "vireo-cherry-max-thc-30pk": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "Vireo", "strain": "Cherry Max-Thc", "unitCount": 30, "unitSize": "" },
+  "vireo-purple-cookies": { "t1": "Flower", "t2": "Mixed Bud", "type": "Indica", "brand": "Vireo", "strain": "Purple Cookies", "unitCount": "", "unitSize": "" },
+  "vireo-granddaddy-purple-1000mg": { "t1": "Vape", "t2": "Distillate Vape", "type": "Indica", "brand": "Vireo", "strain": "Granddaddy Purple", "unitCount": "", "unitSize": "" },
+  "vireo-hawaiian-pineapple-10pk": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "Vireo", "strain": "Hawaiian Pineapple", "unitCount": 10, "unitSize": "" },
+  "vireo-sour-strawberry-lemonade-10pk": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "Vireo", "strain": "Sour Strawberry Lemonade", "unitCount": 10, "unitSize": "" },
+  "vireo-forbidden-fruit-87-1000mg": { "t1": "Vape", "t2": "Distillate Vape", "type": "Indica", "brand": "Vireo", "strain": "Forbidden Fruit", "unitCount": "", "unitSize": "" },
+  "vireo-blue-runtz-1g": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Indica", "brand": "Vireo", "strain": "Blue Runtz", "unitCount": 2, "unitSize": "0.5g" },
+  "vireo-sour-peach-10pk": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "Vireo", "strain": "Sour Peach", "unitCount": 10, "unitSize": "" },
+  "vireo-super-sonic-blizzard": { "t1": "Flower", "t2": "Mixed Bud", "type": "Indica", "brand": "Vireo", "strain": "Super Sonic Blizzard", "unitCount": "", "unitSize": "" },
+  "vireo-oxnard-strawberry-10pk": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "Vireo", "strain": "Oxnard Strawberry", "unitCount": 10, "unitSize": "" },
+  "vireo-garlic-death": { "t1": "Flower", "t2": "Mixed Bud", "type": "Hybrid", "brand": "Vireo", "strain": "Garlic Death", "unitCount": "", "unitSize": "" },
+  "vireo-a-ai-sherbert-1g": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Hybrid", "brand": "Vireo", "strain": "AçAi Sherbert", "unitCount": 2, "unitSize": "0.5g" },
+  "vireo-ice-cream-cake-87-1000mg": { "t1": "Vape", "t2": "Distillate Vape", "type": "Indica", "brand": "Vireo", "strain": "Ice Cream Cake", "unitCount": "", "unitSize": "" },
+  "vireo-rso-oil-indica-2g": { "t1": "Extract", "t2": "Standard Extract", "type": "Indica", "brand": "Vireo", "strain": "Rso Oil - Indica", "unitCount": "", "unitSize": "2g" },
+  "vireo-rso-oil-hybrid-2g": { "t1": "Extract", "t2": "Standard Extract", "type": "Hybrid", "brand": "Vireo", "strain": "Rso Oil - Hybrid", "unitCount": "", "unitSize": "2g" },
+  "vireo-sour-blueberry-nano-10pk": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "Vireo", "strain": "Sour Blueberry Nano", "unitCount": 10, "unitSize": "" },
+  "vireo-honey-apple-nano-10pk": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "Vireo", "strain": "Honey Apple Nano", "unitCount": 10, "unitSize": "" },
+  "vireo-yellow-distillate-vaporizer-cartridge-1000mg": { "t1": "Vape", "t2": "Distillate Vape", "type": "Indica", "brand": "Vireo", "strain": "N/A", "unitCount": "", "unitSize": "" },
+  "vireo-gelato-cake-1g": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Indica", "brand": "Vireo", "strain": "Gelato Cake", "unitCount": 2, "unitSize": "0.5g" },
+  "vireo-gmo-pie": { "t1": "Flower", "t2": "Mixed Bud", "type": "Indica", "brand": "Vireo", "strain": "Gmo Pie", "unitCount": "", "unitSize": "" },
+  "vireo-sour-blackberry-10pk": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "Vireo", "strain": "Sour Blackberry", "unitCount": 10, "unitSize": "" },
+  "vireo-black-currant-nano-10pk": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "Vireo", "strain": "Black Currant Nano", "unitCount": 10, "unitSize": "" },
+  "vireo-a-ai-sherbert": { "t1": "Flower", "t2": "Mixed Bud", "type": "Hybrid", "brand": "Vireo", "strain": "AçAi Sherbert", "unitCount": "", "unitSize": "" },
+  "vireo-milk-chocolate-10pk": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "Vireo", "strain": "Milk Chocolate", "unitCount": 10, "unitSize": "" },
+  "vireo-pave": { "t1": "Flower", "t2": "Mixed Bud", "type": "Hybrid", "brand": "Vireo", "strain": "Pave", "unitCount": "", "unitSize": "" },
+  "shine-acapulco-gold": { "t1": "Vape", "t2": "Distillate Vape", "type": "Sativa", "brand": "&Shine", "strain": "Acapulco Gold", "unitCount": "", "unitSize": "" },
+  "shine-animal-face": { "t1": "Flower", "t2": "Grind / Shake", "type": "Indica", "brand": "&Shine", "strain": "Animal Face", "unitCount": "", "unitSize": "" },
+  "shine-animal-scout": { "t1": "Flower", "t2": "Grind / Shake", "type": "Indica", "brand": "&Shine", "strain": "Animal Scout", "unitCount": "", "unitSize": "" },
+  "shine-banana-cream": { "t1": "Flower", "t2": "Grind / Shake", "type": "Indica", "brand": "&Shine", "strain": "Banana Cream", "unitCount": "", "unitSize": "" },
+  "shine-bananaconda": { "t1": "Flower", "t2": "Grind / Shake", "type": "Hybrid", "brand": "&Shine", "strain": "Bananaconda", "unitCount": "", "unitSize": "" },
+  "shine-beaver-cookies": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Sativa", "brand": "&Shine", "strain": "Beaver Cookies", "unitCount": "", "unitSize": "" },
+  "shine-berry-haze": { "t1": "Vape", "t2": "Distillate Vape", "type": "Indica", "brand": "&Shine", "strain": "Berry Haze", "unitCount": "", "unitSize": "" },
+  "shine-biscotti": { "t1": "Vape", "t2": "Distillate Vape", "type": "Indica", "brand": "&Shine", "strain": "Biscotti", "unitCount": "", "unitSize": "" },
+  "shine-black-maple": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Indica", "brand": "&Shine", "strain": "Black Maple", "unitCount": "", "unitSize": "0.5g" },
+  "shine-blackberry-i": { "t1": "Edible", "t2": "Edible", "type": "Indica", "brand": "&Shine", "strain": "Blackberry (I)", "unitCount": 10, "unitSize": "" },
+  "shine-blue-dream-h": { "t1": "Vape", "t2": "Distillate Vape", "type": "Sativa", "brand": "&Shine", "strain": "Blue Dream (H)", "unitCount": "", "unitSize": "" },
+  "shine-bubba-fett": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Indica", "brand": "&Shine", "strain": "Bubba Fett", "unitCount": "", "unitSize": "0.5g" },
+  "shine-chem-n-cookies": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Hybrid", "brand": "&Shine", "strain": "Chem 'N Cookies", "unitCount": 5, "unitSize": "0.5g" },
+  "shine-do-si-dos": { "t1": "Vape", "t2": "Distillate Vape", "type": "Indica", "brand": "&Shine", "strain": "Do Si Dos", "unitCount": "", "unitSize": "" },
+  "shine-durban-poison": { "t1": "Vape", "t2": "Distillate Vape", "type": "Sativa", "brand": "&Shine", "strain": "Durban Poison", "unitCount": "", "unitSize": "" },
+  "shine-fantasy-melonz": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Hybrid", "brand": "&Shine", "strain": "Fantasy Melonz", "unitCount": "", "unitSize": "" },
+  "shine-fruit-punch-s": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "&Shine", "strain": "Fruit Punch (S)", "unitCount": "", "unitSize": "" },
+  "shine-gas-glue": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Hybrid", "brand": "&Shine", "strain": "Gas & Glue", "unitCount": "", "unitSize": "" },
+  "shine-gogurtz": { "t1": "Flower", "t2": "Premium / Smalls", "type": "Hybrid", "brand": "&Shine", "strain": "Gogurtz", "unitCount": "", "unitSize": "" },
+  "shine-granny-candy": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Sativa", "brand": "&Shine", "strain": "Granny Candy", "unitCount": "", "unitSize": "" },
+  "shine-jack-s-delight": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Sativa", "brand": "&Shine", "strain": "Jack's Delight", "unitCount": "", "unitSize": "" },
+  "shine-mixed-berry-i": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "&Shine", "strain": "Mixed Berry (I)", "unitCount": "", "unitSize": "" },
+  "shine-mystic-mint": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Indica", "brand": "&Shine", "strain": "Mystic Mint", "unitCount": "", "unitSize": "" },
+  "shine-omg": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Hybrid", "brand": "&Shine", "strain": "OMG", "unitCount": "", "unitSize": "" },
+  "shine-paradise-snacks": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Indica", "brand": "&Shine", "strain": "Paradise Snacks", "unitCount": "", "unitSize": "" },
+  "shine-regina-george": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Hybrid", "brand": "&Shine", "strain": "Regina George", "unitCount": "", "unitSize": "" },
+  "shine-rose-gold-runtz": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Hybrid", "brand": "&Shine", "strain": "Rose Gold Runtz", "unitCount": "", "unitSize": "" },
+  "shine-sour-blue-raspberry-1-1": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "&Shine", "strain": "Sour Blue Raspberry 1:1", "unitCount": "", "unitSize": "" },
+  "shine-tangerine-2-1": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "&Shine", "strain": "Tangerine 2:1", "unitCount": "", "unitSize": "" },
+  "shine-tropical-s": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "&Shine", "strain": "Tropical (S)", "unitCount": "", "unitSize": "" },
+  "shine-watermelon-h": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "&Shine", "strain": "Watermelon (H)", "unitCount": "", "unitSize": "" },
+  "shine-zack-s-cake-11": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Hybrid", "brand": "&Shine", "strain": "Zack's Cake 11", "unitCount": "", "unitSize": "" },
+  "inc-ensored-greener-apple": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "(inc)ensored", "strain": "Greener Apple", "unitCount": "", "unitSize": "" },
+  "inc-ensored-pineapple-express-h": { "t1": "Edible", "t2": "Edible", "type": "Hybrid", "brand": "(inc)ensored", "strain": "Pineapple Express (H)", "unitCount": "", "unitSize": "" },
+  "inc-ensored-fast-acting-sour-cherry-tart": { "t1": "Edible", "t2": "Edible", "type": "Hybrid", "brand": "(inc)ensored", "strain": "Fast Acting Sour Cherry Tart", "unitCount": "", "unitSize": "" },
+  "beboe-classic-dad-washed-grey-os": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Beboe", "strain": "Classic Dad - Washed Grey [Os]", "unitCount": "", "unitSize": "" },
+  "beboe-flower-is-female-3d-embroidered-grey-os": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Beboe", "strain": "Flower Is Female - 3d Embroidered - Grey [Os]", "unitCount": "", "unitSize": "" },
+  "beboe-flower-is-female-hoodie-orchid-2xl": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Beboe", "strain": "Flower Is Female Hoodie - Orchid [2xl]", "unitCount": "", "unitSize": "" },
+  "beboe-flower-is-female-hoodie-orchid-m": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Beboe", "strain": "Flower Is Female Hoodie - Orchid [M]", "unitCount": "", "unitSize": "" },
+  "beboe-flower-is-female-hoodie-orchid-s": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Beboe", "strain": "Flower Is Female Hoodie - Orchid [S]", "unitCount": "", "unitSize": "" },
+  "beboe-flower-is-female-hoodie-orchid-xl": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Beboe", "strain": "Flower Is Female Hoodie - Orchid [Xl]", "unitCount": "", "unitSize": "" },
+  "beboe-flower-is-female-stash-pouch-grey": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Beboe", "strain": "Flower Is Female Stash Pouch - Grey", "unitCount": "", "unitSize": "" },
+  "beboe-you-look-fucking-great-3d-embroidered-peach-os": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Beboe", "strain": "You Look Fucking Great - 3d Embroidered - Peach [Os]", "unitCount": "", "unitSize": "" },
+  "beboe-sparkling-pear-cbg": { "t1": "Edible", "t2": "Edible", "type": "Sativa", "brand": "Beboe", "strain": "Sparkling Pear (Cbg)", "unitCount": "", "unitSize": "" },
+  "beboe-1-1-downtime-blackberry": { "t1": "Edible", "t2": "Edible", "type": "Indica", "brand": "Beboe", "strain": "1:1 Downtime Blackberry", "unitCount": "", "unitSize": "" },
+  "beboe-anytime-huckleberry": { "t1": "Edible", "t2": "Edible", "type": "Hybrid", "brand": "Beboe", "strain": "Anytime Huckleberry", "unitCount": "", "unitSize": "" },
+  "beboe-blood-orange-s": { "t1": "Edible", "t2": "Edible", "type": "Sativa", "brand": "Beboe", "strain": "Blood Orange (S)", "unitCount": "", "unitSize": "" },
+  "bic-lighter-metallic": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Bic", "strain": "Lighter - Metallic", "unitCount": "", "unitSize": "" },
+  "blazy-susan-grateful-dead-1-1-4": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Blazy Susan", "strain": "Grateful Dead - 1 1/4", "unitCount": "", "unitSize": "" },
+  "blazy-susan-grateful-dead-king-size-slim-50pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Blazy Susan", "strain": "Grateful Dead - King Size Slim", "unitCount": 50, "unitSize": "" },
+  "blazy-susan-pink-1-1-4": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Blazy Susan", "strain": "Pink - 1 1/4", "unitCount": "", "unitSize": "" },
+  "blazy-susan-pink-king-size-3pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Blazy Susan", "strain": "Pink - King Size", "unitCount": 3, "unitSize": "" },
+  "blazy-susan-pink-king-size-50pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Blazy Susan", "strain": "Pink - King Size", "unitCount": 50, "unitSize": "" },
+  "blazy-susan-pink-purize-1-1-4": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Blazy Susan", "strain": "Pink - Purize - 1 1/4", "unitCount": "", "unitSize": "" },
+  "blazy-susan-purple-1-1-4": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Blazy Susan", "strain": "Purple - 1 1/4", "unitCount": "", "unitSize": "" },
+  "blazy-susan-purple-king-size-slim-50pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Blazy Susan", "strain": "Purple - King Size Slim", "unitCount": 50, "unitSize": "" },
+  "blazy-susan-grateful-dead-1-1-4-50pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Blazy Susan", "strain": "Grateful Dead - 1 1/4\"", "unitCount": 50, "unitSize": "" },
+  "blazy-susan-pink-1-1-4-50pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Blazy Susan", "strain": "Pink - 1 1/4\"", "unitCount": 50, "unitSize": "" },
+  "blazy-susan-pink-purize-1-1-4-6pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Blazy Susan", "strain": "Pink - Purize - 1 1/4\"", "unitCount": 6, "unitSize": "" },
+  "blazy-susan-purple-1-1-4-50pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Blazy Susan", "strain": "Purple - 1 1/4\"", "unitCount": 50, "unitSize": "" },
+  "blazy-susan-purple-1-1-4-6pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Blazy Susan", "strain": "Purple - 1 1/4\"", "unitCount": 6, "unitSize": "" },
+  "bud-bud-supply-happy-packing-tin-black": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Bud Bud Supply", "strain": "Happy Packing Tin - Black", "unitCount": "", "unitSize": "" },
+  "bud-bud-supply-joint-flask-green-gray": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Bud Bud Supply", "strain": "Joint Flask - Green/Gray", "unitCount": "", "unitSize": "" },
+  "bud-bud-supply-the-bigbud-tool": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Bud Bud Supply", "strain": "The Bigbud Tool", "unitCount": "", "unitSize": "" },
+  "bud-bud-supply-the-budbud-tool": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Bud Bud Supply", "strain": "The Budbud Tool", "unitCount": "", "unitSize": "" },
+  "clipper-classic-lighter-large-assorted": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Clipper", "strain": "Classic Lighter - Large - Assorted", "unitCount": "", "unitSize": "" },
+  "dogwalkers-collapsable-dog-bowl": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Dogwalkers", "strain": "Collapsable Dog Bowl", "unitCount": "", "unitSize": "" },
+  "dogwalkers-curved-logo-green": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Dogwalkers", "strain": "Curved Logo - Green", "unitCount": "", "unitSize": "" },
+  "dogwalkers-dogwalkers-sweatshirt-green-s": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Dogwalkers", "strain": "Dogwalkers Sweatshirt - Green [S]", "unitCount": "", "unitSize": "" },
+  "dogwalkers-green-2xl": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Dogwalkers", "strain": "Green [2xl]", "unitCount": "", "unitSize": "" },
+  "dogwalkers-green-3xl": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Dogwalkers", "strain": "Green [3xl]", "unitCount": "", "unitSize": "" },
+  "dogwalkers-green-l": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Dogwalkers", "strain": "Green [L]", "unitCount": "", "unitSize": "" },
+  "dogwalkers-green-m": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Dogwalkers", "strain": "Green [M]", "unitCount": "", "unitSize": "" },
+  "dogwalkers-hoodie-for-dogs-show-dog-cream-l": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Dogwalkers", "strain": "Hoodie For Dogs - Show Dog (Cream) [L]", "unitCount": "", "unitSize": "" },
+  "dogwalkers-hoodie-for-dogs-show-dog-cream-s": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Dogwalkers", "strain": "Hoodie For Dogs - Show Dog (Cream) [S]", "unitCount": "", "unitSize": "" },
+  "dogwalkers-long-sleeve-t-shirt-embroidered-rugby-black-l": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Dogwalkers", "strain": "Long Sleeve T-Shirt - Embroidered Rugby- Black [L]", "unitCount": "", "unitSize": "" },
+  "dogwalkers-long-sleeve-t-shirt-embroidered-rugby-black-xl": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Dogwalkers", "strain": "Long Sleeve T-Shirt - Embroidered Rugby- Black [Xl]", "unitCount": "", "unitSize": "" },
+  "dogwalkers-retractable-dog-leash-green": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Dogwalkers", "strain": "Retractable Dog Leash (Green)", "unitCount": "", "unitSize": "" },
+  "dogwalkers-short-sleeve-t-shirt-classic-pocket-ivory-3xl": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Dogwalkers", "strain": "Short Sleeve T-Shirt Classic Pocket - Ivory [3xl]", "unitCount": "", "unitSize": "" },
+  "dogwalkers-short-sleeve-t-shirt-classic-pocket-ivory-m": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Dogwalkers", "strain": "Short Sleeve T-Shirt Classic Pocket - Ivory [M]", "unitCount": "", "unitSize": "" },
+  "dogwalkers-short-sleeve-t-shirt-classic-pocket-ivory-s": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "Dogwalkers", "strain": "Short Sleeve T-Shirt Classic Pocket - Ivory [S]", "unitCount": "", "unitSize": "" },
+  "dogwalkers-stash-bag-evergreen": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Dogwalkers", "strain": "Stash Bag - Evergreen", "unitCount": "", "unitSize": "" },
+  "dogwalkers-walk-the-dog-white": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Dogwalkers", "strain": "Walk The Dog - White", "unitCount": "", "unitSize": "" },
+  "dogwalkers-afternoon-delight-4": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Hybrid", "brand": "Dogwalkers", "strain": "Afternoon Delight #4", "unitCount": "", "unitSize": "0.35g" },
+  "dogwalkers-animal-face": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Indica", "brand": "Dogwalkers", "strain": "Animal Face", "unitCount": "", "unitSize": "0.35g" },
+  "dogwalkers-animal-scout-35g": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Indica", "brand": "Dogwalkers", "strain": "Animal Scout", "unitCount": "", "unitSize": "0.35g" },
+  "dogwalkers-animal-scout": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Indica", "brand": "Dogwalkers", "strain": "Animal Scout", "unitCount": "", "unitSize": "0.35g" },
+  "dogwalkers-bananaconda": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Hybrid", "brand": "Dogwalkers", "strain": "Bananaconda", "unitCount": "", "unitSize": "0.35g" },
+  "dogwalkers-brownie-scout": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Indica", "brand": "Dogwalkers", "strain": "Brownie Scout", "unitCount": "", "unitSize": "0.35g" },
+  "dogwalkers-durban-z": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Sativa", "brand": "Dogwalkers", "strain": "Durban Z", "unitCount": "", "unitSize": "0.35g" },
+  "dogwalkers-gogurtz": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Hybrid", "brand": "Dogwalkers", "strain": "Gogurtz", "unitCount": "", "unitSize": "0.35g" },
+  "dogwalkers-granny-candy": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Sativa", "brand": "Dogwalkers", "strain": "Granny Candy", "unitCount": "", "unitSize": "0.35g" },
+  "dogwalkers-l-orange": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Sativa", "brand": "Dogwalkers", "strain": "L'Orange", "unitCount": "", "unitSize": "0.35g" },
+  "dogwalkers-runtz-s1": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Indica", "brand": "Dogwalkers", "strain": "Runtz S1", "unitCount": "", "unitSize": "0.35g" },
+  "dogwalkers-velcroz": { "t1": "Pre-Roll", "t2": "Standard Pre-Roll", "type": "Hybrid", "brand": "Dogwalkers", "strain": "Velcroz", "unitCount": "", "unitSize": "0.35g" },
+  "dr-solomon-s-rescue": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "Dr. Solomon's", "strain": "Rescue", "unitCount": "", "unitSize": "" },
+  "dr-solomon-s-1-1-restore": { "t1": "Topical", "t2": "Topical", "type": "N/A", "brand": "Dr. Solomon's", "strain": "1:1 Restore", "unitCount": "", "unitSize": "" },
+  "dr-solomon-s-restore": { "t1": "Tincture", "t2": "Tincture", "type": "N/A", "brand": "Dr. Solomon's", "strain": "Restore", "unitCount": "", "unitSize": "" },
+  "dr-solomon-s-1-3-rescue": { "t1": "Topical", "t2": "Topical", "type": "N/A", "brand": "Dr. Solomon's", "strain": "1:3 Rescue", "unitCount": "", "unitSize": "" },
+  "dr-solomon-s-3-1-unwind": { "t1": "Topical", "t2": "Topical", "type": "N/A", "brand": "Dr. Solomon's", "strain": "3:1 Unwind", "unitCount": "", "unitSize": "" },
+  "dr-solomon-s-1-1-doze": { "t1": "Tincture", "t2": "Tincture", "type": "N/A", "brand": "Dr. Solomon's", "strain": "1:1 Doze", "unitCount": "", "unitSize": "" },
+  "dr-solomon-s-20-1-unwind": { "t1": "Tincture", "t2": "Tincture", "type": "N/A", "brand": "Dr. Solomon's", "strain": "20:1 Unwind", "unitCount": "", "unitSize": "" },
+  "flower-mill-next-gen-2": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Flower Mill", "strain": "Next Gen 2", "unitCount": "", "unitSize": "" },
+  "flower-mill-next-gen-2-5": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Flower Mill", "strain": "Next Gen 2.5", "unitCount": "", "unitSize": "" },
+  "flower-mill-next-gen-2-standard-black": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Flower Mill", "strain": "Next Gen 2\" Standard - Black", "unitCount": "", "unitSize": "" },
+  "flower-mill-next-gen-2-5-standard-black": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Flower Mill", "strain": "Next Gen 2.5\" Standard - Black", "unitCount": "", "unitSize": "" },
+  "flower-mill-next-gen-2-5-standard-purple": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Flower Mill", "strain": "Next Gen 2.5\" Standard - Purple", "unitCount": "", "unitSize": "" },
+  "flower-by-edie-parker-crush-cones-in-excite-mint-3pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Flower by Edie Parker", "strain": "Crush Cones  Mint", "unitCount": 3, "unitSize": "" },
+  "flower-by-edie-parker-crush-cones-in-pocket-bananas-3pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Flower by Edie Parker", "strain": "Crush Cones In Pocket Bananas", "unitCount": 3, "unitSize": "" },
+  "flower-by-edie-parker-marker-doob-tube": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Flower by Edie Parker", "strain": "Marker Doob Tube", "unitCount": "", "unitSize": "" },
+  "flower-by-edie-parker-petal-one-hitter-in-leaf": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Flower by Edie Parker", "strain": "Petal One Hitter In Leaf", "unitCount": "", "unitSize": "" },
+  "formula-420-products-formula-420-cleaner-12oz": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Formula 420 Products", "strain": "Formula 420 Cleaner", "unitCount": "", "unitSize": "12oz" },
+  "formula-420-products-formula-710-12oz": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Formula 420 Products", "strain": "Formula 710", "unitCount": "", "unitSize": "12oz" },
+  "grav-grav-16mm-whimsical-taster": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "GRAV", "strain": "Grav® 16mm Whimsical Taster®", "unitCount": "", "unitSize": "" },
+  "grav-grav-classic-spoon-black": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "GRAV", "strain": "Grav® Classic Spoon - Black", "unitCount": "", "unitSize": "" },
+  "grav-grav-classic-spoon-green": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "GRAV", "strain": "Grav® Classic Spoon - Green", "unitCount": "", "unitSize": "" },
+  "grav-grav-hourglass-pocket-bubbler-rig-clear": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "GRAV", "strain": "Grav® Hourglass Pocket Bubbler Rig - Clear", "unitCount": "", "unitSize": "" },
+  "grav-grav-pebble-spoon-assorted-colors": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "GRAV", "strain": "Grav® Pebble Spoon - Assorted Colors", "unitCount": "", "unitSize": "" },
+  "grav-silicone-dugout-assorted-colors": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "GRAV", "strain": "Silicone Dugout - Assorted Colors", "unitCount": "", "unitSize": "" },
+  "higher-standards-glass-taster-frosted": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Higher Standards", "strain": "Glass Taster - Frosted", "unitCount": "", "unitSize": "" },
+  "higher-standards-heavy-duty-spoon": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Higher Standards", "strain": "Heavy Duty Spoon", "unitCount": "", "unitSize": "" },
+  "houseplant-bamboo-cones-mini-8pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Houseplant", "strain": "Bamboo Cones - Mini", "unitCount": 8, "unitSize": "" },
+  "houseplant-classic-cones-mini-8pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Houseplant", "strain": "Classic Cones - Mini", "unitCount": 8, "unitSize": "" },
+  "houseplant-classic-cones-1-1-4-6pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Houseplant", "strain": "Classic Cones 1 1/4", "unitCount": 6, "unitSize": "" },
+  "k-haring-black-and-white": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "K. Haring", "strain": "Black And White", "unitCount": "", "unitSize": "" },
+  "k-haring-black-red-and-white": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "K. Haring", "strain": "Black Red And White", "unitCount": "", "unitSize": "" },
+  "k-haring-multi-yellow": { "t1": "Gear", "t2": "Apparel", "type": "N/A", "brand": "K. Haring", "strain": "Multi Yellow", "unitCount": "", "unitSize": "" },
+  "king-palm-fruit-passion-2pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "King Palm", "strain": "Fruit Passion", "unitCount": 2, "unitSize": "" },
+  "king-palm-mango-og-2pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "King Palm", "strain": "Mango Og", "unitCount": 2, "unitSize": "" },
+  "king-palm-natural-2pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "King Palm", "strain": "Natural", "unitCount": 2, "unitSize": "" },
+  "king-palm-watermelon-wave-2pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "King Palm", "strain": "Watermelon Wave", "unitCount": 2, "unitSize": "" },
+  "leafline-labs-cobalt-cbd": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "Leafline Labs", "strain": "Cobalt (Cbd)", "unitCount": "", "unitSize": "" },
+  "leafline-labs-unflavored-cbd": { "t1": "Tincture", "t2": "Tincture", "type": "N/A", "brand": "Leafline Labs", "strain": "Heather (1:1)", "unitCount": "", "unitSize": "N/A" },
+  "leafline-labs-heather-1-1": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "Leafline Labs", "strain": "Heather 1:1", "unitCount": "", "unitSize": "" },
+  "leafline-labs-tangerine-h": { "t1": "Extract", "t2": "Standard Extract", "type": "Hybrid", "brand": "Leafline Labs", "strain": "Tangerine (H)", "unitCount": "", "unitSize": "" },
+  "leafline-labs-tangerine-i": { "t1": "Vape", "t2": "Standard Vape", "type": "Indica", "brand": "Leafline Labs", "strain": "Tangerine (I)", "unitCount": "", "unitSize": "" },
+  "leafline-labs-tangerine-s":
