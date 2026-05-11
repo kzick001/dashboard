@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>D&D Campaign HUD</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --text: #e0e0e0;
+      --accent: #bb86fc;
+      --danger: #cf6679;
+      --success: #03dac6;
+    }
+    body {
+      font-family: system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+    .hidden { display: none !important; }
+    .grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+    .card {
+      background: var(--card);
+      padding: 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid #333;
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: var(--accent); }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    .flex-gap { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    
+    .badge {
+      padding: 2px 8px;
+      background: #333;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+    .badge.active { background: var(--danger); color: #fff; }
+    .badge.context { background: var(--success); color: #000; }
+    
+    details {
+      background: var(--card);
+      margin-bottom: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      border: 1px solid #333;
+    }
+    summary { font-weight: bold; cursor: pointer; padding: 0.5rem 0; list-style: none; }
+    summary::-webkit-details-marker { display: none; }
+    
+    button, select {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+    button:hover:not(:disabled) { opacity: 0.8; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .controls { margin-bottom: 1.5rem; display: flex; gap: 1rem; }
+    
+    .item-block {
+      background: #2a2a2a;
+      padding: 1rem;
+      margin-top: 0.5rem;
+      border-radius: 4px;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    .text-sm { font-size: 0.85rem; color: #aaa; }
+    hr { border-color: #333; margin: 1rem 0; }
+  </style>
+</head>
+<body>
+
+  <div id="overview-screen" class="grid"></div>
+
+  <div id="detail-screen" class="hidden">
+    <div class="controls">
+      <button onclick="showOverview()">← Back to HUD</button>
+      <button onclick="toggleAccordions()">Expand/Collapse All</button>
+    </div>
+    <h1 id="detail-name"></h1>
+    <div id="detail-content"></div>
+  </div>
+
+  <script>
+    const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
+    let appState = null;
+    let currentDetailPlayer = null;
+
+    const defaultData = {
+      campaign_name: "The Shattered Obelisk",
+      players: [
+        {
+          name: "Eldrin",
+          stats: { hp_current: 45, hp_max: 52, ac: 16, passive_perception: 14 },
+          status: {
+            conditions: ["Blinded"],
+            exhaustion_level: 1,
+            context_tags: { above: false, below: true, flying: false, shield_active: true }
+          },
+          inventory: [
+            { name: "Health Potion", summary: "Restores 2d4+2 HP.", mechanics: "Action to consume.", flavor_text: "A bubbling red liquid.", quantity: 3 }
+          ],
+          abilities: {
+            spells: [
+              { category: "Level 1", name: "Magic Missile", summary: "120ft, 3 darts", description: "You create three glowing darts of magical force." }
+            ]
+          },
+          achievements: {
+            pending: [
+              { name: "Goblin Bane", summary: "Clear the ambush without damage.", description: "Defeated the Cragmaw scouts flawlessly.", rewards: { gold: 50, items: [{name: "Silk Rope", quantity: 1}] } }
+            ],
+            claimed: []
+          },
+          lore: "Born in the high forest under a blood moon...",
+          special_item_mechanics: ["Ring of Jumping: Triples jump distance"],
+          gold: 120
+        }
+      ]
+    };
+
+    // 1. Initialization & Network
+    async function init() {
+      try {
+        const response = await fetch(WORKER_URL);
+        if (response.ok) {
+          appState = await response.json();
+        } else {
+          appState = defaultData; // Fallback if KV is empty
+        }
+      } catch (e) {
+        console.warn("Worker fetch failed. Using local state.");
+        appState = defaultData;
+      }
+      renderOverview();
+    }
+
+    async function syncToKV() {
+      try {
+        await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(appState)
+        });
+      } catch (e) {
+        console.error("Failed to sync to KV Database.", e);
+      }
+    }
+
+    // 2. Core Rendering
+    function renderOverview() {
+      const container = document.getElementById('overview-screen');
+      container.innerHTML = '';
+
+      appState.players.forEach(player => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.onclick = () => openDetail(player.name);
+
+        const conditionsHtml = player.status.conditions.map(c => `<span class="badge active">${c}</span>`).join('');
+        const contextTags = Object.entries(player.status.context_tags)
+          .filter(([_, isActive]) => isActive)
+          .map(([tag, _]) => `<span class="badge context">${tag.toUpperCase()}</span>`).join('');
+
+        card.innerHTML = `
+          <div class="flex-between">
+            <h2>${player.name}</h2>
+            <h3>HP: ${player.stats.hp_current}/${player.stats.hp_max}</h3>
+          </div>
+          <div class="flex-between text-sm">
+            <span><strong>AC:</strong> ${player.stats.ac}</span>
+            <span><strong>PP:</strong> ${player.stats.passive_perception}</span>
+            <span><strong>Exhaustion:</strong> ${player.status.exhaustion_level}</span>
+          </div>
+          <hr>
+          <div class="flex-gap">${conditionsHtml} ${contextTags}</div>
+          <hr>
+          <div class="text-sm">
+            <div><strong>Pending:</strong> ${player.achievements.pending.length} Unclaimed</div>
+            <div><strong>Special:</strong> ${player.special_item_mechanics.join(', ') || 'None'}</div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function openDetail(playerName) {
+      currentDetailPlayer = playerName;
+      document.getElementById('overview-screen').classList.add('hidden');
+      document.getElementById('detail-screen').classList.remove('hidden');
+      renderDetailScreen();
+    }
+
+    function showOverview() {
+      currentDetailPlayer = null;
+      document.getElementById('detail-screen').classList.add('hidden');
+      document.getElementById('overview-screen').classList.remove('hidden');
+      renderOverview();
+    }
+
+    // 3. Detail Screen Logic
+    function renderDetailScreen() {
+      const player = appState.players.find(p => p.name === currentDetailPlayer);
+      document.getElementById('detail-name').innerText = player.name;
+      const content = document.getElementById('detail-content');
+      content.innerHTML = '';
+
+      // Inventory Accordion
+      const otherPlayers = appState.players.filter(p => p.name !== player.name).map(p => p.name);
+      let invHtml = player.inventory.map(item => `
+        <details class="item-block">
+          <summary class="flex-between">
+            <span>${item.name} (x${item.quantity})</span>
+            <span class="text-sm" style="text-align: right; max-width: 50%;">${item.summary}</span>
+          </summary>
+          <p class="text-sm"><em>${item.flavor_text}</em></p>
+          <p><strong>Mechanic:</strong> ${item.mechanics}</p>
+          <div class="flex-gap">
+            <select id="move-${item.name.replace(/\s+/g, '')}">
+              <option value="" disabled selected>Move to...</option>
+              ${otherPlayers.map(p => `<option value="${p}">${p}</option>`).join('')}
+            </select>
+            <button onclick="moveItem(this, '${player.name}', '${item.name}')">Confirm Move</button>
+          </div>
+        </details>
+      `).join('');
+
+      // Achievements Accordion
+      let achHtml = player.achievements.pending.map(ach => `
+        <div class="item-block">
+          <div class="flex-between">
+            <strong>${ach.name}</strong>
+            <button onclick="claimAchievement(this, '${player.name}', '${ach.name}')">Claim Reward</button>
+          </div>
+          <p class="text-sm">${ach.description}</p>
+          <p class="text-sm"><strong>Rewards:</strong> ${ach.rewards.gold}g, ${ach.rewards.items?.map(i => i.name).join(', ') || 'None'}</p>
+        </div>
+      `).join('');
+
+      content.innerHTML = `
+        <details><summary>Base Stats & Lore</summary>
+          <p><strong>Gold:</strong> ${player.gold}</p>
+          <p>${player.lore}</p>
+        </details>
+        <details><summary>Inventory</summary>${invHtml || '<p>Empty</p>'}</details>
+        <details><summary>Pending Achievements</summary>${achHtml || '<p>No pending achievements.</p>'}</details>
+        <details><summary>Claimed Achievements</summary>
+          ${player.achievements.claimed.map(a => `<p><strong>${a.name}:</strong> ${a.description}</p>`).join('') || '<p>None</p>'}
+        </details>
+      `;
+    }
+
+    function toggleAccordions() {
+      const details = document.querySelectorAll('#detail-content details');
+      const isAnyClosed = Array.from(details).some(d => !d.open);
+      details.forEach(d => d.open = isAnyClosed);
+    }
+
+    // 4. Data Mutations
+    async function moveItem(btn, sourceName, itemName) {
+      const selectId = `move-${itemName.replace(/\s+/g, '')}`;
+      const targetName = document.getElementById(selectId).value;
+      if (!targetName) {
+        alert("Please select a player to move the item to.");
+        return;
+      }
+
+      const sourcePlayer = appState.players.find(p => p.name === sourceName);
+      const targetPlayer = appState.players.find(p => p.name === targetName);
+      
+      const itemIndex = sourcePlayer.inventory.findIndex(i => i.name === itemName);
+      if (itemIndex === -1) return; // Prevent double-tap splice corruption
+
+      btn.disabled = true;
+      btn.innerText = "Moving...";
+
+      const item = sourcePlayer.inventory.splice(itemIndex, 1)[0];
+      const existing = targetPlayer.inventory.find(i => i.name === item.name);
+      if (existing) { existing.quantity += item.quantity; } 
+      else { targetPlayer.inventory.push(item); }
+
+      await syncToKV();
+      renderDetailScreen();
+    }
+
+    async function claimAchievement(btn, playerName, achievementName) {
+      const player = appState.players.find(p => p.name === playerName);
+      const achIndex = player.achievements.pending.findIndex(a => a.name === achievementName);
+      if (achIndex === -1) return; // Prevent double-tap splice corruption
+
+      btn.disabled = true;
+      btn.innerText = "Claiming...";
+
+      const achievement = player.achievements.pending.splice(achIndex, 1)[0];
+
+      if (achievement.rewards.gold) player.gold += achievement.rewards.gold;
+      
+      if (achievement.rewards.items) {
+        achievement.rewards.items.forEach(newItem => {
+          const existing = player.inventory.find(i => i.name === newItem.name);
+          if (existing) existing.quantity += newItem.quantity;
+          else player.inventory.push({ ...newItem, summary: "New item", mechanics: "Unknown", flavor_text: "Needs inspection" });
+        });
+      }
+
+      player.achievements.claimed.push({ name: achievement.name, description: achievement.description });
+      await syncToKV();
+      renderDetailScreen();
+    }
+
+    init();
+  </script>
+</body>
+</html>
