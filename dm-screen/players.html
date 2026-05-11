@@ -81,11 +81,35 @@
     }
     .text-sm { font-size: 0.85rem; color: #aaa; }
     hr { border-color: #333; margin: 1rem 0; }
+    
+    /* System Management UI */
+    textarea {
+      width: 100%;
+      background: #222;
+      color: #fff;
+      border: 1px solid #444;
+      padding: 0.5rem;
+      border-radius: 4px;
+      font-family: monospace;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    .system-block { margin-top: 2rem; border-color: #555; }
+    .btn-danger { background: var(--danger); color: #fff; }
   </style>
 </head>
 <body>
 
-  <div id="overview-screen" class="grid"></div>
+  <div id="overview-container">
+    <div id="overview-screen" class="grid"></div>
+    
+    <details id="import-section" class="system-block">
+      <summary>System: Data Management (Import/Restore)</summary>
+      <p class="text-sm">Paste raw campaign JSON here to overwrite the current database.</p>
+      <textarea id="import-data" rows="8"></textarea>
+      <button class="btn-danger" onclick="handleImport()" style="margin-top: 1rem;">Overwrite Database</button>
+    </details>
+  </div>
 
   <div id="detail-screen" class="hidden">
     <div class="controls">
@@ -138,9 +162,11 @@
       try {
         const response = await fetch(WORKER_URL);
         if (response.ok) {
-          appState = await response.json();
+          const fetchedData = await response.json();
+          // Fallback applied if KV returns empty object
+          appState = (fetchedData && fetchedData.players) ? fetchedData : defaultData;
         } else {
-          appState = defaultData; // Fallback if KV is empty
+          appState = defaultData; 
         }
       } catch (e) {
         console.warn("Worker fetch failed. Using local state.");
@@ -200,7 +226,7 @@
 
     function openDetail(playerName) {
       currentDetailPlayer = playerName;
-      document.getElementById('overview-screen').classList.add('hidden');
+      document.getElementById('overview-container').classList.add('hidden');
       document.getElementById('detail-screen').classList.remove('hidden');
       renderDetailScreen();
     }
@@ -208,7 +234,7 @@
     function showOverview() {
       currentDetailPlayer = null;
       document.getElementById('detail-screen').classList.add('hidden');
-      document.getElementById('overview-screen').classList.remove('hidden');
+      document.getElementById('overview-container').classList.remove('hidden');
       renderOverview();
     }
 
@@ -283,7 +309,7 @@
       const targetPlayer = appState.players.find(p => p.name === targetName);
       
       const itemIndex = sourcePlayer.inventory.findIndex(i => i.name === itemName);
-      if (itemIndex === -1) return; // Prevent double-tap splice corruption
+      if (itemIndex === -1) return; 
 
       btn.disabled = true;
       btn.innerText = "Moving...";
@@ -300,7 +326,7 @@
     async function claimAchievement(btn, playerName, achievementName) {
       const player = appState.players.find(p => p.name === playerName);
       const achIndex = player.achievements.pending.findIndex(a => a.name === achievementName);
-      if (achIndex === -1) return; // Prevent double-tap splice corruption
+      if (achIndex === -1) return; 
 
       btn.disabled = true;
       btn.innerText = "Claiming...";
@@ -320,6 +346,42 @@
       player.achievements.claimed.push({ name: achievement.name, description: achievement.description });
       await syncToKV();
       renderDetailScreen();
+    }
+
+    // 5. System Functions
+    async function handleImport() {
+      const rawData = document.getElementById('import-data').value;
+      if (!rawData) return;
+
+      let parsedData;
+      try {
+        parsedData = JSON.parse(rawData);
+      } catch (e) {
+        alert("Invalid JSON. Import aborted.");
+        return;
+      }
+
+      if (!parsedData || !parsedData.players || !Array.isArray(parsedData.players)) {
+        alert("Invalid campaign structure. Missing 'players' array. Import aborted.");
+        return;
+      }
+
+      appState = parsedData;
+      
+      const btn = document.querySelector('#import-section button');
+      const originalText = btn.innerText;
+      btn.disabled = true;
+      btn.innerText = "Syncing to KV...";
+
+      await syncToKV();
+      
+      btn.disabled = false;
+      btn.innerText = originalText;
+      document.getElementById('import-data').value = '';
+      document.getElementById('import-section').open = false;
+      
+      renderOverview();
+      alert("Database overwritten and synced successfully.");
     }
 
     init();
