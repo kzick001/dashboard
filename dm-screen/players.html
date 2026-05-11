@@ -3,14 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <title>D&D Campaign HUD</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='none' stroke='white' stroke-width='4' stroke-linejoin='round' d='M50 5 L90 30 L90 70 L50 95 L10 70 L10 30 Z M50 5 L50 45 M10 30 L50 45 L90 30 M10 70 L50 45 L90 70 M50 95 L50 45'/></svg>">
+  
   <style>
     :root {
       --bg: #121212;
       --card: #1e1e1e;
       --text: #e0e0e0;
+      --text-muted: #888;
       --accent: #bb86fc;
+      --accent-glow: rgba(187, 134, 252, 0.4);
       --danger: #cf6679;
       --success: #03dac6;
+      --info: #74b9ff;
     }
     body {
       font-family: system-ui, sans-serif;
@@ -19,34 +24,116 @@
       margin: 0;
       padding: 20px;
       line-height: 1.5;
+      font-variant-numeric: tabular-nums; /* Align all numbers beautifully */
     }
     .hidden { display: none !important; }
+    
+    /* Tactical HUD Grid */
     .grid {
       display: grid;
-      gap: 1rem;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      align-items: start;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
     }
+    
+    /* Player Cards */
     .card {
       background: var(--card);
       padding: 1.5rem;
       border-radius: 8px;
       cursor: pointer;
       border: 1px solid #333;
-      transition: border-color 0.2s;
+      border-top: 4px solid var(--player-color, var(--accent));
+      transition: border-color 0.2s, transform 0.1s;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
-    .card:hover { border-color: var(--accent); }
+    .card:hover { 
+      border-color: var(--player-color, var(--accent)); 
+      transform: translateY(-2px); 
+    }
+    .card h2 {
+      margin: 0 0 1rem 0;
+      font-size: 1.8rem;
+      color: var(--player-color, #fff);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      text-align: center;
+    }
+
+    /* Vitals Shelf */
+    .vitals-row {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background: #111;
+      padding: 0.5rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+    .vital-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .vital-item svg { width: 20px; height: 20px; color: var(--text-muted); }
+    .vital-item .value { font-size: 1.2rem; font-weight: bold; color: #fff; }
+
+    /* Layout Utilities */
     .flex-between { display: flex; justify-content: space-between; align-items: center; }
     .flex-gap { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .text-sm { font-size: 0.85rem; color: #aaa; }
+    hr { border-color: #333; margin: 1rem 0; }
     
+    /* Semantic Badges */
     .badge {
       padding: 2px 8px;
-      background: #333;
       border-radius: 4px;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
     .badge.active { background: var(--danger); color: #fff; }
-    .badge.context { background: var(--success); color: #000; }
+    .badge.context { background: var(--text-muted); color: #fff; }
     
+    /* Condition Colors */
+    .badge.poisoned { background: #55efc4; color: #000; }
+    .badge.charmed { background: #fd79a8; color: #fff; }
+    .badge.paralyzed { background: #ffeaa7; color: #000; }
+    .badge.blinded { background: #636e72; color: #fff; }
+    
+    /* Keyword Badges */
+    .badge.curse { background: #8e44ad; color: #fff; }
+    .badge.daily { background: #0984e3; color: #fff; }
+    .badge.reaction { background: #e1b12c; color: #000; }
+    
+    /* Notifications */
+    .notification-glow {
+      color: var(--accent);
+      font-weight: bold;
+      text-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    /* Detail Screen Sticky Header */
+    .detail-header-sticky {
+      position: sticky;
+      top: 0;
+      background: rgba(18, 18, 18, 0.9);
+      backdrop-filter: blur(10px);
+      z-index: 100;
+      padding: 1rem 0;
+      border-bottom: 1px solid #333;
+      margin-bottom: 1rem;
+    }
+    .sticky-vitals {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 0.5rem;
+      font-size: 1.1rem;
+    }
+    .sticky-vitals span { color: var(--player-color); font-weight: bold; }
+
+    /* Accordions */
     details {
       background: var(--card);
       margin-bottom: 0.5rem;
@@ -56,21 +143,31 @@
     }
     summary { font-weight: bold; cursor: pointer; padding: 0.5rem 0; list-style: none; }
     summary::-webkit-details-marker { display: none; }
+    .ghost-accordion { opacity: 0.4; } /* Empty state fade */
     
+    /* UI Controls */
     button, select {
-      background: var(--accent);
-      color: #000;
-      border: none;
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid #555;
       padding: 6px 12px;
       border-radius: 4px;
       cursor: pointer;
       font-size: 0.9rem;
       font-weight: bold;
+      transition: all 0.2s;
     }
-    button:hover:not(:disabled) { opacity: 0.8; }
+    button:hover:not(:disabled) { background: #444; border-color: #888; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .controls { margin-bottom: 1.5rem; display: flex; gap: 1rem; }
+    .controls { display: flex; gap: 1rem; }
     
+    /* Semantic Buttons */
+    .btn-move { background: var(--info); color: #000; border-color: var(--info); }
+    .btn-move:hover:not(:disabled) { background: #0984e3; border-color: #0984e3; }
+    .btn-claim { background: var(--success); color: #000; border-color: var(--success); }
+    .btn-claim:hover:not(:disabled) { background: #00b894; border-color: #00b894; }
+
+    /* Inventory Items */
     .item-block {
       background: #2a2a2a;
       padding: 1rem;
@@ -79,9 +176,18 @@
       overflow-wrap: break-word;
       min-width: 0;
     }
-    .text-sm { font-size: 0.85rem; color: #aaa; }
-    hr { border-color: #333; margin: 1rem 0; }
+    .flavor-text { font-size: 0.85rem; color: #888; font-style: italic; }
+    .mechanic-text { font-size: 0.95rem; color: #fff; margin: 0.5rem 0; }
     
+    /* Math Highlight */
+    .math-highlight {
+      color: #ffeaa7;
+      font-weight: bold;
+      background: rgba(255, 234, 167, 0.1);
+      padding: 0 2px;
+      border-radius: 2px;
+    }
+
     /* System Management UI */
     textarea {
       width: 100%;
@@ -95,7 +201,10 @@
       resize: vertical;
     }
     .system-block { margin-top: 2rem; border-color: #555; }
-    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+    
+    /* SVG Icons */
+    .icon-heart { fill: currentColor; }
   </style>
 </head>
 <body>
@@ -112,11 +221,18 @@
   </div>
 
   <div id="detail-screen" class="hidden">
-    <div class="controls">
-      <button onclick="showOverview()">← Back to HUD</button>
-      <button onclick="toggleAccordions()">Expand/Collapse All</button>
+    <div class="detail-header-sticky">
+      <div class="flex-between">
+        <h1 id="detail-name" style="margin: 0;"></h1>
+        <div class="controls">
+          <button onclick="showOverview()">← Back to HUD</button>
+          <button onclick="toggleAccordions()">Expand All</button>
+        </div>
+      </div>
+      <div class="sticky-vitals" id="detail-vitals">
+        </div>
     </div>
-    <h1 id="detail-name"></h1>
+    
     <div id="detail-content"></div>
   </div>
 
@@ -125,45 +241,26 @@
     let appState = null;
     let currentDetailPlayer = null;
 
+    // Distinct player palette
+    const colorPalette = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe'];
+
+    // SVG Definitions
+    const svgHeart = `<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>`;
+    const svgShield = `<svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" fill="currentColor"/></svg>`;
+    const svgEye = `<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/></svg>`;
+    const svgCoin = `<svg viewBox="0 0 24 24"><path d="M12 7c-3.86 0-7 1.57-7 3.5S8.14 14 12 14s7-1.57 7-3.5S15.86 7 12 7zm0 2c2.21 0 4 .89 4 2s-1.79 2-4 2-4-.89-4-2 1.79-2 4-2z M5 14.11V16c0 1.93 3.14 3.5 7 3.5s7-1.57 7-3.5v-1.89c-1.81 1.05-4.24 1.64-7 1.64s-5.19-.59-7-1.64z" fill="currentColor"/></svg>`;
+
     const defaultData = {
-      campaign_name: "The Shattered Obelisk",
-      players: [
-        {
-          name: "Eldrin",
-          stats: { hp_current: 45, hp_max: 52, ac: 16, passive_perception: 14 },
-          status: {
-            conditions: ["Blinded"],
-            exhaustion_level: 1,
-            context_tags: { above: false, below: true, flying: false, shield_active: true }
-          },
-          inventory: [
-            { name: "Health Potion", summary: "Restores 2d4+2 HP.", mechanics: "Action to consume.", flavor_text: "A bubbling red liquid.", quantity: 3 }
-          ],
-          abilities: {
-            spells: [
-              { category: "Level 1", name: "Magic Missile", summary: "120ft, 3 darts", description: "You create three glowing darts of magical force." }
-            ]
-          },
-          achievements: {
-            pending: [
-              { name: "Goblin Bane", summary: "Clear the ambush without damage.", description: "Defeated the Cragmaw scouts flawlessly.", rewards: { gold: 50, items: [{name: "Silk Rope", quantity: 1}] } }
-            ],
-            claimed: []
-          },
-          lore: "Born in the high forest under a blood moon...",
-          special_item_mechanics: ["Ring of Jumping: Triples jump distance"],
-          gold: 120
-        }
-      ]
+      campaign_name: "Dungeon Crawler Campaign",
+      players: []
     };
 
-    // 1. Initialization & Network
+    // 1. Initialization
     async function init() {
       try {
         const response = await fetch(WORKER_URL);
         if (response.ok) {
           const fetchedData = await response.json();
-          // Fallback applied if KV returns empty object
           appState = (fetchedData && fetchedData.players) ? fetchedData : defaultData;
         } else {
           appState = defaultData; 
@@ -187,37 +284,89 @@
       }
     }
 
+    // --- Formatters & Parsers ---
+    function getConditionClass(cond) {
+      const lower = cond.toLowerCase();
+      if (['poisoned', 'sickened'].includes(lower)) return 'poisoned';
+      if (['charmed'].includes(lower)) return 'charmed';
+      if (['paralyzed', 'stunned'].includes(lower)) return 'paralyzed';
+      if (['blinded', 'deafened'].includes(lower)) return 'blinded';
+      return 'active';
+    }
+
+    function parseMath(text) {
+      if (!text) return '';
+      // Highlights syntax like 2d6, 1d4+2, DC 15
+      return text.replace(/\b(\d+d\d+(?:\s*[+-]\s*\d+)?|DC\s*\d+)\b/gi, '<span class="math-highlight">$&</span>');
+    }
+
+    function parseMechanicBadges(text) {
+      let out = text;
+      const badges = [];
+      if (/curse\:/i.test(out)) badges.push('<span class="badge curse">CURSE</span>');
+      if (/1\/long rest|once per day/i.test(out)) badges.push('<span class="badge daily">1/DAY</span>');
+      if (/reaction/i.test(out)) badges.push('<span class="badge reaction">REACTION</span>');
+      
+      // Clean trigger words out of the text string
+      out = out.replace(/curse\:/i, '').replace(/1\/long rest/i, '').replace(/once per day/i, '').replace(/reaction/i, '').replace(/^[^\w]+/, '').trim();
+      
+      return `<div style="margin-bottom: 0.25rem;">${badges.join(' ')} <span>${out}</span></div>`;
+    }
+
     // 2. Core Rendering
     function renderOverview() {
       const container = document.getElementById('overview-screen');
       container.innerHTML = '';
 
-      appState.players.forEach(player => {
+      appState.players.forEach((player, index) => {
+        const pColor = colorPalette[index % colorPalette.length];
         const card = document.createElement('div');
         card.className = 'card';
+        card.style.setProperty('--player-color', pColor);
         card.onclick = () => openDetail(player.name);
 
-        const conditionsHtml = player.status.conditions.map(c => `<span class="badge active">${c}</span>`).join('');
-        const contextTags = Object.entries(player.status.context_tags)
+        const conditionsHtml = (player.status?.conditions || []).map(c => `<span class="badge ${getConditionClass(c)}">${c}</span>`).join('');
+        const contextTags = Object.entries(player.status?.context_tags || {})
           .filter(([_, isActive]) => isActive)
           .map(([tag, _]) => `<span class="badge context">${tag.toUpperCase()}</span>`).join('');
+        
+        const activeTagsHtml = conditionsHtml + contextTags;
+        const tagsSection = activeTagsHtml ? `<div class="flex-gap" style="margin-top: 1rem;">${activeTagsHtml}</div>` : '';
+
+        // Calculate Consumables > 1
+        const consumables = (player.inventory || []).filter(i => i.quantity > 1).map(i => `${i.name} (${i.quantity})`).join(', ');
+
+        const pendingCount = player.achievements?.pending?.length || 0;
+        const pendingClass = pendingCount > 0 ? 'notification-glow' : '';
 
         card.innerHTML = `
-          <div class="flex-between">
-            <h2>${player.name}</h2>
-            <h3>HP: ${player.stats.hp_current}/${player.stats.hp_max}</h3>
+          <h2>${player.name}</h2>
+          
+          <div class="vitals-row">
+            <div class="vital-item" title="Max HP">${svgHeart}<span class="value">${player.stats?.hp_max || 0}</span></div>
+            <div class="vital-item" title="Armor Class">${svgShield}<span class="value">${player.stats?.ac || 0}</span></div>
+            <div class="vital-item" title="Passive Perception">${svgEye}<span class="value">${player.stats?.passive_perception || 0}</span></div>
+            <div class="vital-item" title="Gold">${svgCoin}<span class="value">${player.gold || 0}</span></div>
           </div>
-          <div class="flex-between text-sm">
-            <span><strong>AC:</strong> ${player.stats.ac}</span>
-            <span><strong>PP:</strong> ${player.stats.passive_perception}</span>
-            <span><strong>Exhaustion:</strong> ${player.status.exhaustion_level}</span>
-          </div>
+          
+          ${tagsSection}
           <hr>
-          <div class="flex-gap">${conditionsHtml} ${contextTags}</div>
-          <hr>
+          
           <div class="text-sm">
-            <div><strong>Pending:</strong> ${player.achievements.pending.length} Unclaimed</div>
-            <div><strong>Special:</strong> ${player.special_item_mechanics.join(', ') || 'None'}</div>
+            <div style="margin-bottom: 0.5rem;">
+              <strong>Consumables:</strong> 
+              <span style="color: #bbb;">${consumables || 'None'}</span>
+            </div>
+            <div class="${pendingClass}" style="margin-bottom: 0.5rem;">
+              <strong>Pending:</strong> ${pendingCount} Unclaimed Achievement${pendingCount !== 1 ? 's' : ''}
+            </div>
+            
+            <div class="special-block" style="margin-top: 0.75rem;">
+              <strong style="display:block; margin-bottom:0.25rem; color:#bbb;">Special Mechanics:</strong>
+              ${(player.special_item_mechanics?.length > 0) 
+                ? player.special_item_mechanics.map(m => parseMechanicBadges(m)).join('')
+                : '<span>None</span>'}
+            </div>
           </div>
         `;
         container.appendChild(card);
@@ -228,7 +377,13 @@
       currentDetailPlayer = playerName;
       document.getElementById('overview-container').classList.add('hidden');
       document.getElementById('detail-screen').classList.remove('hidden');
+      
+      // Setup Sticky Header Colors
+      const pIndex = appState.players.findIndex(p => p.name === playerName);
+      document.getElementById('detail-screen').style.setProperty('--player-color', colorPalette[pIndex % colorPalette.length]);
+      
       renderDetailScreen();
+      window.scrollTo(0, 0); // Reset scroll position
     }
 
     function showOverview() {
@@ -241,51 +396,84 @@
     // 3. Detail Screen Logic
     function renderDetailScreen() {
       const player = appState.players.find(p => p.name === currentDetailPlayer);
+      
+      // Inject Header
       document.getElementById('detail-name').innerText = player.name;
+      document.getElementById('detail-name').style.color = 'var(--player-color)';
+      document.getElementById('detail-vitals').innerHTML = `
+        <div>Max HP: <span>${player.stats?.hp_max || 0}</span></div>
+        <div>AC: <span>${player.stats?.ac || 0}</span></div>
+        <div>PP: <span>${player.stats?.passive_perception || 0}</span></div>
+        <div>Gold: <span>${player.gold || 0}</span></div>
+      `;
+
       const content = document.getElementById('detail-content');
       content.innerHTML = '';
 
-      // Inventory Accordion
       const otherPlayers = appState.players.filter(p => p.name !== player.name).map(p => p.name);
-      let invHtml = player.inventory.map(item => `
+      
+      // Inventory HTML
+      let invHtml = (player.inventory || []).map(item => {
+        // Auto badge wondrous items from flavor text
+        const typeBadge = /wondrous/i.test(item.flavor_text) ? '<span class="badge curse" style="background:#555">Wondrous</span>' : '';
+        return `
         <details class="item-block">
           <summary class="flex-between">
-            <span>${item.name} (x${item.quantity})</span>
-            <span class="text-sm" style="text-align: right; max-width: 50%;">${item.summary}</span>
+            <span>${typeBadge} ${item.name} (x${item.quantity})</span>
+            <span class="text-sm" style="text-align: right; max-width: 50%;">${parseMath(item.summary)}</span>
           </summary>
-          <p class="text-sm"><em>${item.flavor_text}</em></p>
-          <p><strong>Mechanic:</strong> ${item.mechanics}</p>
-          <div class="flex-gap">
-            <select id="move-${item.name.replace(/\s+/g, '')}">
+          <div class="flavor-text">${item.flavor_text}</div>
+          <div class="mechanic-text"><strong>Mechanic:</strong> ${parseMath(item.mechanics)}</div>
+          ${otherPlayers.length > 0 ? `
+          <div class="flex-gap" style="margin-top: 1rem;">
+            <select id="move-${item.name.replace(/[^a-zA-Z0-9]/g, '')}">
               <option value="" disabled selected>Move to...</option>
               ${otherPlayers.map(p => `<option value="${p}">${p}</option>`).join('')}
             </select>
-            <button onclick="moveItem(this, '${player.name}', '${item.name}')">Confirm Move</button>
+            <button class="btn-move" onclick="moveItem(this, '${player.name.replace(/'/g, "\\'")}', '${item.name.replace(/'/g, "\\'")}')">Confirm Move</button>
           </div>
+          ` : ''}
         </details>
-      `).join('');
+      `}).join('');
 
-      // Achievements Accordion
-      let achHtml = player.achievements.pending.map(ach => `
+      // Achievements HTML
+      let achHtml = (player.achievements?.pending || []).map(ach => `
         <div class="item-block">
           <div class="flex-between">
-            <strong>${ach.name}</strong>
-            <button onclick="claimAchievement(this, '${player.name}', '${ach.name}')">Claim Reward</button>
+            <strong class="notification-glow">${ach.name}</strong>
+            <button class="btn-claim" onclick="claimAchievement(this, '${player.name.replace(/'/g, "\\'")}', '${ach.name.replace(/'/g, "\\'")}')">Claim Reward</button>
           </div>
           <p class="text-sm">${ach.description}</p>
-          <p class="text-sm"><strong>Rewards:</strong> ${ach.rewards.gold}g, ${ach.rewards.items?.map(i => i.name).join(', ') || 'None'}</p>
+          <p class="text-sm"><strong>Rewards:</strong> ${ach.rewards?.gold || 0}g, ${ach.rewards?.items?.map(i => i.name).join(', ') || 'None'}</p>
         </div>
       `).join('');
 
+      // Counts for visual hierarchy
+      const invCount = player.inventory?.length || 0;
+      const pendCount = player.achievements?.pending?.length || 0;
+      const claimCount = player.achievements?.claimed?.length || 0;
+
+      // Inject Accordions with Ghost States
       content.innerHTML = `
         <details><summary>Base Stats & Lore</summary>
-          <p><strong>Gold:</strong> ${player.gold}</p>
-          <p>${player.lore}</p>
+          <div class="item-block">
+            <div class="flavor-text">${player.lore || 'None recorded'}</div>
+          </div>
         </details>
-        <details><summary>Inventory</summary>${invHtml || '<p>Empty</p>'}</details>
-        <details><summary>Pending Achievements</summary>${achHtml || '<p>No pending achievements.</p>'}</details>
-        <details><summary>Claimed Achievements</summary>
-          ${player.achievements.claimed.map(a => `<p><strong>${a.name}:</strong> ${a.description}</p>`).join('') || '<p>None</p>'}
+        
+        <details class="${invCount === 0 ? 'ghost-accordion' : ''}">
+          <summary>Inventory (${invCount} Items)</summary>
+          ${invHtml || '<p class="text-sm">Empty</p>'}
+        </details>
+        
+        <details class="${pendCount === 0 ? 'ghost-accordion' : ''}">
+          <summary class="${pendCount > 0 ? 'notification-glow' : ''}">Pending Achievements (${pendCount} Unclaimed)</summary>
+          ${achHtml || '<p class="text-sm">No pending achievements.</p>'}
+        </details>
+        
+        <details class="${claimCount === 0 ? 'ghost-accordion' : ''}">
+          <summary>Claimed Achievements (${claimCount})</summary>
+          ${(player.achievements?.claimed || []).map(a => `<div class="item-block text-sm"><strong>${a.name}:</strong> ${a.description}</div>`).join('') || '<p class="text-sm">None</p>'}
         </details>
       `;
     }
@@ -298,7 +486,7 @@
 
     // 4. Data Mutations
     async function moveItem(btn, sourceName, itemName) {
-      const selectId = `move-${itemName.replace(/\s+/g, '')}`;
+      const selectId = `move-${itemName.replace(/[^a-zA-Z0-9]/g, '')}`;
       const targetName = document.getElementById(selectId).value;
       if (!targetName) {
         alert("Please select a player to move the item to.");
@@ -333,13 +521,14 @@
 
       const achievement = player.achievements.pending.splice(achIndex, 1)[0];
 
-      if (achievement.rewards.gold) player.gold += achievement.rewards.gold;
+      if (achievement.rewards?.gold) player.gold += achievement.rewards.gold;
       
-      if (achievement.rewards.items) {
+      if (achievement.rewards?.items) {
         achievement.rewards.items.forEach(newItem => {
+          const qty = newItem.quantity || 1;
           const existing = player.inventory.find(i => i.name === newItem.name);
-          if (existing) existing.quantity += newItem.quantity;
-          else player.inventory.push({ ...newItem, summary: "New item", mechanics: "Unknown", flavor_text: "Needs inspection" });
+          if (existing) existing.quantity += qty;
+          else player.inventory.push({ ...newItem, summary: "New item", mechanics: "Unknown", flavor_text: "Needs inspection", quantity: qty });
         });
       }
 
