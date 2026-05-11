@@ -5,6 +5,10 @@ export const greenGoodsConfig = {
     payload: { "app_mode": "framelessEmbed", "jane_device_id": "iYQZXwVq21hz9ZKd3VYgM", "num_columns": 1, "search_attributes": ["*"], "store_id": 3812, "placements": [{"disable_ads": false, "page_size": 1000, "placement": "menu_inline_table", "search_filter": "", "search_sort": "recommendation"}], "type": "custom" }
 };
 
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function parseWeightToGrams(amountStr, arrayWeights) {
     if (Array.isArray(arrayWeights)) {
         if (arrayWeights.includes("eighth") || arrayWeights.includes("eighth ounce")) return 3.5;
@@ -36,7 +40,7 @@ export function normalizeGreenGoods(data) {
     if (arr.length === 0) throw new Error("Green Goods dataset is empty.");
 
     return arr.map(item => {
-        // Defensive Coercion: Force strain names into strings to prevent integer crashes
+        // Defensive Coercion
         let finalStrainName = item.strain ? String(item.strain) : null;
         if (!finalStrainName || finalStrainName.toLowerCase() === "no strain" || finalStrainName.toLowerCase() === "none") {
             finalStrainName = item.name ? String(item.name) : "Unknown Product";
@@ -45,34 +49,48 @@ export function normalizeGreenGoods(data) {
             finalStrainName = "Unknown Product";
         }
 
-        const brand = item.brand ? String(item.brand) : "Unknown";
+        const brand = item.brand ? String(item.brand).trim() : "Unknown";
+        
+        // ==========================================
+        // THE PREFIX NUKE
+        // ==========================================
+        if (brand !== "Unknown") {
+            const brandRegex = new RegExp(`^${escapeRegExp(brand)}\\s*-?\\s*`, 'i');
+            finalStrainName = finalStrainName.replace(brandRegex, '').trim();
+        }
+
         const slug = generateSlug(brand, finalStrainName);
+        const dictEntry = LUCID_MAP[slug];
 
         // ==========================================
         // TIER 1: The Golden Map Override
         // ==========================================
-        if (LUCID_MAP[slug]) {
-            const mapData = LUCID_MAP[slug];
-            // Protective Fallback: Inject safe defaults if you left a field blank in the Forge
-            return buildFinalObject(item, finalStrainName, brand, mapData.t1 || "Other", mapData.t2 || "Unknown", mapData.type || "Hybrid", slug);
+        if (dictEntry) {
+            return buildFinalObject(item, finalStrainName, brand, dictEntry.t1 || "Other", dictEntry.t2 || "Unknown", dictEntry.type || "Hybrid", slug, dictEntry);
         }
 
         // ==========================================
-        // TIER 2: The Brand Matrix Override (Green Goods)
+        // TIER 2: The Brand Matrix Override
         // ==========================================
         const kind = (item.kind || "").toLowerCase();
         const brandLow = brand.toLowerCase();
         
-        if (brandLow.includes("simple") && kind === "vape") return buildFinalObject(item, finalStrainName, brand, "Vape", "Resin Vape", extractType(item), slug);
-        if (brandLow.includes("boundary waters") && kind === "vape") return buildFinalObject(item, finalStrainName, brand, "Vape", "Distillate Vape", extractType(item), slug);
-        if (brandLow.includes("vireo") && kind === "vape") return buildFinalObject(item, finalStrainName, brand, "Vape", "Distillate Vape", extractType(item), slug);
+        // The Pure Gear Matrix
+        const pureAccessories = ['grav', 'flower mill', 'k. haring', 'marley natural', 'puffco', 'randy\'s', 'revelry supply', 'ozium', 'sireel', 'bic', 'bud bud supply', 'clipper'];
+        const purePapers = ['blazy susan', 'houseplant', 'king palm', 'ocb', 'raw', 'vibes', 'zig-zag', 'flower by edie parker', 'smoke temple'];
+        
+        if (pureAccessories.includes(brandLow)) return buildFinalObject(item, finalStrainName, brand, "Gear", "Accessories", "N/A", slug, null);
+        if (purePapers.includes(brandLow)) return buildFinalObject(item, finalStrainName, brand, "Gear", "Papers / Wraps", "N/A", slug, null);
+
+        // Green Goods Specific Matrix
+        if (brandLow.includes("simple") && kind === "vape") return buildFinalObject(item, finalStrainName, brand, "Vape", "Resin Vape", extractType(item), slug, null);
+        if (brandLow.includes("boundary waters") && kind === "vape") return buildFinalObject(item, finalStrainName, brand, "Vape", "Distillate Vape", extractType(item), slug, null);
+        if (brandLow.includes("vireo") && kind === "vape") return buildFinalObject(item, finalStrainName, brand, "Vape", "Distillate Vape", extractType(item), slug, null);
 
         // ==========================================
-        // TIER 3: The Omni-String Waterfall (Fallback)
+        // TIER 3: The Omni-String Waterfall
         // ==========================================
         const desc = item.store_notes || item.description || "";
-        
-        // Defensive Coercion: Force root_types into an array before filtering and joining
         const rootStr = (Array.isArray(item.root_types) ? item.root_types : [item.root_types]).filter(Boolean).join(" ").toLowerCase();
         const omni = `${finalStrainName} ${brand} ${kind} ${item.category} ${rootStr} ${desc}`.toLowerCase();
 
@@ -118,17 +136,15 @@ export function normalizeGreenGoods(data) {
             else t2 = "Accessories";
         }
 
-        return buildFinalObject(item, finalStrainName, brand, t1, t2, extractType(item), slug);
+        return buildFinalObject(item, finalStrainName, brand, t1, t2, extractType(item), slug, null);
     });
 }
 
-// --- HELPER FUNCTIONS ---
 function extractType(item) {
     const brand = item.brand ? String(item.brand) : "";
     const desc = item.store_notes || item.description || "";
     const kind = (item.kind || "").toLowerCase();
     
-    // Defensive Coercion
     const rootStr = (Array.isArray(item.root_types) ? item.root_types : [item.root_types]).filter(Boolean).join(" ").toLowerCase();
     const omni = `${brand} ${kind} ${item.category} ${rootStr} ${desc}`.toLowerCase();
     
@@ -137,29 +153,46 @@ function extractType(item) {
     return "Hybrid";
 }
 
-function buildFinalObject(item, strain, brand, t1, t2, type, slug) {
-    const sizeFallbackMatch = strain.match(/(?:\[|\()?(\d*\.?\d+\s*(?:g|mg|oz|pk))(?:\]|\))?/i);
-    const amountStr = item.amount || (sizeFallbackMatch ? sizeFallbackMatch[1] : null);
-    const weightGrams = parseWeightToGrams(amountStr, item.available_weights);
+function buildFinalObject(item, strain, brand, t1, t2, type, slug, dictEntry) {
+    // 1. Live Payload Parsing (The Smart Regex)
+    const regex = /\s*[-|\[|\(]?\s*(\d+\.?\d*\s*(?:mg|g|pk|oz|ct))\s*[\]|\)]?$/i;
+    const match = strain.match(regex);
+    let apiExtractedSize = match ? match[1] : (item.amount || "");
     
-    let sizesDisplay = "N/A";
-    if (weightGrams) sizesDisplay = `${weightGrams}g`; 
-    else if (amountStr) sizesDisplay = String(amountStr); 
+    // 2. The Clean Strain (Strips the weight out of the name)
+    let cleanStrain = match ? strain.replace(regex, '').trim() : strain;
 
-    // Redundant lexicon overrides removed. 
-    // parseWeightToGrams handles this logic upstream natively now.
+    // 3. The API Default Fallback Engine
+    let finalCount = 1;
+    let finalSize = apiExtractedSize;
 
+    if (dictEntry) {
+        if (dictEntry.unitCount !== "" && dictEntry.unitCount !== undefined && dictEntry.unitCount !== null) {
+            finalCount = parseInt(dictEntry.unitCount) || 1;
+        }
+        if (dictEntry.unitSize !== "" && dictEntry.unitSize !== undefined && dictEntry.unitSize !== null) {
+            finalSize = dictEntry.unitSize;
+        }
+    }
+
+    // 4. Mathematical Conversions
+    const perUnitGrams = parseWeightToGrams(finalSize, item.available_weights);
+    const totalWeightGrams = perUnitGrams ? (perUnitGrams * finalCount) : null;
+
+    // Formatting Note: app.js will handle the "5x 0.5g" smart string formatting in Phase 4.
+    // For now, we package the raw data cleanly for the engine.
+    
     const price = parseFloat(item.bucket_price || item.price || 0);
     let ppg = 0;
-    if (price > 0 && weightGrams && weightGrams > 0) ppg = price / weightGrams;
+    if (price > 0 && totalWeightGrams && totalWeightGrams > 0) ppg = price / totalWeightGrams;
 
     const desc = item.store_notes || item.description || "";
     let thcNum = 0;
     if (item.percent_thc) thcNum = parseFloat(item.percent_thc);
     else if (item.product_percent_thc) thcNum = parseFloat(item.product_percent_thc);
     else {
-      const match = desc.match(/THC\s*:?\s*([\d.]+)/i);
-      if (match && match[1]) thcNum = parseFloat(match[1]);
+      const matchTHC = desc.match(/THC\s*:?\s*([\d.]+)/i);
+      if (matchTHC && matchTHC[1]) thcNum = parseFloat(matchTHC[1]);
     }
 
     const badges = [...new Set((item.compound_names || []).map(c => c.value).filter(Boolean))];
@@ -167,15 +200,13 @@ function buildFinalObject(item, strain, brand, t1, t2, type, slug) {
     if (cbdNum > 0) badges.unshift(`CBD: ${cbdNum}%`); 
 
     const hasDeepData = badges.length > 0 || desc.length > 20;
-    
-    // Defensive Coercion
     const safeRoots = (Array.isArray(item.root_types) ? item.root_types : [item.root_types]).filter(Boolean).join(" ");
-    const omni = `${strain} ${brand} ${item.kind} ${item.category} ${safeRoots} ${desc}`.toLowerCase();
+    const omni = `${cleanStrain} ${brand} ${item.kind} ${item.category} ${safeRoots} ${desc}`.toLowerCase();
 
     return {
-      strain: strain, brand: brand,
+      strain: cleanStrain, brand: brand,
       t1: t1, t2: t2, type: type,
-      size: sizesDisplay, weight: weightGrams,
+      count: finalCount, size: finalSize, weight: totalWeightGrams,
       thcNum: thcNum, thcDisplay: thcNum > 0 ? `${thcNum}%` : "N/A",
       priceNum: price, priceDisplay: price > 0 ? `$${price}` : "N/A",
       ppgNum: ppg, ppgDisplay: ppg > 0 ? `$${ppg.toFixed(2)}/g` : "N/A",
