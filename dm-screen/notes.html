@@ -26,8 +26,8 @@
     .btn-icon.active { color: var(--accent); }
 
     /* Layout Grid */
-    .showrunner-layout { display: grid; grid-template-columns: 280px 1fr 320px; flex-grow: 1; transition: grid-template-columns 0.3s ease; overflow: hidden; }
-    .showrunner-layout.hide-left { grid-template-columns: 0px 1fr 320px; }
+    .showrunner-layout { display: grid; grid-template-columns: 280px 1fr 340px; flex-grow: 1; transition: grid-template-columns 0.3s ease; overflow: hidden; }
+    .showrunner-layout.hide-left { grid-template-columns: 0px 1fr 340px; }
     .showrunner-layout.hide-right { grid-template-columns: 280px 1fr 0px; }
     .showrunner-layout.hide-both { grid-template-columns: 0px 1fr 0px; }
 
@@ -51,15 +51,17 @@
     .stage-content { max-width: 850px; margin: 0 auto; padding-bottom: 4rem; }
 
     .scratchpad-sidebar { background: var(--scratch-bg); border-left: 1px solid #333; display: flex; flex-direction: column; }
-    .scratchpad-header { padding: 0.75rem 1.5rem; border-bottom: 1px solid #222; font-size: 0.85rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; }
+    .scratchpad-header { padding: 0.75rem 1rem; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; background: #111; }
     .scratchpad-textarea { flex-grow: 1; background: transparent; border: none; color: #bbb; padding: 1.5rem; font-family: monospace; font-size: 0.95rem; resize: none; outline: none; line-height: 1.6; }
+
+    /* Session Dropdown UI */
+    .session-select { background: #222; color: #fff; border: 1px solid #444; padding: 4px 8px; border-radius: 4px; font-size: 0.9rem; outline: none; cursor: pointer; max-width: 180px; }
+    .session-select:focus { border-color: var(--accent); }
 
     /* Visual Hierarchy Components */
     .read-aloud-block { background: #1a1e24; border-left: 4px solid var(--info); padding: 1.25rem 1.5rem; font-family: 'Georgia', serif; font-style: italic; font-size: 1.15rem; color: #d1d5db; border-radius: 0 4px 4px 0; margin: 1.5rem 0; line-height: 1.6; }
-    
     .ai-terminal { background: #050505; border: 1px solid #333; color: #55efc4; font-family: monospace; padding: 1rem 1.5rem; border-radius: 4px; margin: 1.5rem 0; font-size: 0.95rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
     .ai-terminal::before { content: ">_ "; color: #55efc4; }
-    
     .mechanics-list { list-style-type: none; padding: 0; margin: 1.5rem 0; }
     .mechanics-list li { background: rgba(255,255,255,0.03); border: 1px solid #333; padding: 1rem; margin-bottom: 0.5rem; border-radius: 4px; }
     .math-highlight { color: #ffeaa7; font-weight: bold; background: rgba(255, 234, 167, 0.1); padding: 0 4px; border-radius: 2px; }
@@ -76,7 +78,7 @@
     .edit-wrapper:hover .edit-trigger { opacity: 1; }
     .inline-input { background: #111; color: #fff; border: 1px dashed var(--info); padding: 4px; border-radius: 3px; font-family: inherit; font-size: inherit; font-style: inherit; outline: none; width: 100%; box-sizing: border-box; resize: vertical; min-height: 2em; }
 
-    /* Toasts & Buttons */
+    /* Modals, Toasts & Popovers */
     #toast-container { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
     .toast { background: rgba(30, 30, 30, 0.95); color: #fff; padding: 0.75rem 1.5rem; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 0.95rem; border: 1px solid var(--accent); animation: fadein 0.3s, fadeout 0.3s 2.7s forwards; }
     @keyframes fadein { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
@@ -86,6 +88,21 @@
     .btn:hover { background: #333; border-color: #888; }
     .btn-send { background: rgba(187, 134, 252, 0.1); border-color: var(--accent); color: var(--accent); }
     .btn-send:hover { background: var(--accent); color: #000; }
+    .btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+
+    /* Context Popover for Awards */
+    .award-wrapper { position: relative; display: inline-block; }
+    .award-popover { position: absolute; right: 0; top: 110%; background: #222; border: 1px solid #555; border-radius: 6px; width: 180px; z-index: 50; box-shadow: 0 8px 16px rgba(0,0,0,0.8); display: flex; flex-direction: column; overflow: hidden; }
+    .popover-title { padding: 8px 12px; font-size: 0.8rem; color: #888; border-bottom: 1px solid #444; background: #1a1a1a; text-transform: uppercase; letter-spacing: 0.05em; }
+    .popover-item { padding: 10px 12px; font-size: 0.95rem; cursor: pointer; transition: 0.1s; }
+    .popover-item:hover { background: rgba(187, 134, 252, 0.2); color: #fff; }
+
+    /* System Import Modal */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 999; display: flex; align-items: center; justify-content: center; }
+    .modal-content { background: var(--card); padding: 2rem; border-radius: 8px; border: 1px solid #444; width: 90%; max-width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+    .modal-content h2 { margin-top: 0; color: var(--accent); }
+    .modal-content textarea { width: 100%; background: #111; color: #fff; border: 1px solid #444; padding: 0.75rem; border-radius: 4px; font-family: monospace; box-sizing: border-box; resize: vertical; margin: 1rem 0; outline: none; }
+    .modal-content textarea:focus { border-color: var(--accent); }
   </style>
 </head>
 <body>
@@ -112,14 +129,29 @@
 
   <div id="toast-container"></div>
 
+  <div id="import-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h2>Data Management</h2>
+      <p style="color:#aaa; font-size:0.9rem;">Paste a JSON patch to merge new rooms into your campaign, or perform a hard overwrite to replace everything.</p>
+      <textarea id="import-data" rows="8" placeholder='{ "campaign_notes": { "rooms": [ ... ] } }'></textarea>
+      <div class="flex-between">
+        <div class="flex-gap">
+          <button class="btn btn-send" onclick="mergeNotes()">+ Merge Notes</button>
+          <button class="btn btn-danger" onclick="overwriteNotes()">⚠ Hard Overwrite</button>
+        </div>
+        <button class="btn" onclick="toggleImportModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div class="showrunner-layout" id="main-layout">
     
     <div class="nav-sidebar">
       <div class="nav-list" id="nav-list"></div>
       <div style="padding: 1rem; border-top: 1px solid #333;">
-        <button class="btn" style="width: 100%; justify-content: center;" onclick="alert('JSON Merge/Import logic connects here in future updates')">
+        <button class="btn" style="width: 100%; justify-content: center;" onclick="toggleImportModal()">
           <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-          Import JSON
+          Import Notes
         </button>
       </div>
     </div>
@@ -132,7 +164,12 @@
 
     <div class="scratchpad-sidebar">
       <div class="scratchpad-header">
-        <span id="scratchpad-title">Session Notes</span>
+        <div class="flex-gap">
+          <select id="session-select" class="session-select" onchange="changeSession(this.value)"></select>
+          <button class="btn-icon" onclick="createNewSession()" title="New Session">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+        </div>
         <span id="sync-status" title="Auto-saves on 30s delay">
           <svg viewBox="0 0 24 24" width="16" height="16" stroke="#555" stroke-width="2" fill="none"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
         </span>
@@ -143,31 +180,28 @@
   </div>
 
   <script>
-    // --- Initial Seed Data (From RTF Document) ---
+    const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
+    
     let appState = {
       campaign_notes: {
-        global_scratchpad: "Session 12: The party is bruised. Tilly is looking for an outlet to plug in her appliances.",
+        sessions: [
+          { id: Date.now(), title: "Session 1", content: "Initial campaign setup notes..." }
+        ],
         rooms: [
           {
             id: "room_17a",
             title: "Room 17a: The Waiting Area",
-            read_aloud: "The air in this wide anteroom smells of cheap carpet cleaner and simmering resentment. A labyrinth of faded velvet ropes zigzags toward a faux-wood podium smeared with greasy fingerprints, completely blocking the northern double doors. Overhead, a violently buzzing neon sign reads: \"PLEASE WAIT TO BE SEATED.\" Fluorescent lights cast a sickly, flickering glow over a dusty bowl of complimentary peppermints resting on the podium.",
+            read_aloud: "The air in this wide anteroom smells of cheap carpet cleaner and simmering resentment. A labyrinth of faded velvet ropes zigzags toward a faux-wood podium...",
             mechanics: [
-              "Layout: This is a short, wide connector hallway. The only exits are back south to Room 17b or through the double doors north to Room 16.",
-              "The Velvet Rope Maze: The stanchions and ropes form a 30-foot zigzagging path. The velvet ropes are actually enchanted.",
-              "Line-Skipper's Penance: Any Crawler who attempts to climb over or duck under the velvet ropes instead of walking the maze triggers the trap. The ropes animate, lashing out like whips (+5 to hit, 1d4 bludgeoning damage) and grappling the target (Escape DC 13 Dexterity/Acrobatics).",
-              "The Mints: The bowl of \"Complimentary Peppermints\" on the podium is a trap. They are actually calcified, peppermint-painted spider eggs. Eating one restores 1 HP but forces a DC 12 Constitution saving throw. On a failure, the Crawler is Poisoned for 1 hour."
+              "Line-Skipper's Penance: Any Crawler who attempts to climb over or duck under the velvet ropes instead of walking the maze triggers the trap. The ropes animate, lashing out like whips (+5 to hit, 1d4 bludgeoning damage) and grappling the target (Escape DC 13 Dexterity/Acrobatics)."
             ],
             ai_tooltip: "[SCANNING ENVIRONMENT...] Target: The Bowl of Mints. Oh, look. Complimentary refreshments... Go on. Pop one in.",
             encounters: [
               {
                 name: "\"Brenda,\" The Eternal Hostess",
                 cr: "3",
-                tactics: "She won't actively attack unless a Crawler attempts to bypass the podium or attack her first. She uses Luring Song on anyone complaining.",
-                quotes: [
-                  "PARTY OF FOUR? IT'S GOING TO BE A FORTY-FIVE MINUTE WAIT.",
-                  "TABLE NINE IS READY FOR SLAUGHTER!"
-                ]
+                tactics: "She won't actively attack unless a Crawler attempts to bypass the podium or attack her first.",
+                quotes: ["PARTY OF FOUR? IT'S GOING TO BE A FORTY-FIVE MINUTE WAIT."]
               }
             ],
             loot: [
@@ -176,45 +210,67 @@
                 item_name: "The Vibrating Pager of Anticipation",
                 item_desc: "A chunky, greasy plastic coaster. It buzzes aggressively."
               }
-            ],
-            session_override: ""
-          },
-          {
-            id: "room_vip",
-            title: "The VIP Treadmill (Room 6e)",
-            read_aloud: "The hallway abruptly shifts into a 50-foot stretch lined with blank brick walls. Dozens of small, circular holes dot the brickwork at waist height. The floor beneath your feet feels slightly springy, like thick rubber.",
-            mechanics: [
-              "The Treadmill Floor: The moment a player steps onto the rubber floor, it activates, rolling rapidly backward. It requires a successful DC 14 Athletics check to move forward at half speed. Failing means being thrown Prone.",
-              "The Rock-Shooters: On initiative count 20, the holes in the walls fire heated, heavy massage stones across the hall. Anyone in the hall must make a DC 12 Dexterity save or take 1d4 bludgeoning damage.",
-              "The Punchline: If a player lets themselves be pulled to the very end of the 50-foot hallway, there is no exit. There is only a blank brick wall with a sign reading \"VIP LOUNGE UNDER CONSTRUCTION.\" Below the sign is a heavy iron lever. Pulling the lever shuts down the treadmill and the rock-shooters for 10 minutes."
-            ],
-            ai_tooltip: "[SCANNING ENVIRONMENT...] Target: The VIP Treadmill. \"Ooh, a velvet rope. Because nothing overrides basic survival instincts like the desperate need to feel exclusive. Step right up, VIPs. Let's see how fast you can run when the floor decides it hates you.\"",
-            encounters: [],
-            loot: [
-              {
-                achievement_name: "The Hustle Trap Reward",
-                item_name: "Iron \"Valued Customer\" Box",
-                item_desc: "You put in the work, you ground it out, and you hit a literal brick wall. Welcome to the VIP experience."
-              },
-              {
-                achievement_name: "Loot Box Unlocked",
-                item_name: "The Participation Trophy",
-                item_desc: "A cheap, plastic gold trophy depicting a humanoid giving a weak thumbs up. If you hold this while crying, it glows slightly in the dark, providing absolutely no mechanical benefit but acting as a reasonably depressing nightlight."
-              }
-            ],
-            session_override: ""
+            ]
           }
         ]
-      }
+      },
+      players: [] // Pulled from KV to populate award menus
     };
 
-    // --- Time Machine & State ---
     let historyStack = [];
     let redoStack = [];
-    let currentRoomIndex = 'global'; // 'global' or integer index
+    let currentRoomIndex = 0; 
+    let currentSessionId = null;
 
+    // --- Core Systems & Migration ---
     function saveLocal() {
       localStorage.setItem('showrunner_state', JSON.stringify(appState));
+    }
+
+    async function syncToKV() {
+      // Background sync to master database to link with Player HUD
+      try { await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(appState) }); } 
+      catch (e) { console.error("KV Sync failed", e); }
+    }
+
+    async function init() {
+      // 1. Fetch Master State from KV (if available) to ensure we have the players array
+      try {
+        const response = await fetch(WORKER_URL);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.campaign_notes) appState = data;
+          else if (data && data.players) {
+            // Keep local notes, just grab the players
+            appState.players = data.players;
+          }
+        }
+      } catch (e) {
+        // Fallback to local storage
+        const local = localStorage.getItem('showrunner_state');
+        if (local) {
+          try { appState = JSON.parse(local); } catch(err) { console.warn("Local state corrupt."); }
+        }
+      }
+
+      // 2. Data Migration: Convert old global_scratchpad to Session array if needed
+      if (!appState.campaign_notes) appState.campaign_notes = { rooms: [], sessions: [] };
+      if (!appState.campaign_notes.sessions) {
+        appState.campaign_notes.sessions = [];
+        if (appState.campaign_notes.global_scratchpad) {
+          appState.campaign_notes.sessions.push({
+            id: Date.now(),
+            title: "Legacy Scratchpad",
+            content: appState.campaign_notes.global_scratchpad
+          });
+          delete appState.campaign_notes.global_scratchpad;
+        } else {
+          appState.campaign_notes.sessions.push({ id: Date.now(), title: "Session 1", content: "" });
+        }
+      }
+      
+      currentSessionId = appState.campaign_notes.sessions[0].id;
+      renderAll();
     }
 
     function pushState() {
@@ -227,27 +283,14 @@
       if (historyStack.length === 0) return showToast("Nothing to undo.");
       redoStack.push(JSON.parse(JSON.stringify(appState)));
       appState = historyStack.pop();
-      saveLocal(); 
-      renderAll(); 
-      showToast("Undo successful.");
+      saveLocal(); syncToKV(); renderAll(); showToast("Undo successful.");
     }
     
     function redo() {
       if (redoStack.length === 0) return showToast("Nothing to redo.");
       historyStack.push(JSON.parse(JSON.stringify(appState)));
       appState = redoStack.pop();
-      saveLocal(); 
-      renderAll(); 
-      showToast("Redo successful.");
-    }
-
-    // --- Initialization ---
-    async function init() {
-      const local = localStorage.getItem('showrunner_state');
-      if (local) {
-        try { appState = JSON.parse(local); } catch(e) { console.warn("Local state corrupt."); }
-      }
-      renderAll();
+      saveLocal(); syncToKV(); renderAll(); showToast("Redo successful.");
     }
 
     // --- Helpers ---
@@ -263,7 +306,7 @@
     function parseMath(text) { return text ? text.replace(/\b(\d+d\d+(?:\s*[+-]\s*\d+)?|DC\s*\d+)\b/gi, '<span class="math-highlight">$&</span>') : ''; }
 
     const SVG_PENCIL = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
-    const SVG_SEND = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 2L11 13"></path><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`;
+    const SVG_AWARD = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>`;
     
     // --- Layout Toggles ---
     function toggleLeft() { document.getElementById('main-layout').classList.toggle('hide-left'); document.getElementById('btn-left').classList.toggle('active');}
@@ -272,25 +315,25 @@
     // --- Rendering ---
     function renderSidebar() {
       const list = document.getElementById('nav-list');
-      let html = `<div class="nav-item ${currentRoomIndex === 'global' ? 'active' : ''}" onclick="selectRoom('global')">🌐 Global Campaign Notes</div>`;
+      let html = '';
       if (appState.campaign_notes && appState.campaign_notes.rooms) {
         appState.campaign_notes.rooms.forEach((room, idx) => {
           html += `<div class="nav-item ${currentRoomIndex === idx ? 'active' : ''}" onclick="selectRoom(${idx})" title="${escapeHtml(room.title)}">${escapeHtml(room.title)}</div>`;
         });
       }
-      list.innerHTML = html;
+      list.innerHTML = html || `<div style="padding:1rem; color:#666; font-size:0.9rem;">No rooms imported yet.</div>`;
     }
 
     function selectRoom(index) {
       currentRoomIndex = index;
-      renderAll();
+      renderSidebar();
+      renderStage();
     }
 
     function renderStage() {
       const stage = document.getElementById('stage-content');
-      if (currentRoomIndex === 'global') {
-        stage.innerHTML = `<h1 style="color:var(--accent); font-size:2rem; margin-top:2rem;">Global Campaign Overview</h1>
-                           <p style="color:#888">Select a specific room from the left sidebar to view its blueprint, read-aloud text, and traps.<br><br>Use the Scratchpad on the right to maintain your running session notes.</p>`;
+      if (appState.campaign_notes.rooms.length === 0) {
+        stage.innerHTML = `<h2 style="color:#555; text-align:center; margin-top:4rem;">Campaign is empty. Import notes to begin.</h2>`;
         return;
       }
 
@@ -319,157 +362,57 @@
 
       let lootHtml = '';
       if (room.loot) {
-        lootHtml = room.loot.map(l => `
+        lootHtml = room.loot.map((l, lIdx) => `
           <div class="loot-card">
             <div>
               <strong style="color:#f1c40f">${escapeHtml(l.achievement_name)}</strong><br>
               <span style="font-size:0.9rem; color:#bbb">${escapeHtml(l.item_name)}</span>
             </div>
-            <button class="btn btn-send" onclick="sendToHud('${escapeJS(l.item_name)}')">
-              ${SVG_SEND} Send to HUD
-            </button>
+            <div class="award-wrapper">
+              <button class="btn btn-send" onclick="toggleAwardMenu(${currentRoomIndex}, ${lIdx})">
+                ${SVG_AWARD} Award to Player
+              </button>
+              <div id="award-menu-${currentRoomIndex}-${lIdx}" class="award-popover hidden">
+                 <div class="popover-title">Select Character:</div>
+                 ${(appState.players && appState.players.length > 0) 
+                    ? appState.players.map(p => `<div class="popover-item" onclick="confirmAward(${currentRoomIndex}, ${lIdx}, '${escapeJS(p.name)}')">${escapeHtml(p.name)}</div>`).join('') 
+                    : '<div style="padding:10px 12px; font-size:0.85rem; color:#888;">No players found</div>'}
+                 <div class="popover-item" style="color:var(--danger); border-top:1px solid #333;" onclick="toggleAwardMenu(${currentRoomIndex}, ${lIdx})">Cancel</div>
+              </div>
+            </div>
           </div>
         `).join('');
       }
 
       stage.innerHTML = `
         <h1 style="color:var(--accent); font-size:2rem;">${makeEditable(escapeHtml(room.title), rPath, 'title')}</h1>
-        
-        <div class="read-aloud-block">
-          ${makeEditable(escapeHtml(room.read_aloud), rPath, 'read_aloud', true)}
-        </div>
-
-        <ul class="mechanics-list">
-          ${mechanicsHtml}
-        </ul>
-
+        <div class="read-aloud-block">${makeEditable(escapeHtml(room.read_aloud), rPath, 'read_aloud', true)}</div>
+        <ul class="mechanics-list">${mechanicsHtml}</ul>
         ${room.ai_tooltip ? `<div class="ai-terminal">${makeEditable(escapeHtml(room.ai_tooltip), rPath, 'ai_tooltip', true)}</div>` : ''}
-
         ${encountersHtml}
-
         ${(room.loot && room.loot.length > 0) ? `<h3 style="margin-top:2rem; border-bottom:1px solid #333; padding-bottom:0.5rem;">Rewards & Loot</h3>${lootHtml}` : ''}
       `;
     }
 
+    // --- Session Scratchpad Logic ---
     function renderScratchpad() {
+      const select = document.getElementById('session-select');
       const textarea = document.getElementById('scratchpad-input');
-      const title = document.getElementById('scratchpad-title');
       
-      if (currentRoomIndex === 'global') {
-        title.innerText = "Global Session Notes";
-        textarea.value = appState.campaign_notes.global_scratchpad || "";
-      } else {
-        const room = appState.campaign_notes.rooms[currentRoomIndex];
-        title.innerText = "Room Override Notes";
-        textarea.value = (room && room.session_override) ? room.session_override : "";
-      }
+      let optionsHtml = '';
+      appState.campaign_notes.sessions.forEach(session => {
+        optionsHtml += `<option value="${session.id}" ${session.id === currentSessionId ? 'selected' : ''}>${escapeHtml(session.title)}</option>`;
+      });
+      select.innerHTML = optionsHtml;
+
+      const currentSession = appState.campaign_notes.sessions.find(s => s.id === currentSessionId);
+      textarea.value = currentSession ? currentSession.content : "";
     }
 
-    function renderAll() {
-      renderSidebar();
-      renderStage();
+    function changeSession(idStr) {
+      currentSessionId = parseInt(idStr);
       renderScratchpad();
     }
 
-    // --- Inline Editor Engine ---
-    function makeEditable(val, pathArray, fieldName, isTextarea = false) {
-      const pJson = escapeJS(JSON.stringify(pathArray));
-      return `<span class="edit-wrapper">
-                <span class="edit-val">${val}</span>
-                <button class="edit-trigger" onclick="event.stopPropagation(); startInlineEdit(this, '${pJson}', '${fieldName}', ${isTextarea})">${SVG_PENCIL}</button>
-              </span>`;
-    }
-
-    function startInlineEdit(el, objectPathJSON, fieldName, isTextarea) {
-      const parent = el.closest('.edit-wrapper');
-      const textSpan = parent.querySelector('.edit-val');
-      const rawText = textSpan.innerText; 
-      
-      const input = document.createElement(isTextarea ? 'textarea' : 'input');
-      input.className = 'inline-input';
-      input.value = rawText;
-      
-      input.onblur = () => {
-        pushState();
-        let newVal = input.value.trim();
-        
-        const pathParts = JSON.parse(objectPathJSON);
-        let target = appState;
-        
-        for(let i=0; i < pathParts.length; i++) {
-          if (target[pathParts[i]] === undefined) target[pathParts[i]] = (typeof pathParts[i+1] === 'number') ? [] : {};
-          if (i === pathParts.length - 1 && fieldName === '') {
-             target[pathParts[i]] = newVal;
-          } else {
-             target = target[pathParts[i]];
-          }
-        }
-        if (fieldName !== '') target[fieldName] = newVal;
-        
-        saveLocal();
-        renderAll(); 
-      };
-      
-      input.onkeydown = (e) => { if(e.key === 'Enter' && !isTextarea) input.blur(); };
-      input.onclick = (e) => e.stopPropagation();
-      
-      parent.innerHTML = '';
-      parent.appendChild(input);
-      input.focus();
-    }
-
-    // --- Macro-Debounce Scratchpad ---
-    const DEBOUNCE_MS = 30000; // 30 seconds
-    let scratchTimer;
-
-    const textarea = document.getElementById('scratchpad-input');
-    
-    textarea.addEventListener('input', (e) => {
-      setSyncIcon('syncing');
-      clearTimeout(scratchTimer);
-      scratchTimer = setTimeout(() => {
-        commitScratchpad(e.target.value);
-      }, DEBOUNCE_MS);
-    });
-
-    textarea.addEventListener('blur', (e) => {
-      clearTimeout(scratchTimer);
-      commitScratchpad(e.target.value);
-    });
-
-    function commitScratchpad(text) {
-      if (currentRoomIndex === 'global') {
-        if(appState.campaign_notes.global_scratchpad === text) return;
-        pushState();
-        appState.campaign_notes.global_scratchpad = text;
-      } else {
-        if(appState.campaign_notes.rooms[currentRoomIndex].session_override === text) return;
-        pushState();
-        appState.campaign_notes.rooms[currentRoomIndex].session_override = text;
-      }
-      saveLocal();
-      setSyncIcon('success');
-    }
-
-    function setSyncIcon(status) {
-      const icon = document.getElementById('sync-status');
-      if (status === 'syncing') {
-        icon.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="#888" stroke-width="2" fill="none"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>`;
-      } else if (status === 'success') {
-        icon.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="var(--success)" stroke-width="2" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-        setTimeout(() => {
-           icon.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="#555" stroke-width="2" fill="none"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>`;
-        }, 2000);
-      }
-    }
-
-    // --- Cross Pollination Stub ---
-    function sendToHud(itemName) {
-      showToast(`Package Prepared: [${itemName}] staged for Player HUD distribution.`);
-    }
-
-    // Boot
-    init();
-  </script>
-</body>
-</html>
+    function createNewSession() {
+      const title = prompt("Enter Session Title:", `Session ${appState.campaign_notes.sessions.length
