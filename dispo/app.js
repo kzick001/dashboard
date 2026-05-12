@@ -4,8 +4,8 @@ import { normalizeGreenGoods, greenGoodsConfig } from './greengoods.js';
 // ==========================================
 // CONFIGURATION & STATE
 // ==========================================
-const WORKER_URL = "https://your-worker-name.your-subdomain.workers.dev/watchlist"; // UPDATE THIS IN PHASE 5
-const API_EMAIL = "your-email@example.com"; // Identifier for your KV store
+const WORKER_URL = "https://lucid-sentinel.YOUR-CLOUDFLARE-ACCOUNT.workers.dev/watchlist"; 
+const API_EMAIL = "askozicki@gmail.com";
 
 let currentData = [];
 let watchlist = [];
