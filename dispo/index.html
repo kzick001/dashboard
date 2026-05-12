@@ -40,11 +40,11 @@
     }
     .watchlist-panel h3 { margin: 0; font-size: 14px; color: var(--accent); display: flex; align-items: center; gap: 8px; min-width: 150px; }
     .watchlist-input-group { display: flex; flex: 1; gap: 8px; min-width: 300px; }
-    .watchlist-input-group input {
+    .watchlist-input-group input, .watchlist-input-group select {
       flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: var(--text-main);
       padding: 10px 15px; border-radius: 8px; font-family: 'Inter'; font-size: 13px; outline: none;
     }
-    .watchlist-input-group input:focus { border-color: var(--accent); }
+    .watchlist-input-group input:focus, .watchlist-input-group select:focus { border-color: var(--accent); }
 
     /* Filters */
     .filter-panel { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -99,8 +99,29 @@
 
   <div class="watchlist-panel">
     <h3>🤍 Watchlist</h3>
-    <div class="watchlist-input-group">
-      <input type="text" id="ghostItemInput" placeholder="Manual Add (e.g. Rythm - Animal Face)...">
+    <div class="watchlist-input-group" style="flex-wrap: wrap;">
+      <select id="ghostBrand" style="flex: 0.5;">
+        <option value="">-- Brand --</option>
+      </select>
+      
+      <input type="text" id="ghostStrain" list="ghostStrainList" placeholder="Strain Name (e.g. Animal Face)...">
+      <datalist id="ghostStrainList"></datalist>
+      
+      <select id="ghostSize" style="flex: 0.3;">
+        <option value="">-- Size --</option>
+        <option value="0.3g">0.3g</option>
+        <option value="0.35g">0.35g</option>
+        <option value="0.5g">0.5g</option>
+        <option value="1g">1g</option>
+        <option value="2g">2g</option>
+        <option value="3.5g">3.5g</option>
+        <option value="7g">7g</option>
+        <option value="14g">14g</option>
+        <option value="28g">28g</option>
+        <option value="10pk">10pk</option>
+        <option value="20pk">20pk</option>
+        <option value="30pk">30pk</option>
+      </select>
       <button id="addGhostBtn" class="primary">Track Item</button>
     </div>
     <button id="syncCloudBtn" class="success" style="margin-left: auto;">Sync to Cloud</button>
