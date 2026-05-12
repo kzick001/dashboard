@@ -2,7 +2,7 @@ import { LUCID_MAP } from './dictionary.js';
 
 export const riseConfig = {
     url: "https://dmerch.iheartjane.com/v2/multi?jdm_api_key=ce5f15c9-3d09-441d-9bfd-26e87aff5925&jdm_source=monolith&jdm_version=2.16.0",
-    payload: { "app_mode": "framelessEmbed", "jane_device_id": "iYQZXwVq21hz9ZKd3VYgM", "num_columns": 1, "search_attributes": ["*"], "store_id": 4635, "placements": [{"disable_ads": false, "page_size": 1000, "placement": "menu_inline_table", "search_filter": "", "search_sort": "recommendation"}], "type": "custom" }
+    payload: { "app_mode": "framelessEmbed", "jane_device_id": "LUCID_SERVER", "num_columns": 1, "search_attributes": ["*"], "store_id": 4635, "placements": [{"disable_ads": false, "page_size": 1000, "placement": "menu_inline_table", "search_filter": "", "search_sort": "recommendation"}], "type": "custom" }
 };
 
 function escapeRegExp(string) {
@@ -150,15 +150,11 @@ function extractType(item) {
 }
 
 function buildFinalObject(item, strain, brand, t1, t2, type, slug, dictEntry) {
-    // 1. Live Payload Parsing (The Smart Regex)
     const regex = /\s*[-|\[|\(]?\s*(\d+\.?\d*\s*(?:mg|g|pk|oz|ct))\s*[\]|\)]?$/i;
     const match = strain.match(regex);
     let apiExtractedSize = match ? match[1] : (item.amount || "");
-    
-    // 2. The Clean Strain (Strips the weight out of the name)
     let cleanStrain = match ? strain.replace(regex, '').trim() : strain;
 
-    // 3. The API Default Fallback Engine
     let finalCount = 1;
     let finalSize = apiExtractedSize;
 
@@ -171,11 +167,22 @@ function buildFinalObject(item, strain, brand, t1, t2, type, slug, dictEntry) {
         }
     }
 
-    // 4. Mathematical Conversions
-    const perUnitGrams = parseWeightToGrams(finalSize, item.available_weights);
-    const totalWeightGrams = perUnitGrams ? (perUnitGrams * finalCount) : null;
-    
     const price = parseFloat(item.bucket_price || item.price || 0);
+
+    // ==========================================
+    // THE FLOWER HEURISTIC (TWEAK 1)
+    // ==========================================
+    let perUnitGrams = parseWeightToGrams(finalSize, item.available_weights);
+    let totalWeightGrams = perUnitGrams ? (perUnitGrams * finalCount) : null;
+
+    if (t1 === "Flower" && (!totalWeightGrams || totalWeightGrams <= 0)) {
+        if (price >= 160) { finalSize = "28g"; totalWeightGrams = 28.0; }
+        else if (price >= 100) { finalSize = "14g"; totalWeightGrams = 14.0; }
+        else if (price >= 60) { finalSize = "7g"; totalWeightGrams = 7.0; }
+        else if (price >= 26) { finalSize = "3.5g"; totalWeightGrams = 3.5; }
+        // Anything under $26 is skipped to protect against 1g/Pre-Roll variance
+    }
+
     let ppg = 0;
     if (price > 0 && totalWeightGrams && totalWeightGrams > 0) ppg = price / totalWeightGrams;
 
