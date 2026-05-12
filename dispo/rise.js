@@ -2,7 +2,7 @@ import { LUCID_MAP } from './dictionary.js';
 
 export const riseConfig = {
     url: "https://dmerch.iheartjane.com/v2/multi?jdm_api_key=ce5f15c9-3d09-441d-9bfd-26e87aff5925&jdm_source=monolith&jdm_version=2.16.0",
-    payload: { "app_mode": "framelessEmbed", "jane_device_id": "iYQZXwVq21hz9ZKd3VYgM", "num_columns": 1, "search_attributes": ["*"], "store_id": 3344, "placements": [{"disable_ads": false, "page_size": 1000, "placement": "menu_inline_table", "search_filter": "", "search_sort": "recommendation"}], "type": "custom" }
+    payload: { "app_mode": "framelessEmbed", "jane_device_id": "iYQZXwVq21hz9ZKd3VYgM", "num_columns": 1, "search_attributes": ["*"], "store_id": 4635, "placements": [{"disable_ads": false, "page_size": 1000, "placement": "menu_inline_table", "search_filter": "", "search_sort": "recommendation"}], "type": "custom" }
 };
 
 function escapeRegExp(string) {
