@@ -2,97 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>D&D Campaign HUD</title>
+  <title>Showrunner HUD</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='none' stroke='white' stroke-width='4' stroke-linejoin='round' d='M50 5 L90 30 L90 70 L50 95 L10 70 L10 30 Z M50 5 L50 45 M10 30 L50 45 L90 30 M10 70 L50 45 L90 70 M50 95 L50 45'/></svg>">
   
   <style>
     :root {
-      --bg: #121212;
-      --card: #1e1e1e;
-      --text: #e0e0e0;
-      --text-muted: #888;
-      --accent: #bb86fc;
-      --accent-glow: rgba(187, 134, 252, 0.4);
-      --danger: #cf6679;
-      --success: #03dac6;
-      --info: #74b9ff;
+      --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --text-muted: #888;
+      --accent: #bb86fc; --accent-glow: rgba(187, 134, 252, 0.4);
+      --danger: #cf6679; --success: #03dac6; --info: #74b9ff; --header: #0f0f0f;
     }
-    body {
-      font-family: system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      margin: 0;
-      padding: 20px;
-      line-height: 1.5;
-      font-variant-numeric: tabular-nums;
-    }
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0 0 40px 0; line-height: 1.5; font-variant-numeric: tabular-nums; }
     .hidden { display: none !important; }
-    
-    /* Tactical HUD Grid */
-    .grid {
-      display: grid;
-      gap: 1.5rem;
-      align-items: start;
-      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-    }
-    
-    /* Player Cards */
-    .card {
-      background: var(--card);
-      padding: 1.5rem;
-      border-radius: 8px;
-      cursor: pointer;
-      border: 1px solid #333;
-      border-top: 4px solid var(--player-color, var(--accent));
-      transition: border-color 0.2s, transform 0.1s;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    }
-    .card:hover { 
-      border-color: var(--player-color, var(--accent)); 
-      transform: translateY(-2px); 
-    }
-    .card h2 {
-      margin: 0 0 1rem 0;
-      font-size: 1.8rem;
-      color: var(--player-color, #fff);
-      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-      text-align: center;
-    }
 
-    /* Vitals Shelf */
-    .vitals-row {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      background: #111;
-      padding: 0.5rem;
-      border-radius: 6px;
-      margin-bottom: 1rem;
-    }
-    .vital-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.25rem;
-    }
+    /* Header Bar */
+    header { background: var(--header); padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    .header-title { font-size: 1.2rem; font-weight: bold; letter-spacing: 0.1em; color: var(--accent); text-transform: uppercase; }
+    .header-controls { display: flex; gap: 0.5rem; align-items: center; }
+
+    /* Layouts */
+    .container { padding: 20px; }
+    .grid { display: grid; gap: 1.5rem; align-items: start; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+    #detail-screen { max-width: 850px; margin: 0 auto; }
+    
+    /* Toast Notifications */
+    #toast-container { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+    .toast { background: rgba(50, 50, 50, 0.95); color: #fff; padding: 0.5rem 1rem; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 0.9rem; border: 1px solid #555; animation: fadein 0.3s, fadeout 0.3s 2.7s; }
+    @keyframes fadein { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
+
+    /* Cards */
+    .card { background: var(--card); padding: 1.5rem; border-radius: 8px; cursor: pointer; border: 1px solid #333; border-top: 4px solid var(--player-color, var(--accent)); transition: all 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    .card:hover { border-color: var(--player-color, var(--accent)); transform: translateY(-2px); }
+    .card h2 { margin: 0 0 1rem 0; font-size: 1.8rem; color: var(--player-color, #fff); text-shadow: 0 2px 4px rgba(0,0,0,0.5); text-align: center; }
+
+    /* Vitals */
+    .vitals-row { display: flex; justify-content: space-around; align-items: center; background: #111; padding: 0.5rem; border-radius: 6px; margin-bottom: 1rem; }
+    .vital-item { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
     .vital-item svg { width: 20px; height: 20px; color: var(--text-muted); }
     .vital-item .value { font-size: 1.2rem; font-weight: bold; color: #fff; }
 
-    /* Layout Utilities */
+    /* Detail Sticky Header */
+    .detail-header-sticky { background: rgba(18, 18, 18, 0.95); backdrop-filter: blur(10px); padding: 1rem 0; border-bottom: 1px solid #333; margin-bottom: 1rem; position: sticky; top: 58px; z-index: 100; }
+    .sticky-vitals { display: flex; gap: 1.5rem; margin-top: 0.5rem; font-size: 1.1rem; align-items: center; justify-content: center; }
+    .sticky-vitals span.vital-label { color: var(--player-color); font-weight: bold; }
+
+    /* UI Elements & Badges */
     .flex-between { display: flex; justify-content: space-between; align-items: center; }
     .flex-gap { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-    .text-sm { font-size: 0.85rem; color: #aaa; }
     hr { border-color: #333; margin: 1rem 0; }
     
-    /* Semantic Badges */
-    .badge {
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
+    .badge { padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; }
     .badge.active { background: var(--danger); color: #fff; }
     .badge.context { background: var(--text-muted); color: #fff; }
     .badge.poisoned { background: #55efc4; color: #000; }
@@ -102,126 +61,111 @@
     .badge.curse { background: #8e44ad; color: #fff; }
     .badge.daily { background: #0984e3; color: #fff; }
     .badge.reaction { background: #e1b12c; color: #000; }
-    
-    /* Notifications */
     .notification-glow { color: var(--accent); font-weight: bold; text-shadow: 0 0 8px var(--accent-glow); }
 
-    /* Detail Screen Sticky Header */
-    .detail-header-sticky {
-      position: sticky;
-      top: 0;
-      background: rgba(18, 18, 18, 0.95);
-      backdrop-filter: blur(10px);
-      z-index: 100;
-      padding: 1rem 0;
-      border-bottom: 1px solid #333;
-      margin-bottom: 1rem;
-    }
-    .sticky-vitals {
-      display: flex;
-      gap: 1.5rem;
-      margin-top: 0.5rem;
-      font-size: 1.1rem;
-      align-items: center;
-    }
-    .sticky-vitals span.vital-label { color: var(--player-color); font-weight: bold; }
-    .sticky-vitals .vital-val { color: #fff; }
+    /* Buttons */
+    button, select { background: var(--card); color: var(--text); border: 1px solid #555; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; font-weight: bold; transition: all 0.2s; }
+    button:hover:not(:disabled) { background: #444; border-color: #888; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-sm { padding: 4px 8px; font-size: 0.8rem; }
+    .btn-icon { background: transparent; border: none; font-size: 1.1rem; padding: 4px; color: var(--text-muted); }
+    .btn-icon:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    .btn-move { background: var(--info); color: #000; border-color: var(--info); }
+    .btn-claim { background: var(--success); color: #000; border-color: var(--success); }
+    .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
 
-    /* Accordions */
-    details {
-      background: var(--card);
-      margin-bottom: 0.5rem;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      border: 1px solid #333;
-    }
-    summary { font-weight: bold; cursor: pointer; padding: 0.5rem 0; list-style: none; }
+    /* Accordions & Items */
+    details { background: var(--card); margin-bottom: 0.5rem; padding: 0.5rem 1rem; border-radius: 4px; border: 1px solid #333; }
+    summary { font-weight: bold; cursor: pointer; padding: 0.5rem 0; list-style: none; display: flex; align-items: center; gap: 0.5rem; }
     summary::-webkit-details-marker { display: none; }
     .ghost-accordion { opacity: 0.4; } 
     
-    /* UI Controls */
-    button, select {
-      background: var(--card);
-      color: var(--text);
-      border: 1px solid #555;
-      padding: 6px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: bold;
-      transition: all 0.2s;
-    }
-    button:hover:not(:disabled) { background: #444; border-color: #888; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .controls { display: flex; gap: 1rem; align-items: center; }
-    .btn-move { background: var(--info); color: #000; border-color: var(--info); }
-    .btn-move:hover:not(:disabled) { background: #0984e3; border-color: #0984e3; }
-    .btn-claim { background: var(--success); color: #000; border-color: var(--success); }
-    .btn-claim:hover:not(:disabled) { background: #00b894; border-color: #00b894; }
-
-    /* Inventory & Edit Formatting */
     .item-block { background: #2a2a2a; padding: 1rem; margin-top: 0.5rem; border-radius: 4px; overflow-wrap: break-word; min-width: 0; }
-    .flavor-text { font-size: 0.85rem; color: #888; font-style: italic; }
-    .mechanic-text { font-size: 0.95rem; color: #fff; margin: 0.5rem 0; }
+    .flavor-text { font-size: 0.85rem; color: #888; font-style: italic; white-space: pre-wrap; }
+    .mechanic-text { font-size: 0.95rem; color: #fff; margin: 0.5rem 0; white-space: pre-wrap; }
     .math-highlight { color: #ffeaa7; font-weight: bold; background: rgba(255, 234, 167, 0.1); padding: 0 2px; border-radius: 2px; }
 
-    /* --- Micro-Buttons & Smart Inputs --- */
-    .micro-btn { background: transparent; border: 1px solid #555; padding: 0 6px; border-radius: 3px; font-weight: bold; cursor: pointer; color: var(--text-muted); }
-    .micro-btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
-    .qty-controls { display: inline-flex; align-items: center; gap: 6px; font-weight: normal; font-size: 0.9rem; }
-    
-    .smart-math-input { width: 55px; background: #111; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 2px 4px; text-align: center; font-family: monospace; font-size: 1rem; }
-    .smart-math-input:focus { border-color: var(--accent); outline: none; }
-    
-    .editable-text { white-space: pre-wrap; }
-    .editing-active { border-bottom: 1px dashed #777; background: rgba(255,255,255,0.05); padding: 2px 4px; border-radius: 4px; cursor: text; outline: none; min-height: 1.5em; display: inline-block; width: 100%; box-sizing: border-box; }
-    .editing-active:focus { background: rgba(255,255,255,0.1); border-color: var(--accent); }
+    /* Inline Editing */
+    .edit-wrapper { position: relative; display: inline-flex; align-items: center; gap: 0.25rem; }
+    .edit-trigger { opacity: 0; font-size: 0.8rem; cursor: pointer; color: var(--info); transition: opacity 0.2s; background: none; border: none; padding: 0; margin-left: 4px; }
+    .edit-wrapper:hover .edit-trigger { opacity: 1; }
+    .inline-input { background: #111; color: #fff; border: 1px solid var(--accent); padding: 2px 4px; border-radius: 3px; font-family: inherit; font-size: inherit; outline: none; width: 100%; box-sizing: border-box; }
+    textarea.inline-input { resize: vertical; min-height: 60px; }
 
-    /* System Management UI */
-    textarea { width: 100%; background: #222; color: #fff; border: 1px solid #444; padding: 0.5rem; border-radius: 4px; font-family: monospace; box-sizing: border-box; resize: vertical; }
-    .system-block { margin-top: 2rem; border-color: #555; }
-    .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
-    .icon-heart { fill: currentColor; }
+    /* Qty Stack & Charges */
+    .drag-handle { cursor: grab; color: #555; padding-right: 8px; font-size: 1.2rem; user-select: none; }
+    .drag-handle:active { cursor: grabbing; }
+    
+    .qty-stack { display: grid; grid-template-areas: "up" "val" "down"; gap: 2px; text-align: center; margin-right: 10px; }
+    .qty-stack button { grid-area: up; padding: 0 4px; font-size: 0.6rem; background: #333; border: none; border-radius: 2px; }
+    .qty-stack button:last-child { grid-area: down; }
+    .qty-stack input { grid-area: val; width: 35px; text-align: center; background: #111; color: #fff; border: 1px solid #555; font-size: 0.85rem; border-radius: 2px; -moz-appearance: textfield; }
+    .qty-stack input::-webkit-outer-spin-button, .qty-stack input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    
+    .item-charges { display: flex; gap: 4px; margin-top: 6px; }
+    .charge-bubble { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--accent); cursor: pointer; transition: all 0.1s; }
+    .charge-bubble.filled { background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
+    .charge-bubble.empty { background: transparent; }
+
+    .item-settings-panel { background: #1a1a1a; padding: 10px; border-radius: 4px; border: 1px dashed #555; margin-top: 10px; font-size: 0.85rem; }
   </style>
 </head>
 <body>
 
-  <div id="overview-container">
+  <header>
+    <div class="header-title">Showrunner</div>
+    <div class="header-controls">
+      <button class="btn-icon" onclick="undo()" title="Undo">⟲</button>
+      <button class="btn-icon" onclick="redo()" title="Redo">⟳</button>
+      <select id="time-advance" onchange="advanceTime(this.value)">
+        <option value="" disabled selected>⌛ Advance Time...</option>
+        <option value="short">Short Rest</option>
+        <option value="long">Long Rest</option>
+        <option value="dawn">Dawn</option>
+      </select>
+    </div>
+  </header>
+
+  <div id="toast-container"></div>
+
+  <div class="container" id="overview-container">
     <div id="overview-screen" class="grid"></div>
     
-    <details id="import-section" class="system-block">
-      <summary>System: Data Management (Merge / Restore)</summary>
-      <p class="text-sm" style="margin-top: 0;">Paste a JSON patch to append new achievements/items, or a full JSON to overwrite.</p>
-      <textarea id="import-data" rows="8"></textarea>
+    <details id="import-section" class="system-block" style="max-width: 600px;">
+      <summary>System: Data Management</summary>
+      <p class="text-sm" style="margin-top: 0;">Paste JSON patch to append, or full JSON to overwrite.</p>
+      <textarea id="import-data" rows="5"></textarea>
       <div class="flex-gap" style="margin-top: 1rem;">
-        <button class="btn-move" onclick="handleMerge(this)">+ Merge / Append Data</button>
+        <button class="btn-move" onclick="handleMerge(this)">+ Merge Data</button>
         <button class="btn-danger" onclick="handleOverwrite(this)">⚠ Hard Overwrite</button>
       </div>
     </details>
   </div>
 
-  <div id="detail-screen" class="hidden">
+  <div class="container hidden" id="detail-screen">
     <div class="detail-header-sticky">
       <div class="flex-between">
         <h1 id="detail-name" style="margin: 0;"></h1>
         <div class="controls">
-          <button onclick="showOverview()">← HUD</button>
-          <button onclick="toggleAccordions()">Expand All</button>
-          <button id="btn-edit-mode" onclick="toggleEditMode()">✏️ Edit Sheet</button>
+          <button onclick="showOverview()">← To Player Overview</button>
+          <button onclick="toggleAccordions(true)">Expand All</button>
+          <button onclick="toggleAccordions(false)">Collapse All</button>
         </div>
       </div>
-      <div class="sticky-vitals" id="detail-vitals">
-        </div>
+      <div class="sticky-vitals" id="detail-vitals"></div>
     </div>
-    
     <div id="detail-content"></div>
   </div>
 
   <script>
     const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
-    let appState = null;
+    let appState = { campaign_name: "Showrunner", players: [] };
     let currentDetailPlayer = null;
-    let isEditMode = false;
+
+    // Time Machine
+    let historyStack = [];
+    let redoStack = [];
+    const MAX_HISTORY = 10;
 
     const colorPalette = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe'];
     const svgHeart = `<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>`;
@@ -229,87 +173,123 @@
     const svgEye = `<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/></svg>`;
     const svgCoin = `<svg viewBox="0 0 24 24"><path d="M12 7c-3.86 0-7 1.57-7 3.5S8.14 14 12 14s7-1.57 7-3.5S15.86 7 12 7zm0 2c2.21 0 4 .89 4 2s-1.79 2-4 2-4-.89-4-2 1.79-2 4-2z M5 14.11V16c0 1.93 3.14 3.5 7 3.5s7-1.57 7-3.5v-1.89c-1.81 1.05-4.24 1.64-7 1.64s-5.19-.59-7-1.64z" fill="currentColor"/></svg>`;
 
-    const defaultData = { campaign_name: "Dungeon Crawler Campaign", players: [] };
+    // --- State Management ---
+    function pushState() {
+      historyStack.push(JSON.parse(JSON.stringify(appState)));
+      if(historyStack.length > MAX_HISTORY) historyStack.shift();
+      redoStack = [];
+    }
 
-    // --- Core Network ---
+    async function undo() {
+      if (historyStack.length === 0) return showToast("Nothing to undo.");
+      redoStack.push(JSON.parse(JSON.stringify(appState)));
+      appState = historyStack.pop();
+      await syncToKV();
+      renderAll();
+      showToast("Undo successful.");
+    }
+
+    async function redo() {
+      if (redoStack.length === 0) return showToast("Nothing to redo.");
+      historyStack.push(JSON.parse(JSON.stringify(appState)));
+      appState = redoStack.pop();
+      await syncToKV();
+      renderAll();
+      showToast("Redo successful.");
+    }
+
     async function init() {
       try {
         const response = await fetch(WORKER_URL);
         if (response.ok) {
-          const fetchedData = await response.json();
-          appState = (fetchedData && fetchedData.players) ? fetchedData : defaultData;
-        } else appState = defaultData; 
-      } catch (e) { appState = defaultData; }
+          const data = await response.json();
+          appState = (data && data.players) ? data : appState;
+        }
+      } catch (e) { console.warn("Fetch failed. Using local state."); }
       renderOverview();
     }
 
     async function syncToKV() {
-      try {
-        await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(appState) });
-      } catch (e) { console.error("Failed to sync.", e); }
+      try { await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(appState) }); } 
+      catch (e) { showToast("Sync Failed!"); }
     }
 
-    // --- Helpers ---
-    function getConditionClass(cond) {
-      const lower = cond.toLowerCase();
-      if (['poisoned', 'sickened'].includes(lower)) return 'poisoned';
-      if (['charmed'].includes(lower)) return 'charmed';
-      if (['paralyzed', 'stunned'].includes(lower)) return 'paralyzed';
-      if (['blinded', 'deafened'].includes(lower)) return 'blinded';
-      return 'active';
+    // --- Utility ---
+    function showToast(msg) {
+      const container = document.getElementById('toast-container');
+      const t = document.createElement('div');
+      t.className = 'toast'; t.innerText = msg;
+      container.appendChild(t);
+      setTimeout(() => t.remove(), 3000);
     }
+    function escapeJS(str) { return str ? str.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;') : ''; }
+    function parseMath(text) { return text ? text.replace(/\b(\d+d\d+(?:\s*[+-]\s*\d+)?|DC\s*\d+)\b/gi, '<span class="math-highlight">$&</span>') : ''; }
+    function renderAll() { currentDetailPlayer ? renderDetailScreen(true) : renderOverview(); }
 
-    function parseMath(text) {
-      if (!text) return '';
-      return text.replace(/\b(\d+d\d+(?:\s*[+-]\s*\d+)?|DC\s*\d+)\b/gi, '<span class="math-highlight">$&</span>');
-    }
-
-    function escapeHtml(text) {
-      if(!text) return '';
-      return text.toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // --- Inline Edit Engine ---
+    function startInlineEdit(el, objectPathJSON, fieldName, isNumber = false, isTextarea = false) {
+      const parent = el.closest('.edit-wrapper');
+      const textSpan = parent.querySelector('.edit-val');
+      const currentVal = textSpan.innerText;
+      
+      const input = document.createElement(isTextarea ? 'textarea' : 'input');
+      input.className = 'inline-input';
+      if(!isTextarea) input.type = isNumber ? 'text' : 'text'; 
+      input.value = currentVal;
+      
+      input.onblur = async () => {
+        pushState();
+        let newVal = input.value.trim();
+        
+        // Resolve object path safely
+        const pathParts = JSON.parse(objectPathJSON);
+        let target = appState;
+        for(let i=0; i < pathParts.length; i++) {
+          if (target[pathParts[i]] === undefined) target[pathParts[i]] = {};
+          target = target[pathParts[i]];
+        }
+        
+        if(isNumber) {
+           if(newVal.startsWith('+')) newVal = parseInt(target[fieldName]) + parseInt(newVal.substring(1));
+           else if(newVal.startsWith('-')) newVal = parseInt(target[fieldName]) - parseInt(newVal.substring(1));
+           target[fieldName] = parseInt(newVal) || 0;
+        } else {
+           target[fieldName] = newVal;
+        }
+        
+        await syncToKV();
+        renderAll();
+      };
+      
+      input.onkeydown = (e) => { if(e.key === 'Enter' && !isTextarea) input.blur(); };
+      input.onclick = (e) => e.stopPropagation();
+      
+      parent.innerHTML = '';
+      parent.appendChild(input);
+      input.focus();
     }
     
-    function escapeJS(text) {
-      if(!text) return '';
-      return text.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    function makeEditable(val, pathArray, fieldName, isNumber = false, isTextarea = false) {
+      const pJson = escapeJS(JSON.stringify(pathArray));
+      return `<span class="edit-wrapper">
+                <span class="edit-val">${val}</span>
+                <button class="edit-trigger" onclick="event.stopPropagation(); startInlineEdit(this, '${pJson}', '${fieldName}', ${isNumber}, ${isTextarea})">✎</button>
+              </span>`;
     }
 
-    function parseMechanicBadges(text) {
-      let out = text;
-      const badges = [];
-      if (/curse\:/i.test(out)) badges.push('<span class="badge curse">CURSE</span>');
-      if (/1\/long rest|once per day/i.test(out)) badges.push('<span class="badge daily">1/DAY</span>');
-      if (/reaction/i.test(out)) badges.push('<span class="badge reaction">REACTION</span>');
-      out = out.replace(/curse\:/i, '').replace(/1\/long rest/i, '').replace(/once per day/i, '').replace(/reaction/i, '').replace(/^[^\w]+/, '').trim();
-      return `<div style="margin-bottom: 0.25rem;">${badges.join(' ')} <span>${out}</span></div>`;
-    }
-
-    function applySmartMath(current, inputStr) {
-      if (!inputStr) return current;
-      if (inputStr.startsWith('+')) return current + parseInt(inputStr.substring(1)) || current;
-      if (inputStr.startsWith('-')) return current - parseInt(inputStr.substring(1)) || current;
-      return parseInt(inputStr) || current;
-    }
-
-    // --- Tactical HUD View ---
+    // --- Overview ---
     function renderOverview() {
       const container = document.getElementById('overview-screen');
       container.innerHTML = '';
-
       appState.players.forEach((player, index) => {
-        const pColor = colorPalette[index % colorPalette.length];
         const card = document.createElement('div');
         card.className = 'card';
-        card.style.setProperty('--player-color', pColor);
+        card.style.setProperty('--player-color', colorPalette[index % colorPalette.length]);
         card.onclick = () => openDetail(player.name);
 
         const conditionsHtml = (player.status?.conditions || []).map(c => `<span class="badge ${getConditionClass(c)}">${c}</span>`).join('');
-        const contextTags = Object.entries(player.status?.context_tags || {}).filter(([_, v]) => v).map(([t]) => `<span class="badge context">${t.toUpperCase()}</span>`).join('');
-        const activeTagsHtml = conditionsHtml + contextTags;
-        const tagsSection = activeTagsHtml ? `<div class="flex-gap" style="margin-top: 1rem;">${activeTagsHtml}</div>` : '';
-
-        const consumables = (player.inventory || []).filter(i => i.quantity > 1).map(i => `${i.name} (${i.quantity})`).join(', ');
-        const pendingCount = player.achievements?.pending?.length || 0;
+        const tagsSection = conditionsHtml ? `<div class="flex-gap" style="margin-top: 1rem;">${conditionsHtml}</div>` : '';
+        const consumables = (player.inventory || []).filter(i => (i.quantity > 1 || i.is_multiple)).map(i => `${i.name} (${i.quantity})`).join(', ');
 
         card.innerHTML = `
           <h2>${player.name}</h2>
@@ -322,371 +302,279 @@
           ${tagsSection}
           <hr>
           <div class="text-sm">
-            <div style="margin-bottom: 0.5rem;"><strong>Consumables:</strong> <span style="color: #bbb;">${consumables || 'None'}</span></div>
-            <div class="${pendingCount > 0 ? 'notification-glow' : ''}" style="margin-bottom: 0.5rem;"><strong>Pending:</strong> ${pendingCount} Unclaimed</div>
+            <div style="margin-bottom: 0.5rem;"><strong>Consumables:</strong> <span style="color:#bbb;">${consumables || 'None'}</span></div>
             <div class="special-block" style="margin-top: 0.75rem;">
-              <strong style="display:block; margin-bottom:0.25rem; color:#bbb;">Special Mechanics:</strong>
-              ${(player.special_item_mechanics?.length > 0) ? player.special_item_mechanics.map(m => parseMechanicBadges(m)).join('') : '<span>None</span>'}
+              <strong style="display:block; margin-bottom:0.25rem; color:#bbb;">Mechanics:</strong>
+              ${(player.special_item_mechanics?.length > 0) ? player.special_item_mechanics.map(m => `<div>- ${m}</div>`).join('') : '<span>None</span>'}
             </div>
-          </div>
-        `;
+          </div>`;
         container.appendChild(card);
       });
     }
 
-    function openDetail(playerName) {
-      currentDetailPlayer = playerName;
+    // --- Detail Screen ---
+    function openDetail(name) {
+      currentDetailPlayer = name;
       document.getElementById('overview-container').classList.add('hidden');
       document.getElementById('detail-screen').classList.remove('hidden');
-      const pIndex = appState.players.findIndex(p => p.name === playerName);
+      const pIndex = appState.players.findIndex(p => p.name === name);
       document.getElementById('detail-screen').style.setProperty('--player-color', colorPalette[pIndex % colorPalette.length]);
-      
-      // Ensure Edit Mode is off when opening a new sheet
-      isEditMode = false;
-      const btn = document.getElementById('btn-edit-mode');
-      btn.innerText = "✏️ Edit Sheet";
-      btn.classList.remove('btn-claim');
-
-      renderDetailScreen();
-      window.scrollTo(0, 0); 
+      renderDetailScreen(); window.scrollTo(0, 0); 
     }
+    function showOverview() { currentDetailPlayer = null; document.getElementById('detail-screen').classList.add('hidden'); document.getElementById('overview-container').classList.remove('hidden'); renderOverview(); }
 
-    function showOverview() {
-      currentDetailPlayer = null;
-      isEditMode = false;
-      document.getElementById('detail-screen').classList.add('hidden');
-      document.getElementById('overview-container').classList.remove('hidden');
-      renderOverview();
-    }
-
-    // --- Detail & Edit Screen View ---
-    function renderDetailScreen(preserveAccordions = false) {
-      const player = appState.players.find(p => p.name === currentDetailPlayer);
-      
-      // Capture open accordion states so micro-buttons don't collapse bags
+    function renderDetailScreen(preserve = false) {
+      const playerIndex = appState.players.findIndex(p => p.name === currentDetailPlayer);
+      const player = appState.players[playerIndex];
       let openStates = [];
-      if(preserveAccordions) {
-        openStates = Array.from(document.querySelectorAll('#detail-content details')).map(d => d.open);
-      }
+      if(preserve) openStates = Array.from(document.querySelectorAll('#detail-content details')).map(d => d.open);
 
       document.getElementById('detail-name').innerText = player.name;
       document.getElementById('detail-name').style.color = 'var(--player-color)';
       
-      // Smart Math Vitals Header
+      const pPath = ['players', playerIndex];
       document.getElementById('detail-vitals').innerHTML = `
-        <div><span class="vital-label">HP:</span> 
-          <span class="vital-val">${player.stats?.hp_max || 0}</span>
-          <input type="text" class="smart-math-input hidden" id="edit-hp" value="${player.stats?.hp_max || 0}">
-        </div>
-        <div><span class="vital-label">AC:</span> 
-          <span class="vital-val">${player.stats?.ac || 0}</span>
-          <input type="text" class="smart-math-input hidden" id="edit-ac" value="${player.stats?.ac || 0}">
-        </div>
-        <div><span class="vital-label">PP:</span> 
-          <span class="vital-val">${player.stats?.passive_perception || 0}</span>
-          <input type="text" class="smart-math-input hidden" id="edit-pp" value="${player.stats?.passive_perception || 0}">
-        </div>
-        <div><span class="vital-label">Gold:</span> 
-          <span class="vital-val">${player.gold || 0}</span>
-          <input type="text" class="smart-math-input hidden" id="edit-gold" value="${player.gold || 0}">
-        </div>
+        <div><span class="vital-label">HP:</span> ${makeEditable(player.stats?.hp_max||0, [...pPath, 'stats'], 'hp_max', true)}</div>
+        <div><span class="vital-label">AC:</span> ${makeEditable(player.stats?.ac||0, [...pPath, 'stats'], 'ac', true)}</div>
+        <div><span class="vital-label">PP:</span> ${makeEditable(player.stats?.passive_perception||0, [...pPath, 'stats'], 'passive_perception', true)}</div>
+        <div><span class="vital-label">Gold:</span> ${makeEditable(player.gold||0, pPath, 'gold', true)}</div>
       `;
 
-      const content = document.getElementById('detail-content');
       const otherPlayers = appState.players.filter(p => p.name !== player.name).map(p => p.name);
       
-      let invHtml = (player.inventory || []).map(item => {
-        const typeBadge = /wondrous/i.test(item.flavor_text) ? '<span class="badge curse" style="background:#555">Wondrous</span>' : '';
+      let invHtml = (player.inventory || []).map((item, iIndex) => {
+        const iPath = [...pPath, 'inventory', iIndex];
+        const typeBadge = /wondrous/i.test(item.flavor_text) ? `<span class="badge" style="background:#555">Wondrous</span>` : '';
+        
+        let qtyUI = item.is_multiple ? `
+          <div class="qty-stack" onclick="event.stopPropagation()">
+            <button onclick="setQty(${playerIndex}, ${iIndex}, 1)">▲</button>
+            <input type="number" value="${item.quantity}" min="1" max="1000" onchange="setQtyVal(${playerIndex}, ${iIndex}, this.value)">
+            <button onclick="setQty(${playerIndex}, ${iIndex}, -1)">▼</button>
+          </div>` : '';
+          
+        let chargesUI = '';
+        if(item.charges && item.charges.max > 0) {
+          let b = '';
+          for(let c=0; c < item.charges.max; c++) b += `<span class="charge-bubble ${c < item.charges.current ? 'filled' : 'empty'}" onclick="event.stopPropagation(); setCharge(${playerIndex}, ${iIndex}, ${c+1})"></span>`;
+          chargesUI = `<div class="item-charges">${b}</div>`;
+        }
+
         return `
-        <details class="item-block">
-          <summary class="flex-between">
-            <span>${typeBadge} ${item.name} 
-              <span class="qty-controls">
-                (x<button class="micro-btn" onclick="adjustQty(event, '${escapeJS(player.name)}', '${escapeJS(item.name)}', -1)">-</button> 
-                ${item.quantity} 
-                <button class="micro-btn" onclick="adjustQty(event, '${escapeJS(player.name)}', '${escapeJS(item.name)}', 1)">+</button>)
-              </span>
-            </span>
+        <details class="item-block" ondragover="allowDrop(event)" ondrop="drop(event, ${playerIndex}, ${iIndex})">
+          <summary>
+            <span class="drag-handle" draggable="true" ondragstart="drag(event, ${iIndex})" onclick="event.stopPropagation()">⋮⋮</span>
+            ${qtyUI}
+            <div style="flex-grow:1">
+               <div class="flex-between">
+                 <span>${typeBadge} ${makeEditable(item.name, iPath, 'name')}</span>
+               </div>
+               ${chargesUI}
+            </div>
           </summary>
-          <div class="flavor-text editable-text" data-type="inv-flavor" data-item="${escapeHtml(item.name)}" data-raw="${escapeHtml(item.flavor_text)}">${item.flavor_text}</div>
-          <div class="mechanic-text"><strong>Mechanic:</strong> <span class="editable-text" data-type="inv-mech" data-item="${escapeHtml(item.name)}" data-raw="${escapeHtml(item.mechanics)}">${parseMath(item.mechanics)}</span></div>
-          ${otherPlayers.length > 0 ? `
-          <div class="flex-gap action-btn-group" style="margin-top: 1rem;">
-            <select id="move-${item.name.replace(/[^a-zA-Z0-9]/g, '')}">
+          <div class="flavor-text" style="margin-top:10px;">${makeEditable(item.flavor_text, iPath, 'flavor_text', false, true)}</div>
+          <div class="mechanic-text"><strong>Mechanic:</strong> ${makeEditable(parseMath(item.mechanics), iPath, 'mechanics', false, true)}</div>
+          
+          <div class="flex-gap" style="margin-top: 1rem;">
+            <button class="btn-sm" onclick="toggleSettings(${iIndex})">⚙️ Options</button>
+            ${otherPlayers.length > 0 ? `<button class="btn-sm" onclick="toggleMoveUI(${iIndex})">📦 Move</button>` : ''}
+          </div>
+          
+          <div id="settings-${iIndex}" class="item-settings-panel hidden">
+             <label><input type="checkbox" ${item.is_multiple ? 'checked' : ''} onchange="toggleItemProp(${playerIndex}, ${iIndex}, 'is_multiple', this.checked)"> Track Quantity</label><br>
+             <div style="margin-top:6px; display:flex; gap:10px; align-items:center;">
+               <label>Max Charges: <input type="number" style="width:40px" value="${item.charges?.max || 0}" onchange="setChargeMax(${playerIndex}, ${iIndex}, this.value)"></label>
+               <select onchange="setChargeReset(${playerIndex}, ${iIndex}, this.value)">
+                 <option value="long" ${item.charges?.reset_on === 'long' ? 'selected' : ''}>Reset: Long Rest</option>
+                 <option value="short" ${item.charges?.reset_on === 'short' ? 'selected' : ''}>Reset: Short Rest</option>
+                 <option value="dawn" ${item.charges?.reset_on === 'dawn' ? 'selected' : ''}>Reset: Dawn</option>
+                 <option value="manual" ${item.charges?.reset_on === 'manual' ? 'selected' : ''}>Reset: Manual</option>
+               </select>
+             </div>
+             <button class="btn-danger btn-sm" style="margin-top:10px" onclick="deleteItem(${playerIndex}, ${iIndex})">Delete Item</button>
+          </div>
+
+          <div id="moveui-${iIndex}" class="item-settings-panel hidden flex-gap">
+            <select id="move-target-${iIndex}">
               <option value="" disabled selected>Move to...</option>
               ${otherPlayers.map(p => `<option value="${p}">${p}</option>`).join('')}
             </select>
-            <button class="btn-move" onclick="moveItem(this, '${escapeJS(player.name)}', '${escapeJS(item.name)}')">Confirm Move</button>
-          </div>` : ''}
-        </details>
-      `}).join('');
+            <button class="btn-move btn-sm" onclick="confirmMove(${playerIndex}, ${iIndex})">Confirm Move</button>
+            <button class="btn-sm" onclick="toggleMoveUI(${iIndex})">Cancel</button>
+          </div>
+        </details>`
+      }).join('');
 
-      let achHtml = (player.achievements?.pending || []).map(ach => {
+      let achHtml = (player.achievements?.pending || []).map((ach, aIndex) => {
+        const aPath = [...pPath, 'achievements', 'pending', aIndex];
         return `
         <div class="item-block">
           <div class="flex-between">
-            <strong class="notification-glow">${ach.name}</strong>
-            <button class="btn-claim action-btn-group" onclick="claimAchievement(this, '${escapeJS(player.name)}', '${escapeJS(ach.name)}')">Claim Reward</button>
+            <strong class="notification-glow">${makeEditable(ach.name, aPath, 'name')}</strong>
+            <button class="btn-claim btn-sm" onclick="claimAch(${playerIndex}, ${aIndex})">Claim Reward</button>
           </div>
-          <div class="text-sm editable-text" data-type="ach-desc" data-item="${escapeHtml(ach.name)}" data-raw="${escapeHtml(ach.description)}" style="margin: 0.5rem 0;">${ach.description}</div>
-          <p class="text-sm"><strong>Rewards:</strong> ${ach.rewards?.gold || 0}g, ${ach.rewards?.items?.map(i => i.name).join(', ') || 'None'}</p>
-        </div>
-      `}).join('');
-
-      const invCount = player.inventory?.length || 0;
-      const pendCount = player.achievements?.pending?.length || 0;
-      const claimCount = player.achievements?.claimed?.length || 0;
+          <div class="text-sm" style="margin: 0.5rem 0;">${makeEditable(ach.description, aPath, 'description', false, true)}</div>
+        </div>`
+      }).join('');
 
       content.innerHTML = `
         <details><summary>Base Stats & Lore</summary>
-          <div class="item-block">
-            <div class="flavor-text editable-text" data-type="lore" data-raw="${escapeHtml(player.lore)}">${player.lore || 'None recorded'}</div>
-          </div>
+          <div class="item-block flavor-text">${makeEditable(player.lore || 'None', pPath, 'lore', false, true)}</div>
         </details>
-        
-        <details class="${invCount === 0 ? 'ghost-accordion' : ''}">
-          <summary>Inventory (${invCount} Items)</summary>
-          ${invHtml || '<p class="text-sm">Empty</p>'}
-        </details>
-        
-        <details class="${pendCount === 0 ? 'ghost-accordion' : ''}">
-          <summary class="${pendCount > 0 ? 'notification-glow' : ''}">Pending Achievements (${pendCount} Unclaimed)</summary>
-          ${achHtml || '<p class="text-sm">No pending achievements.</p>'}
-        </details>
-        
-        <details class="${claimCount === 0 ? 'ghost-accordion' : ''}">
-          <summary>Claimed Achievements (${claimCount})</summary>
-          ${(player.achievements?.claimed || []).map(a => `<div class="item-block text-sm"><strong>${a.name}:</strong> ${a.description}</div>`).join('') || '<p class="text-sm">None</p>'}
-        </details>
+        <details class="${!invHtml ? 'ghost-accordion' : ''}"><summary>Inventory (${player.inventory?.length||0})</summary>${invHtml || '<p>Empty</p>'}</details>
+        <details class="${!achHtml ? 'ghost-accordion' : ''}"><summary class="${player.achievements?.pending?.length>0?'notification-glow':''}">Pending Achievements (${player.achievements?.pending?.length||0})</summary>${achHtml || '<p>None</p>'}</details>
       `;
 
-      // Restore accordion states
-      if(preserveAccordions) {
+      if(preserve) {
         const details = document.querySelectorAll('#detail-content details');
         details.forEach((d, i) => { if(openStates[i]) d.open = true; });
       }
     }
 
-    // --- Interactive Data Mutations ---
-    async function adjustQty(e, playerName, itemName, delta) {
-      e.preventDefault(); e.stopPropagation();
-      const btn = e.target;
-      if (btn.disabled) return;
-      btn.disabled = true;
+    // --- Interactions ---
+    function toggleAccordions(open) { document.querySelectorAll('#detail-content details').forEach(d => d.open = open); }
+    function toggleSettings(idx) { document.getElementById(`settings-${idx}`).classList.toggle('hidden'); }
+    function toggleMoveUI(idx) { document.getElementById(`moveui-${idx}`).classList.toggle('hidden'); }
+    function getConditionClass(c) { return ['poisoned','charmed','paralyzed','blinded'].includes(c.toLowerCase()) ? c.toLowerCase() : 'active'; }
 
-      const player = appState.players.find(p => p.name === playerName);
-      const item = player.inventory.find(i => i.name === itemName);
-      if (!item) { btn.disabled = false; return; }
-
-      item.quantity += delta;
-      if (item.quantity <= 0) {
-        if(confirm(`Remove ${item.name} entirely?`)) {
-          player.inventory = player.inventory.filter(i => i.name !== itemName);
-        } else item.quantity = 1;
-      }
-      
-      await syncToKV();
-      renderDetailScreen(true); // Re-renders, button will not be disabled in new DOM
+    // Inventory Mechanics
+    async function setQty(pIdx, iIdx, delta) {
+      pushState();
+      const item = appState.players[pIdx].inventory[iIdx];
+      item.quantity = Math.max(1, Math.min(1000, item.quantity + delta));
+      await syncToKV(); renderDetailScreen(true);
     }
-
-    // --- Edit Mode Engine ---
-    function toggleEditMode() {
-      isEditMode = !isEditMode;
-      const btn = document.getElementById('btn-edit-mode');
-      
-      if (isEditMode) {
-        // Entering Edit Mode
-        btn.innerText = "💾 Save Changes";
-        btn.classList.add('btn-claim');
-        
-        // Swap Vitals
-        document.querySelectorAll('.vital-val').forEach(el => el.classList.add('hidden'));
-        document.querySelectorAll('.smart-math-input').forEach(el => el.classList.remove('hidden'));
-        
-        // Hide move/claim buttons
-        document.querySelectorAll('.action-btn-group').forEach(el => el.classList.add('hidden'));
-
-        // Enable contenteditable, swap to raw unparsed text
-        document.querySelectorAll('.editable-text').forEach(el => {
-          el.contentEditable = "true";
-          el.classList.add('editing-active');
-          el.innerText = el.getAttribute('data-raw'); // strip math markup
-        });
-      } else {
-        // Saving Changes
-        btn.innerText = "✏️ Edit Sheet";
-        btn.classList.remove('btn-claim');
-        saveEdits();
-      }
+    async function setQtyVal(pIdx, iIdx, val) {
+      pushState();
+      appState.players[pIdx].inventory[iIdx].quantity = Math.max(1, Math.min(1000, parseInt(val)||1));
+      await syncToKV(); renderDetailScreen(true);
     }
-
-    async function saveEdits() {
-      const player = appState.players.find(p => p.name === currentDetailPlayer);
-
-      // Save Smart Math Vitals
-      player.stats.hp_max = applySmartMath(player.stats.hp_max, document.getElementById('edit-hp').value.trim());
-      player.stats.ac = applySmartMath(player.stats.ac, document.getElementById('edit-ac').value.trim());
-      player.stats.passive_perception = applySmartMath(player.stats.passive_perception, document.getElementById('edit-pp').value.trim());
-      player.gold = applySmartMath(player.gold, document.getElementById('edit-gold').value.trim());
-
-      // Save Text Fields
-      document.querySelectorAll('.editable-text').forEach(el => {
-        const type = el.getAttribute('data-type');
-        const val = el.innerText.trim();
-        const itemName = el.getAttribute('data-item');
-
-        if (type === 'lore') player.lore = val;
-        if (type === 'inv-flavor') {
-          const item = player.inventory.find(i => i.name === itemName);
-          if (item) item.flavor_text = val;
-        }
-        if (type === 'inv-mech') {
-          const item = player.inventory.find(i => i.name === itemName);
-          if (item) item.mechanics = val;
-        }
-        if (type === 'ach-desc') {
-          const ach = player.achievements.pending.find(a => a.name === itemName);
-          if (ach) ach.description = val;
-        }
+    async function setCharge(pIdx, iIdx, targetCharge) {
+      pushState();
+      const item = appState.players[pIdx].inventory[iIdx];
+      item.charges.current = (item.charges.current === targetCharge) ? targetCharge - 1 : targetCharge;
+      await syncToKV(); renderDetailScreen(true);
+    }
+    async function toggleItemProp(pIdx, iIdx, prop, val) {
+      pushState();
+      appState.players[pIdx].inventory[iIdx][prop] = val;
+      await syncToKV(); renderDetailScreen(true);
+    }
+    async function setChargeMax(pIdx, iIdx, val) {
+      pushState();
+      const item = appState.players[pIdx].inventory[iIdx];
+      if(!item.charges) item.charges = { current:0, reset_on:'long' };
+      item.charges.max = parseInt(val)||0;
+      item.charges.current = item.charges.max;
+      await syncToKV(); renderDetailScreen(true);
+    }
+    async function setChargeReset(pIdx, iIdx, val) {
+      pushState();
+      appState.players[pIdx].inventory[iIdx].charges.reset_on = val;
+      await syncToKV(); renderDetailScreen(true);
+    }
+    async function deleteItem(pIdx, iIdx) {
+      if(!confirm("Delete this item permanently?")) return;
+      pushState();
+      appState.players[pIdx].inventory.splice(iIdx, 1);
+      await syncToKV(); renderDetailScreen(true);
+    }
+    async function confirmMove(pIdx, iIdx) {
+      const select = document.getElementById(`move-target-${iIdx}`);
+      if(!select.value) return showToast("Select target.");
+      pushState();
+      const p = appState.players[pIdx];
+      const targetP = appState.players.find(x => x.name === select.value);
+      if (!targetP.inventory) targetP.inventory = [];
+      const item = p.inventory.splice(iIdx, 1)[0];
+      const ex = targetP.inventory.find(i => i.name === item.name);
+      if(ex && item.is_multiple) ex.quantity += item.quantity; else targetP.inventory.push(item);
+      await syncToKV(); renderDetailScreen(true);
+      showToast(`Moved ${item.name}`);
+    }
+    async function claimAch(pIdx, aIdx) {
+      pushState();
+      const p = appState.players[pIdx];
+      const ach = p.achievements.pending.splice(aIdx, 1)[0];
+      if(ach.rewards?.gold) p.gold += ach.rewards.gold;
+      
+      if (!p.inventory) p.inventory = [];
+      if(ach.rewards?.items) ach.rewards.items.forEach(ni => {
+        const ex = p.inventory.find(i=>i.name===ni.name);
+        if(ex && ni.is_multiple) ex.quantity += (ni.quantity||1); else p.inventory.push({...ni, quantity:ni.quantity||1});
       });
-
-      await syncToKV();
-      renderDetailScreen(true); // Re-render applies formatting/badges
-    }
-
-    // --- Action Button Handlers ---
-    function toggleAccordions() {
-      const details = document.querySelectorAll('#detail-content details');
-      const isAnyClosed = Array.from(details).some(d => !d.open);
-      details.forEach(d => d.open = isAnyClosed);
-    }
-
-    async function moveItem(btn, sourceName, itemName) {
-      const selectId = `move-${itemName.replace(/[^a-zA-Z0-9]/g, '')}`;
-      const targetName = document.getElementById(selectId).value;
-      if (!targetName) return alert("Select a player.");
-
-      const sourcePlayer = appState.players.find(p => p.name === sourceName);
-      const targetPlayer = appState.players.find(p => p.name === targetName);
-      const itemIndex = sourcePlayer.inventory.findIndex(i => i.name === itemName);
-      if (itemIndex === -1) return; 
-
-      btn.disabled = true; btn.innerText = "Moving...";
-      const item = sourcePlayer.inventory.splice(itemIndex, 1)[0];
-      const existing = targetPlayer.inventory.find(i => i.name === item.name);
       
-      if (existing) existing.quantity += item.quantity; 
-      else targetPlayer.inventory.push(item); 
-
-      await syncToKV();
-      renderDetailScreen(true);
+      if (!p.achievements.claimed) p.achievements.claimed = [];
+      p.achievements.claimed.push({name:ach.name, description:ach.description});
+      
+      await syncToKV(); renderDetailScreen(true); showToast("Reward Claimed!");
     }
 
-    async function claimAchievement(btn, playerName, achievementName) {
-      const player = appState.players.find(p => p.name === playerName);
-      const achIndex = player.achievements.pending.findIndex(a => a.name === achievementName);
-      if (achIndex === -1) return; 
-
-      btn.disabled = true; btn.innerText = "Claiming...";
-      const achievement = player.achievements.pending.splice(achIndex, 1)[0];
-
-      if (achievement.rewards?.gold) player.gold += achievement.rewards.gold;
-      if (achievement.rewards?.items) {
-        achievement.rewards.items.forEach(newItem => {
-          const qty = newItem.quantity || 1;
-          const existing = player.inventory.find(i => i.name === newItem.name);
-          if (existing) existing.quantity += qty;
-          else player.inventory.push({ ...newItem, quantity: qty });
+    // Time Advance
+    async function advanceTime(type) {
+      if(!type) return;
+      pushState();
+      appState.players.forEach(p => {
+        if(type === 'long') {
+          if (p.stats) p.stats.hp_current = p.stats.hp_max || 0;
+          if (p.status && p.status.conditions) {
+            p.status.conditions = p.status.conditions.filter(c => !['poisoned','blinded','deafened','paralyzed','stunned'].includes(c.toLowerCase()));
+          }
+        }
+        (p.inventory||[]).forEach(i => {
+          if(i.charges && (i.charges.reset_on === type || (type === 'long' && i.charges.reset_on === 'short'))) i.charges.current = i.charges.max;
         });
-      }
-
-      player.achievements.claimed.push({ name: achievement.name, description: achievement.description });
-      await syncToKV();
-      renderDetailScreen(true);
+      });
+      document.getElementById('time-advance').value = "";
+      await syncToKV(); renderAll(); showToast(`${type.toUpperCase()} REST applied.`);
     }
 
-    // --- System Management (Upsert) ---
+    // Drag & Drop
+    let draggedIdx = null;
+    function drag(e, idx) { draggedIdx = idx; e.dataTransfer.effectAllowed = "move"; }
+    function allowDrop(e) { e.preventDefault(); }
+    async function drop(e, pIdx, tIdx) {
+      e.preventDefault();
+      if(draggedIdx === null || draggedIdx === tIdx) return;
+      pushState();
+      const p = appState.players[pIdx];
+      const item = p.inventory.splice(draggedIdx, 1)[0];
+      p.inventory.splice(tIdx, 0, item);
+      await syncToKV(); renderDetailScreen(true);
+    }
+
+    // --- Data Mgmt ---
     async function handleMerge(btn) {
-      const rawData = document.getElementById('import-data').value;
-      if (!rawData) return;
-
-      let parsedData;
-      try { parsedData = JSON.parse(rawData); } catch (e) { return alert("Invalid JSON format."); }
-      if (!parsedData.players || !Array.isArray(parsedData.players)) return alert("JSON must contain a 'players' array.");
-
-      let mergeCount = 0;
-      parsedData.players.forEach(incomingPlayer => {
-        const existingPlayer = appState.players.find(p => p.name.toLowerCase() === incomingPlayer.name.toLowerCase());
-        
-        if (existingPlayer) {
-          // Upsert Pending Achievements
-          if (incomingPlayer.achievements?.pending) {
-            if (!existingPlayer.achievements) existingPlayer.achievements = { pending: [], claimed: [] };
-            if (!existingPlayer.achievements.pending) existingPlayer.achievements.pending = [];
-            incomingPlayer.achievements.pending.forEach(incAch => {
-              const exAch = existingPlayer.achievements.pending.find(a => a.name === incAch.name);
-              if (exAch) Object.assign(exAch, incAch);
-              else existingPlayer.achievements.pending.push(incAch);
-              mergeCount++;
-            });
-          }
-          // Upsert Inventory
-          if (incomingPlayer.inventory) {
-            if (!existingPlayer.inventory) existingPlayer.inventory = [];
-            incomingPlayer.inventory.forEach(newItem => {
-              const existingItem = existingPlayer.inventory.find(i => i.name === newItem.name);
-              const qtyToAdd = newItem.quantity || 0; 
-              if (existingItem) {
-                const currentQty = existingItem.quantity;
-                Object.assign(existingItem, newItem);
-                existingItem.quantity = currentQty + qtyToAdd;
-              } else existingPlayer.inventory.push({...newItem, quantity: qtyToAdd || 1});
-              mergeCount++;
-            });
-          }
-        } else {
-          appState.players.push({
-            name: incomingPlayer.name,
-            stats: { hp_max: 10, ac: 10, passive_perception: 10 },
-            status: { conditions: [], context_tags: {} },
-            inventory: incomingPlayer.inventory || [],
-            abilities: { spells: [] },
-            achievements: incomingPlayer.achievements || { pending: [], claimed: [] },
-            lore: "Newly merged character.",
-            special_item_mechanics: [],
-            gold: 0
+      const raw = document.getElementById('import-data').value;
+      let d; try { d = JSON.parse(raw); } catch(e) { return showToast("Invalid JSON"); }
+      if(!d.players) return showToast("Missing players array");
+      pushState();
+      let count = 0;
+      d.players.forEach(inc => {
+        const ex = appState.players.find(p => p.name.toLowerCase() === inc.name.toLowerCase());
+        if(ex) {
+          (inc.achievements?.pending||[]).forEach(ia => {
+             if(!ex.achievements) ex.achievements = { pending: [], claimed: [] };
+             if(!ex.achievements.pending) ex.achievements.pending = [];
+             const ea = ex.achievements.pending.find(a=>a.name===ia.name);
+             if(ea) Object.assign(ea, ia); else ex.achievements.pending.push(ia); count++;
           });
-          mergeCount++;
+          (inc.inventory||[]).forEach(ii => {
+             if(!ex.inventory) ex.inventory = [];
+             const ei = ex.inventory.find(i=>i.name===ii.name);
+             if(ei) { const c = ei.quantity; Object.assign(ei, ii); ei.quantity = c + (ii.quantity||0); }
+             else ex.inventory.push({...ii, quantity: ii.quantity||1}); count++;
+          });
         }
       });
-
-      if (mergeCount > 0) {
-        if (btn) { btn.disabled = true; btn.innerText = "Syncing..."; }
-        await syncToKV();
-        renderOverview();
-        if (btn) { btn.disabled = false; btn.innerText = "+ Merge / Append Data"; }
-        document.getElementById('import-data').value = '';
-        document.getElementById('import-section').open = false;
-        alert(`Merged ${mergeCount} updates into DB.`);
-      } else alert("No matching updates found.");
+      btn.disabled = true; await syncToKV(); btn.disabled = false; renderAll(); showToast(`Merged ${count} updates.`);
     }
 
     async function handleOverwrite(btn) {
-      const rawData = document.getElementById('import-data').value;
-      if (!rawData) return;
-      if (!confirm("WARNING: Completely erase current state?")) return;
-
-      let parsedData;
-      try { parsedData = JSON.parse(rawData); } catch (e) { return alert("Invalid JSON."); }
-      if (!parsedData.players) return alert("Missing 'players' array.");
-
-      appState = parsedData;
-      if (btn) { btn.disabled = true; btn.innerText = "Syncing..."; }
-      await syncToKV();
-      renderOverview();
-      if (btn) { btn.disabled = false; btn.innerText = "⚠ Hard Overwrite"; }
-      document.getElementById('import-data').value = '';
-      document.getElementById('import-section').open = false;
+      if(!confirm("HARD OVERWRITE: Erase everything?")) return;
+      const raw = document.getElementById('import-data').value;
+      let d; try { d = JSON.parse(raw); } catch(e) { return showToast("Invalid JSON"); }
+      pushState(); appState = d; btn.disabled = true; await syncToKV(); btn.disabled = false; renderAll(); showToast("Overwritten.");
     }
 
     init();
