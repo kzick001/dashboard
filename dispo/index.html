@@ -46,11 +46,15 @@
     }
     .watchlist-input-group input:focus, .watchlist-input-group select:focus { border-color: var(--accent); }
 
-    /* Filters */
+   /* Filters */
     .filter-panel { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
     select, input[type="text"].search-bar {
       background: var(--glass); color: var(--text-main); border: 1px solid var(--glass-border);
       padding: 10px; border-radius: 8px; font-family: 'Inter'; font-size: 13px; outline: none; flex: 1; min-width: 120px;
+    }
+    option {
+      background-color: var(--bg);
+      color: var(--text-main);
     }
     
     /* Table Styles */
