@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Shop Time</title>
+    
+    <!-- iOS PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Shop Time">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23333%22 width=%22100%22 height=%22100%22/><text y=%2250%22 font-size=%2250%22 fill=%22white%22>W</text></svg>">
+    
+    <style>
+        :root {
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --text: #ffffff;
+            --text-muted: #a0a0a0;
+            --primary: #4caf50;
+            --danger: #f44336;
+            --accent: #2196f3;
+            --border: #333;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        
+        body { background-color: var(--bg); color: var(--text); padding: env(safe-area-inset-top) 1rem 1rem 1rem; }
+
+        header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+        h1 { font-size: 1.5rem; }
+        
+        .sync-status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: var(--text-muted); }
+        .sync-icon { width: 16px; height: 16px; fill: currentColor; }
+        .syncing { animation: spin 1s linear infinite; color: var(--primary); }
+        .synced { color: var(--primary); }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        nav { display: flex; gap: 1rem; margin-bottom: 1rem; }
+        .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 1rem; cursor: pointer; padding: 0.5rem 0; border-bottom: 2px solid transparent; }
+        .nav-btn.active { color: var(--text); border-bottom-color: var(--primary); }
+
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* Tracker View */
+        .controls { background: var(--surface); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
+        .project-select-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+        select, input { flex: 1; background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 0.75rem; border-radius: 4px; font-size: 1rem; }
+        .icon-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0.75rem; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        
+        .timer-display { text-align: center; font-size: 2.5rem; font-variant-numeric: tabular-nums; margin: 1rem 0; }
+        
+        .action-buttons { display: flex; gap: 1rem; }
+        .btn { flex: 1; padding: 1rem; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; color: white; cursor: pointer; transition: opacity 0.2s; }
+        .btn:active { opacity: 0.8; }
+        .btn-start { background-color: var(--primary); }
+        .btn-stop { background-color: var(--danger); }
+        .btn-manual { background-color: var(--accent); margin-top: 1rem; width: 100%; }
+
+        /* Lists & Cards */
+        h2 { font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-muted); }
+        .session-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .session-item { background: var(--surface); padding: 1rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .session-details { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; flex: 1; margin-right: 1rem; }
+        .session-project { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .session-time { font-size: 0.875rem; color: var(--text-muted); }
+
+        /* Project View */
+        details { background: var(--surface); margin-bottom: 0.5rem; border-radius: 8px; overflow: hidden; }
+        summary { padding: 1rem; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; list-style: none; }
+        summary::-webkit-details-marker { display: none; }
+        .project-actions { display: flex; gap: 0.5rem; padding: 1rem; border-top: 1px solid var(--border); }
+        .btn-small { padding: 0.5rem 1rem; font-size: 0.875rem; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--text); cursor: pointer; }
+
+        /* Modals */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: var(--surface); width: 100%; max-width: 400px; padding: 1.5rem; border-radius: 8px; display: flex; flex-direction: column; gap: 1rem; }
+        .modal-buttons { display: flex; gap: 1rem; margin-top: 0.5rem; }
+        
+        svg { width: 20px; height: 20px; fill: currentColor; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Shop Time</h1>
+        <div class="sync-status" id="syncIndicator">
+            <svg class="sync-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            <span id="syncText">Synced</span>
+        </div>
+    </header>
+
+    <nav>
+        <button class="nav-btn active" onclick="switchView('tracker')">Tracker</button>
+        <button class="nav-btn" onclick="switchView('projects')">Projects</button>
+    </nav>
+
+    <!-- Main Tracker View -->
+    <main id="view-tracker" class="view active">
+        <div class="controls">
+            <div class="project-select-row">
+                <select id="projectSelect">
+                    <option value="">Select Project...</option>
+                </select>
+                <button class="icon-btn" onclick="addProject()" aria-label="Add Project">
+                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                </button>
+            </div>
+            
+            <div class="timer-display" id="timerDisplay">00:00:00</div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-start" id="startBtn" onclick="toggleTimer()">START</button>
+            </div>
+            <button class="btn btn-manual" onclick="openManualEntry()">Manual Entry</button>
+        </div>
+
+        <h2>Recent Punches</h2>
+        <div class="session-list" id="recentSessions"></div>
+    </main>
+
+    <!-- Projects & History View -->
+    <main id="view-projects" class="view">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2>Project Logs</h2>
+            <button class="icon-btn" onclick="exportData()" aria-label="Export Data">
+                <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            </button>
+        </div>
+        <div id="projectAccordion"></div>
+    </main>
+
+    <!-- Manual / Edit Modal -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <h3 id="modalTitle">Edit Session</h3>
+            <select id="modalProjectSelect"></select>
+            <label>Start Time
+                <input type="datetime-local" id="modalStart">
+            </label>
+            <label>End Time
+                <input type="datetime-local" id="modalEnd">
+            </label>
+            <div class="modal-buttons">
+                <button class="btn" style="background: var(--border)" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-start" onclick="saveSessionModal()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Configuration
+        const WORKER_URL = 'https://wisechel.askozicki.workers.dev/';
+        const AUTH_KEY = 'WISE_CHEL';
+        
+        let state = {
+            projects: JSON.parse(localStorage.getItem('projects') || '[]'),
+            sessions: JSON.parse(localStorage.getItem('sessions') || '[]'),
+            activeSession: JSON.parse(localStorage.getItem('activeSession') || 'null'),
+            queue: JSON.parse(localStorage.getItem('queue') || '[]')
+        };
+
+        let timerInterval = null;
+        let editingSessionId = null;
+
+        // Core Initialization
+        function init() {
+            renderProjects();
+            renderRecent();
+            renderAccordion();
+            if (state.activeSession) {
+                startClock();
+                document.getElementById('projectSelect').value = state.activeSession.projectId;
+                updateButtonState(true);
+            }
+            window.addEventListener('online', attemptSync);
+            attemptSync();
+        }
+
+        // Persistence
+        function saveState() {
+            localStorage.setItem('projects', JSON.stringify(state.projects));
+            localStorage.setItem('sessions', JSON.stringify(state.sessions));
+            localStorage.setItem('activeSession', JSON.stringify(state.activeSession));
+            localStorage.setItem('queue', JSON.stringify(state.queue));
+            renderRecent();
+            renderAccordion();
+            queueSync();
+        }
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // Navigation
+        function switchView(viewName) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('view-' + viewName).classList.add('active');
+            const targetBtn = document.querySelector(`button[onclick="switchView('${viewName}')"]`);
+            if (targetBtn) targetBtn.classList.add('active');
+            if(viewName === 'projects') renderAccordion();
+        }
+
+        // Project Management
+        function addProject() {
+            const name = prompt("Enter new project name:");
+            if (!name || name.trim() === '') return;
+            state.projects.push({ id: generateId(), name: name.trim(), archived: false });
+            saveState();
+            renderProjects();
+        }
+
+        function archiveProject(id) {
+            if (!confirm("Archive this project? It will be hidden from new entries.")) return;
+            const p = state.projects.find(p => p.id === id);
+            if (p) p.archived = true;
+            saveState();
+            renderProjects();
+        }
+
+        function deleteProject(id) {
+            if (state.activeSession && state.activeSession.projectId === id) {
+                return alert("Cannot delete an active project. Please stop the timer first.");
+            }
+            if (!confirm("Are you sure? This deletes the project and ALL associated time logs permanently.")) return;
+            state.projects = state.projects.filter(p => p.id !== id);
+            state.sessions = state.sessions.filter(s => s.projectId !== id);
+            saveState();
+            renderProjects();
+        }
+
+        // Timer Logic
+        function toggleTimer() {
+            const select = document.getElementById('projectSelect');
+            if (!select.value) return alert("Select a project first.");
+
+            if (state.activeSession) {
+                // Stop
+                const session = {
+                    id: state.activeSession.id,
+                    projectId: state.activeSession.projectId,
+                    startTime: state.activeSession.startTime,
+                    endTime: new Date().toISOString()
+                };
+                state.sessions.push(session);
+                state.activeSession = null;
+                clearInterval(timerInterval);
+                document.getElementById('timerDisplay').textContent = "00:00:00";
+                updateButtonState(false);
+            } else {
+                // Start
+                state.activeSession = {
+                    id: generateId(),
+                    projectId: select.value,
+                    startTime: new Date().toISOString()
+                };
+                startClock();
+                updateButtonState(true);
+            }
+            saveState();
+        }
+
+        function updateButtonState(isRunning) {
+            const container = document.querySelector('.action-buttons');
+            if (isRunning) {
+                container.innerHTML = `<button class="btn btn-stop" onclick="toggleTimer()">STOP</button>`;
+                document.getElementById('projectSelect').disabled = true;
+            } else {
+                container.innerHTML = `<button class="btn btn-start" onclick="toggleTimer()">START</button>`;
+                document.getElementById('projectSelect').disabled = false;
+            }
+        }
+
+        function startClock() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const now = new Date();
+                const start = new Date(state.activeSession.startTime);
+                const diff = new Date(now - start);
+                const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+                const m = String(diff.getUTCMinutes()).padStart(2, '0');
+                const s = String(diff.getUTCSeconds()).padStart(2, '0');
+                document.getElementById('timerDisplay').textContent = `${h}:${m}:${s}`;
+            }, 1000);
+        }
+
+        // Modals & Manual Entry
+        function openManualEntry() {
+            editingSessionId = null;
+            document.getElementById('modalTitle').textContent = "Manual Entry";
+            document.getElementById('modalProjectSelect').innerHTML = document.getElementById('projectSelect').innerHTML;
+            
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('modalEnd').value = now.toISOString().slice(0, 16);
+            
+            now.setHours(now.getHours() - 1);
+            document.getElementById('modalStart').value = now.toISOString().slice(0, 16);
+            
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function openEdit(id) {
+            const session = state.sessions.find(s => s.id === id);
+            if (!session) return;
+            editingSessionId = id;
+            
+            document.getElementById('modalTitle').textContent = "Edit Session";
+            document.getElementById('modalProjectSelect').innerHTML = document.getElementById('projectSelect').innerHTML;
+            document.getElementById('modalProjectSelect').value = session.projectId;
+            
+            const start = new Date(session.startTime);
+            start.setMinutes(start.getMinutes() - start.getTimezoneOffset());
+            document.getElementById('modalStart').value = start.toISOString().slice(0, 16);
+
+            const end = new Date(session.endTime);
+            end.setMinutes(end.getMinutes() - end.getTimezoneOffset());
+            document.getElementById('modalEnd').value = end.toISOString().slice(0, 16);
+
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        function saveSessionModal() {
+            const projectId = document.getElementById('modalProjectSelect').value;
+            const startVal = document.getElementById('modalStart').value;
+            const endVal = document.getElementById('modalEnd').value;
+
+            if (!projectId || !startVal || !endVal) return alert("Fill all fields.");
+
+            const sessionData = {
+                id: editingSessionId || generateId(),
+                projectId: projectId,
+                startTime: new Date(startVal).toISOString(),
+                endTime: new Date(endVal).toISOString()
+            };
+
+            if (editingSessionId) {
+                const idx = state.sessions.findIndex(s => s.id === editingSessionId);
+                state.sessions[idx] = sessionData;
+            } else {
+                state.sessions.push(sessionData);
+            }
+
+            saveState();
+            closeModal();
+        }
+
+        // Rendering
+        function renderProjects() {
+            const select = document.getElementById('projectSelect');
+            const activeProjects = state.projects.filter(p => !p.archived);
+            select.innerHTML = '<option value="">Select Project...</option>' + 
+                activeProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            
+            if (state.activeSession) select.value = state.activeSession.projectId;
+        }
+
+        function formatDuration(start, end) {
+            const diff = new Date(end) - new Date(start);
+            const hrs = (diff / 3600000).toFixed(2);
+            return `${hrs} hrs`;
+        }
+
+        function renderRecent() {
+            const list = document.getElementById('recentSessions');
+            const sorted = [...state.sessions].sort((a, b) => new Date(b.startTime) - new Date(a.startTime)).slice(0, 6);
+            
+            list.innerHTML = sorted.map(s => {
+                const p = state.projects.find(proj => proj.id === s.projectId);
+                const pName = p ? p.name : 'Unknown Project';
+                const date = new Date(s.startTime).toLocaleDateString();
+                const dur = formatDuration(s.startTime, s.endTime);
+                
+                return `
+                <div class="session-item">
+                    <div class="session-details">
+                        <span class="session-project">${pName}</span>
+                        <span class="session-time">${date} • ${dur}</span>
+                    </div>
+                    <button class="icon-btn" onclick="openEdit('${s.id}')">
+                        <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                    </button>
+                </div>`;
+            }).join('');
+        }
+
+        function renderAccordion() {
+            const container = document.getElementById('projectAccordion');
+            container.innerHTML = state.projects.map(p => {
+                const pSessions = state.sessions.filter(s => s.projectId === p.id);
+                const totalMs = pSessions.reduce((acc, s) => acc + (new Date(s.endTime) - new Date(s.startTime)), 0);
+                const totalHrs = (totalMs / 3600000).toFixed(2);
+
+                const sessionHTML = pSessions.sort((a, b) => new Date(b.startTime) - new Date(a.startTime)).map(s => `
+                    <div class="session-item" style="border-radius: 0; border-bottom: 1px solid var(--border);">
+                        <div class="session-details">
+                            <span class="session-time">${new Date(s.startTime).toLocaleString()}</span>
+                            <span class="session-time">${formatDuration(s.startTime, s.endTime)}</span>
+                        </div>
+                        <button class="icon-btn" onclick="openEdit('${s.id}')">
+                            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        </button>
+                    </div>
+                `).join('');
+
+                return `
+                <details>
+                    <summary>
+                        <span>${p.name} ${p.archived ? '(Archived)' : ''}</span>
+                        <span>${totalHrs} hrs</span>
+                    </summary>
+                    <div>${sessionHTML}</div>
+                    <div class="project-actions">
+                        ${!p.archived ? `<button class="btn-small" onclick="archiveProject('${p.id}')">Archive</button>` : ''}
+                        <button class="btn-small" style="color: var(--danger); border-color: var(--danger);" onclick="deleteProject('${p.id}')">Delete</button>
+                    </div>
+                </details>`;
+            }).join('');
+        }
+
+        // Export Data
+        function exportData() {
+            let csv = "Project,Start,End,Hours\n";
+            state.sessions.forEach(s => {
+                const p = state.projects.find(proj => proj.id === s.projectId);
+                const pName = p ? p.name.replace(/,/g, '') : 'Unknown';
+                const hrs = ((new Date(s.endTime) - new Date(s.startTime)) / 3600000).toFixed(2);
+                csv += `${pName},${s.startTime},${s.endTime},${hrs}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'shop_time_export.csv');
+            a.click();
+        }
+
+        // Sync Logic
+        function queueSync() {
+            // Overwrite queue to strictly 1 item to prevent QuotaExceededError when offline
+            state.queue = [{ timestamp: Date.now(), data: { projects: state.projects, sessions: state.sessions } }];
+            localStorage.setItem('queue', JSON.stringify(state.queue));
+            attemptSync();
+        }
+
+        async function attemptSync() {
+            if (!navigator.onLine || state.queue.length === 0) return setSyncState('offline');
+            
+            setSyncState('syncing');
+            const payload = state.queue[state.queue.length - 1].data; // Send latest state
+
+            try {
+                const response = await fetch(WORKER_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${AUTH_KEY}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    state.queue = [];
+                    localStorage.setItem('queue', JSON.stringify(state.queue));
+                    setSyncState('synced');
+                } else {
+                    setSyncState('error');
+                }
+            } catch (error) {
+                setSyncState('error');
+            }
+        }
+
+        function setSyncState(status) {
+            const icon = document.querySelector('.sync-icon');
+            const text = document.getElementById('syncText');
+            
+            icon.classList.remove('syncing');
+            icon.innerHTML = '';
+
+            if (status === 'synced') {
+                text.textContent = 'Synced';
+                text.style.color = 'var(--primary)';
+                icon.style.color = 'var(--primary)';
+                icon.innerHTML = '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>';
+            } else if (status === 'syncing') {
+                text.textContent = 'Syncing...';
+                text.style.color = 'var(--accent)';
+                icon.style.color = 'var(--accent)';
+                icon.classList.add('syncing');
+                icon.innerHTML = '<path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>';
+            } else {
+                text.textContent = 'Offline';
+                text.style.color = 'var(--text-muted)';
+                icon.style.color = 'var(--text-muted)';
+                icon.innerHTML = '<path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-1.48 0-2.85.43-4.01 1.17l1.46 1.46C10.21 6.23 11.08 6 12 6c3.04 0 5.5 2.46 5.5 5.5v.5H19c1.66 0 3 1.34 3 3 0 1.13-.64 2.11-1.56 2.62l1.45 1.45C23.16 18.16 24 16.68 24 15c0-2.64-2.05-4.78-4.65-4.96zM3 5.27l2.75 2.74C2.56 8.15 0 10.77 0 14c0 3.31 2.69 6 6 6h11.73l2 2 1.27-1.27L4.27 4 3 5.27zM7.73 10l8 8H6c-2.21 0-4-1.79-4-4s1.79-4 4-4h1.73z"/>';
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
