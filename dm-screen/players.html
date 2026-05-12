@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>D&D Campaign HUD V1.2.1</title>
+  <title>D&D Campaign HUD</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='none' stroke='white' stroke-width='4' stroke-linejoin='round' d='M50 5 L90 30 L90 70 L50 95 L10 70 L10 30 Z M50 5 L50 45 M10 30 L50 45 L90 30 M10 70 L50 45 L90 70 M50 95 L50 45'/></svg>">
   
   <style>
@@ -24,7 +24,7 @@
       margin: 0;
       padding: 20px;
       line-height: 1.5;
-      font-variant-numeric: tabular-nums; /* Align all numbers beautifully */
+      font-variant-numeric: tabular-nums;
     }
     .hidden { display: none !important; }
     
@@ -95,30 +95,22 @@
     }
     .badge.active { background: var(--danger); color: #fff; }
     .badge.context { background: var(--text-muted); color: #fff; }
-    
-    /* Condition Colors */
     .badge.poisoned { background: #55efc4; color: #000; }
     .badge.charmed { background: #fd79a8; color: #fff; }
     .badge.paralyzed { background: #ffeaa7; color: #000; }
     .badge.blinded { background: #636e72; color: #fff; }
-    
-    /* Keyword Badges */
     .badge.curse { background: #8e44ad; color: #fff; }
     .badge.daily { background: #0984e3; color: #fff; }
     .badge.reaction { background: #e1b12c; color: #000; }
     
     /* Notifications */
-    .notification-glow {
-      color: var(--accent);
-      font-weight: bold;
-      text-shadow: 0 0 8px var(--accent-glow);
-    }
+    .notification-glow { color: var(--accent); font-weight: bold; text-shadow: 0 0 8px var(--accent-glow); }
 
     /* Detail Screen Sticky Header */
     .detail-header-sticky {
       position: sticky;
       top: 0;
-      background: rgba(18, 18, 18, 0.9);
+      background: rgba(18, 18, 18, 0.95);
       backdrop-filter: blur(10px);
       z-index: 100;
       padding: 1rem 0;
@@ -130,8 +122,10 @@
       gap: 1.5rem;
       margin-top: 0.5rem;
       font-size: 1.1rem;
+      align-items: center;
     }
-    .sticky-vitals span { color: var(--player-color); font-weight: bold; }
+    .sticky-vitals span.vital-label { color: var(--player-color); font-weight: bold; }
+    .sticky-vitals .vital-val { color: #fff; }
 
     /* Accordions */
     details {
@@ -143,7 +137,7 @@
     }
     summary { font-weight: bold; cursor: pointer; padding: 0.5rem 0; list-style: none; }
     summary::-webkit-details-marker { display: none; }
-    .ghost-accordion { opacity: 0.4; } /* Empty state fade */
+    .ghost-accordion { opacity: 0.4; } 
     
     /* UI Controls */
     button, select {
@@ -159,51 +153,34 @@
     }
     button:hover:not(:disabled) { background: #444; border-color: #888; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .controls { display: flex; gap: 1rem; }
-    
-    /* Semantic Buttons */
+    .controls { display: flex; gap: 1rem; align-items: center; }
     .btn-move { background: var(--info); color: #000; border-color: var(--info); }
     .btn-move:hover:not(:disabled) { background: #0984e3; border-color: #0984e3; }
     .btn-claim { background: var(--success); color: #000; border-color: var(--success); }
     .btn-claim:hover:not(:disabled) { background: #00b894; border-color: #00b894; }
 
-    /* Inventory Items */
-    .item-block {
-      background: #2a2a2a;
-      padding: 1rem;
-      margin-top: 0.5rem;
-      border-radius: 4px;
-      overflow-wrap: break-word;
-      min-width: 0;
-    }
+    /* Inventory & Edit Formatting */
+    .item-block { background: #2a2a2a; padding: 1rem; margin-top: 0.5rem; border-radius: 4px; overflow-wrap: break-word; min-width: 0; }
     .flavor-text { font-size: 0.85rem; color: #888; font-style: italic; }
     .mechanic-text { font-size: 0.95rem; color: #fff; margin: 0.5rem 0; }
+    .math-highlight { color: #ffeaa7; font-weight: bold; background: rgba(255, 234, 167, 0.1); padding: 0 2px; border-radius: 2px; }
+
+    /* --- Micro-Buttons & Smart Inputs --- */
+    .micro-btn { background: transparent; border: 1px solid #555; padding: 0 6px; border-radius: 3px; font-weight: bold; cursor: pointer; color: var(--text-muted); }
+    .micro-btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
+    .qty-controls { display: inline-flex; align-items: center; gap: 6px; font-weight: normal; font-size: 0.9rem; }
     
-    /* Math Highlight */
-    .math-highlight {
-      color: #ffeaa7;
-      font-weight: bold;
-      background: rgba(255, 234, 167, 0.1);
-      padding: 0 2px;
-      border-radius: 2px;
-    }
+    .smart-math-input { width: 55px; background: #111; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 2px 4px; text-align: center; font-family: monospace; font-size: 1rem; }
+    .smart-math-input:focus { border-color: var(--accent); outline: none; }
+    
+    .editable-text { white-space: pre-wrap; }
+    .editing-active { border-bottom: 1px dashed #777; background: rgba(255,255,255,0.05); padding: 2px 4px; border-radius: 4px; cursor: text; outline: none; min-height: 1.5em; display: inline-block; width: 100%; box-sizing: border-box; }
+    .editing-active:focus { background: rgba(255,255,255,0.1); border-color: var(--accent); }
 
     /* System Management UI */
-    textarea {
-      width: 100%;
-      background: #222;
-      color: #fff;
-      border: 1px solid #444;
-      padding: 0.5rem;
-      border-radius: 4px;
-      font-family: monospace;
-      box-sizing: border-box;
-      resize: vertical;
-    }
+    textarea { width: 100%; background: #222; color: #fff; border: 1px solid #444; padding: 0.5rem; border-radius: 4px; font-family: monospace; box-sizing: border-box; resize: vertical; }
     .system-block { margin-top: 2rem; border-color: #555; }
     .btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
-    
-    /* SVG Icons */
     .icon-heart { fill: currentColor; }
   </style>
 </head>
@@ -217,8 +194,8 @@
       <p class="text-sm" style="margin-top: 0;">Paste a JSON patch to append new achievements/items, or a full JSON to overwrite.</p>
       <textarea id="import-data" rows="8"></textarea>
       <div class="flex-gap" style="margin-top: 1rem;">
-        <button class="btn-move" onclick="handleMerge()">+ Merge / Append Data</button>
-        <button class="btn-danger" onclick="handleOverwrite()">⚠ Hard Overwrite</button>
+        <button class="btn-move" onclick="handleMerge(this)">+ Merge / Append Data</button>
+        <button class="btn-danger" onclick="handleOverwrite(this)">⚠ Hard Overwrite</button>
       </div>
     </details>
   </div>
@@ -228,8 +205,9 @@
       <div class="flex-between">
         <h1 id="detail-name" style="margin: 0;"></h1>
         <div class="controls">
-          <button onclick="showOverview()">← Back to HUD</button>
+          <button onclick="showOverview()">← HUD</button>
           <button onclick="toggleAccordions()">Expand All</button>
+          <button id="btn-edit-mode" onclick="toggleEditMode()">✏️ Edit Sheet</button>
         </div>
       </div>
       <div class="sticky-vitals" id="detail-vitals">
@@ -243,51 +221,35 @@
     const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
     let appState = null;
     let currentDetailPlayer = null;
+    let isEditMode = false;
 
-    // Distinct player palette
     const colorPalette = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe'];
-
-    // SVG Definitions
     const svgHeart = `<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>`;
     const svgShield = `<svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" fill="currentColor"/></svg>`;
     const svgEye = `<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="currentColor"/></svg>`;
     const svgCoin = `<svg viewBox="0 0 24 24"><path d="M12 7c-3.86 0-7 1.57-7 3.5S8.14 14 12 14s7-1.57 7-3.5S15.86 7 12 7zm0 2c2.21 0 4 .89 4 2s-1.79 2-4 2-4-.89-4-2 1.79-2 4-2z M5 14.11V16c0 1.93 3.14 3.5 7 3.5s7-1.57 7-3.5v-1.89c-1.81 1.05-4.24 1.64-7 1.64s-5.19-.59-7-1.64z" fill="currentColor"/></svg>`;
 
-    const defaultData = {
-      campaign_name: "Dungeon Crawler Campaign",
-      players: []
-    };
+    const defaultData = { campaign_name: "Dungeon Crawler Campaign", players: [] };
 
-    // 1. Initialization
+    // --- Core Network ---
     async function init() {
       try {
         const response = await fetch(WORKER_URL);
         if (response.ok) {
           const fetchedData = await response.json();
           appState = (fetchedData && fetchedData.players) ? fetchedData : defaultData;
-        } else {
-          appState = defaultData; 
-        }
-      } catch (e) {
-        console.warn("Worker fetch failed. Using local state.");
-        appState = defaultData;
-      }
+        } else appState = defaultData; 
+      } catch (e) { appState = defaultData; }
       renderOverview();
     }
 
     async function syncToKV() {
       try {
-        await fetch(WORKER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(appState)
-        });
-      } catch (e) {
-        console.error("Failed to sync to KV Database.", e);
-      }
+        await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(appState) });
+      } catch (e) { console.error("Failed to sync.", e); }
     }
 
-    // --- Formatters & Parsers ---
+    // --- Helpers ---
     function getConditionClass(cond) {
       const lower = cond.toLowerCase();
       if (['poisoned', 'sickened'].includes(lower)) return 'poisoned';
@@ -299,8 +261,17 @@
 
     function parseMath(text) {
       if (!text) return '';
-      // Highlights syntax like 2d6, 1d4+2, DC 15
       return text.replace(/\b(\d+d\d+(?:\s*[+-]\s*\d+)?|DC\s*\d+)\b/gi, '<span class="math-highlight">$&</span>');
+    }
+
+    function escapeHtml(text) {
+      if(!text) return '';
+      return text.toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    
+    function escapeJS(text) {
+      if(!text) return '';
+      return text.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
     function parseMechanicBadges(text) {
@@ -309,14 +280,18 @@
       if (/curse\:/i.test(out)) badges.push('<span class="badge curse">CURSE</span>');
       if (/1\/long rest|once per day/i.test(out)) badges.push('<span class="badge daily">1/DAY</span>');
       if (/reaction/i.test(out)) badges.push('<span class="badge reaction">REACTION</span>');
-      
-      // Clean trigger words out of the text string
       out = out.replace(/curse\:/i, '').replace(/1\/long rest/i, '').replace(/once per day/i, '').replace(/reaction/i, '').replace(/^[^\w]+/, '').trim();
-      
       return `<div style="margin-bottom: 0.25rem;">${badges.join(' ')} <span>${out}</span></div>`;
     }
 
-    // 2. Core Rendering
+    function applySmartMath(current, inputStr) {
+      if (!inputStr) return current;
+      if (inputStr.startsWith('+')) return current + parseInt(inputStr.substring(1)) || current;
+      if (inputStr.startsWith('-')) return current - parseInt(inputStr.substring(1)) || current;
+      return parseInt(inputStr) || current;
+    }
+
+    // --- Tactical HUD View ---
     function renderOverview() {
       const container = document.getElementById('overview-screen');
       container.innerHTML = '';
@@ -329,46 +304,29 @@
         card.onclick = () => openDetail(player.name);
 
         const conditionsHtml = (player.status?.conditions || []).map(c => `<span class="badge ${getConditionClass(c)}">${c}</span>`).join('');
-        const contextTags = Object.entries(player.status?.context_tags || {})
-          .filter(([_, isActive]) => isActive)
-          .map(([tag, _]) => `<span class="badge context">${tag.toUpperCase()}</span>`).join('');
-        
+        const contextTags = Object.entries(player.status?.context_tags || {}).filter(([_, v]) => v).map(([t]) => `<span class="badge context">${t.toUpperCase()}</span>`).join('');
         const activeTagsHtml = conditionsHtml + contextTags;
         const tagsSection = activeTagsHtml ? `<div class="flex-gap" style="margin-top: 1rem;">${activeTagsHtml}</div>` : '';
 
-        // Calculate Consumables > 1
         const consumables = (player.inventory || []).filter(i => i.quantity > 1).map(i => `${i.name} (${i.quantity})`).join(', ');
-
         const pendingCount = player.achievements?.pending?.length || 0;
-        const pendingClass = pendingCount > 0 ? 'notification-glow' : '';
 
         card.innerHTML = `
           <h2>${player.name}</h2>
-          
           <div class="vitals-row">
             <div class="vital-item" title="Max HP">${svgHeart}<span class="value">${player.stats?.hp_max || 0}</span></div>
             <div class="vital-item" title="Armor Class">${svgShield}<span class="value">${player.stats?.ac || 0}</span></div>
             <div class="vital-item" title="Passive Perception">${svgEye}<span class="value">${player.stats?.passive_perception || 0}</span></div>
             <div class="vital-item" title="Gold">${svgCoin}<span class="value">${player.gold || 0}</span></div>
           </div>
-          
           ${tagsSection}
           <hr>
-          
           <div class="text-sm">
-            <div style="margin-bottom: 0.5rem;">
-              <strong>Consumables:</strong> 
-              <span style="color: #bbb;">${consumables || 'None'}</span>
-            </div>
-            <div class="${pendingClass}" style="margin-bottom: 0.5rem;">
-              <strong>Pending:</strong> ${pendingCount} Unclaimed Achievement${pendingCount !== 1 ? 's' : ''}
-            </div>
-            
+            <div style="margin-bottom: 0.5rem;"><strong>Consumables:</strong> <span style="color: #bbb;">${consumables || 'None'}</span></div>
+            <div class="${pendingCount > 0 ? 'notification-glow' : ''}" style="margin-bottom: 0.5rem;"><strong>Pending:</strong> ${pendingCount} Unclaimed</div>
             <div class="special-block" style="margin-top: 0.75rem;">
               <strong style="display:block; margin-bottom:0.25rem; color:#bbb;">Special Mechanics:</strong>
-              ${(player.special_item_mechanics?.length > 0) 
-                ? player.special_item_mechanics.map(m => parseMechanicBadges(m)).join('')
-                : '<span>None</span>'}
+              ${(player.special_item_mechanics?.length > 0) ? player.special_item_mechanics.map(m => parseMechanicBadges(m)).join('') : '<span>None</span>'}
             </div>
           </div>
         `;
@@ -380,87 +338,109 @@
       currentDetailPlayer = playerName;
       document.getElementById('overview-container').classList.add('hidden');
       document.getElementById('detail-screen').classList.remove('hidden');
-      
-      // Setup Sticky Header Colors
       const pIndex = appState.players.findIndex(p => p.name === playerName);
       document.getElementById('detail-screen').style.setProperty('--player-color', colorPalette[pIndex % colorPalette.length]);
       
+      // Ensure Edit Mode is off when opening a new sheet
+      isEditMode = false;
+      const btn = document.getElementById('btn-edit-mode');
+      btn.innerText = "✏️ Edit Sheet";
+      btn.classList.remove('btn-claim');
+
       renderDetailScreen();
-      window.scrollTo(0, 0); // Reset scroll position
+      window.scrollTo(0, 0); 
     }
 
     function showOverview() {
       currentDetailPlayer = null;
+      isEditMode = false;
       document.getElementById('detail-screen').classList.add('hidden');
       document.getElementById('overview-container').classList.remove('hidden');
       renderOverview();
     }
 
-    // 3. Detail Screen Logic
-    function renderDetailScreen() {
+    // --- Detail & Edit Screen View ---
+    function renderDetailScreen(preserveAccordions = false) {
       const player = appState.players.find(p => p.name === currentDetailPlayer);
       
-      // Inject Header
+      // Capture open accordion states so micro-buttons don't collapse bags
+      let openStates = [];
+      if(preserveAccordions) {
+        openStates = Array.from(document.querySelectorAll('#detail-content details')).map(d => d.open);
+      }
+
       document.getElementById('detail-name').innerText = player.name;
       document.getElementById('detail-name').style.color = 'var(--player-color)';
+      
+      // Smart Math Vitals Header
       document.getElementById('detail-vitals').innerHTML = `
-        <div>Max HP: <span>${player.stats?.hp_max || 0}</span></div>
-        <div>AC: <span>${player.stats?.ac || 0}</span></div>
-        <div>PP: <span>${player.stats?.passive_perception || 0}</span></div>
-        <div>Gold: <span>${player.gold || 0}</span></div>
+        <div><span class="vital-label">HP:</span> 
+          <span class="vital-val">${player.stats?.hp_max || 0}</span>
+          <input type="text" class="smart-math-input hidden" id="edit-hp" value="${player.stats?.hp_max || 0}">
+        </div>
+        <div><span class="vital-label">AC:</span> 
+          <span class="vital-val">${player.stats?.ac || 0}</span>
+          <input type="text" class="smart-math-input hidden" id="edit-ac" value="${player.stats?.ac || 0}">
+        </div>
+        <div><span class="vital-label">PP:</span> 
+          <span class="vital-val">${player.stats?.passive_perception || 0}</span>
+          <input type="text" class="smart-math-input hidden" id="edit-pp" value="${player.stats?.passive_perception || 0}">
+        </div>
+        <div><span class="vital-label">Gold:</span> 
+          <span class="vital-val">${player.gold || 0}</span>
+          <input type="text" class="smart-math-input hidden" id="edit-gold" value="${player.gold || 0}">
+        </div>
       `;
 
       const content = document.getElementById('detail-content');
-      content.innerHTML = '';
-
       const otherPlayers = appState.players.filter(p => p.name !== player.name).map(p => p.name);
       
-      // Inventory HTML
       let invHtml = (player.inventory || []).map(item => {
-        // Auto badge wondrous items from flavor text
         const typeBadge = /wondrous/i.test(item.flavor_text) ? '<span class="badge curse" style="background:#555">Wondrous</span>' : '';
         return `
         <details class="item-block">
           <summary class="flex-between">
-            <span>${typeBadge} ${item.name} (x${item.quantity})</span>
-            <span class="text-sm" style="text-align: right; max-width: 50%;">${parseMath(item.summary)}</span>
+            <span>${typeBadge} ${item.name} 
+              <span class="qty-controls">
+                (x<button class="micro-btn" onclick="adjustQty(event, '${escapeJS(player.name)}', '${escapeJS(item.name)}', -1)">-</button> 
+                ${item.quantity} 
+                <button class="micro-btn" onclick="adjustQty(event, '${escapeJS(player.name)}', '${escapeJS(item.name)}', 1)">+</button>)
+              </span>
+            </span>
           </summary>
-          <div class="flavor-text">${item.flavor_text}</div>
-          <div class="mechanic-text"><strong>Mechanic:</strong> ${parseMath(item.mechanics)}</div>
+          <div class="flavor-text editable-text" data-type="inv-flavor" data-item="${escapeHtml(item.name)}" data-raw="${escapeHtml(item.flavor_text)}">${item.flavor_text}</div>
+          <div class="mechanic-text"><strong>Mechanic:</strong> <span class="editable-text" data-type="inv-mech" data-item="${escapeHtml(item.name)}" data-raw="${escapeHtml(item.mechanics)}">${parseMath(item.mechanics)}</span></div>
           ${otherPlayers.length > 0 ? `
-          <div class="flex-gap" style="margin-top: 1rem;">
+          <div class="flex-gap action-btn-group" style="margin-top: 1rem;">
             <select id="move-${item.name.replace(/[^a-zA-Z0-9]/g, '')}">
               <option value="" disabled selected>Move to...</option>
               ${otherPlayers.map(p => `<option value="${p}">${p}</option>`).join('')}
             </select>
-            <button class="btn-move" onclick="moveItem(this, '${player.name.replace(/'/g, "\\'")}', '${item.name.replace(/'/g, "\\'")}')">Confirm Move</button>
-          </div>
-          ` : ''}
+            <button class="btn-move" onclick="moveItem(this, '${escapeJS(player.name)}', '${escapeJS(item.name)}')">Confirm Move</button>
+          </div>` : ''}
         </details>
       `}).join('');
 
-      // Achievements HTML
-      let achHtml = (player.achievements?.pending || []).map(ach => `
+      let achHtml = (player.achievements?.pending || []).map(ach => {
+        return `
         <div class="item-block">
           <div class="flex-between">
             <strong class="notification-glow">${ach.name}</strong>
-            <button class="btn-claim" onclick="claimAchievement(this, '${player.name.replace(/'/g, "\\'")}', '${ach.name.replace(/'/g, "\\'")}')">Claim Reward</button>
+            <button class="btn-claim action-btn-group" onclick="claimAchievement(this, '${escapeJS(player.name)}', '${escapeJS(ach.name)}')">Claim Reward</button>
           </div>
-          <p class="text-sm">${ach.description}</p>
+          <div class="text-sm editable-text" data-type="ach-desc" data-item="${escapeHtml(ach.name)}" data-raw="${escapeHtml(ach.description)}" style="margin: 0.5rem 0;">${ach.description}</div>
           <p class="text-sm"><strong>Rewards:</strong> ${ach.rewards?.gold || 0}g, ${ach.rewards?.items?.map(i => i.name).join(', ') || 'None'}</p>
         </div>
-      `).join('');
+      `}).join('');
 
-      // Counts for visual hierarchy
       const invCount = player.inventory?.length || 0;
       const pendCount = player.achievements?.pending?.length || 0;
       const claimCount = player.achievements?.claimed?.length || 0;
 
-      // Inject Accordions with Ghost States
       content.innerHTML = `
         <details><summary>Base Stats & Lore</summary>
           <div class="item-block">
-            <div class="flavor-text">${player.lore || 'None recorded'}</div>
+            <div class="flavor-text editable-text" data-type="lore" data-raw="${escapeHtml(player.lore)}">${player.lore || 'None recorded'}</div>
           </div>
         </details>
         
@@ -479,39 +459,127 @@
           ${(player.achievements?.claimed || []).map(a => `<div class="item-block text-sm"><strong>${a.name}:</strong> ${a.description}</div>`).join('') || '<p class="text-sm">None</p>'}
         </details>
       `;
+
+      // Restore accordion states
+      if(preserveAccordions) {
+        const details = document.querySelectorAll('#detail-content details');
+        details.forEach((d, i) => { if(openStates[i]) d.open = true; });
+      }
     }
 
+    // --- Interactive Data Mutations ---
+    async function adjustQty(e, playerName, itemName, delta) {
+      e.preventDefault(); e.stopPropagation();
+      const btn = e.target;
+      if (btn.disabled) return;
+      btn.disabled = true;
+
+      const player = appState.players.find(p => p.name === playerName);
+      const item = player.inventory.find(i => i.name === itemName);
+      if (!item) { btn.disabled = false; return; }
+
+      item.quantity += delta;
+      if (item.quantity <= 0) {
+        if(confirm(`Remove ${item.name} entirely?`)) {
+          player.inventory = player.inventory.filter(i => i.name !== itemName);
+        } else item.quantity = 1;
+      }
+      
+      await syncToKV();
+      renderDetailScreen(true); // Re-renders, button will not be disabled in new DOM
+    }
+
+    // --- Edit Mode Engine ---
+    function toggleEditMode() {
+      isEditMode = !isEditMode;
+      const btn = document.getElementById('btn-edit-mode');
+      
+      if (isEditMode) {
+        // Entering Edit Mode
+        btn.innerText = "💾 Save Changes";
+        btn.classList.add('btn-claim');
+        
+        // Swap Vitals
+        document.querySelectorAll('.vital-val').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.smart-math-input').forEach(el => el.classList.remove('hidden'));
+        
+        // Hide move/claim buttons
+        document.querySelectorAll('.action-btn-group').forEach(el => el.classList.add('hidden'));
+
+        // Enable contenteditable, swap to raw unparsed text
+        document.querySelectorAll('.editable-text').forEach(el => {
+          el.contentEditable = "true";
+          el.classList.add('editing-active');
+          el.innerText = el.getAttribute('data-raw'); // strip math markup
+        });
+      } else {
+        // Saving Changes
+        btn.innerText = "✏️ Edit Sheet";
+        btn.classList.remove('btn-claim');
+        saveEdits();
+      }
+    }
+
+    async function saveEdits() {
+      const player = appState.players.find(p => p.name === currentDetailPlayer);
+
+      // Save Smart Math Vitals
+      player.stats.hp_max = applySmartMath(player.stats.hp_max, document.getElementById('edit-hp').value.trim());
+      player.stats.ac = applySmartMath(player.stats.ac, document.getElementById('edit-ac').value.trim());
+      player.stats.passive_perception = applySmartMath(player.stats.passive_perception, document.getElementById('edit-pp').value.trim());
+      player.gold = applySmartMath(player.gold, document.getElementById('edit-gold').value.trim());
+
+      // Save Text Fields
+      document.querySelectorAll('.editable-text').forEach(el => {
+        const type = el.getAttribute('data-type');
+        const val = el.innerText.trim();
+        const itemName = el.getAttribute('data-item');
+
+        if (type === 'lore') player.lore = val;
+        if (type === 'inv-flavor') {
+          const item = player.inventory.find(i => i.name === itemName);
+          if (item) item.flavor_text = val;
+        }
+        if (type === 'inv-mech') {
+          const item = player.inventory.find(i => i.name === itemName);
+          if (item) item.mechanics = val;
+        }
+        if (type === 'ach-desc') {
+          const ach = player.achievements.pending.find(a => a.name === itemName);
+          if (ach) ach.description = val;
+        }
+      });
+
+      await syncToKV();
+      renderDetailScreen(true); // Re-render applies formatting/badges
+    }
+
+    // --- Action Button Handlers ---
     function toggleAccordions() {
       const details = document.querySelectorAll('#detail-content details');
       const isAnyClosed = Array.from(details).some(d => !d.open);
       details.forEach(d => d.open = isAnyClosed);
     }
 
-    // 4. Data Mutations
     async function moveItem(btn, sourceName, itemName) {
       const selectId = `move-${itemName.replace(/[^a-zA-Z0-9]/g, '')}`;
       const targetName = document.getElementById(selectId).value;
-      if (!targetName) {
-        alert("Please select a player to move the item to.");
-        return;
-      }
+      if (!targetName) return alert("Select a player.");
 
       const sourcePlayer = appState.players.find(p => p.name === sourceName);
       const targetPlayer = appState.players.find(p => p.name === targetName);
-      
       const itemIndex = sourcePlayer.inventory.findIndex(i => i.name === itemName);
       if (itemIndex === -1) return; 
 
-      btn.disabled = true;
-      btn.innerText = "Moving...";
-
+      btn.disabled = true; btn.innerText = "Moving...";
       const item = sourcePlayer.inventory.splice(itemIndex, 1)[0];
       const existing = targetPlayer.inventory.find(i => i.name === item.name);
-      if (existing) { existing.quantity += item.quantity; } 
-      else { targetPlayer.inventory.push(item); }
+      
+      if (existing) existing.quantity += item.quantity; 
+      else targetPlayer.inventory.push(item); 
 
       await syncToKV();
-      renderDetailScreen();
+      renderDetailScreen(true);
     }
 
     async function claimAchievement(btn, playerName, achievementName) {
@@ -519,94 +587,65 @@
       const achIndex = player.achievements.pending.findIndex(a => a.name === achievementName);
       if (achIndex === -1) return; 
 
-      btn.disabled = true;
-      btn.innerText = "Claiming...";
-
+      btn.disabled = true; btn.innerText = "Claiming...";
       const achievement = player.achievements.pending.splice(achIndex, 1)[0];
 
       if (achievement.rewards?.gold) player.gold += achievement.rewards.gold;
-      
       if (achievement.rewards?.items) {
         achievement.rewards.items.forEach(newItem => {
           const qty = newItem.quantity || 1;
           const existing = player.inventory.find(i => i.name === newItem.name);
           if (existing) existing.quantity += qty;
-          else player.inventory.push({ ...newItem, summary: "New item", mechanics: "Unknown", flavor_text: "Needs inspection", quantity: qty });
+          else player.inventory.push({ ...newItem, quantity: qty });
         });
       }
 
       player.achievements.claimed.push({ name: achievement.name, description: achievement.description });
       await syncToKV();
-      renderDetailScreen();
+      renderDetailScreen(true);
     }
 
-    // 5. System Functions: Safe Merge
-    async function handleMerge() {
+    // --- System Management (Upsert) ---
+    async function handleMerge(btn) {
       const rawData = document.getElementById('import-data').value;
       if (!rawData) return;
 
       let parsedData;
-      try { parsedData = JSON.parse(rawData); } 
-      catch (e) { alert("Invalid JSON format."); return; }
-
-      if (!parsedData.players || !Array.isArray(parsedData.players)) {
-        alert("JSON must contain a 'players' array to merge."); return;
-      }
+      try { parsedData = JSON.parse(rawData); } catch (e) { return alert("Invalid JSON format."); }
+      if (!parsedData.players || !Array.isArray(parsedData.players)) return alert("JSON must contain a 'players' array.");
 
       let mergeCount = 0;
-
-      // Loop through the incoming "Patch" data
       parsedData.players.forEach(incomingPlayer => {
-        // Find the existing player in the database (Case-insensitive matching)
         const existingPlayer = appState.players.find(p => p.name.toLowerCase() === incomingPlayer.name.toLowerCase());
         
         if (existingPlayer) {
-        // UPSERT Pending Achievements
-          if (incomingPlayer.achievements && incomingPlayer.achievements.pending) {
+          // Upsert Pending Achievements
+          if (incomingPlayer.achievements?.pending) {
             if (!existingPlayer.achievements) existingPlayer.achievements = { pending: [], claimed: [] };
             if (!existingPlayer.achievements.pending) existingPlayer.achievements.pending = [];
-            
-            incomingPlayer.achievements.pending.forEach(incomingAch => {
-              // Find by Name
-              const existingAch = existingPlayer.achievements.pending.find(a => a.name === incomingAch.name);
-              
-              if (existingAch) {
-                // If it exists, overwrite its properties (fixes typos/summaries)
-                Object.assign(existingAch, incomingAch);
-                mergeCount++;
-              } else {
-                // If it doesn't exist, add it as new
-                existingPlayer.achievements.pending.push(incomingAch);
-                mergeCount++;
-              }
+            incomingPlayer.achievements.pending.forEach(incAch => {
+              const exAch = existingPlayer.achievements.pending.find(a => a.name === incAch.name);
+              if (exAch) Object.assign(exAch, incAch);
+              else existingPlayer.achievements.pending.push(incAch);
+              mergeCount++;
             });
           }
-          
-          // UPSERT Inventory Items
+          // Upsert Inventory
           if (incomingPlayer.inventory) {
             if (!existingPlayer.inventory) existingPlayer.inventory = [];
-            
             incomingPlayer.inventory.forEach(newItem => {
               const existingItem = existingPlayer.inventory.find(i => i.name === newItem.name);
-              const qtyToAdd = newItem.quantity || 0; // Default to 0 if just pushing a text update
-              
+              const qtyToAdd = newItem.quantity || 0; 
               if (existingItem) {
-                // Save the current quantity before overwriting
                 const currentQty = existingItem.quantity;
-                // Overwrite text fields (flavor, mechanics, summary)
                 Object.assign(existingItem, newItem);
-                // Safely combine the quantities
                 existingItem.quantity = currentQty + qtyToAdd;
-                mergeCount++;
-              } else {
-                existingPlayer.inventory.push({...newItem, quantity: qtyToAdd || 1});
-                mergeCount++;
-              }
+              } else existingPlayer.inventory.push({...newItem, quantity: qtyToAdd || 1});
+              mergeCount++;
             });
           }
         } else {
-          // Create skeletal entry for new players in the patch
-          const newPlayerTemplate = {
+          appState.players.push({
             name: incomingPlayer.name,
             stats: { hp_max: 10, ac: 10, passive_perception: 10 },
             status: { conditions: [], context_tags: {} },
@@ -616,61 +655,38 @@
             lore: "Newly merged character.",
             special_item_mechanics: [],
             gold: 0
-          };
-          appState.players.push(newPlayerTemplate);
+          });
           mergeCount++;
         }
       });
 
       if (mergeCount > 0) {
-        const btn = document.querySelector('.btn-move');
-        btn.disabled = true;
-        btn.innerText = "Syncing...";
-
+        if (btn) { btn.disabled = true; btn.innerText = "Syncing..."; }
         await syncToKV();
         renderOverview();
-        
-        btn.disabled = false;
-        btn.innerText = "+ Merge / Append Data";
+        if (btn) { btn.disabled = false; btn.innerText = "+ Merge / Append Data"; }
         document.getElementById('import-data').value = '';
         document.getElementById('import-section').open = false;
-        alert(`Successfully merged data into ${appState.players.length} players.`);
-      } else {
-        alert("No matching players or valid data found to merge.");
-      }
+        alert(`Merged ${mergeCount} updates into DB.`);
+      } else alert("No matching updates found.");
     }
 
-    // 6. System Functions: Hard Overwrite
-    async function handleOverwrite() {
+    async function handleOverwrite(btn) {
       const rawData = document.getElementById('import-data').value;
       if (!rawData) return;
-
-      if (!confirm("WARNING: This will completely erase the current campaign state and replace it with the pasted text. Are you sure?")) {
-        return;
-      }
+      if (!confirm("WARNING: Completely erase current state?")) return;
 
       let parsedData;
-      try { parsedData = JSON.parse(rawData); } 
-      catch (e) { alert("Invalid JSON format."); return; }
-
-      if (!parsedData.players || !Array.isArray(parsedData.players)) {
-        alert("Invalid structure. Missing 'players' array."); return;
-      }
+      try { parsedData = JSON.parse(rawData); } catch (e) { return alert("Invalid JSON."); }
+      if (!parsedData.players) return alert("Missing 'players' array.");
 
       appState = parsedData;
-      
-      const btn = document.querySelector('.btn-danger');
-      btn.disabled = true;
-      btn.innerText = "Syncing...";
-
+      if (btn) { btn.disabled = true; btn.innerText = "Syncing..."; }
       await syncToKV();
       renderOverview();
-      
-      btn.disabled = false;
-      btn.innerText = "⚠ Hard Overwrite";
+      if (btn) { btn.disabled = false; btn.innerText = "⚠ Hard Overwrite"; }
       document.getElementById('import-data').value = '';
       document.getElementById('import-section').open = false;
-      alert("Database overwritten successfully.");
     }
 
     init();
