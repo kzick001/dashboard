@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Showrunner | Campaign Notes</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='none' stroke='white' stroke-width='4' stroke-linejoin='round' d='M50 5 L90 30 L90 70 L50 95 L10 70 L10 30 Z M50 5 L50 45 M10 30 L50 45 L90 30 M10 70 L50 45 L90 70 M50 95 L50 45'/></svg>">
+  
+  <style>
+    :root {
+      --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --text-muted: #888;
+      --accent: #bb86fc; --info: #74b9ff; --success: #03dac6; --danger: #cf6679;
+      --header: #0f0f0f; --nav-bg: #161616; --scratch-bg: #0a0a0a;
+    }
+    
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; line-height: 1.5; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+    .hidden { display: none !important; }
+
+    /* Header Bar */
+    header { background: var(--header); padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; z-index: 200; box-shadow: 0 2px 8px rgba(0,0,0,0.5); flex-shrink: 0; }
+    .header-title { font-size: 1.2rem; font-weight: bold; letter-spacing: 0.1em; color: var(--accent); text-transform: uppercase; display: flex; align-items: center; gap: 1rem; }
+    .header-controls { display: flex; gap: 1rem; align-items: center; color: var(--text-muted); font-size: 0.9rem; }
+    
+    /* SVG Buttons */
+    .btn-icon { background: transparent; border: none; padding: 4px; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; transition: 0.2s; }
+    .btn-icon:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    .btn-icon.active { color: var(--accent); }
+
+    /* Layout Grid */
+    .showrunner-layout { display: grid; grid-template-columns: 280px 1fr 320px; flex-grow: 1; transition: grid-template-columns 0.3s ease; overflow: hidden; }
+    .showrunner-layout.hide-left { grid-template-columns: 0px 1fr 320px; }
+    .showrunner-layout.hide-right { grid-template-columns: 280px 1fr 0px; }
+    .showrunner-layout.hide-both { grid-template-columns: 0px 1fr 0px; }
+
+    @media (max-width: 900px) {
+      .showrunner-layout, .showrunner-layout.hide-left, .showrunner-layout.hide-right, .showrunner-layout.hide-both { 
+        display: flex; flex-direction: column; overflow-y: auto; 
+      }
+      .nav-sidebar, .scratchpad-sidebar { width: 100%; height: 350px; flex-shrink: 0; border: none; border-bottom: 1px solid #333; }
+      .main-stage { overflow: visible; padding: 1.5rem; }
+      .stage-content { padding-bottom: 2rem; }
+    }
+
+    /* Columns */
+    .nav-sidebar { background: var(--nav-bg); border-right: 1px solid #333; display: flex; flex-direction: column; overflow: hidden; }
+    .nav-list { overflow-y: auto; flex-grow: 1; padding: 1rem 0; }
+    .nav-item { padding: 0.75rem 1.5rem; cursor: pointer; border-left: 3px solid transparent; color: #aaa; transition: 0.1s; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+    .nav-item.active { border-left-color: var(--accent); background: rgba(187, 134, 252, 0.1); color: #fff; font-weight: bold; }
+    
+    .main-stage { overflow-y: auto; padding: 2rem 4rem; box-sizing: border-box; background: var(--bg); position: relative; }
+    .stage-content { max-width: 850px; margin: 0 auto; padding-bottom: 4rem; }
+
+    .scratchpad-sidebar { background: var(--scratch-bg); border-left: 1px solid #333; display: flex; flex-direction: column; }
+    .scratchpad-header { padding: 0.75rem 1.5rem; border-bottom: 1px solid #222; font-size: 0.85rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; }
+    .scratchpad-textarea { flex-grow: 1; background: transparent; border: none; color: #bbb; padding: 1.5rem; font-family: monospace; font-size: 0.95rem; resize: none; outline: none; line-height: 1.6; }
+
+    /* Visual Hierarchy Components */
+    .read-aloud-block { background: #1a1e24; border-left: 4px solid var(--info); padding: 1.25rem 1.5rem; font-family: 'Georgia', serif; font-style: italic; font-size: 1.15rem; color: #d1d5db; border-radius: 0 4px 4px 0; margin: 1.5rem 0; line-height: 1.6; }
+    
+    .ai-terminal { background: #050505; border: 1px solid #333; color: #55efc4; font-family: monospace; padding: 1rem 1.5rem; border-radius: 4px; margin: 1.5rem 0; font-size: 0.95rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
+    .ai-terminal::before { content: ">_ "; color: #55efc4; }
+    
+    .mechanics-list { list-style-type: none; padding: 0; margin: 1.5rem 0; }
+    .mechanics-list li { background: rgba(255,255,255,0.03); border: 1px solid #333; padding: 1rem; margin-bottom: 0.5rem; border-radius: 4px; }
+    .math-highlight { color: #ffeaa7; font-weight: bold; background: rgba(255, 234, 167, 0.1); padding: 0 4px; border-radius: 2px; }
+
+    .encounter-card { background: #1f1f1f; border-top: 3px solid var(--danger); padding: 1.5rem; border-radius: 6px; margin: 1.5rem 0; }
+    .quote-pill { display: inline-block; background: rgba(255, 255, 255, 0.1); border-left: 2px solid var(--accent); padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; margin: 4px 4px 4px 0; font-style: italic; }
+
+    .loot-card { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 1rem 1.5rem; border-radius: 4px; margin-bottom: 0.5rem; border-left: 3px solid #f1c40f; }
+
+    /* Inline Editing */
+    .edit-wrapper { position: relative; display: inline-flex; width: 100%; align-items: center; }
+    .edit-val { width: 100%; white-space: pre-wrap; overflow-wrap: break-word; word-break: break-word; }
+    .edit-trigger { opacity: 0; position: absolute; right: 0; top: 0; background: rgba(0,0,0,0.8); border: 1px solid #555; border-radius: 4px; padding: 4px; color: var(--info); cursor: pointer; transition: 0.2s; }
+    .edit-wrapper:hover .edit-trigger { opacity: 1; }
+    .inline-input { background: #111; color: #fff; border: 1px dashed var(--info); padding: 4px; border-radius: 3px; font-family: inherit; font-size: inherit; font-style: inherit; outline: none; width: 100%; box-sizing: border-box; resize: vertical; min-height: 2em; }
+
+    /* Toasts & Buttons */
+    #toast-container { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+    .toast { background: rgba(30, 30, 30, 0.95); color: #fff; padding: 0.75rem 1.5rem; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 0.95rem; border: 1px solid var(--accent); animation: fadein 0.3s, fadeout 0.3s 2.7s forwards; }
+    @keyframes fadein { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
+    
+    .btn { background: var(--card); color: var(--text); border: 1px solid #555; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn:hover { background: #333; border-color: #888; }
+    .btn-send { background: rgba(187, 134, 252, 0.1); border-color: var(--accent); color: var(--accent); }
+    .btn-send:hover { background: var(--accent); color: #000; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title">
+      <button class="btn-icon" onclick="toggleLeft()" title="Toggle Index" id="btn-left">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+      </button>
+      SHOWRUNNER <span style="color:#555">|</span> NOTES
+    </div>
+    <div class="header-controls">
+      <button class="btn-icon" onclick="undo()" title="Undo">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3l-3 2.7"></path></svg>
+      </button>
+      <button class="btn-icon" onclick="redo()" title="Redo">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>
+      </button>
+      <button class="btn-icon" onclick="toggleRight()" title="Toggle Scratchpad" id="btn-right">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+      </button>
+    </div>
+  </header>
+
+  <div id="toast-container"></div>
+
+  <div class="showrunner-layout" id="main-layout">
+    
+    <div class="nav-sidebar">
+      <div class="nav-list" id="nav-list"></div>
+      <div style="padding: 1rem; border-top: 1px solid #333;">
+        <button class="btn" style="width: 100%; justify-content: center;" onclick="alert('JSON Merge/Import logic connects here in future updates')">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          Import JSON
+        </button>
+      </div>
+    </div>
+
+    <div class="main-stage" id="main-stage">
+      <div class="stage-content" id="stage-content">
+        <h2 style="color:#555; text-align:center; margin-top:4rem;">Select a room from the index.</h2>
+      </div>
+    </div>
+
+    <div class="scratchpad-sidebar">
+      <div class="scratchpad-header">
+        <span id="scratchpad-title">Session Notes</span>
+        <span id="sync-status" title="Auto-saves on 30s delay">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="#555" stroke-width="2" fill="none"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+        </span>
+      </div>
+      <textarea class="scratchpad-textarea" id="scratchpad-input" placeholder="Live session notes..."></textarea>
+    </div>
+
+  </div>
+
+  <script>
+    // --- Initial Seed Data (From RTF Document) ---
+    let appState = {
+      campaign_notes: {
+        global_scratchpad: "Session 12: The party is bruised. Tilly is looking for an outlet to plug in her appliances.",
+        rooms: [
+          {
+            id: "room_17a",
+            title: "Room 17a: The Waiting Area",
+            read_aloud: "The air in this wide anteroom smells of cheap carpet cleaner and simmering resentment. A labyrinth of faded velvet ropes zigzags toward a faux-wood podium smeared with greasy fingerprints, completely blocking the northern double doors. Overhead, a violently buzzing neon sign reads: \"PLEASE WAIT TO BE SEATED.\" Fluorescent lights cast a sickly, flickering glow over a dusty bowl of complimentary peppermints resting on the podium.",
+            mechanics: [
+              "Layout: This is a short, wide connector hallway. The only exits are back south to Room 17b or through the double doors north to Room 16.",
+              "The Velvet Rope Maze: The stanchions and ropes form a 30-foot zigzagging path. The velvet ropes are actually enchanted.",
+              "Line-Skipper's Penance: Any Crawler who attempts to climb over or duck under the velvet ropes instead of walking the maze triggers the trap. The ropes animate, lashing out like whips (+5 to hit, 1d4 bludgeoning damage) and grappling the target (Escape DC 13 Dexterity/Acrobatics).",
+              "The Mints: The bowl of \"Complimentary Peppermints\" on the podium is a trap. They are actually calcified, peppermint-painted spider eggs. Eating one restores 1 HP but forces a DC 12 Constitution saving throw. On a failure, the Crawler is Poisoned for 1 hour."
+            ],
+            ai_tooltip: "[SCANNING ENVIRONMENT...] Target: The Bowl of Mints. Oh, look. Complimentary refreshments... Go on. Pop one in.",
+            encounters: [
+              {
+                name: "\"Brenda,\" The Eternal Hostess",
+                cr: "3",
+                tactics: "She won't actively attack unless a Crawler attempts to bypass the podium or attack her first. She uses Luring Song on anyone complaining.",
+                quotes: [
+                  "PARTY OF FOUR? IT'S GOING TO BE A FORTY-FIVE MINUTE WAIT.",
+                  "TABLE NINE IS READY FOR SLAUGHTER!"
+                ]
+              }
+            ],
+            loot: [
+              {
+                achievement_name: "Karen In Training",
+                item_name: "The Vibrating Pager of Anticipation",
+                item_desc: "A chunky, greasy plastic coaster. It buzzes aggressively."
+              }
+            ],
+            session_override: ""
+          },
+          {
+            id: "room_vip",
+            title: "The VIP Treadmill (Room 6e)",
+            read_aloud: "The hallway abruptly shifts into a 50-foot stretch lined with blank brick walls. Dozens of small, circular holes dot the brickwork at waist height. The floor beneath your feet feels slightly springy, like thick rubber.",
+            mechanics: [
+              "The Treadmill Floor: The moment a player steps onto the rubber floor, it activates, rolling rapidly backward. It requires a successful DC 14 Athletics check to move forward at half speed. Failing means being thrown Prone.",
+              "The Rock-Shooters: On initiative count 20, the holes in the walls fire heated, heavy massage stones across the hall. Anyone in the hall must make a DC 12 Dexterity save or take 1d4 bludgeoning damage.",
+              "The Punchline: If a player lets themselves be pulled to the very end of the 50-foot hallway, there is no exit. There is only a blank brick wall with a sign reading \"VIP LOUNGE UNDER CONSTRUCTION.\" Below the sign is a heavy iron lever. Pulling the lever shuts down the treadmill and the rock-shooters for 10 minutes."
+            ],
+            ai_tooltip: "[SCANNING ENVIRONMENT...] Target: The VIP Treadmill. \"Ooh, a velvet rope. Because nothing overrides basic survival instincts like the desperate need to feel exclusive. Step right up, VIPs. Let's see how fast you can run when the floor decides it hates you.\"",
+            encounters: [],
+            loot: [
+              {
+                achievement_name: "The Hustle Trap Reward",
+                item_name: "Iron \"Valued Customer\" Box",
+                item_desc: "You put in the work, you ground it out, and you hit a literal brick wall. Welcome to the VIP experience."
+              },
+              {
+                achievement_name: "Loot Box Unlocked",
+                item_name: "The Participation Trophy",
+                item_desc: "A cheap, plastic gold trophy depicting a humanoid giving a weak thumbs up. If you hold this while crying, it glows slightly in the dark, providing absolutely no mechanical benefit but acting as a reasonably depressing nightlight."
+              }
+            ],
+            session_override: ""
+          }
+        ]
+      }
+    };
+
+    // --- Time Machine & State ---
+    let historyStack = [];
+    let redoStack = [];
+    let currentRoomIndex = 'global'; // 'global' or integer index
+
+    function saveLocal() {
+      localStorage.setItem('showrunner_state', JSON.stringify(appState));
+    }
+
+    function pushState() {
+      historyStack.push(JSON.parse(JSON.stringify(appState)));
+      if(historyStack.length > 10) historyStack.shift();
+      redoStack = [];
+    }
+
+    function undo() {
+      if (historyStack.length === 0) return showToast("Nothing to undo.");
+      redoStack.push(JSON.parse(JSON.stringify(appState)));
+      appState = historyStack.pop();
+      saveLocal(); 
+      renderAll(); 
+      showToast("Undo successful.");
+    }
+    
+    function redo() {
+      if (redoStack.length === 0) return showToast("Nothing to redo.");
+      historyStack.push(JSON.parse(JSON.stringify(appState)));
+      appState = redoStack.pop();
+      saveLocal(); 
+      renderAll(); 
+      showToast("Redo successful.");
+    }
+
+    // --- Initialization ---
+    async function init() {
+      const local = localStorage.getItem('showrunner_state');
+      if (local) {
+        try { appState = JSON.parse(local); } catch(e) { console.warn("Local state corrupt."); }
+      }
+      renderAll();
+    }
+
+    // --- Helpers ---
+    function showToast(msg) {
+      const c = document.getElementById('toast-container');
+      const t = document.createElement('div');
+      t.className = 'toast'; t.innerText = msg;
+      c.appendChild(t);
+      setTimeout(() => t.remove(), 3000);
+    }
+    function escapeJS(str) { return str ? str.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;') : ''; }
+    function escapeHtml(str) { return str ? str.toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
+    function parseMath(text) { return text ? text.replace(/\b(\d+d\d+(?:\s*[+-]\s*\d+)?|DC\s*\d+)\b/gi, '<span class="math-highlight">$&</span>') : ''; }
+
+    const SVG_PENCIL = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
+    const SVG_SEND = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 2L11 13"></path><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`;
+    
+    // --- Layout Toggles ---
+    function toggleLeft() { document.getElementById('main-layout').classList.toggle('hide-left'); document.getElementById('btn-left').classList.toggle('active');}
+    function toggleRight() { document.getElementById('main-layout').classList.toggle('hide-right'); document.getElementById('btn-right').classList.toggle('active');}
+
+    // --- Rendering ---
+    function renderSidebar() {
+      const list = document.getElementById('nav-list');
+      let html = `<div class="nav-item ${currentRoomIndex === 'global' ? 'active' : ''}" onclick="selectRoom('global')">🌐 Global Campaign Notes</div>`;
+      if (appState.campaign_notes && appState.campaign_notes.rooms) {
+        appState.campaign_notes.rooms.forEach((room, idx) => {
+          html += `<div class="nav-item ${currentRoomIndex === idx ? 'active' : ''}" onclick="selectRoom(${idx})" title="${escapeHtml(room.title)}">${escapeHtml(room.title)}</div>`;
+        });
+      }
+      list.innerHTML = html;
+    }
+
+    function selectRoom(index) {
+      currentRoomIndex = index;
+      renderAll();
+    }
+
+    function renderStage() {
+      const stage = document.getElementById('stage-content');
+      if (currentRoomIndex === 'global') {
+        stage.innerHTML = `<h1 style="color:var(--accent); font-size:2rem; margin-top:2rem;">Global Campaign Overview</h1>
+                           <p style="color:#888">Select a specific room from the left sidebar to view its blueprint, read-aloud text, and traps.<br><br>Use the Scratchpad on the right to maintain your running session notes.</p>`;
+        return;
+      }
+
+      const room = appState.campaign_notes.rooms[currentRoomIndex];
+      if (!room) return;
+      const rPath = ['campaign_notes', 'rooms', currentRoomIndex];
+
+      let mechanicsHtml = '';
+      if (room.mechanics) {
+        mechanicsHtml = room.mechanics.map((m, mIdx) => `<li>${makeEditable(parseMath(escapeHtml(m)), [...rPath, 'mechanics', mIdx], '', true)}</li>`).join('');
+      }
+      
+      let encountersHtml = '';
+      if (room.encounters) {
+        encountersHtml = room.encounters.map(enc => `
+          <div class="encounter-card">
+            <div class="flex-between" style="margin-bottom:1rem;">
+               <h3 style="margin:0; color:var(--danger)">⚔️ ${escapeHtml(enc.name)}</h3>
+               <span class="badge active">CR ${enc.cr || '?'}</span>
+            </div>
+            <p style="font-size:0.9rem; color:#ccc;">${escapeHtml(enc.tactics)}</p>
+            <div>${(enc.quotes || []).map(q => `<span class="quote-pill">"${escapeHtml(q)}"</span>`).join('')}</div>
+          </div>
+        `).join('');
+      }
+
+      let lootHtml = '';
+      if (room.loot) {
+        lootHtml = room.loot.map(l => `
+          <div class="loot-card">
+            <div>
+              <strong style="color:#f1c40f">${escapeHtml(l.achievement_name)}</strong><br>
+              <span style="font-size:0.9rem; color:#bbb">${escapeHtml(l.item_name)}</span>
+            </div>
+            <button class="btn btn-send" onclick="sendToHud('${escapeJS(l.item_name)}')">
+              ${SVG_SEND} Send to HUD
+            </button>
+          </div>
+        `).join('');
+      }
+
+      stage.innerHTML = `
+        <h1 style="color:var(--accent); font-size:2rem;">${makeEditable(escapeHtml(room.title), rPath, 'title')}</h1>
+        
+        <div class="read-aloud-block">
+          ${makeEditable(escapeHtml(room.read_aloud), rPath, 'read_aloud', true)}
+        </div>
+
+        <ul class="mechanics-list">
+          ${mechanicsHtml}
+        </ul>
+
+        ${room.ai_tooltip ? `<div class="ai-terminal">${makeEditable(escapeHtml(room.ai_tooltip), rPath, 'ai_tooltip', true)}</div>` : ''}
+
+        ${encountersHtml}
+
+        ${(room.loot && room.loot.length > 0) ? `<h3 style="margin-top:2rem; border-bottom:1px solid #333; padding-bottom:0.5rem;">Rewards & Loot</h3>${lootHtml}` : ''}
+      `;
+    }
+
+    function renderScratchpad() {
+      const textarea = document.getElementById('scratchpad-input');
+      const title = document.getElementById('scratchpad-title');
+      
+      if (currentRoomIndex === 'global') {
+        title.innerText = "Global Session Notes";
+        textarea.value = appState.campaign_notes.global_scratchpad || "";
+      } else {
+        const room = appState.campaign_notes.rooms[currentRoomIndex];
+        title.innerText = "Room Override Notes";
+        textarea.value = (room && room.session_override) ? room.session_override : "";
+      }
+    }
+
+    function renderAll() {
+      renderSidebar();
+      renderStage();
+      renderScratchpad();
+    }
+
+    // --- Inline Editor Engine ---
+    function makeEditable(val, pathArray, fieldName, isTextarea = false) {
+      const pJson = escapeJS(JSON.stringify(pathArray));
+      return `<span class="edit-wrapper">
+                <span class="edit-val">${val}</span>
+                <button class="edit-trigger" onclick="event.stopPropagation(); startInlineEdit(this, '${pJson}', '${fieldName}', ${isTextarea})">${SVG_PENCIL}</button>
+              </span>`;
+    }
+
+    function startInlineEdit(el, objectPathJSON, fieldName, isTextarea) {
+      const parent = el.closest('.edit-wrapper');
+      const textSpan = parent.querySelector('.edit-val');
+      const rawText = textSpan.innerText; 
+      
+      const input = document.createElement(isTextarea ? 'textarea' : 'input');
+      input.className = 'inline-input';
+      input.value = rawText;
+      
+      input.onblur = () => {
+        pushState();
+        let newVal = input.value.trim();
+        
+        const pathParts = JSON.parse(objectPathJSON);
+        let target = appState;
+        
+        for(let i=0; i < pathParts.length; i++) {
+          if (target[pathParts[i]] === undefined) target[pathParts[i]] = (typeof pathParts[i+1] === 'number') ? [] : {};
+          if (i === pathParts.length - 1 && fieldName === '') {
+             target[pathParts[i]] = newVal;
+          } else {
+             target = target[pathParts[i]];
+          }
+        }
+        if (fieldName !== '') target[fieldName] = newVal;
+        
+        saveLocal();
+        renderAll(); 
+      };
+      
+      input.onkeydown = (e) => { if(e.key === 'Enter' && !isTextarea) input.blur(); };
+      input.onclick = (e) => e.stopPropagation();
+      
+      parent.innerHTML = '';
+      parent.appendChild(input);
+      input.focus();
+    }
+
+    // --- Macro-Debounce Scratchpad ---
+    const DEBOUNCE_MS = 30000; // 30 seconds
+    let scratchTimer;
+
+    const textarea = document.getElementById('scratchpad-input');
+    
+    textarea.addEventListener('input', (e) => {
+      setSyncIcon('syncing');
+      clearTimeout(scratchTimer);
+      scratchTimer = setTimeout(() => {
+        commitScratchpad(e.target.value);
+      }, DEBOUNCE_MS);
+    });
+
+    textarea.addEventListener('blur', (e) => {
+      clearTimeout(scratchTimer);
+      commitScratchpad(e.target.value);
+    });
+
+    function commitScratchpad(text) {
+      if (currentRoomIndex === 'global') {
+        if(appState.campaign_notes.global_scratchpad === text) return;
+        pushState();
+        appState.campaign_notes.global_scratchpad = text;
+      } else {
+        if(appState.campaign_notes.rooms[currentRoomIndex].session_override === text) return;
+        pushState();
+        appState.campaign_notes.rooms[currentRoomIndex].session_override = text;
+      }
+      saveLocal();
+      setSyncIcon('success');
+    }
+
+    function setSyncIcon(status) {
+      const icon = document.getElementById('sync-status');
+      if (status === 'syncing') {
+        icon.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="#888" stroke-width="2" fill="none"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>`;
+      } else if (status === 'success') {
+        icon.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="var(--success)" stroke-width="2" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        setTimeout(() => {
+           icon.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="#555" stroke-width="2" fill="none"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>`;
+        }, 2000);
+      }
+    }
+
+    // --- Cross Pollination Stub ---
+    function sendToHud(itemName) {
+      showToast(`Package Prepared: [${itemName}] staged for Player HUD distribution.`);
+    }
+
+    // Boot
+    init();
+  </script>
+</body>
+</html>
