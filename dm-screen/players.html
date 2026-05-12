@@ -561,23 +561,47 @@
         const existingPlayer = appState.players.find(p => p.name.toLowerCase() === incomingPlayer.name.toLowerCase());
         
         if (existingPlayer) {
-          // Merge Pending Achievements
+        // UPSERT Pending Achievements
           if (incomingPlayer.achievements && incomingPlayer.achievements.pending) {
             if (!existingPlayer.achievements) existingPlayer.achievements = { pending: [], claimed: [] };
             if (!existingPlayer.achievements.pending) existingPlayer.achievements.pending = [];
             
-            existingPlayer.achievements.pending.push(...incomingPlayer.achievements.pending);
-            mergeCount += incomingPlayer.achievements.pending.length;
+            incomingPlayer.achievements.pending.forEach(incomingAch => {
+              // Find by Name
+              const existingAch = existingPlayer.achievements.pending.find(a => a.name === incomingAch.name);
+              
+              if (existingAch) {
+                // If it exists, overwrite its properties (fixes typos/summaries)
+                Object.assign(existingAch, incomingAch);
+                mergeCount++;
+              } else {
+                // If it doesn't exist, add it as new
+                existingPlayer.achievements.pending.push(incomingAch);
+                mergeCount++;
+              }
+            });
           }
           
-          // Merge Inventory Items directly
+          // UPSERT Inventory Items
           if (incomingPlayer.inventory) {
             if (!existingPlayer.inventory) existingPlayer.inventory = [];
+            
             incomingPlayer.inventory.forEach(newItem => {
-              const qty = newItem.quantity || 1;
               const existingItem = existingPlayer.inventory.find(i => i.name === newItem.name);
-              if (existingItem) existingItem.quantity += qty;
-              else existingPlayer.inventory.push({...newItem, quantity: qty});
+              const qtyToAdd = newItem.quantity || 0; // Default to 0 if just pushing a text update
+              
+              if (existingItem) {
+                // Save the current quantity before overwriting
+                const currentQty = existingItem.quantity;
+                // Overwrite text fields (flavor, mechanics, summary)
+                Object.assign(existingItem, newItem);
+                // Safely combine the quantities
+                existingItem.quantity = currentQty + qtyToAdd;
+                mergeCount++;
+              } else {
+                existingPlayer.inventory.push({...newItem, quantity: qtyToAdd || 1});
+                mergeCount++;
+              }
             });
           }
         } else {
