@@ -1,11 +1,12 @@
 import { normalizeRise, riseConfig } from './rise.js';
 import { normalizeGreenGoods, greenGoodsConfig } from './greengoods.js';
+import { LUCID_MAP } from './dictionary.js';
 
 // ==========================================
 // CONFIGURATION & STATE
 // ==========================================
-const WORKER_URL = "https://lucid-sentinel.YOUR-CLOUDFLARE-ACCOUNT.workers.dev/watchlist"; 
-const API_EMAIL = "askozicki@gmail.com";
+const WORKER_URL = "https://dispo.askozicki.workers.dev/watchlist";
+const API_EMAIL = "askozicki@gmail.com"; 
 
 let currentData = [];
 let watchlist = [];
@@ -19,7 +20,13 @@ const searchBar = document.getElementById('searchBar');
 const filterT1 = document.getElementById('filterT1');
 const filterType = document.getElementById('filterType');
 const loader = document.getElementById('loader');
-const ghostItemInput = document.getElementById('ghostItemInput');
+
+const brandSelect = document.getElementById('ghostBrand');
+const strainInput = document.getElementById('ghostStrain');
+const strainList = document.getElementById('ghostStrainList');
+const sizeSelect = document.getElementById('ghostSize');
+const addGhostBtn = document.getElementById('addGhostBtn');
+const syncCloudBtn = document.getElementById('syncCloudBtn');
 
 // ==========================================
 // UTILITIES
@@ -42,9 +49,6 @@ const calculateValueMetric = (item) => {
     }
     
     if (item.t1 === 'Edible') {
-        // Normalizer outputs weight in grams. 100mg = 0.1g.
-        // If an item is $20 for 100mg (0.1g), PPG is $200/g. 
-        // Value per 100mg = PPG / 10 = $20.00 / 100mg.
         const per100mg = item.ppgNum / 10; 
         return { val: per100mg, display: `$${per100mg.toFixed(2)} <span class="metric">/100mg</span>` };
     }
@@ -53,8 +57,27 @@ const calculateValueMetric = (item) => {
 };
 
 // ==========================================
-// WATCHLIST (SERVERLESS BRIDGE)
+// WATCHLIST (COMPOUND KEYS & UI)
 // ==========================================
+// 1. Populate Brand Dropdown (Exclude Gear)
+const brands = new Set();
+Object.values(LUCID_MAP).forEach(item => {
+    if (item.t1 !== "Gear" && item.brand) brands.add(item.brand);
+});
+Array.from(brands).sort().forEach(b => {
+    brandSelect.innerHTML += `<option value="${b}">${b}</option>`;
+});
+
+// 2. Dynamic Strain Datalist
+brandSelect.addEventListener('change', (e) => {
+    const selectedBrand = e.target.value;
+    const strains = new Set();
+    Object.values(LUCID_MAP).forEach(item => {
+        if (item.brand === selectedBrand && item.strain) strains.add(item.strain);
+    });
+    strainList.innerHTML = Array.from(strains).sort().map(s => `<option value="${s}">`).join('');
+});
+
 async function loadWatchlist() {
     try {
         const res = await fetch(`${WORKER_URL}?email=${encodeURIComponent(API_EMAIL)}`);
@@ -69,10 +92,9 @@ async function loadWatchlist() {
 }
 
 async function syncWatchlist() {
-    const btn = document.getElementById('syncCloudBtn');
-    const originalText = btn.innerText;
-    btn.innerText = "Syncing...";
-    btn.disabled = true;
+    const originalText = syncCloudBtn.innerText;
+    syncCloudBtn.innerText = "Syncing...";
+    syncCloudBtn.disabled = true;
 
     try {
         await fetch(WORKER_URL, {
@@ -80,49 +102,52 @@ async function syncWatchlist() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: API_EMAIL, watchlist: watchlist })
         });
-        btn.innerText = "Synced! ✓";
-        btn.classList.replace('primary', 'success');
+        syncCloudBtn.innerText = "Synced! ✓";
+        syncCloudBtn.classList.replace('primary', 'success');
     } catch (err) {
         alert("Failed to sync to Cloudflare.");
-        btn.innerText = "Sync Failed";
+        syncCloudBtn.innerText = "Sync Failed";
     }
 
     setTimeout(() => {
-        btn.innerText = originalText;
-        btn.disabled = false;
-        btn.classList.replace('success', 'primary');
+        syncCloudBtn.innerText = originalText;
+        syncCloudBtn.disabled = false;
+        syncCloudBtn.classList.replace('success', 'primary');
     }, 2000);
 }
 
-// Attach globally for inline HTML onClick handlers
-window.toggleWatchlist = (slug) => {
-    if (watchlist.includes(slug)) {
-        watchlist = watchlist.filter(s => s !== slug);
+// 3. Track List Toggle (Uses Compound Keys: "slug@size")
+window.toggleWatchlist = (compoundKey) => {
+    if (watchlist.includes(compoundKey)) {
+        watchlist = watchlist.filter(k => k !== compoundKey);
     } else {
-        watchlist.push(slug);
+        watchlist.push(compoundKey);
     }
     renderTable();
 };
 
-document.getElementById('addGhostBtn').addEventListener('click', () => {
-    const raw = ghostItemInput.value.trim();
-    if (!raw.includes('-')) {
-        alert("Please use the format: Brand - Strain (e.g. Rythm - Animal Face)");
+// 4. Ghost Add Submit
+addGhostBtn.addEventListener('click', () => {
+    const brand = brandSelect.value;
+    const strain = strainInput.value.trim();
+    const size = sizeSelect.value;
+    
+    if (!brand || !strain || !size) {
+        alert("Please fill out Brand, Strain, and Size to track an item.");
         return;
     }
-    const parts = raw.split('-');
-    const brand = parts[0].trim();
-    const strain = parts.slice(1).join('-').trim();
-    const slug = generateSlug(brand, strain);
     
-    if (!watchlist.includes(slug)) {
-        watchlist.push(slug);
-        ghostItemInput.value = "";
+    const slug = generateSlug(brand, strain);
+    const compoundKey = `${slug}@${size}`;
+    
+    if (!watchlist.includes(compoundKey)) {
+        watchlist.push(compoundKey);
+        strainInput.value = ""; // Reset for fast entry
         renderTable();
     }
 });
 
-document.getElementById('syncCloudBtn').addEventListener('click', syncWatchlist);
+syncCloudBtn.addEventListener('click', syncWatchlist);
 
 // ==========================================
 // DATA INGESTION
@@ -162,7 +187,6 @@ function renderTable() {
     const t1Filter = filterT1.value;
     const typeFilter = filterType.value;
 
-    // 1. Filter Live Data
     let filtered = currentData.filter(item => {
         let passT1 = (t1Filter === 'All' || item.t1 === t1Filter);
         let passType = (typeFilter === 'All' || item.type === typeFilter);
@@ -171,7 +195,6 @@ function renderTable() {
         return passT1 && passType && passSearch;
     });
 
-    // 2. Map and Format for Sorting
     let mapped = filtered.map(item => {
         const valueData = calculateValueMetric(item);
         return {
@@ -182,12 +205,9 @@ function renderTable() {
         };
     });
 
-    // 3. Sorting
     mapped.sort((a, b) => {
         let valA = a[currentSort.column];
         let valB = b[currentSort.column];
-
-        // Custom sort routing
         if (currentSort.column === 'ppgNum') { valA = a.valueMetricSort; valB = b.valueMetricSort; }
 
         if (valA < valB) return currentSort.asc ? -1 : 1;
@@ -197,25 +217,24 @@ function renderTable() {
 
     let html = '';
 
-    // 4. Ghost Row Injection (Out of Stock)
-    // Only inject ghost rows if there is NO active search filter, to prevent clutter
+    // 5. Ghost Row Injection (Compound Key Extraction)
     if (search === "") {
-        const liveSlugs = currentData.map(i => i.slug);
-        const missingSlugs = watchlist.filter(slug => !liveSlugs.includes(slug));
+        const liveKeys = currentData.map(i => `${i.slug}@${i.size}`);
+        const missingKeys = watchlist.filter(k => !liveKeys.includes(k));
 
-        missingSlugs.forEach(ghostSlug => {
-            const parts = ghostSlug.split('-');
-            const displayBrand = parts[0].toUpperCase();
-            const displayStrain = parts.slice(1).join(' ').toUpperCase();
+        missingKeys.forEach(ghostKey => {
+            const [ghostSlug, ghostSize] = ghostKey.split('@');
+            // Look up the clean name from the dictionary
+            const dictItem = LUCID_MAP[ghostSlug] || { brand: "Unknown", strain: ghostSlug };
 
             html += `
             <tr class="ghost-row">
-                <td onclick="toggleWatchlist('${ghostSlug}')"><span class="track-btn active">💜</span></td>
-                <td class="brand">${displayBrand}</td>
-                <td class="strain">${displayStrain} <span class="ghost-badge">OUT OF STOCK</span></td>
+                <td onclick="toggleWatchlist('${ghostKey}')"><span class="track-btn active">💜</span></td>
+                <td class="brand">${dictItem.brand.toUpperCase()}</td>
+                <td class="strain">${dictItem.strain} <span class="ghost-badge">OUT OF STOCK</span></td>
                 <td>--</td>
                 <td>--</td>
-                <td>--</td>
+                <td style="color:#fff; font-weight:bold;">${ghostSize}</td>
                 <td>--</td>
                 <td>--</td>
                 <td>--</td>
@@ -223,15 +242,16 @@ function renderTable() {
         });
     }
 
-    // 5. Render Live Rows
+    // 6. Live Rows (Compound Key Assignment)
     mapped.forEach(item => {
-        const isTracked = watchlist.includes(item.slug);
+        const compoundKey = `${item.slug}@${item.size}`;
+        const isTracked = watchlist.includes(compoundKey);
         const heartHtml = isTracked ? `<span class="track-btn active">💜</span>` : `<span class="track-btn">🤍</span>`;
         const typeClass = item.type.toLowerCase();
 
         html += `
         <tr>
-            <td onclick="toggleWatchlist('${item.slug}')">${heartHtml}</td>
+            <td onclick="toggleWatchlist('${compoundKey}')">${heartHtml}</td>
             <td class="brand">${item.brand}</td>
             <td class="strain">${item.strain}</td>
             <td><span style="color:var(--text-muted);">${item.t1} &rarr;</span> ${item.t2}</td>
