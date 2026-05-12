@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>D&D Campaign HUD</title>
+  <title>D&D Campaign HUD V1.2.1</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='none' stroke='white' stroke-width='4' stroke-linejoin='round' d='M50 5 L90 30 L90 70 L50 95 L10 70 L10 30 Z M50 5 L50 45 M10 30 L50 45 L90 30 M10 70 L50 45 L90 70 M50 95 L50 45'/></svg>">
   
   <style>
@@ -213,10 +213,13 @@
     <div id="overview-screen" class="grid"></div>
     
     <details id="import-section" class="system-block">
-      <summary>System: Data Management (Import/Restore)</summary>
-      <p class="text-sm">Paste raw campaign JSON here to overwrite the current database.</p>
+      <summary>System: Data Management (Merge / Restore)</summary>
+      <p class="text-sm" style="margin-top: 0;">Paste a JSON patch to append new achievements/items, or a full JSON to overwrite.</p>
       <textarea id="import-data" rows="8"></textarea>
-      <button class="btn-danger" onclick="handleImport()" style="margin-top: 1rem;">Overwrite Database</button>
+      <div class="flex-gap" style="margin-top: 1rem;">
+        <button class="btn-move" onclick="handleMerge()">+ Merge / Append Data</button>
+        <button class="btn-danger" onclick="handleOverwrite()">⚠ Hard Overwrite</button>
+      </div>
     </details>
   </div>
 
@@ -537,40 +540,113 @@
       renderDetailScreen();
     }
 
-    // 5. System Functions
-    async function handleImport() {
+    // 5. System Functions: Safe Merge
+    async function handleMerge() {
       const rawData = document.getElementById('import-data').value;
       if (!rawData) return;
 
       let parsedData;
-      try {
-        parsedData = JSON.parse(rawData);
-      } catch (e) {
-        alert("Invalid JSON. Import aborted.");
+      try { parsedData = JSON.parse(rawData); } 
+      catch (e) { alert("Invalid JSON format."); return; }
+
+      if (!parsedData.players || !Array.isArray(parsedData.players)) {
+        alert("JSON must contain a 'players' array to merge."); return;
+      }
+
+      let mergeCount = 0;
+
+      // Loop through the incoming "Patch" data
+      parsedData.players.forEach(incomingPlayer => {
+        // Find the existing player in the database (Case-insensitive matching)
+        const existingPlayer = appState.players.find(p => p.name.toLowerCase() === incomingPlayer.name.toLowerCase());
+        
+        if (existingPlayer) {
+          // Merge Pending Achievements
+          if (incomingPlayer.achievements && incomingPlayer.achievements.pending) {
+            if (!existingPlayer.achievements) existingPlayer.achievements = { pending: [], claimed: [] };
+            if (!existingPlayer.achievements.pending) existingPlayer.achievements.pending = [];
+            
+            existingPlayer.achievements.pending.push(...incomingPlayer.achievements.pending);
+            mergeCount += incomingPlayer.achievements.pending.length;
+          }
+          
+          // Merge Inventory Items directly
+          if (incomingPlayer.inventory) {
+            if (!existingPlayer.inventory) existingPlayer.inventory = [];
+            incomingPlayer.inventory.forEach(newItem => {
+              const qty = newItem.quantity || 1;
+              const existingItem = existingPlayer.inventory.find(i => i.name === newItem.name);
+              if (existingItem) existingItem.quantity += qty;
+              else existingPlayer.inventory.push({...newItem, quantity: qty});
+            });
+          }
+        } else {
+          // Create skeletal entry for new players in the patch
+          const newPlayerTemplate = {
+            name: incomingPlayer.name,
+            stats: { hp_max: 10, ac: 10, passive_perception: 10 },
+            status: { conditions: [], context_tags: {} },
+            inventory: incomingPlayer.inventory || [],
+            abilities: { spells: [] },
+            achievements: incomingPlayer.achievements || { pending: [], claimed: [] },
+            lore: "Newly merged character.",
+            special_item_mechanics: [],
+            gold: 0
+          };
+          appState.players.push(newPlayerTemplate);
+          mergeCount++;
+        }
+      });
+
+      if (mergeCount > 0) {
+        const btn = document.querySelector('.btn-move');
+        btn.disabled = true;
+        btn.innerText = "Syncing...";
+
+        await syncToKV();
+        renderOverview();
+        
+        btn.disabled = false;
+        btn.innerText = "+ Merge / Append Data";
+        document.getElementById('import-data').value = '';
+        document.getElementById('import-section').open = false;
+        alert(`Successfully merged data into ${appState.players.length} players.`);
+      } else {
+        alert("No matching players or valid data found to merge.");
+      }
+    }
+
+    // 6. System Functions: Hard Overwrite
+    async function handleOverwrite() {
+      const rawData = document.getElementById('import-data').value;
+      if (!rawData) return;
+
+      if (!confirm("WARNING: This will completely erase the current campaign state and replace it with the pasted text. Are you sure?")) {
         return;
       }
 
-      if (!parsedData || !parsedData.players || !Array.isArray(parsedData.players)) {
-        alert("Invalid campaign structure. Missing 'players' array. Import aborted.");
-        return;
+      let parsedData;
+      try { parsedData = JSON.parse(rawData); } 
+      catch (e) { alert("Invalid JSON format."); return; }
+
+      if (!parsedData.players || !Array.isArray(parsedData.players)) {
+        alert("Invalid structure. Missing 'players' array."); return;
       }
 
       appState = parsedData;
       
-      const btn = document.querySelector('#import-section button');
-      const originalText = btn.innerText;
+      const btn = document.querySelector('.btn-danger');
       btn.disabled = true;
-      btn.innerText = "Syncing to KV...";
+      btn.innerText = "Syncing...";
 
       await syncToKV();
+      renderOverview();
       
       btn.disabled = false;
-      btn.innerText = originalText;
+      btn.innerText = "⚠ Hard Overwrite";
       document.getElementById('import-data').value = '';
       document.getElementById('import-section').open = false;
-      
-      renderOverview();
-      alert("Database overwritten and synced successfully.");
+      alert("Database overwritten successfully.");
     }
 
     init();
