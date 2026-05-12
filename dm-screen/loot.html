@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Showrunner | Loot Tables</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='none' stroke='white' stroke-width='4' stroke-linejoin='round' d='M50 5 L90 30 L90 70 L50 95 L10 70 L10 30 Z M50 5 L50 45 M10 30 L50 45 L90 30 M10 70 L50 45 L90 70 M50 95 L50 45'/></svg>">
+  
+  <style>
+    :root {
+      --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --text-muted: #888;
+      --accent: #bb86fc; --info: #74b9ff; --success: #03dac6; --danger: #cf6679; --warning: #f1c40f;
+      --header: #0f0f0f; --nav-bg: #161616; --mag-bg: #0a0a0a;
+    }
+    
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; line-height: 1.5; height: 100vh; overflow: hidden; display: flex; flex-direction: column; font-variant-numeric: tabular-nums; }
+    .hidden { display: none !important; }
+
+    /* Header Bar */
+    header { background: var(--header); padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; z-index: 200; box-shadow: 0 2px 8px rgba(0,0,0,0.5); flex-shrink: 0; }
+    .header-title { font-size: 1.2rem; font-weight: bold; letter-spacing: 0.1em; color: var(--accent); text-transform: uppercase; display: flex; align-items: center; gap: 1rem; }
+    .header-controls { display: flex; gap: 1rem; align-items: center; color: var(--text-muted); }
+    
+    /* SVG Buttons */
+    .btn-icon { background: transparent; border: none; padding: 4px; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; transition: 0.2s; }
+    .btn-icon:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    .btn-icon.active { color: var(--accent); }
+
+    /* Layout Grid */
+    .showrunner-layout { display: grid; grid-template-columns: 260px 1fr 360px; flex-grow: 1; transition: grid-template-columns 0.3s ease; overflow: hidden; }
+    
+    @media (max-width: 900px) {
+      .showrunner-layout { display: flex; flex-direction: column; overflow-y: auto; }
+      .nav-sidebar, .magazine-sidebar { width: 100%; height: 350px; flex-shrink: 0; border: none; border-bottom: 1px solid #333; }
+      .main-stage { overflow: visible; padding: 1.5rem; }
+    }
+
+    /* Left Nav Sidebar */
+    .nav-sidebar { background: var(--nav-bg); border-right: 1px solid #333; display: flex; flex-direction: column; overflow: hidden; }
+    .nav-list { overflow-y: auto; flex-grow: 1; padding: 1rem 0; }
+    .nav-category { padding: 0.5rem 1.5rem; font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.5rem; }
+    .nav-item { padding: 0.75rem 1.5rem; cursor: pointer; border-left: 3px solid transparent; color: #aaa; transition: 0.1s; font-size: 0.95rem; }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+    .nav-item.active { border-left-color: var(--accent); background: rgba(187, 134, 252, 0.1); color: #fff; font-weight: bold; }
+
+    /* Center Stage (Resolution) */
+    .main-stage { overflow-y: auto; padding: 2rem 4rem; box-sizing: border-box; background: var(--bg); display: flex; flex-direction: column; align-items: center; }
+    .roller-container { background: #111; border: 1px solid #333; padding: 2rem; border-radius: 8px; text-align: center; width: 100%; max-width: 600px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); }
+    .roller-input-group { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .dice-input { background: #050505; color: var(--accent); border: 2px solid #444; border-radius: 8px; font-size: 3rem; text-align: center; width: 120px; padding: 0.5rem; outline: none; font-family: monospace; transition: 0.2s; }
+    .dice-input:focus { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
+    .dice-input::-webkit-outer-spin-button, .dice-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    
+    .btn-resolve { background: var(--accent); color: #000; font-size: 1.2rem; font-weight: bold; padding: 0.75rem 2rem; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .btn-resolve:hover { background: #d0a3ff; transform: translateY(-2px); box-shadow: 0 4px 12px var(--accent-glow); }
+
+    /* Result Cards */
+    .result-container { width: 100%; max-width: 600px; margin-top: 2rem; }
+    .result-card { background: #1a1e24; border-top: 4px solid var(--info); padding: 2rem; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.8); animation: slideUp 0.3s ease-out forwards; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .result-card.error { border-top-color: var(--danger); background: #2a1518; }
+    .result-card.intercept { border-top-color: var(--warning); background: #262211; border: 2px solid var(--warning); }
+    
+    .result-title { font-size: 1.5rem; color: #fff; margin: 0 0 0.5rem 0; }
+    .result-type { display: inline-block; background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--info); margin-bottom: 1.5rem; }
+    .result-mechanics { color: #d1d5db; line-height: 1.6; font-size: 1.05rem; white-space: pre-wrap; }
+    
+    .action-row { display: flex; gap: 1rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #333; }
+    .btn-action { flex-grow: 1; background: #222; border: 1px solid #444; color: #fff; padding: 0.75rem; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: 0.2s; }
+    .btn-action:hover { background: #333; border-color: #666; }
+    .btn-action.award { color: var(--success); border-color: rgba(3, 218, 198, 0.3); background: rgba(3, 218, 198, 0.05); }
+    .btn-action.award:hover { background: var(--success); color: #000; }
+
+    /* Right Sidebar (Magazine) */
+    .magazine-sidebar { background: var(--mag-bg); border-left: 1px solid #333; display: flex; flex-direction: column; overflow: hidden; }
+    .magazine-header { padding: 1rem; border-bottom: 1px solid #222; background: #111; font-weight: bold; letter-spacing: 0.05em; color: #aaa; text-transform: uppercase; }
+    .magazine-list { overflow-y: auto; flex-grow: 1; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    
+    .slot { padding: 0.75rem; border-radius: 4px; font-size: 0.9rem; border: 1px solid transparent; transition: 0.2s; }
+    .slot.loaded { background: #1a1a1a; border-color: #333; color: #bbb; display: flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .slot.loaded .slot-num { color: #666; font-family: monospace; margin-right: 0.5rem; flex-shrink: 0; }
+    
+    .slot.depleted { background: rgba(207, 102, 121, 0.1); border: 1px dashed var(--danger); color: var(--danger); display: flex; flex-direction: column; gap: 0.5rem; }
+    .slot.depleted .warn-text { display: flex; align-items: center; gap: 0.5rem; font-weight: bold; }
+    .btn-forge { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; text-align: center; }
+    .btn-forge:hover { background: var(--danger); color: #fff; }
+
+    /* Forge Form Inline */
+    .forge-form { background: #111; padding: 0.75rem; border-radius: 4px; border: 1px solid #444; margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .forge-input { background: #000; color: #fff; border: 1px solid #333; padding: 6px; border-radius: 3px; font-family: inherit; font-size: 0.85rem; outline: none; }
+    .forge-input:focus { border-color: var(--info); }
+    .forge-textarea { resize: vertical; min-height: 60px; font-family: monospace; }
+    .btn-save-forge { background: var(--info); color: #000; border: none; padding: 6px; border-radius: 3px; font-weight: bold; cursor: pointer; }
+
+    /* Context Popover for Awards */
+    .award-wrapper { position: relative; display: flex; flex-grow: 1; }
+    .award-popover { position: absolute; left: 0; bottom: 110%; background: #222; border: 1px solid #555; border-radius: 6px; width: 200px; z-index: 50; box-shadow: 0 -8px 16px rgba(0,0,0,0.8); display: flex; flex-direction: column; overflow: hidden; }
+    .popover-title { padding: 8px 12px; font-size: 0.8rem; color: #888; border-bottom: 1px solid #444; background: #1a1a1a; text-transform: uppercase; letter-spacing: 0.05em; }
+    .popover-item { padding: 10px 12px; font-size: 0.95rem; cursor: pointer; transition: 0.1s; }
+    .popover-item:hover { background: rgba(3, 218, 198, 0.2); color: #fff; }
+
+    /* Modals & Toasts */
+    #toast-container { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+    .toast { background: rgba(30, 30, 30, 0.95); color: #fff; padding: 0.75rem 1.5rem; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 0.95rem; border: 1px solid var(--accent); animation: fadein 0.3s, fadeout 0.3s 2.7s forwards; }
+    @keyframes fadein { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 999; display: flex; align-items: center; justify-content: center; }
+    .modal-content { background: var(--card); padding: 2rem; border-radius: 8px; border: 1px solid #444; width: 90%; max-width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+    .modal-content h2 { margin-top: 0; color: var(--accent); }
+    .modal-content textarea { width: 100%; background: #111; color: #fff; border: 1px solid #444; padding: 0.75rem; border-radius: 4px; font-family: monospace; box-sizing: border-box; resize: vertical; margin: 1rem 0; outline: none; }
+    .btn { background: var(--card); color: var(--text); border: 1px solid #555; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn:hover { background: #333; border-color: #888; }
+    .btn-send { background: rgba(187, 134, 252, 0.1); border-color: var(--accent); color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-title">
+      SHOWRUNNER <span style="color:#555">|</span> LOOT TABLES
+    </div>
+    <div class="header-controls">
+      <button class="btn-icon" onclick="undo()" title="Undo">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3l-3 2.7"></path></svg>
+      </button>
+      <button class="btn-icon" onclick="redo()" title="Redo">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <div id="toast-container"></div>
+
+  <div id="import-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h2>Import Loot Tables</h2>
+      <p style="color:#aaa; font-size:0.9rem;">Paste a JSON payload to restock depleted slots. Pre-loaded slots will not be overwritten.</p>
+      <textarea id="import-data" rows="8" placeholder='{ "loot_tables": { "tiers": { ... } } }'></textarea>
+      <div style="display:flex; justify-content:space-between;">
+        <button class="btn btn-send" onclick="mergeLoot()">+ Restock Empty Slots</button>
+        <button class="btn" onclick="toggleImportModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="showrunner-layout">
+    
+    <div class="nav-sidebar">
+      <div class="nav-list" id="nav-list">
+        <div class="nav-category">Global Tiers (1-100)</div>
+        <div class="nav-item active" onclick="selectView('tier', 'bronze')" id="nav-tier-bronze">Bronze Tier</div>
+        <div class="nav-item" onclick="selectView('tier', 'silver')" id="nav-tier-silver">Silver Tier</div>
+        <div class="nav-item" onclick="selectView('tier', 'gold')" id="nav-tier-gold">Gold Tier</div>
+        <div class="nav-item" onclick="selectView('tier', 'platinum')" id="nav-tier-platinum">Platinum Tier</div>
+        
+        <div class="nav-category" style="margin-top: 1.5rem;">Personal Intercepts (1-10)</div>
+        <div class="nav-item" onclick="selectView('personal', 'Chuck')" id="nav-personal-Chuck">Chuck</div>
+        <div class="nav-item" onclick="selectView('personal', 'Tilly')" id="nav-personal-Tilly">Tilly</div>
+        <div class="nav-item" onclick="selectView('personal', 'Hendrick')" id="nav-personal-Hendrick">Hendrick</div>
+        <div class="nav-item" onclick="selectView('personal', 'Jimothy')" id="nav-personal-Jimothy">Jimothy</div>
+        <div class="nav-item" onclick="selectView('personal', 'Aelar')" id="nav-personal-Aelar">Aelar</div>
+      </div>
+      <div style="padding: 1rem; border-top: 1px solid #333;">
+        <button class="btn" style="width: 100%; justify-content: center;" onclick="toggleImportModal()">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          Import Tables
+        </button>
+      </div>
+    </div>
+
+    <div class="main-stage">
+      <h2 id="stage-title" style="color: #666; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2rem;">Bronze Tier</h2>
+      
+      <div class="roller-container">
+        <div class="roller-input-group">
+          <svg viewBox="0 0 24 24" width="40" height="40" stroke="var(--accent)" stroke-width="1.5" fill="none"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          <input type="number" id="dice-input" class="dice-input" placeholder="00" min="1" max="100" onkeydown="if(event.key==='Enter') resolveRoll()">
+        </div>
+        <button class="btn-resolve" onclick="resolveRoll()">
+          Resolve Roll
+        </button>
+      </div>
+
+      <div id="result-container" class="result-container">
+        </div>
+    </div>
+
+    <div class="magazine-sidebar">
+      <div class="magazine-header" id="magazine-title">Loaded: Bronze</div>
+      <div class="magazine-list" id="magazine-list">
+        </div>
+    </div>
+
+  </div>
+
+  <script>
+    const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
+    
+    // --- Data Schema & Boot ---
+    let appState = {
+      loot_tables: {
+        tiers: { bronze: [], silver: [], gold: [], platinum: [] },
+        personal: { Chuck: [], Tilly: [], Hendrick: [], Jimothy: [], Aelar: [] }
+      },
+      players: [ {name: "Chuck"}, {name: "Tilly"}, {name: "Hendrick"}, {name: "Jimothy"}, {name: "Aelar"} ]
+    };
+
+    // Auto-seed empty slots if not present
+    function seedEmptySlots() {
+      ['bronze', 'silver', 'gold', 'platinum'].forEach(tier => {
+        if(appState.loot_tables.tiers[tier].length < 100) {
+          for(let i = appState.loot_tables.tiers[tier].length; i < 100; i++) {
+            appState.loot_tables.tiers[tier].push({ roll: i+1, item: null });
+          }
+        }
+      });
+      ['Chuck', 'Tilly', 'Hendrick', 'Jimothy', 'Aelar'].forEach(p => {
+        if(!appState.loot_tables.personal[p]) appState.loot_tables.personal[p] = [];
+        if(appState.loot_tables.personal[p].length < 10) {
+          for(let i = appState.loot_tables.personal[p].length; i < 10; i++) {
+            appState.loot_tables.personal[p].push({ roll: i+1, item: null });
+          }
+        }
+      });
+    }
+
+    // Seed dummy data for testing
+    function seedDummyData() {
+      appState.loot_tables.tiers.bronze[0].item = { name: "The Lukewarm Energy Drink", type: "Consumable", desc: "Drinking this restores 1d4 hit points, but gives disadvantage on Sleight of Hand." };
+      appState.loot_tables.tiers.bronze[1].item = { name: "Ward of the Fast-Food Emperor", type: "Armor (Shield)", desc: "A legendary buckler providing standard +2 AC." };
+      appState.loot_tables.personal.Chuck[3].item = { name: "Gordon's Gourmet Fury-Rub", type: "Consumable", desc: "+1d4 Fire damage for 1 min. Weapon screams British insults at you." };
+    }
+
+    let historyStack = [];
+    let redoStack = [];
+    let currentView = { type: 'tier', id: 'bronze' };
+    let stagedRoll = null; // { tableRef, index, item }
+
+    function saveLocal() { localStorage.setItem('showrunner_loot', JSON.stringify(appState)); }
+    
+    async function syncToKV() { 
+      try { 
+        let payload = appState;
+        const res = await fetch(WORKER_URL);
+        if (res.ok) {
+          const remote = await res.json();
+          // Merge safely: Keep remote keys (like campaign_notes), overlay our local state, and enforce our updated players array
+          payload = { ...remote, ...appState, players: appState.players };
+        }
+        await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); 
+      } catch (e) {} 
+    }
+
+    async function init() {
+      const local = localStorage.getItem('showrunner_loot');
+      if (local) { try { appState = JSON.parse(local); } catch(e) {} }
+      
+      seedEmptySlots();
+      if(!local) seedDummyData(); // Only seed dummy if brand new
+      
+      // Attempt to pull players array from master DB so Awards menu matches exactly
+      try {
+        const response = await fetch(WORKER_URL);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.players) appState.players = data.players;
+        }
+      } catch (e) {}
+
+      renderAll();
+    }
+
+    function pushState() {
+      historyStack.push(JSON.parse(JSON.stringify(appState)));
+      if(historyStack.length > 10) historyStack.shift();
+      redoStack = [];
+    }
+
+    function undo() {
+      if (historyStack.length === 0) return showToast("Nothing to undo.");
+      redoStack.push(JSON.parse(JSON.stringify(appState)));
+      appState = historyStack.pop();
+      saveLocal(); syncToKV(); renderAll(); showToast("Undo successful.");
+    }
+    
+    function redo() {
+      if (redoStack.length === 0) return showToast("Nothing to redo.");
+      historyStack.push(JSON.parse(JSON.stringify(appState)));
+      appState = redoStack.pop();
+      saveLocal(); syncToKV(); renderAll(); showToast("Redo successful.");
+    }
+
+    // --- Core UI Navigation ---
+    function selectView(type, id) {
+      currentView = { type, id };
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.getElementById(`nav-${type}-${id}`).classList.add('active');
+      
+      document.getElementById('stage-title').innerText = type === 'tier' ? `${id} Tier` : `Personal: ${id}`;
+      document.getElementById('dice-input').max = type === 'tier' ? 100 : 10;
+      document.getElementById('dice-input').value = '';
+      document.getElementById('result-container').innerHTML = '';
+      stagedRoll = null;
+      
+      renderMagazine();
+    }
+
+    function renderAll() {
+      selectView(currentView.type, currentView.id);
+    }
+
+    // --- Resolution Engine ---
+    function resolveRoll() {
+      const input = document.getElementById('dice-input');
+      const rollVal = parseInt(input.value);
+      const maxRoll = currentView.type === 'tier' ? 100 : 10;
+      
+      if (!rollVal || rollVal < 1 || rollVal > maxRoll) return showToast(`Enter a number between 1 and ${maxRoll}`);
+
+      // 1. Intercept Mechanic (>= 90 on a Tier table)
+      if (currentView.type === 'tier' && rollVal >= 90) {
+        triggerIntercept();
+        return;
+      }
+
+      // 2. Fetch Slot
+      const table = currentView.type === 'tier' ? appState.loot_tables.tiers[currentView.id] : appState.loot_tables.personal[currentView.id];
+      const slotIndex = rollVal - 1;
+      const slot = table[slotIndex];
+
+      stagedRoll = { tableRef: table, index: slotIndex, item: slot ? slot.item : null };
+      renderResultCard();
+    }
+
+    function triggerIntercept() {
+      const rc = document.getElementById('result-container');
+      const pOptions = Object.keys(appState.loot_tables.personal).map(p => `<option value="${p}">${p}</option>`).join('');
+      
+      rc.innerHTML = `
+        <div class="result-card intercept">
+          <h2 style="color: var(--warning); margin-top:0; text-align:center;">90+ ROLL DETECTED</h2>
+          <p style="text-align:center; color:#ccc;">The Kouateen have intercepted the feed. Diverting to personal loot tables.</p>
+          <div style="display:flex; gap:1rem; justify-content:center; margin-top:2rem;">
+            <select id="intercept-player" style="background:#111; color:#fff; border:1px solid var(--warning); padding:0.5rem; outline:none;">
+              ${pOptions}
+            </select>
+            <input type="number" id="intercept-dice" placeholder="1-10" min="1" max="10" style="background:#111; color:var(--warning); border:1px solid var(--warning); width:80px; text-align:center; font-weight:bold; font-size:1.2rem; outline:none;">
+            <button class="btn" style="background:var(--warning); color:#000; border:none;" onclick="resolveIntercept()">Pull Personal</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function resolveIntercept() {
+      const player = document.getElementById('intercept-player').value;
+      const rollVal = parseInt(document.getElementById('intercept-dice').value);
+      
+      if (!rollVal || rollVal < 1 || rollVal > 10) return showToast("Enter a 1-10 roll.");
+      
+      // Synchronize the entire UI state to the intercepted personal table
+      selectView('personal', player);
+      document.getElementById('dice-input').value = rollVal;
+      
+      const table = appState.loot_tables.personal[player];
+      const slotIndex = rollVal - 1;
+      const slot = table[slotIndex];
+
+      stagedRoll = { tableRef: table, index: slotIndex, item: slot ? slot.item : null };
+      renderResultCard();
+    }
+
+    function renderResultCard() {
+      const rc = document.getElementById('result-container');
+      
+      if (!stagedRoll.item) {
+        rc.innerHTML = `
+          <div class="result-card error">
+            <h2 class="result-title" style="color:var(--danger)">SLOT EMPTY</h2>
+            <p class="result-mechanics">The Kouateen are displeased. This slot has already been depleted and was not restocked.</p>
+            <div class="action-row">
+              <button class="btn-action" style="color:var(--info)" onclick="document.getElementById('dice-input').focus()">Roll Again</button>
+              <button class="btn-action" style="color:var(--danger)" onclick="const btn = document.getElementById('forge-btn-${stagedRoll.index}'); btn.click(); btn.scrollIntoView({behavior: 'smooth', block: 'center'});">Backfill Now</button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const i = stagedRoll.item;
+      rc.innerHTML = `
+        <div class="result-card">
+          <h2 class="result-title">${escapeHtml(i.name)}</h2>
+          <span class="result-type">${escapeHtml(i.type)}</span>
+          <div class="result-mechanics">${escapeHtml(i.desc)}</div>
+          
+          <div class="action-row">
+            <div class="award-wrapper">
+              <button class="btn-action award" style="width:100%" onclick="toggleAwardMenu()">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                Award to Player
+              </button>
+              <div id="award-menu" class="award-popover hidden">
+                 <div class="popover-title">Select Character:</div>
+                 ${appState.players.map(p => `<div class="popover-item" onclick="confirmAward('${escapeJS(p.name)}')">${escapeHtml(p.name)}</div>`).join('')}
+                 <div class="popover-item" style="color:var(--danger); border-top:1px solid #333;" onclick="toggleAwardMenu()">Cancel</div>
+              </div>
+            </div>
+
+            <button class="btn-action" onclick="copyToRoll20()">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              Copy for Roll20
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- Result Actions ---
+    function copyToRoll20() {
+      if (!stagedRoll || !stagedRoll.item) return;
+      const i = stagedRoll.item;
+      const markdown = `**ITEM:** ${i.name}\n**TYPE:** ${i.type}\n**MECHANICS:** ${i.desc}`;
+      navigator.clipboard.writeText(markdown).then(() => showToast("Copied to clipboard!"));
+    }
+
+    function toggleAwardMenu() {
+      document.getElementById('award-menu').classList.toggle('hidden');
+    }
+
+    async function confirmAward(playerName) {
+      if (!stagedRoll || !stagedRoll.item) return;
+      pushState();
+      
+      const item = stagedRoll.item;
+      const player = appState.players.find(p => p.name === playerName);
+      if(!player) return showToast("Player not found in database.");
+
+      if (!player.achievements) player.achievements = { pending: [], claimed: [] };
+      if (!player.achievements.pending) player.achievements.pending = [];
+      
+      player.achievements.pending.push({
+        name: "Loot Roll Reward",
+        description: "Acquired from the rolling tables.",
+        rewards: { gold: 0, items: [ { name: item.name, flavor_text: item.desc, mechanics: "Requires inspection.", quantity: 1 } ] }
+      });
+
+      // Deplete Ammunition
+      stagedRoll.tableRef[stagedRoll.index].item = null;
+
+      saveLocal();
+      await syncToKV(); // Send to HUD safely
+      
+      document.getElementById('result-container').innerHTML = `
+        <div class="result-card" style="border-top-color:var(--success); text-align:center;">
+          <h2 style="color:var(--success)">Payload Delivered</h2>
+          <p style="color:#aaa">${item.name} sent to ${playerName}'s HUD.</p>
+        </div>`;
+      
+      stagedRoll = null;
+      renderMagazine(); // Updates right column to show red warning
+      showToast("Awarded & Depleted.");
+    }
+
+    // --- Right Column (Magazine & Forge) ---
+    function renderMagazine() {
+      document.getElementById('magazine-title').innerText = `Loaded: ${currentView.id}`;
+      const table = currentView.type === 'tier' ? appState.loot_tables.tiers[currentView.id] : appState.loot_tables.personal[currentView.id];
+      
+      let html = table.map((slot, index) => {
+        if (slot.item === null) {
+          return `
+            <div class="slot depleted">
+               <div class="warn-text">
+                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                 [${index + 1}] EMPTY
+               </div>
+               <button id="forge-btn-${index}" class="btn-forge" onclick="toggleForgeForm(${index})">+ Forge New Item</button>
+               <div id="forge-form-${index}" class="forge-form hidden">
+                 <input type="text" id="forge-name-${index}" class="forge-input" placeholder="Item Name...">
+                 <input type="text" id="forge-type-${index}" class="forge-input" placeholder="Type (e.g. Weapon, Trinket)">
+                 <textarea id="forge-desc-${index}" class="forge-input forge-textarea" placeholder="Mechanics & Description..."></textarea>
+                 <button class="btn-save-forge" onclick="saveForgedItem(${index})">Load Slot</button>
+               </div>
+            </div>`;
+        } else {
+          return `<div class="slot loaded"><span class="slot-num">[${index + 1}]</span> ${escapeHtml(slot.item.name)}</div>`;
+        }
+      }).join('');
+      
+      document.getElementById('magazine-list').innerHTML = html;
+    }
+
+    function toggleForgeForm(index) {
+      document.getElementById(`forge-form-${index}`).classList.toggle('hidden');
+    }
+
+    function saveForgedItem(index) {
+      const name = document.getElementById(`forge-name-${index}`).value.trim();
+      const type = document.getElementById(`forge-type-${index}`).value.trim();
+      const desc = document.getElementById(`forge-desc-${index}`).value.trim();
+      
+      if(!name) return showToast("Item requires a name.");
+
+      pushState();
+      const table = currentView.type === 'tier' ? appState.loot_tables.tiers[currentView.id] : appState.loot_tables.personal[currentView.id];
+      table[index].item = { name, type, desc };
+
+      saveLocal();
+      syncToKV();
+      renderMagazine();
+      showToast("Slot loaded.");
+    }
+
+    // --- Import Modals ---
+    function toggleImportModal() { document.getElementById('import-modal').classList.toggle('hidden'); }
+
+    function mergeLoot() {
+      const raw = document.getElementById('import-data').value;
+      let d; try { d = JSON.parse(raw); } catch(e) { return showToast("Invalid JSON"); }
+      if (!d.loot_tables) return showToast("Missing loot_tables object.");
+
+      pushState();
+      let count = 0;
+
+      // Merge Tiers
+      if (d.loot_tables.tiers) {
+        for (const tier in d.loot_tables.tiers) {
+          if (!appState.loot_tables.tiers[tier]) appState.loot_tables.tiers[tier] = [];
+          d.loot_tables.tiers[tier].forEach((newSlot, idx) => {
+            if (!appState.loot_tables.tiers[tier][idx] || appState.loot_tables.tiers[tier][idx].item === null) {
+              appState.loot_tables.tiers[tier][idx] = newSlot;
+              count++;
+            }
+          });
+        }
+      }
+      
+      // Merge Personal
+      if (d.loot_tables.personal) {
+        for (const p in d.loot_tables.personal) {
+          if (!appState.loot_tables.personal[p]) appState.loot_tables.personal[p] = [];
+          d.loot_tables.personal[p].forEach((newSlot, idx) => {
+            if (!appState.loot_tables.personal[p][idx] || appState.loot_tables.personal[p][idx].item === null) {
+              appState.loot_tables.personal[p][idx] = newSlot;
+              count++;
+            }
+          });
+        }
+      }
+
+      saveLocal(); syncToKV(); renderAll(); toggleImportModal(); document.getElementById('import-data').value = '';
+      showToast(`Restocked ${count} empty slots.`);
+    }
+
+    // Boot
+    function showToast(msg) {
+      const c = document.getElementById('toast-container');
+      const t = document.createElement('div');
+      t.className = 'toast'; t.innerText = msg;
+      c.appendChild(t); setTimeout(() => t.remove(), 3000);
+    }
+    function escapeHtml(str) { return str ? str.toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
+    function escapeJS(str) { return str ? str.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;') : ''; }
+
+    init();
+  </script>
+</body>
+</html>
