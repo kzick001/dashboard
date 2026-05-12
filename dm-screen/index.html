@@ -1,401 +1,566 @@
 <!DOCTYPE html>
-<html lang="en" class="bg-black text-gray-200 antialiased selection:bg-white/20">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KZICK // DM DASHBOARD</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* CUPERTINO 2050 TOLERANCES */
-        :root {
-            --spring: cubic-bezier(0.175, 0.885, 0.32, 1.1);
-            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
-        
-        /* SMART GLASS COMPONENT */
-        .smart-glass {
-            background: rgba(10, 10, 10, 0.6);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 1.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            transition: all 0.4s var(--ease-out);
-        }
+  <meta charset="UTF-8">
+  <title>Showrunner | Master Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='none' stroke='white' stroke-width='4' stroke-linejoin='round' d='M50 5 L90 30 L90 70 L50 95 L10 70 L10 30 Z M50 5 L50 45 M10 30 L50 45 L90 30 M10 70 L50 45 L90 70 M50 95 L50 45'/></svg>">
+  
+  <style>
+    :root {
+      --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --text-muted: #888;
+      --accent: #bb86fc; --info: #74b9ff; --success: #03dac6; --danger: #cf6679;
+      --header: #0f0f0f; --nav-bg: #161616; --blueprint-bg: #1a1e24; --scratch-bg: #050505;
+    }
+    
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; font-variant-numeric: tabular-nums; }
+    .hidden { display: none !important; }
 
-        /* NATIVE ACCORDION RESET */
-        details > summary {
-            list-style: none;
-            cursor: pointer;
-        }
-        details > summary::-webkit-details-marker { display: none; }
-        
-        /* SPRING PHYSICS FOR VIEWS */
-        .view-section {
-            display: none;
-            opacity: 0;
-            transform: translateY(10px);
-        }
-        .view-section.active {
-            display: block;
-            animation: springIn 0.5s var(--spring) forwards;
-        }
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #555; }
 
-        @keyframes springIn {
-            to { opacity: 1; transform: translateY(0); }
-        }
+    /* Zone 1: Command Header */
+    header { background: var(--header); border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1.5rem; z-index: 200; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    .brand { font-size: 1.2rem; font-weight: bold; letter-spacing: 0.1em; color: var(--accent); text-transform: uppercase; display: flex; align-items: center; gap: 1rem; }
+    .nav-links { display: flex; gap: 0.75rem; align-items: center; }
+    .nav-btn { background: transparent; color: #aaa; border: 1px solid #444; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.85rem; font-weight: bold; transition: 0.2s; }
+    .nav-btn:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: #888; }
+    .nav-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(187, 134, 252, 0.1); }
+    
+    .btn-icon { background: transparent; border: none; padding: 4px; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; border-radius: 4px; transition: 0.2s; }
+    .btn-icon:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    select.time-advance { background: #111; color: #fff; border: 1px solid #444; padding: 4px 8px; border-radius: 4px; outline: none; font-size: 0.85rem; cursor: pointer; }
 
-        /* MATRIX OVERRIDE */
-        .matrix-mode {
-            --tw-text-opacity: 1;
-            color: rgb(0 255 0 / var(--tw-text-opacity)) !important;
-            background-color: #000 !important;
-        }
-        .matrix-mode .smart-glass {
-            border-color: rgba(0, 255, 0, 0.2);
-            background: rgba(0, 20, 0, 0.8);
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.1);
-        }
+    /* Main Workspace & Flex Morphing */
+    .main-workspace { display: flex; flex-direction: column; flex-grow: 1; position: relative; overflow: hidden; }
 
-        /* CUSTOM SCROLLBAR */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
-    </style>
+    /* Zone 2: Player Deck */
+    .player-deck { flex: 1 1 50%; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 1rem; padding: 1.5rem; overflow-y: auto; transition: flex 0.3s ease, padding 0.3s ease; background: radial-gradient(circle at center, #1a1a1a 0%, var(--bg) 100%); }
+    .player-deck.collapsed { flex: 0 0 90px; padding: 0.5rem 1.5rem; overflow-y: hidden; align-items: center; gap: 0.5rem; }
+    
+    /* Player Cards */
+    .p-card { background: var(--card); width: 260px; padding: 1rem; border-radius: 8px; border: 1px solid #333; border-top: 4px solid var(--p-color, var(--accent)); display: flex; flex-direction: column; gap: 0.75rem; transition: all 0.3s ease; position: relative; }
+    .player-deck.collapsed .p-card { width: auto; flex-direction: row; align-items: center; padding: 0.5rem 1rem; }
+    .p-card.absent { filter: grayscale(1) opacity(0.4); order: 99; transform: scale(0.95); border-top-color: #444; }
+    
+    .p-header { display: flex; justify-content: space-between; align-items: center; }
+    .p-name { font-size: 1.2rem; font-weight: bold; margin: 0; color: var(--p-color, #fff); white-space: nowrap; }
+    .player-deck.collapsed .p-name { font-size: 1rem; margin-right: 1rem; }
+    .player-deck.collapsed .card-details, .player-deck.collapsed .vital-grid-full { display: none; }
+    
+    .vital-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; background: #111; padding: 0.5rem; border-radius: 6px; border: 1px inset #222; }
+    .player-deck.collapsed .vital-grid { display: flex; gap: 1rem; padding: 0; border: none; background: transparent; }
+    .vital-stat { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+    .vital-label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; display: flex; align-items: center; gap: 4px; }
+    .editable-input { background: transparent; color: #fff; border: 1px dashed transparent; border-radius: 3px; font-family: inherit; font-size: 1rem; font-weight: bold; width: 45px; text-align: right; outline: none; transition: 0.2s; }
+    .editable-input:hover { border-color: #444; }
+    .editable-input:focus { border-style: solid; border-color: var(--accent); background: #000; }
+    
+    .card-actions { display: flex; gap: 0.5rem; margin-top: auto; }
+    .btn-action { flex-grow: 1; background: #222; border: 1px solid #444; color: #ccc; padding: 4px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 4px; }
+    .btn-action:hover { background: #333; color: #fff; border-color: var(--accent); }
+    .btn-absent { flex-grow: 0; width: 30px; }
+    .btn-absent.is-absent { background: var(--danger); border-color: var(--danger); color: #000; }
+    .pending-badge { background: var(--accent); color: #000; font-size: 0.65rem; font-weight: bold; padding: 2px 6px; border-radius: 10px; position: absolute; top: -10px; right: -10px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+
+    /* Dividers */
+    .divider { background: #222; display: flex; align-items: center; justify-content: center; color: #888; cursor: pointer; transition: 0.2s; z-index: 10; user-select: none; }
+    .divider:hover { background: #333; color: var(--accent); }
+    .divider.horizontal { height: 16px; border-top: 1px solid #111; border-bottom: 1px solid #111; width: 100%; flex-shrink: 0; }
+    .divider.vertical { width: 16px; border-left: 1px solid #111; border-right: 1px solid #111; height: 100%; flex-shrink: 0; }
+
+    /* Zone 3: Narrative Split */
+    .narrative-split { flex: 1 1 50%; display: flex; flex-direction: row; transition: flex 0.3s ease; overflow: hidden; }
+    .narrative-split.expanded { flex: 1 1 100%; }
+    @media (max-width: 900px) {
+      .narrative-split { flex-direction: column; overflow-y: auto; }
+      .blueprint-col, .scratchpad-col { flex: 0 0 auto; min-height: 400px; overflow: visible; }
+    }
+
+    /* 3A: Blueprint Column */
+    .blueprint-col { flex: 1 1 60%; background: var(--blueprint-bg); overflow-y: auto; padding: 1.5rem 2rem; transition: flex 0.3s ease; box-sizing: border-box; }
+    .read-aloud { border-left: 4px solid var(--info); padding: 1rem; font-family: 'Georgia', serif; font-style: italic; color: #d1d5db; background: rgba(0,0,0,0.2); margin-bottom: 1rem; }
+    .mechanics-list { padding-left: 1.5rem; color: #ccc; font-size: 0.95rem; }
+    .mechanics-list li { margin-bottom: 0.5rem; }
+    .math-highlight { color: #ffeaa7; font-weight: bold; background: rgba(255, 234, 167, 0.1); padding: 0 4px; border-radius: 2px; }
+    .loot-card { background: rgba(0,0,0,0.3); border-left: 3px solid #f1c40f; padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; border-radius: 4px; }
+
+    /* 3B: Scratchpad Column */
+    .scratchpad-col { flex: 1 1 40%; background: var(--scratch-bg); display: flex; flex-direction: column; transition: flex 0.3s ease, border 0.3s ease; overflow: hidden; }
+    .scratchpad-col.collapsed { flex: 0 0 0px; padding: 0; border: none; }
+    .scratchpad-header { padding: 0.5rem 1rem; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; background: #111; flex-shrink: 0; }
+    .scratchpad-textarea { flex-grow: 1; background: transparent; border: none; color: #bbb; padding: 1rem; font-family: monospace; font-size: 0.95rem; resize: none; outline: none; line-height: 1.6; }
+
+    /* Zone 4: Navigation Drawer */
+    .nav-drawer { position: absolute; top: 0; left: 0; bottom: 0; width: 280px; background: var(--nav-bg); border-right: 1px solid #333; z-index: 150; transform: translateX(-100%); transition: transform 0.3s ease; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.8); }
+    .nav-drawer.open { transform: translateX(0); }
+    .drawer-header { padding: 1rem; background: #111; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; color: #aaa; font-weight: bold; letter-spacing: 0.05em; }
+    .drawer-list { overflow-y: auto; flex-grow: 1; padding: 0.5rem 0; }
+    .drawer-item { padding: 0.75rem 1.5rem; color: #ccc; cursor: pointer; border-left: 3px solid transparent; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .drawer-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+    .drawer-item.active { border-left-color: var(--accent); background: rgba(187, 134, 252, 0.1); color: #fff; font-weight: bold; }
+    .drawer-category { padding: 0.5rem 1.5rem; font-size: 0.75rem; color: #666; text-transform: uppercase; margin-top: 0.5rem; }
+
+    /* Overlay / Modals */
+    .overlay-backdrop { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); backdrop-filter: blur(3px); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 1; transition: 0.2s; }
+    .overlay-backdrop.hidden { opacity: 0; pointer-events: none; }
+    .modal-content { background: var(--card); border: 1px solid #444; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; overflow: hidden; transform: translateY(0); transition: 0.3s ease; }
+    .overlay-backdrop.hidden .modal-content { transform: translateY(20px); }
+    .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; }
+    .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; max-height: 70vh; overflow-y: auto; }
+    .condition-badge { display: inline-block; background: var(--danger); color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; margin: 2px; }
+    
+    /* Popover Menu */
+    .popover { position: absolute; background: #222; border: 1px solid #555; border-radius: 6px; width: 180px; z-index: 50; box-shadow: 0 8px 16px rgba(0,0,0,0.8); display: flex; flex-direction: column; overflow: hidden; }
+    .popover-title { padding: 6px 12px; font-size: 0.75rem; color: #888; border-bottom: 1px solid #444; background: #1a1a1a; text-transform: uppercase; }
+    .popover-item { padding: 8px 12px; font-size: 0.9rem; cursor: pointer; transition: 0.1s; }
+    .popover-item:hover { background: rgba(3, 218, 198, 0.2); color: #fff; }
+
+    /* Toasts & Sync */
+    #toast-container { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+    .toast { background: rgba(30, 30, 30, 0.95); color: #fff; padding: 0.75rem 1.5rem; border-radius: 6px; border: 1px solid var(--accent); animation: fadein 0.3s, fadeout 0.3s 2.7s forwards; }
+    @keyframes fadein { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
+    #sync-status-icon { transition: 0.3s; }
+    .btn-send { background: rgba(187, 134, 252, 0.1); border: 1px solid var(--accent); color: var(--accent); padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: 0.2s; }
+    .btn-send:hover { background: var(--accent); color: #000; }
+  </style>
 </head>
-<body class="h-screen w-screen overflow-hidden flex flex-col">
+<body>
 
-    <header class="h-16 border-b border-white/5 flex items-center justify-between px-6 shrink-0 z-50">
-        <div class="flex items-center gap-6">
-            <h1 class="text-xs font-bold tracking-[0.2em] text-white/50 uppercase">Kzick Forge // OS</h1>
-            <nav id="main-nav" class="flex gap-2 bg-white/5 p-1 rounded-full border border-white/5">
-                <button data-tab="notes" class="nav-btn px-4 py-1.5 rounded-full text-sm font-medium transition-all text-white bg-white/10">Notes</button>
-                <button data-tab="rooms" class="nav-btn px-4 py-1.5 rounded-full text-sm font-medium transition-all text-gray-500 hover:text-white">Rooms</button>
-                <button data-tab="players" class="nav-btn px-4 py-1.5 rounded-full text-sm font-medium transition-all text-gray-500 hover:text-white">Players</button>
-                <button data-tab="loot" class="nav-btn px-4 py-1.5 rounded-full text-sm font-medium transition-all text-gray-500 hover:text-white">Loot Engine</button>
-            </nav>
+  <header>
+    <div class="brand">
+      <button class="btn-icon" onclick="toggleNavDrawer()" title="Campaign Navigator">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+      SHOWRUNNER
+    </div>
+    
+    <div class="nav-links">
+      <span id="sync-status-icon" title="Data Synced" style="color:#555;">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+      </span>
+      <button class="btn-icon" onclick="undo()" title="Undo"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3l-3 2.7"></path></svg></button>
+      <button class="btn-icon" onclick="redo()" title="Redo"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg></button>
+      
+      <select class="time-advance" onchange="advanceTime(this.value)">
+        <option value="" disabled selected>⌛ Rests...</option>
+        <option value="short">Short Rest</option>
+        <option value="long">Long Rest</option>
+        <option value="dawn">Dawn</option>
+      </select>
+      
+      <span style="border-left: 1px solid #444; height: 20px; margin: 0 0.5rem;"></span>
+      <a href="index.html" class="nav-btn active">Dashboard</a>
+      <a href="players.html" class="nav-btn">Players</a>
+      <a href="notes.html" class="nav-btn">Notes</a>
+      <a href="loot.html" class="nav-btn">Loot</a>
+    </div>
+  </header>
+
+  <div id="toast-container"></div>
+
+  <div class="main-workspace">
+    
+    <div id="nav-drawer" class="nav-drawer">
+      <div class="drawer-header">
+        NAVIGATOR
+        <button class="btn-icon" onclick="toggleNavDrawer()"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      </div>
+      <div class="drawer-list" id="drawer-list"></div>
+    </div>
+
+    <div id="player-deck" class="player-deck">
+      </div>
+
+    <div class="divider horizontal" onclick="toggleDeck()" title="Toggle Combat/Exploration Mode">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="7 10 12 15 17 10"></polyline></svg>
+    </div>
+
+    <div id="narrative-split" class="narrative-split">
+      
+      <div id="blueprint-col" class="blueprint-col">
+        <h2 style="color:#555; text-align:center; margin-top:3rem;">Select a Room from the Navigator.</h2>
+      </div>
+
+      <div class="divider vertical" onclick="toggleScratchpad()" title="Toggle Scratchpad">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </div>
+
+      <div id="scratchpad-col" class="scratchpad-col">
+        <div class="scratchpad-header">
+          <select id="session-select" style="background:#222; color:#fff; border:1px solid #444; border-radius:4px; padding:2px 6px; outline:none;" onchange="changeSession(this.value)"></select>
+          <button class="btn-icon" onclick="createSession()" title="New Session"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
         </div>
-        <div class="flex items-center gap-4">
-            <button id="btn-matrix" class="text-[10px] tracking-widest text-gray-500 hover:text-[#0f0] transition-colors uppercase">Matrix Mode</button>
-            <button id="btn-sync" class="bg-white text-black px-4 py-1.5 rounded-full text-xs font-bold tracking-wider hover:bg-gray-200 transition-colors uppercase">Push To Cloud</button>
-        </div>
-    </header>
+        <textarea id="scratchpad-input" class="scratchpad-textarea" placeholder="Live session notes..."></textarea>
+      </div>
 
-    <section id="view-notes" class="view-section active h-full p-6">
-        <div class="smart-glass w-full h-full p-6 flex flex-col gap-4">
-            <h2 class="text-xs font-medium tracking-widest text-white/50 uppercase">Session Pipeline / Prepping Session 6</h2>
-            <textarea id="data-notes" class="w-full h-full bg-transparent border-none outline-none resize-none text-base leading-relaxed text-gray-300 placeholder-white/20" placeholder="Inject session notes here..."></textarea>
-        </div>
-    </section>
+    </div>
+  </div>
 
-    <section id="view-rooms" class="view-section h-full p-6">
-        <div class="grid grid-cols-12 gap-6 h-full">
-            <div class="col-span-4 smart-glass p-4 overflow-y-auto" id="rooms-list">
-                </div>
-            <div class="col-span-8 smart-glass p-8 overflow-y-auto flex flex-col gap-6" id="rooms-detail">
-                <div class="text-sm text-white/30 tracking-widest uppercase">Select a room to view tolerances</div>
-            </div>
-        </div>
-    </section>
+  <div id="player-modal" class="overlay-backdrop hidden" onclick="if(event.target===this) closePlayerModal()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-name" style="margin:0; color:var(--accent);">Player Name</h2>
+        <button class="btn-icon" onclick="closePlayerModal()"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      </div>
+      <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
 
-    <section id="view-players" class="view-section h-full p-6">
-        <div class="grid grid-cols-12 gap-6 h-full">
-            <div class="col-span-3 smart-glass p-4 overflow-y-auto flex flex-col gap-2" id="players-list">
-                </div>
-            <div class="col-span-9 smart-glass p-8 overflow-y-auto flex flex-col gap-6" id="players-detail">
-                <div class="text-sm text-white/30 tracking-widest uppercase">Select an asset to view telemetry</div>
-            </div>
-        </div>
-    </section>
+  <script>
+    const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
+    const colorPalette = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe'];
+    
+    // SVGs for dynamic injection
+    const SVGS = {
+      heart: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`,
+      shield: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>`,
+      eye: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
+      eyeOff: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`,
+      coin: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v8M8 12h8"></path></svg>`,
+      award: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>`
+    };
 
-    <section id="view-loot" class="view-section h-full p-6 flex flex-col items-center justify-center relative">
-        <button id="btn-edit-loot" class="absolute top-6 right-6 text-[10px] tracking-widest text-white/30 hover:text-white uppercase transition-opacity">Edit Matrix JSON</button>
-        
-        <div class="w-full max-w-2xl flex flex-col items-center gap-8">
-            <div class="flex gap-2 bg-white/5 p-1 rounded-full border border-white/5" id="loot-tiers">
-                <button data-tier="bronze" class="tier-btn px-6 py-2 rounded-full text-sm font-medium text-white bg-white/10">Bronze</button>
-                <button data-tier="silver" class="tier-btn px-6 py-2 rounded-full text-sm font-medium text-gray-500 hover:text-white">Silver</button>
-                <button data-tier="gold" class="tier-btn px-6 py-2 rounded-full text-sm font-medium text-gray-500 hover:text-white">Gold</button>
-                <button data-tier="platinum" class="tier-btn px-6 py-2 rounded-full text-sm font-medium text-gray-500 hover:text-white">Platinum</button>
-                <button data-tier="personal" class="tier-btn px-6 py-2 rounded-full text-sm font-medium text-gray-500 hover:text-white">Personal</button>
-            </div>
-            
-            <div id="personal-nav" class="flex gap-2 hidden opacity-0 transition-opacity">
-                </div>
+    // Unified Master State
+    let appState = {
+      players: [],
+      campaign_notes: { sessions: [{ id: Date.now(), title: "Session 1", content: "" }], rooms: [] },
+      loot_tables: {}
+    };
 
-            <input type="number" id="loot-input" min="1" max="100" class="w-48 h-32 text-center text-6xl font-bold bg-transparent border-b-2 border-white/10 outline-none focus:border-white transition-colors text-white" placeholder="00">
-            
-            <div id="loot-result" class="h-24 flex flex-col items-center justify-center text-center opacity-0 transition-opacity">
-                <p id="loot-item-name" class="text-xl font-medium"></p>
-                <button id="loot-claim-btn" class="mt-4 text-[10px] bg-white/10 hover:bg-white text-white hover:text-black px-4 py-1 rounded-full uppercase tracking-widest hidden transition-colors">Mark Claimed</button>
-            </div>
-        </div>
-    </section>
+    // Pointers & Timers
+    let currentRoomIndex = null;
+    let currentSessionId = null;
+    let historyStack = [];
+    let redoStack = [];
+    const MAX_HISTORY = 15;
+    let scratchTimer;
 
-    <script>
-        /**
-         * DEFAULT DATA SCHEMAS (Injecting payload from Session 5/6)
-         */
-        const DEFAULT_DATA = {
-            notes: "CURRENTLY PREPPING: Session 6.\nLOCATION: Golden Carrion (Room 16)\n\nRECAP: Chuck looted charred Influencer bros. Tilly got violently exfoliated by Margie. Chuck pulped an Esthetician's head like a Gallagher show. Tilly melted a guy with an Acid Orb. Margie swapped places with a Big Macticore, killing it and pinning its mobility scooter horn on. \n\nSTATUS: Horn is blaring. Dead Macticore on table. ARMs are in 19a. Chuck's shoes are melting.",
-            rooms: [
-                { id: "rm_16", name: "16: The Golden Carrion", readAloud: "The overwhelming stench of boiled hot dog water and congealed fryer grease washes over you. A sprawling buffet with a trough of gray cubes...", mechanics: "Sneeze Guard: Class-2 Evocation Laser Grid (1d6 radiant). Gray Cubes: Restore 1d4 HP, DC 13 Con Save or get The Meat Sweats (Poisoned).", monsters: "3x Assistant Regional Manticores (CR 3 - Hover 10ft, 1 attack/turn). 5x Scooter Manticores. 10x Minimum Wage Ghouls.", treasure: "Silver-Tier Employee Badge on Lead Manticore." },
-                { id: "rm_12", name: "12: Orientation Seminar", readAloud: "Sickly sweet smell of cheap vanilla diffusers. A projector loops a dizzying slideshow of gold coins and pyramid graphs. Bros in fleece vests stare at you.", mechanics: "Projector Trap: DC 13 Wis save or Charmed/Hypnotized. Breaking bulb: 15 HP, blinds everyone for 1 round (DC 13 Dex).", monsters: "3x Diamond-Tier Influencers (Doppelgangers CR 1). Volatile Inventory (50% chance to detonate Pink Slop on fire/lightning damage).", treasure: "The Blazer of False Confidence (+1 Cha, Disadv Stealth)." },
-                { id: "rm_15", name: "15: The Panera Saferoom", readAloud: "Perfectly regulated 72-degree climate. Aggressively inoffensive acoustic guitar music. A gnomish woman with a brass bionic arm wipes the counter.", mechanics: "SAFE ZONE. No combat. Long Rest costs 50gp for a hotel room. Food costs gp.", monsters: "Oksana, The Babka (Invulnerable).", treasure: "Sourdough Bread Bowl (10gp) cures Meat Sweats. Day-Old Baguette (25gp) acts as +1 Club." },
-                { id: "rm_18", name: "18: The Cube Press", readAloud: "Blistering heat, burning hair, unseasoned boiling meat. A massive hydraulic press stamps out gray cubes.", mechanics: "Grease Slick: DC 12 Dex or Prone. Flammable floor disables Troll Regen.", monsters: "Gordon Slamsey (Reskinned Troll CR 5). Chad the Shift Lead (Goblin Boss CR 1). 3x Vape-Cloud Line Cooks.", treasure: "Kiss the Cook Apron (Fire Resist, Grapplers must kiss you)." }
-            ],
-            players: [
-                { id: "pc_chuck", name: "Chuck (Fighter)", stats: "HP: 28 | AC: 16 | Passive Per: 12", lore: "Variant Human. Shoeless due to large feet. Refuses to be a cog in the machine.", inventory: "- Saboteur's Armor (Once per LR drop to 1 HP by screaming grievance)\n- Pack of the Fanny (Attracts aggro)\n- Bootleg Jordans (Melted to skin)\n- Push, Don't Pull Sign\n- OSHA-Compliant Spa Crocs" },
-                { id: "pc_hendrick", name: "Hendrick (Warlock)", stats: "HP: 24 | AC: 12 | Passive Per: 11", lore: "Standard Human. Propane Fiend Patron. Misses two-step dancing with his wife.", inventory: "- The Sacred Tank (Blue fire, explodes if pierced)\n- Voided Receipt (Confusion spell)\n- Unsubscribe Button\n- Diamond Tier Day Pass" },
-                { id: "pc_tilly", name: "Tilly (Wizard)", stats: "HP: 20 | AC: 12 | Passive Per: 11", lore: "Forest Gnome. Traumatized by Suffer-A-Mole. Loves setting things on fire.", inventory: "- Jessie James (Crocheted Raccoon)\n- Charred Arcade Tickets\n- Not My Job Visor (+1 AC if ally took damage)\n- 3x Vials of Alpha-Liquid (Pink Napalm)" },
-                { id: "pc_aelar", name: "Aelar (Fighter)", stats: "HP: 28 | AC: 20 | Passive Per: 12", lore: "High Elf. Wields Ymmat the Rapier. Haughty and dignified corporate bootlicker.", inventory: "- Plaque of the Month (+2 Shield, shouts 'Synergy!')\n- Modem of Agony (Deafening)\n- Mallet of Second Opinions (Removes charm)\n- Showstopper Party-Popper" }
-            ],
-            loot: {
-                bronze: [{ min: 1, max: 100, name: "Bronze 'Front of House' Box (Lanyard of Micromanagement)", isUnique: false, isGone: false }],
-                silver: [{ min: 1, max: 100, name: "Silver 'Middle Management' Box (Wand of Terrible Investment Advice)", isUnique: false, isGone: false }],
-                gold: [{ min: 1, max: 100, name: "Gold 'Severance Package' Box (Clipboard of Write-Ups)", isUnique: false, isGone: false }],
-                platinum: [{ min: 1, max: 100, name: "Platinum 'Premium Member' Box (Keycard of Superiority)", isUnique: false, isGone: false }],
-                personal: { pc_chuck: [{min: 1, max: 100, name: "Basic Decor", isUnique: false, isGone: false}] }
-            }
-        };
+    // --- State Engine ---
+    function saveLocal() { localStorage.setItem('showrunner_master', JSON.stringify(appState)); }
 
-        /**
-         * STATE PIPELINE & RECONCILIATION
-         */
-        let db = JSON.parse(sessionStorage.getItem('kzick_dnd_db'));
-        if (!db) {
-            db = DEFAULT_DATA;
-            sessionStorage.setItem('kzick_dnd_db', JSON.stringify(db));
+    async function syncToKV() {
+      try {
+        let payload = appState;
+        const res = await fetch(WORKER_URL);
+        if (res.ok) {
+          const remote = await res.json();
+          // Deep merge to prevent overwriting remote objects with empty local defaults
+          payload = { 
+            ...remote, 
+            ...appState, 
+            players: appState.players.length > 0 ? appState.players : (remote.players || []),
+            loot_tables: Object.keys(appState.loot_tables).length > 0 ? appState.loot_tables : (remote.loot_tables || {})
+          };
         }
+        await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        flashSync();
+      } catch (e) { console.error("KV Sync Failed"); }
+    }
 
-        const saveState = () => {
-            sessionStorage.setItem('kzick_dnd_db', JSON.stringify(db));
-        };
+    async function init() {
+      // 1. Load Local
+      const local = localStorage.getItem('showrunner_master');
+      if (local) { try { appState = JSON.parse(local); } catch(e){} }
 
-        const pushToCloud = () => {
-            const btn = document.getElementById('btn-sync');
-            btn.innerText = "SYNCING...";
-            // Stub for actual Cloudflare Worker fetch
-            setTimeout(() => {
-                btn.innerText = "PUSH TO CLOUD";
-                btn.classList.add('bg-green-400');
-                setTimeout(() => btn.classList.remove('bg-green-400'), 1000);
-            }, 800);
-        };
+      // 2. Fetch Remote Overrides
+      try {
+        const res = await fetch(WORKER_URL);
+        if (res.ok) {
+          const remote = await res.json();
+          if (remote.players) appState.players = remote.players;
+          if (remote.campaign_notes) appState.campaign_notes = remote.campaign_notes;
+          if (remote.loot_tables) appState.loot_tables = remote.loot_tables;
+        }
+      } catch (e) { console.warn("Fetch failed, using local."); }
 
-        /**
-         * DOM ROUTING & NAVIGATION
-         */
-        document.getElementById('main-nav').addEventListener('click', (e) => {
-            if (!e.target.dataset.tab) return;
-            // Update buttons
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('text-white', 'bg-white/10');
-                btn.classList.add('text-gray-500');
-            });
-            e.target.classList.remove('text-gray-500');
-            e.target.classList.add('text-white', 'bg-white/10');
+      // Sanitize
+      if (!appState.campaign_notes.sessions || appState.campaign_notes.sessions.length === 0) {
+        appState.campaign_notes.sessions = [{ id: Date.now(), title: "Session 1", content: "" }];
+      }
+      currentSessionId = appState.campaign_notes.sessions[0].id;
+
+      renderAll();
+    }
+
+    function pushState() {
+      historyStack.push(JSON.parse(JSON.stringify(appState)));
+      if(historyStack.length > MAX_HISTORY) historyStack.shift();
+      redoStack = [];
+    }
+    function undo() {
+      if (historyStack.length === 0) return showToast("Nothing to undo.");
+      redoStack.push(JSON.parse(JSON.stringify(appState)));
+      appState = historyStack.pop();
+      saveLocal(); syncToKV(); renderAll(); showToast("Undo successful.");
+    }
+    function redo() {
+      if (redoStack.length === 0) return showToast("Nothing to redo.");
+      historyStack.push(JSON.parse(JSON.stringify(appState)));
+      appState = redoStack.pop();
+      saveLocal(); syncToKV(); renderAll(); showToast("Redo successful.");
+    }
+
+    // --- UI Morphing Toggles ---
+    function toggleDeck() {
+      const deck = document.getElementById('player-deck');
+      const split = document.getElementById('narrative-split');
+      deck.classList.toggle('collapsed');
+      split.classList.toggle('expanded');
+    }
+    function toggleScratchpad() {
+      document.getElementById('scratchpad-col').classList.toggle('collapsed');
+    }
+    function toggleNavDrawer() {
+      document.getElementById('nav-drawer').classList.toggle('open');
+    }
+
+    // --- Render Dispatcher ---
+    function renderAll() {
+      renderNavDrawer();
+      renderPlayerDeck();
+      renderBlueprint();
+      renderScratchpad();
+    }
+
+    // --- Zone 4: Nav Drawer ---
+    function renderNavDrawer() {
+      let html = `<div class="drawer-category">Active Rooms</div>`;
+      if(appState.campaign_notes.rooms.length === 0) html += `<div style="padding:1rem; color:#666; font-size:0.85rem;">No rooms loaded.</div>`;
+      appState.campaign_notes.rooms.forEach((r, idx) => {
+        html += `<div class="drawer-item ${currentRoomIndex === idx ? 'active' : ''}" onclick="selectRoom(${idx})">${escapeHtml(r.title)}</div>`;
+      });
+      document.getElementById('drawer-list').innerHTML = html;
+    }
+    function selectRoom(idx) {
+      currentRoomIndex = idx;
+      toggleNavDrawer();
+      renderNavDrawer();
+      renderBlueprint();
+    }
+
+    // --- Zone 2: Player Deck ---
+    function renderPlayerDeck() {
+      const deck = document.getElementById('player-deck');
+      if (appState.players.length === 0) {
+        deck.innerHTML = `<h3 style="color:#555; width:100%; text-align:center;">No players imported.</h3>`;
+        return;
+      }
+
+      deck.innerHTML = appState.players.map((p, idx) => {
+        const pColor = colorPalette[idx % colorPalette.length];
+        const absentClass = p.is_absent ? 'absent' : '';
+        const pendingCount = (p.achievements && p.achievements.pending) ? p.achievements.pending.length : 0;
+        const badgeHtml = pendingCount > 0 ? `<div class="pending-badge">${pendingCount}</div>` : '';
+
+        return `
+          <div class="p-card ${absentClass}" style="--p-color: ${pColor}">
+            ${badgeHtml}
+            <div class="p-header">
+              <h2 class="p-name">${escapeHtml(p.name)}</h2>
+              <div class="card-details">
+                <button class="btn-action btn-absent ${p.is_absent ? 'is-absent' : ''}" onclick="toggleAttendance(${idx})" title="Toggle Attendance">${p.is_absent ? SVGS.eyeOff : SVGS.eye}</button>
+              </div>
+            </div>
             
-            // Switch Views
-            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
-            document.getElementById(`view-${e.target.dataset.tab}`).classList.add('active');
-        });
+            <div class="vital-grid vital-grid-full">
+              <div class="vital-stat"><span class="vital-label">${SVGS.heart} HP</span><input type="text" class="editable-input" value="${p.stats?.hp_max||0}" onblur="updateStat(${idx}, 'hp_max', this.value)" onkeydown="if(event.key==='Enter') this.blur()"></div>
+              <div class="vital-stat"><span class="vital-label">${SVGS.shield} AC</span><input type="text" class="editable-input" value="${p.stats?.ac||0}" onblur="updateStat(${idx}, 'ac', this.value)" onkeydown="if(event.key==='Enter') this.blur()"></div>
+              <div class="vital-stat"><span class="vital-label">${SVGS.eye} PP</span><input type="text" class="editable-input" value="${p.stats?.passive_perception||0}" onblur="updateStat(${idx}, 'passive_perception', this.value)" onkeydown="if(event.key==='Enter') this.blur()"></div>
+              <div class="vital-stat"><span class="vital-label">${SVGS.coin} GP</span><input type="text" class="editable-input" value="${p.gold||0}" onblur="updateStat(${idx}, 'gold', this.value)" onkeydown="if(event.key==='Enter') this.blur()"></div>
+            </div>
 
-        // Matrix Mode Toggle
-        document.getElementById('btn-matrix').addEventListener('click', () => {
-            document.documentElement.classList.toggle('matrix-mode');
-        });
-
-        // Cloud Sync Bind
-        document.getElementById('btn-sync').addEventListener('click', pushToCloud);
-
-        /**
-         * TAB 1: NOTES LOGIC
-         */
-        const notesArea = document.getElementById('data-notes');
-        notesArea.value = db.notes;
-        notesArea.addEventListener('input', (e) => {
-            db.notes = e.target.value;
-            saveState();
-        });
-
-        /**
-         * RENDER UTILS (Master/Detail)
-         */
-        const renderList = (containerId, dataArray, clickHandler) => {
-            const container = document.getElementById(containerId);
-            container.innerHTML = dataArray.map(item => `
-                <div data-id="${item.id}" class="list-item p-3 mb-2 rounded-xl cursor-pointer transition-colors text-sm text-gray-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10">
-                    ${item.name}
-                </div>
-            `).join('');
+            <div class="vital-grid hidden-full" style="display:none;">
+               <div class="vital-stat"><span class="vital-label">${SVGS.heart}</span><input type="text" class="editable-input" value="${p.stats?.hp_max||0}" onblur="updateStat(${idx}, 'hp_max', this.value)" onkeydown="if(event.key==='Enter') this.blur()"></div>
+               <div class="vital-stat"><span class="vital-label">${SVGS.shield}</span><span style="font-weight:bold">${p.stats?.ac||0}</span></div>
+            </div>
             
-            container.addEventListener('click', (e) => {
-                const row = e.target.closest('.list-item');
-                if (!row) return;
-                // UI Highlight
-                container.querySelectorAll('.list-item').forEach(el => el.classList.remove('bg-white/10', 'text-white', 'border-white/10'));
-                row.classList.add('bg-white/10', 'text-white', 'border-white/10');
-                // Trigger Detail
-                const itemData = dataArray.find(d => d.id === row.dataset.id);
-                clickHandler(itemData);
-            });
-        };
+            <div class="card-actions card-details">
+              <button class="btn-action" onclick="openPlayerModal(${idx})">Details / Inventory</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      // CSS trick: display:none on inline style vs class depending on collapsed state
+      if(deck.classList.contains('collapsed')) {
+         deck.querySelectorAll('.vital-grid-full').forEach(el => el.style.display = 'none');
+         deck.querySelectorAll('.hidden-full').forEach(el => el.style.display = 'flex');
+      }
+    }
 
-        /**
-         * TAB 2: ROOMS LOGIC
-         */
-        renderList('rooms-list', db.rooms, (room) => {
-            document.getElementById('rooms-detail').innerHTML = `
-                <div class="flex justify-between items-start">
-                    <h2 class="text-xl font-bold tracking-wider">${room.name}</h2>
-                </div>
-                <div class="flex flex-col gap-4">
-                    <details class="bg-white/5 border border-white/5 rounded-xl p-4 open:bg-white/10 transition-colors" open>
-                        <summary class="text-xs tracking-widest uppercase text-white/50 mb-2 hover:text-white">Read Aloud</summary>
-                        <textarea class="w-full bg-transparent border-none outline-none resize-y text-gray-300 text-sm leading-relaxed min-h-[80px]" oninput="updateRoom('${room.id}', 'readAloud', this.value)">${room.readAloud}</textarea>
-                    </details>
-                    <details class="bg-white/5 border border-white/5 rounded-xl p-4 open:bg-white/10 transition-colors">
-                        <summary class="text-xs tracking-widest uppercase text-white/50 mb-2 hover:text-white">Mechanics & Hazards</summary>
-                        <textarea class="w-full bg-transparent border-none outline-none resize-y text-gray-300 text-sm leading-relaxed min-h-[80px]" oninput="updateRoom('${room.id}', 'mechanics', this.value)">${room.mechanics}</textarea>
-                    </details>
-                    <details class="bg-white/5 border border-white/5 rounded-xl p-4 open:bg-white/10 transition-colors">
-                        <summary class="text-xs tracking-widest uppercase text-white/50 mb-2 hover:text-white">Monsters & NPCs</summary>
-                        <textarea class="w-full bg-transparent border-none outline-none resize-y text-gray-300 text-sm leading-relaxed min-h-[80px]" oninput="updateRoom('${room.id}', 'monsters', this.value)">${room.monsters}</textarea>
-                    </details>
-                    <details class="bg-white/5 border border-white/5 rounded-xl p-4 open:bg-white/10 transition-colors">
-                        <summary class="text-xs tracking-widest uppercase text-white/50 mb-2 hover:text-white">Loot & Rewards</summary>
-                        <textarea class="w-full bg-transparent border-none outline-none resize-y text-gray-300 text-sm leading-relaxed min-h-[80px]" oninput="updateRoom('${room.id}', 'treasure', this.value)">${room.treasure}</textarea>
-                    </details>
-                </div>
-            `;
+    function updateStat(pIdx, field, valStr) {
+      const val = valStr.trim();
+      if(!val) return renderPlayerDeck(); // Restore UI if user clears input
+      pushState();
+      
+      const p = appState.players[pIdx];
+      if (!p.stats) p.stats = {}; // Prevent TypeError if missing
+      let curr = field === 'gold' ? (p.gold||0) : (p.stats[field]||0);
+      
+      if(val.startsWith('+')) curr += parseInt(val.substring(1)) || 0;
+      else if(val.startsWith('-')) curr -= parseInt(val.substring(1)) || 0;
+      else curr = parseInt(val) || 0;
+
+      if(field === 'gold') p.gold = curr; else p.stats[field] = curr;
+      
+      saveLocal(); syncToKV(); renderPlayerDeck();
+    }
+
+    function toggleAttendance(pIdx) {
+      pushState();
+      appState.players[pIdx].is_absent = !appState.players[pIdx].is_absent;
+      saveLocal(); syncToKV(); renderPlayerDeck();
+    }
+
+    function openPlayerModal(pIdx) {
+      const p = appState.players[pIdx];
+      document.getElementById('modal-name').innerText = p.name;
+      document.getElementById('modal-name').style.color = colorPalette[pIdx % colorPalette.length];
+      
+      let condHtml = (p.status?.conditions||[]).length > 0 ? p.status.conditions.map(c=>`<span class="condition-badge">${c}</span>`).join('') : '<span style="color:#666">Healthy</span>';
+      
+      document.getElementById('modal-body').innerHTML = `
+        <div><strong>Status:</strong> ${condHtml}</div>
+        <div><strong>Inventory:</strong> ${(p.inventory||[]).length} items</div>
+        <div><strong>Lore:</strong> <span style="color:#aaa; font-style:italic;">${escapeHtml(p.lore)||"None"}</span></div>
+      `;
+      document.getElementById('player-modal').classList.remove('hidden');
+    }
+    function closePlayerModal() { document.getElementById('player-modal').classList.add('hidden'); }
+
+    // --- Zone 3A: Blueprint ---
+    function renderBlueprint() {
+      const col = document.getElementById('blueprint-col');
+      if (currentRoomIndex === null || !appState.campaign_notes.rooms[currentRoomIndex]) {
+        col.innerHTML = `<h2 style="color:#555; text-align:center; margin-top:3rem;">Select a Room from the Navigator.</h2>`;
+        return;
+      }
+      
+      const room = appState.campaign_notes.rooms[currentRoomIndex];
+      let mechHtml = (room.mechanics||[]).map(m => `<li>${parseMath(escapeHtml(m))}</li>`).join('');
+      let encHtml = (room.encounters||[]).map(e => `<div style="background:#111; padding:1rem; border-left:3px solid var(--danger); margin-bottom:1rem;"><strong>${escapeHtml(e.name)}</strong> (CR ${e.cr||'?'})<br><span style="color:#aaa; font-size:0.9rem;">${escapeHtml(e.tactics)}</span></div>`).join('');
+      
+      let lootHtml = (room.loot||[]).map((l, lIdx) => `
+        <div class="loot-card">
+          <div><strong style="color:var(--warning)">${escapeHtml(l.achievement_name)}</strong><br><span style="font-size:0.85rem; color:#bbb">${escapeHtml(l.item_name)}</span></div>
+          <div style="position:relative;">
+             <button class="btn-send" onclick="toggleAwardMenu(${lIdx})">${SVGS.award} Award</button>
+             <div id="award-menu-${lIdx}" class="popover hidden" style="right:0;">
+                <div class="popover-title">Select Player:</div>
+                ${appState.players.map((p, pIdx) => `<div class="popover-item" onclick="awardLoot(${lIdx}, ${pIdx})">${escapeHtml(p.name)}</div>`).join('')}
+             </div>
+          </div>
+        </div>
+      `).join('');
+
+      col.innerHTML = `
+        <h1 style="color:var(--accent); margin-top:0;">${escapeHtml(room.title)}</h1>
+        <div class="read-aloud">${escapeHtml(room.read_aloud)}</div>
+        <ul class="mechanics-list">${mechHtml}</ul>
+        ${encHtml}
+        ${lootHtml ? `<h3 style="border-bottom:1px solid #333; padding-bottom:4px;">Rewards</h3>${lootHtml}` : ''}
+      `;
+    }
+
+    function toggleAwardMenu(lIdx) {
+      document.querySelectorAll('.popover').forEach(el => { if(el.id !== `award-menu-${lIdx}`) el.classList.add('hidden'); });
+      document.getElementById(`award-menu-${lIdx}`).classList.toggle('hidden');
+    }
+
+    function awardLoot(lIdx, pIdx) {
+      pushState();
+      const room = appState.campaign_notes.rooms[currentRoomIndex];
+      const loot = room.loot.splice(lIdx, 1)[0]; // Remove from room
+      
+      const player = appState.players[pIdx];
+      if(!player.achievements) player.achievements = { pending: [] };
+      if(!player.achievements.pending) player.achievements.pending = [];
+      
+      player.achievements.pending.push({
+        name: loot.achievement_name, description: loot.item_desc || "Room Loot",
+        rewards: { gold: 0, items: [{ name: loot.item_name, flavor_text: loot.item_desc, quantity: 1 }] }
+      });
+      
+      saveLocal(); syncToKV(); renderBlueprint(); renderPlayerDeck();
+      showToast(`Awarded ${loot.item_name} to ${player.name}`);
+    }
+
+    // --- Zone 3B: Scratchpad ---
+    function renderScratchpad() {
+      const select = document.getElementById('session-select');
+      const textarea = document.getElementById('scratchpad-input');
+      
+      select.innerHTML = appState.campaign_notes.sessions.map(s => `<option value="${s.id}" ${s.id === currentSessionId ? 'selected' : ''}>${escapeHtml(s.title)}</option>`).join('');
+      const curr = appState.campaign_notes.sessions.find(s => s.id === currentSessionId);
+      textarea.value = curr ? curr.content : '';
+    }
+
+    function changeSession(idStr) { currentSessionId = parseInt(idStr); renderScratchpad(); }
+    function createSession() {
+      const title = prompt("Session Title:", `Session ${appState.campaign_notes.sessions.length + 1}`);
+      if(!title) return;
+      pushState();
+      const s = { id: Date.now(), title, content: "" };
+      appState.campaign_notes.sessions.push(s);
+      currentSessionId = s.id;
+      saveLocal(); syncToKV(); renderScratchpad();
+    }
+
+    document.getElementById('scratchpad-input').addEventListener('input', (e) => {
+      clearTimeout(scratchTimer);
+      document.getElementById('sync-status-icon').style.color = '#888';
+      scratchTimer = setTimeout(() => commitScratchpad(e.target.value), 30000);
+    });
+    document.getElementById('scratchpad-input').addEventListener('blur', (e) => {
+      clearTimeout(scratchTimer); commitScratchpad(e.target.value);
+    });
+
+    function commitScratchpad(text) {
+      const s = appState.campaign_notes.sessions.find(x => x.id === currentSessionId);
+      if(!s || s.content === text) return;
+      pushState();
+      s.content = text;
+      saveLocal(); syncToKV();
+    }
+
+    // --- Tools ---
+    async function advanceTime(type) {
+      if(!type) return;
+      pushState();
+      appState.players.forEach(p => {
+        if(type === 'long') {
+          if(p.stats) p.stats.hp_current = p.stats.hp_max || 0;
+          if(p.status && p.status.conditions) p.status.conditions = p.status.conditions.filter(c => !['poisoned','blinded','deafened'].includes(c.toLowerCase()));
+        }
+        (p.inventory||[]).forEach(i => {
+          if(i.charges && (i.charges.reset_on === type || (type === 'long' && i.charges.reset_on === 'short'))) i.charges.current = i.charges.max;
         });
+      });
+      document.querySelector('.time-advance').value = "";
+      saveLocal(); await syncToKV(); renderPlayerDeck(); showToast(`${type.toUpperCase()} REST Applied`);
+    }
 
-        window.updateRoom = (id, key, val) => {
-            const r = db.rooms.find(x => x.id === id);
-            if(r) r[key] = val;
-            saveState();
-        };
+    function flashSync() {
+      const el = document.getElementById('sync-status-icon');
+      el.style.color = 'var(--success)';
+      setTimeout(() => el.style.color = '#555', 2000);
+    }
+    
+    function showToast(msg) {
+      const c = document.getElementById('toast-container');
+      const t = document.createElement('div');
+      t.className = 'toast'; t.innerText = msg;
+      c.appendChild(t); setTimeout(() => t.remove(), 3000);
+    }
+    function escapeHtml(s) { return s?s.toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'):''; }
+    function escapeJS(s) { return s?s.toString().replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;'):''; }
+    function parseMath(t) { return t?t.replace(/\b(\d+d\d+(?:\s*[+-]\s*\d+)?|DC\s*\d+)\b/gi, '<span class="math-highlight">$&</span>'):''; }
 
-        /**
-         * TAB 3: PLAYERS LOGIC
-         */
-        renderList('players-list', db.players, (pc) => {
-            document.getElementById('players-detail').innerHTML = `
-                <h2 class="text-xl font-bold tracking-wider">${pc.name}</h2>
-                <input type="text" class="w-full bg-transparent border-b border-white/10 outline-none text-gray-400 font-mono text-sm py-2" value="${pc.stats}" oninput="updatePC('${pc.id}', 'stats', this.value)">
-                
-                <details class="bg-white/5 border border-white/5 rounded-xl p-4 mt-4 open:bg-white/10 transition-colors" open>
-                    <summary class="text-xs tracking-widest uppercase text-white/50 mb-2 hover:text-white">Inventory & Curses</summary>
-                    <textarea class="w-full bg-transparent border-none outline-none resize-y text-gray-300 text-sm leading-relaxed min-h-[150px]" oninput="updatePC('${pc.id}', 'inventory', this.value)">${pc.inventory}</textarea>
-                </details>
-            `;
-        });
-
-        window.updatePC = (id, key, val) => {
-            const p = db.players.find(x => x.id === id);
-            if(p) p[key] = val;
-            saveState();
-        };
-
-        /**
-         * TAB 4: LOOT ENGINE LOGIC
-         */
-        let activeTier = 'bronze';
-        let activePcLootId = 'pc_chuck';
-        
-        // Populate Personal Pills
-        const pNav = document.getElementById('personal-nav');
-        pNav.innerHTML = db.players.map((p, i) => `
-            <button data-pcid="${p.id}" class="pc-btn px-4 py-1 rounded-full text-xs font-medium border border-white/10 ${i===0 ? 'bg-white/20 text-white' : 'text-gray-500 hover:text-white'}">${p.name.split(' ')[0]}</button>
-        `).join('');
-
-        // Tier Selection
-        document.getElementById('loot-tiers').addEventListener('click', (e) => {
-            if (!e.target.dataset.tier) return;
-            activeTier = e.target.dataset.tier;
-            
-            document.querySelectorAll('.tier-btn').forEach(btn => {
-                btn.classList.remove('text-white', 'bg-white/10');
-                btn.classList.add('text-gray-500');
-            });
-            e.target.classList.remove('text-gray-500');
-            e.target.classList.add('text-white', 'bg-white/10');
-
-            if(activeTier === 'personal') {
-                pNav.classList.remove('hidden');
-                setTimeout(() => pNav.classList.remove('opacity-0'), 50);
-            } else {
-                pNav.classList.add('opacity-0');
-                setTimeout(() => pNav.classList.add('hidden'), 300);
-            }
-            document.getElementById('loot-input').value = '';
-            document.getElementById('loot-result').classList.add('opacity-0');
-        });
-
-        // PC Selection
-        pNav.addEventListener('click', (e) => {
-            if (!e.target.dataset.pcid) return;
-            activePcLootId = e.target.dataset.pcid;
-            document.querySelectorAll('.pc-btn').forEach(btn => {
-                btn.classList.remove('bg-white/20', 'text-white');
-                btn.classList.add('text-gray-500');
-            });
-            e.target.classList.remove('text-gray-500');
-            e.target.classList.add('bg-white/20', 'text-white');
-        });
-
-        // Lookup Engine
-        const rollInput = document.getElementById('loot-input');
-        const resBox = document.getElementById('loot-result');
-        const resName = document.getElementById('loot-item-name');
-        const claimBtn = document.getElementById('loot-claim-btn');
-        let currentItemRef = null;
-
-        rollInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                const val = parseInt(e.target.value);
-                if(isNaN(val)) return;
-
-                const table = activeTier === 'personal' ? db.loot.personal[activePcLootId] : db.loot[activeTier];
-                if(!table) return;
-
-                currentItemRef = table.find(item => item.min <= val && item.max >= val);
-                
-                if(!currentItemRef) {
-                    resName.innerText = "NO ITEM IN RANGE.";
-                    resName.className = "text-xl font-medium text-gray-500";
-                    claimBtn.classList.add('hidden');
-                } else if (currentItemRef.isGone) {
-                    resName.innerText = "[ DEPLETED ] " + currentItemRef.name;
-                    resName.className = "text-xl font-medium text-red-500 line-through";
-                    claimBtn.classList.add('hidden');
-                } else {
-                    resName.innerText = currentItemRef.name;
-                    resName.className = "text-xl font-medium text-white";
-                    if(currentItemRef.isUnique) {
-                        claimBtn.classList.remove('hidden');
-                    } else {
-                        claimBtn.classList.add('hidden');
-                    }
-                }
-                
-                resBox.classList.remove('opacity-0');
-            }
-        });
-
-        claimBtn.addEventListener('click', () => {
-            if(currentItemRef) {
-                currentItemRef.isGone = true;
-                saveState();
-                resName.classList.add('line-through', 'text-red-500');
-                claimBtn.classList.add('hidden');
-                pushToCloud();
-            }
-        });
-
-    </script>
+    init();
+  </script>
 </body>
 </html>
