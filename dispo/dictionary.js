@@ -200,4 +200,17 @@ export const LUCID_MAP = {
   "leafline-labs-heather-1-1": { "t1": "Edible", "t2": "Edible", "type": "N/A", "brand": "Leafline Labs", "strain": "Heather 1:1", "unitCount": "", "unitSize": "" },
   "leafline-labs-tangerine-h": { "t1": "Extract", "t2": "Standard Extract", "type": "Hybrid", "brand": "Leafline Labs", "strain": "Tangerine (H)", "unitCount": "", "unitSize": "" },
   "leafline-labs-tangerine-i": { "t1": "Vape", "t2": "Standard Vape", "type": "Indica", "brand": "Leafline Labs", "strain": "Tangerine (I)", "unitCount": "", "unitSize": "" },
-  "leafline-labs-tangerine-s":
+"leafline-labs-tangerine-s": { "t1": "Vape", "t2": "Standard Vape", "type": "Sativa", "brand": "Leafline Labs", "strain": "Tangerine (S)", "unitCount": "", "unitSize": "" },
+  "marley-natural-black-glass-filter-tip-6pk": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Marley Natural", "strain": "Black Glass Filter Tip", "unitCount": 6, "unitSize": "" },
+  "ocb-ocb-unbleached-cones-1-1-4-6pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "OCB", "strain": "Ocb® Unbleached Cones - 1 1/4", "unitCount": 6, "unitSize": "" },
+  "ocb-ocb-unbleached-cones-1-1-4-50pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "OCB", "strain": "Ocb® Unbleached Cones - 1 1/4", "unitCount": 50, "unitSize": "" },
+  "puffco-hot-knife-onyx": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Puffco", "strain": "Hot Knife - Onyx", "unitCount": "", "unitSize": "" },
+  "randy-s-black-label-cleaner-12oz": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "Randy's", "strain": "Black Label Cleaner", "unitCount": "", "unitSize": "12oz" },
+  "raw-classic-king-slim-50pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "RAW", "strain": "Classic - King Slim", "unitCount": 50, "unitSize": "" },
+  "rythm-banana-cream": { "t1": "Vape", "t2": "Rosin Vape", "type": "Indica", "brand": "RYTHM", "strain": "Banana Cream", "unitCount": "", "unitSize": "" },
+  "rythm-dulce-de-uva": { "t1": "Vape", "t2": "Rosin Vape", "type": "Indica", "brand": "RYTHM", "strain": "Dulce De Uva", "unitCount": "", "unitSize": "" },
+  "rythm-l-orange": { "t1": "Vape", "t2": "Resin Vape", "type": "Sativa", "brand": "RYTHM", "strain": "L'Orange", "unitCount": "", "unitSize": "" },
+  "rythm-la-kush-cake": { "t1": "Vape", "t2": "Resin Vape", "type": "Indica", "brand": "RYTHM", "strain": "La Kush Cake", "unitCount": "", "unitSize": "" },
+  "sireel-4-frit-multi-marbles": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "SirEEL", "strain": "4\" Frit & Multi Marbles", "unitCount": "", "unitSize": "" },
+  "vibes-ultra-thin-papers-1-1-4-black-50pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Vibes", "strain": "Ultra Thin Papers 1 1/4 - Black", "unitCount": 50, "unitSize": "" }
+};
