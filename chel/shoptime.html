@@ -61,7 +61,8 @@
         select:focus, input:focus { border-color: var(--primary); }
         
         input[type="datetime-local"] { width: 100%; padding: 0.5rem; font-size: 0.9rem; }
-        input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; opacity: 0.8; transition: opacity 0.2s; }
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 
         .icon-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 0.875rem; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
         
@@ -71,6 +72,16 @@
         .btn-start { background-color: var(--primary); width: 100%; margin-top: 1rem; }
         .btn-stop { background-color: var(--danger); width: 100%; }
         .btn-text { background: transparent; border: 1px solid var(--border); color: var(--text); font-size: 0.9rem; padding: 0.5rem 1rem; border-radius: 8px; }
+
+        /* Modal Overlays */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; opacity: 0; transition: opacity 0.2s ease; }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal { background: var(--surface); width: 100%; max-width: 400px; padding: 1.5rem; border-radius: 20px; display: flex; flex-direction: column; gap: 1.25rem; box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: translateY(20px); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal-overlay.active .modal { transform: translateY(0); }
+        .modal h3 { font-size: 1.25rem; font-weight: 600; text-align: center; }
+        .input-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .input-group label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .modal-actions { display: flex; gap: 1rem; margin-top: 0.5rem; }
 
         /* Ledger Row Styling */
         h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: var(--text); letter-spacing: -0.5px; }
@@ -129,6 +140,11 @@
                 <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9v-2h2v2zm0-4H9V7h2v5z"/></svg>
                 PUNCH IN
             </button>
+            
+            <button class="btn btn-text" style="width: 100%; margin-top: 0.75rem; border-color: var(--border); color: var(--text);" onclick="openManualModal()">
+                <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; margin-right: 6px;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                MANUAL LOG
+            </button>
         </div>
 
         <h2>Recent Punches</h2>
@@ -156,6 +172,33 @@
             Projects
         </button>
     </nav>
+
+    <!-- Manual Log Modal -->
+    <div class="modal-overlay" id="manualModal">
+        <div class="modal">
+            <h3>Manual Punch Log</h3>
+            
+            <div class="input-group">
+                <label>Project</label>
+                <select id="manualProjectSelect"></select>
+            </div>
+            
+            <div class="input-group">
+                <label>Start Time</label>
+                <input type="datetime-local" id="manualStart">
+            </div>
+            
+            <div class="input-group">
+                <label>End Time</label>
+                <input type="datetime-local" id="manualEnd">
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-text" style="width: auto;" onclick="closeManualModal()">Cancel</button>
+                <button class="btn btn-start" style="margin-top: 0; flex: 2;" onclick="saveManualPunch()">Save Log</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Data Configuration
@@ -289,7 +332,7 @@
             renderRecent();
         }
 
-        // Ledger Logic
+        // Ledger & Manual Logic
         function deleteSession(id) {
             if (!confirm("Are you sure you want to delete this punch?")) return;
             triggerHaptic();
@@ -344,6 +387,60 @@
 
             saveState();
             renderRecent();
+        }
+        
+        // Manual Log Modal Logic
+        function openManualModal() {
+            const select = document.getElementById('projectSelect');
+            const manualSelect = document.getElementById('manualProjectSelect');
+            
+            // Populate project dropdown and inherit current selection
+            manualSelect.innerHTML = select.innerHTML;
+            if (select.value) manualSelect.value = select.value;
+            
+            // Default times: Start is 1 hr ago, End is Now
+            const now = new Date();
+            const oneHourAgo = new Date(now.getTime() - 3600000);
+            
+            document.getElementById('manualStart').value = toLocalInputFormat(oneHourAgo.toISOString());
+            document.getElementById('manualEnd').value = toLocalInputFormat(now.toISOString());
+            
+            document.getElementById('manualModal').classList.add('active');
+        }
+
+        function closeManualModal() {
+            document.getElementById('manualModal').classList.remove('active');
+        }
+
+        function saveManualPunch() {
+            const projectId = document.getElementById('manualProjectSelect').value;
+            const startVal = document.getElementById('manualStart').value;
+            const endVal = document.getElementById('manualEnd').value;
+            
+            if (!projectId) return alert("Please select a project.");
+            if (!startVal || !endVal) return alert("Please provide both start and end times.");
+            
+            const start = fromLocalInputFormat(startVal);
+            const end = fromLocalInputFormat(endVal);
+            
+            // Chronology validation guardrail to prevent NaN/Negative hours
+            if (new Date(end) <= new Date(start)) {
+                return alert("Error: End time must be after the start time.");
+            }
+            
+            triggerHaptic();
+            
+            state.sessions.push({
+                id: generateId(),
+                projectId: projectId,
+                startTime: start,
+                endTime: end
+            });
+            
+            saveState();
+            renderRecent();
+            renderAccordion();
+            closeManualModal();
         }
 
         // Rendering
