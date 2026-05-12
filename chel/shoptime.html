@@ -2,82 +2,96 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Shop Time</title>
     
     <!-- iOS PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Shop Time">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23333%22 width=%22100%22 height=%22100%22/><text y=%2250%22 font-size=%2250%22 fill=%22white%22>W</text></svg>">
+    
+    <!-- Inline SVG Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><path d=%22M50 5 L55 15 L65 12 L65 22 L75 22 L72 32 L82 35 L76 43 L85 50 L76 57 L82 65 L72 68 L75 78 L65 78 L65 88 L55 85 L50 95 L45 85 L35 88 L35 78 L25 78 L28 68 L18 65 L24 57 L15 50 L24 43 L18 35 L28 32 L25 22 L35 22 L35 12 L45 15 Z%22 fill=%22%23333%22 stroke=%22white%22 stroke-width=%224%22 stroke-linejoin=%22round%22/><circle cx=%2250%22 cy=%2250%22 r=%2230%22 fill=%22none%22 stroke=%22white%22 stroke-width=%224%22/><line x1=%2250%22 y1=%2250%22 x2=%2250%22 y2=%2230%22 stroke=%22white%22 stroke-width=%224%22 stroke-linecap=%22round%22/><line x1=%2250%22 y1=%2250%22 x2=%2265%22 y2=%2250%22 stroke=%22white%22 stroke-width=%224%22 stroke-linecap=%22round%22/></svg>">
     
     <style>
         :root {
-            --bg: #121212;
-            --surface: #1e1e1e;
+            --bg: #000000;
+            --surface: #1c1c1e;
+            --surface-hover: #2c2c2e;
             --text: #ffffff;
-            --text-muted: #a0a0a0;
-            --primary: #4caf50;
-            --danger: #f44336;
-            --accent: #2196f3;
-            --border: #333;
+            --text-muted: #8e8e93;
+            --primary: #34c759; /* iOS Green */
+            --danger: #ff3b30;  /* iOS Red */
+            --accent: #0a84ff;  /* iOS Blue */
+            --border: #38383a;
+            --warning: #ff9f0a; /* iOS Orange */
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        body { background-color: var(--bg); color: var(--text); padding: env(safe-area-inset-top) 1rem 1rem 1rem; }
+        body { background-color: var(--bg); color: var(--text); padding: env(safe-area-inset-top) 1rem calc(80px + env(safe-area-inset-bottom)) 1rem; }
 
-        header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
-        h1 { font-size: 1.5rem; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
         
+        .header-brand { display: flex; align-items: center; gap: 0.75rem; }
+        h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; }
+        .saw-badge { width: 28px; height: 28px; color: var(--primary); }
+
         .sync-status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: var(--text-muted); }
         .sync-icon { width: 16px; height: 16px; fill: currentColor; }
-        .syncing { animation: spin 1s linear infinite; color: var(--primary); }
+        .syncing { animation: spin 1s linear infinite; color: var(--accent); }
         .synced { color: var(--primary); }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        nav { display: flex; gap: 1rem; margin-bottom: 1rem; }
-        .nav-btn { background: none; border: none; color: var(--text-muted); font-size: 1rem; cursor: pointer; padding: 0.5rem 0; border-bottom: 2px solid transparent; }
-        .nav-btn.active { color: var(--text); border-bottom-color: var(--primary); }
+        /* iOS Bottom Nav */
+        nav { position: fixed; bottom: 0; left: 0; width: 100%; display: flex; background: rgba(28, 28, 30, 0.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.1); padding-bottom: env(safe-area-inset-bottom); z-index: 100; }
+        .nav-btn { flex: 1; background: none; border: none; color: var(--text-muted); font-size: 0.8rem; font-weight: 600; cursor: pointer; padding: 1rem 0; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: color 0.2s; }
+        .nav-btn.active { color: var(--primary); }
+        .nav-btn svg { width: 24px; height: 24px; }
 
-        .view { display: none; }
+        .view { display: none; animation: fadeIn 0.2s ease-out; }
         .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Tracker View */
-        .controls { background: var(--surface); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
-        .project-select-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-        select, input { flex: 1; background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 0.75rem; border-radius: 4px; font-size: 1rem; }
-        .icon-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0.75rem; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        /* UI Components */
+        .card { background: var(--surface); padding: 1rem; border-radius: 16px; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .flex-row { display: flex; gap: 0.75rem; align-items: center; }
         
-        .timer-display { text-align: center; font-size: 2.5rem; font-variant-numeric: tabular-nums; margin: 1rem 0; }
+        select, input { flex: 1; background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 0.875rem; border-radius: 12px; font-size: 1rem; outline: none; }
+        select:focus, input:focus { border-color: var(--primary); }
         
-        .action-buttons { display: flex; gap: 1rem; }
-        .btn { flex: 1; padding: 1rem; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; color: white; cursor: pointer; transition: opacity 0.2s; }
-        .btn:active { opacity: 0.8; }
-        .btn-start { background-color: var(--primary); }
-        .btn-stop { background-color: var(--danger); }
-        .btn-manual { background-color: var(--accent); margin-top: 1rem; width: 100%; }
+        input[type="datetime-local"] { width: 100%; padding: 0.5rem; font-size: 0.9rem; }
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
 
-        /* Lists & Cards */
-        h2 { font-size: 1.2rem; margin-bottom: 1rem; color: var(--text-muted); }
-        .session-list { display: flex; flex-direction: column; gap: 0.5rem; }
-        .session-item { background: var(--surface); padding: 1rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .session-details { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; flex: 1; margin-right: 1rem; }
-        .session-project { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .session-time { font-size: 0.875rem; color: var(--text-muted); }
+        .icon-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 0.875rem; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; }
+        
+        .btn { flex: 1; padding: 1rem; border: none; border-radius: 16px; font-size: 1.1rem; font-weight: 600; color: white; cursor: pointer; transition: transform 0.1s, opacity 0.2s; text-align: center; display: inline-flex; justify-content: center; align-items: center; gap: 0.5rem; }
+        .btn:active, .icon-btn:active { transform: scale(0.96); opacity: 0.8; }
+        
+        .btn-start { background-color: var(--primary); width: 100%; margin-top: 1rem; }
+        .btn-stop { background-color: var(--danger); width: 100%; }
+        .btn-text { background: transparent; border: 1px solid var(--border); color: var(--text); font-size: 0.9rem; padding: 0.5rem 1rem; border-radius: 8px; }
+
+        /* Ledger Row Styling */
+        h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: var(--text); letter-spacing: -0.5px; }
+        
+        .ledger-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .ledger-item { background: var(--surface); padding: 1rem; border-radius: 16px; display: flex; flex-direction: column; gap: 0.75rem; }
+        .ledger-item.stale { border: 1px solid var(--danger); }
+        
+        .ledger-header { display: flex; justify-content: space-between; align-items: center; }
+        .ledger-project { font-weight: 600; font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; padding-right: 1rem; }
+        .ledger-total { font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+        
+        .ledger-times { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; align-items: end; }
+        .time-group { display: flex; flex-direction: column; gap: 0.25rem; }
+        .time-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
 
         /* Project View */
-        details { background: var(--surface); margin-bottom: 0.5rem; border-radius: 8px; overflow: hidden; }
-        summary { padding: 1rem; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; list-style: none; }
+        details { background: var(--surface); margin-bottom: 0.75rem; border-radius: 16px; overflow: hidden; }
+        summary { padding: 1.25rem 1rem; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; list-style: none; font-size: 1.1rem; }
         summary::-webkit-details-marker { display: none; }
-        .project-actions { display: flex; gap: 0.5rem; padding: 1rem; border-top: 1px solid var(--border); }
-        .btn-small { padding: 0.5rem 1rem; font-size: 0.875rem; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: var(--text); cursor: pointer; }
-
-        /* Modals */
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
-        .modal-overlay.active { display: flex; }
-        .modal { background: var(--surface); width: 100%; max-width: 400px; padding: 1.5rem; border-radius: 8px; display: flex; flex-direction: column; gap: 1rem; }
-        .modal-buttons { display: flex; gap: 1rem; margin-top: 0.5rem; }
+        .project-actions { display: flex; gap: 0.75rem; padding: 1rem; border-top: 1px solid var(--border); background: var(--bg); }
         
         svg { width: 20px; height: 20px; fill: currentColor; }
     </style>
@@ -85,22 +99,25 @@
 <body>
 
     <header>
-        <h1>Shop Time</h1>
+        <div class="header-brand">
+            <svg class="saw-badge" viewBox="0 0 100 100">
+                <path d="M50 5 L55 15 L65 12 L65 22 L75 22 L72 32 L82 35 L76 43 L85 50 L76 57 L82 65 L72 68 L75 78 L65 78 L65 88 L55 85 L50 95 L45 85 L35 88 L35 78 L25 78 L28 68 L18 65 L24 57 L15 50 L24 43 L18 35 L28 32 L25 22 L35 22 L35 12 L45 15 Z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/>
+                <circle cx="50" cy="50" r="28" fill="none" stroke="currentColor" stroke-width="4"/>
+                <line x1="50" y1="50" x2="50" y2="30" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                <line x1="50" y1="50" x2="65" y2="50" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                <circle cx="50" cy="50" r="4" fill="currentColor"/>
+            </svg>
+            <h1>Shop Time</h1>
+        </div>
         <div class="sync-status" id="syncIndicator">
             <svg class="sync-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
             <span id="syncText">Synced</span>
         </div>
     </header>
 
-    <nav>
-        <button class="nav-btn active" onclick="switchView('tracker')">Tracker</button>
-        <button class="nav-btn" onclick="switchView('projects')">Projects</button>
-    </nav>
-
-    <!-- Main Tracker View -->
     <main id="view-tracker" class="view active">
-        <div class="controls">
-            <div class="project-select-row">
+        <div class="card">
+            <div class="flex-row">
                 <select id="projectSelect">
                     <option value="">Select Project...</option>
                 </select>
@@ -108,47 +125,37 @@
                     <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
                 </button>
             </div>
-            
-            <div class="timer-display" id="timerDisplay">00:00:00</div>
-            
-            <div class="action-buttons">
-                <button class="btn btn-start" id="startBtn" onclick="toggleTimer()">START</button>
-            </div>
-            <button class="btn btn-manual" onclick="openManualEntry()">Manual Entry</button>
+            <button class="btn btn-start" onclick="punchIn()">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9v-2h2v2zm0-4H9V7h2v5z"/></svg>
+                PUNCH IN
+            </button>
         </div>
 
         <h2>Recent Punches</h2>
-        <div class="session-list" id="recentSessions"></div>
+        <div class="ledger-list" id="recentSessions"></div>
     </main>
 
-    <!-- Projects & History View -->
     <main id="view-projects" class="view">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h2>Project Logs</h2>
-            <button class="icon-btn" onclick="exportData()" aria-label="Export Data">
-                <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            <button class="btn btn-text" onclick="exportData()">
+                <svg viewBox="0 0 24 24" style="margin-right: 4px;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                Export
             </button>
         </div>
         <div id="projectAccordion"></div>
     </main>
 
-    <!-- Manual / Edit Modal -->
-    <div class="modal-overlay" id="editModal">
-        <div class="modal">
-            <h3 id="modalTitle">Edit Session</h3>
-            <select id="modalProjectSelect"></select>
-            <label>Start Time
-                <input type="datetime-local" id="modalStart">
-            </label>
-            <label>End Time
-                <input type="datetime-local" id="modalEnd">
-            </label>
-            <div class="modal-buttons">
-                <button class="btn" style="background: var(--border)" onclick="closeModal()">Cancel</button>
-                <button class="btn btn-start" onclick="saveSessionModal()">Save</button>
-            </div>
-        </div>
-    </div>
+    <nav>
+        <button class="nav-btn active" onclick="switchView('tracker')">
+            <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+            Tracker
+        </button>
+        <button class="nav-btn" onclick="switchView('projects')">
+            <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+            Projects
+        </button>
+    </nav>
 
     <script>
         // Data Configuration
@@ -158,304 +165,43 @@
         let state = {
             projects: JSON.parse(localStorage.getItem('projects') || '[]'),
             sessions: JSON.parse(localStorage.getItem('sessions') || '[]'),
-            activeSession: JSON.parse(localStorage.getItem('activeSession') || 'null'),
             queue: JSON.parse(localStorage.getItem('queue') || '[]')
         };
 
-        let timerInterval = null;
-        let editingSessionId = null;
+        let syncTimeout = null;
 
         // Core Initialization
         function init() {
             renderProjects();
             renderRecent();
             renderAccordion();
-            if (state.activeSession) {
-                startClock();
-                document.getElementById('projectSelect').value = state.activeSession.projectId;
-                updateButtonState(true);
-            }
             window.addEventListener('online', attemptSync);
             attemptSync();
         }
 
-        // Persistence
+        // Persistence & Sync
         function saveState() {
             localStorage.setItem('projects', JSON.stringify(state.projects));
             localStorage.setItem('sessions', JSON.stringify(state.sessions));
-            localStorage.setItem('activeSession', JSON.stringify(state.activeSession));
-            localStorage.setItem('queue', JSON.stringify(state.queue));
-            renderRecent();
-            renderAccordion();
             queueSync();
         }
 
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        }
-
-        // Navigation
-        function switchView(viewName) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('view-' + viewName).classList.add('active');
-            const targetBtn = document.querySelector(`button[onclick="switchView('${viewName}')"]`);
-            if (targetBtn) targetBtn.classList.add('active');
-            if(viewName === 'projects') renderAccordion();
-        }
-
-        // Project Management
-        function addProject() {
-            const name = prompt("Enter new project name:");
-            if (!name || name.trim() === '') return;
-            state.projects.push({ id: generateId(), name: name.trim(), archived: false });
-            saveState();
-            renderProjects();
-        }
-
-        function archiveProject(id) {
-            if (!confirm("Archive this project? It will be hidden from new entries.")) return;
-            const p = state.projects.find(p => p.id === id);
-            if (p) p.archived = true;
-            saveState();
-            renderProjects();
-        }
-
-        function deleteProject(id) {
-            if (state.activeSession && state.activeSession.projectId === id) {
-                return alert("Cannot delete an active project. Please stop the timer first.");
-            }
-            if (!confirm("Are you sure? This deletes the project and ALL associated time logs permanently.")) return;
-            state.projects = state.projects.filter(p => p.id !== id);
-            state.sessions = state.sessions.filter(s => s.projectId !== id);
-            saveState();
-            renderProjects();
-        }
-
-        // Timer Logic
-        function toggleTimer() {
-            const select = document.getElementById('projectSelect');
-            if (!select.value) return alert("Select a project first.");
-
-            if (state.activeSession) {
-                // Stop
-                const session = {
-                    id: state.activeSession.id,
-                    projectId: state.activeSession.projectId,
-                    startTime: state.activeSession.startTime,
-                    endTime: new Date().toISOString()
-                };
-                state.sessions.push(session);
-                state.activeSession = null;
-                clearInterval(timerInterval);
-                document.getElementById('timerDisplay').textContent = "00:00:00";
-                updateButtonState(false);
-            } else {
-                // Start
-                state.activeSession = {
-                    id: generateId(),
-                    projectId: select.value,
-                    startTime: new Date().toISOString()
-                };
-                startClock();
-                updateButtonState(true);
-            }
-            saveState();
-        }
-
-        function updateButtonState(isRunning) {
-            const container = document.querySelector('.action-buttons');
-            if (isRunning) {
-                container.innerHTML = `<button class="btn btn-stop" onclick="toggleTimer()">STOP</button>`;
-                document.getElementById('projectSelect').disabled = true;
-            } else {
-                container.innerHTML = `<button class="btn btn-start" onclick="toggleTimer()">START</button>`;
-                document.getElementById('projectSelect').disabled = false;
-            }
-        }
-
-        function startClock() {
-            clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                const now = new Date();
-                const start = new Date(state.activeSession.startTime);
-                const diff = new Date(now - start);
-                const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
-                const m = String(diff.getUTCMinutes()).padStart(2, '0');
-                const s = String(diff.getUTCSeconds()).padStart(2, '0');
-                document.getElementById('timerDisplay').textContent = `${h}:${m}:${s}`;
-            }, 1000);
-        }
-
-        // Modals & Manual Entry
-        function openManualEntry() {
-            editingSessionId = null;
-            document.getElementById('modalTitle').textContent = "Manual Entry";
-            document.getElementById('modalProjectSelect').innerHTML = document.getElementById('projectSelect').innerHTML;
-            
-            const now = new Date();
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            document.getElementById('modalEnd').value = now.toISOString().slice(0, 16);
-            
-            now.setHours(now.getHours() - 1);
-            document.getElementById('modalStart').value = now.toISOString().slice(0, 16);
-            
-            document.getElementById('editModal').classList.add('active');
-        }
-
-        function openEdit(id) {
-            const session = state.sessions.find(s => s.id === id);
-            if (!session) return;
-            editingSessionId = id;
-            
-            document.getElementById('modalTitle').textContent = "Edit Session";
-            document.getElementById('modalProjectSelect').innerHTML = document.getElementById('projectSelect').innerHTML;
-            document.getElementById('modalProjectSelect').value = session.projectId;
-            
-            const start = new Date(session.startTime);
-            start.setMinutes(start.getMinutes() - start.getTimezoneOffset());
-            document.getElementById('modalStart').value = start.toISOString().slice(0, 16);
-
-            const end = new Date(session.endTime);
-            end.setMinutes(end.getMinutes() - end.getTimezoneOffset());
-            document.getElementById('modalEnd').value = end.toISOString().slice(0, 16);
-
-            document.getElementById('editModal').classList.add('active');
-        }
-
-        function closeModal() {
-            document.getElementById('editModal').classList.remove('active');
-        }
-
-        function saveSessionModal() {
-            const projectId = document.getElementById('modalProjectSelect').value;
-            const startVal = document.getElementById('modalStart').value;
-            const endVal = document.getElementById('modalEnd').value;
-
-            if (!projectId || !startVal || !endVal) return alert("Fill all fields.");
-
-            const sessionData = {
-                id: editingSessionId || generateId(),
-                projectId: projectId,
-                startTime: new Date(startVal).toISOString(),
-                endTime: new Date(endVal).toISOString()
-            };
-
-            if (editingSessionId) {
-                const idx = state.sessions.findIndex(s => s.id === editingSessionId);
-                state.sessions[idx] = sessionData;
-            } else {
-                state.sessions.push(sessionData);
-            }
-
-            saveState();
-            closeModal();
-        }
-
-        // Rendering
-        function renderProjects() {
-            const select = document.getElementById('projectSelect');
-            const activeProjects = state.projects.filter(p => !p.archived);
-            select.innerHTML = '<option value="">Select Project...</option>' + 
-                activeProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-            
-            if (state.activeSession) select.value = state.activeSession.projectId;
-        }
-
-        function formatDuration(start, end) {
-            const diff = new Date(end) - new Date(start);
-            const hrs = (diff / 3600000).toFixed(2);
-            return `${hrs} hrs`;
-        }
-
-        function renderRecent() {
-            const list = document.getElementById('recentSessions');
-            const sorted = [...state.sessions].sort((a, b) => new Date(b.startTime) - new Date(a.startTime)).slice(0, 6);
-            
-            list.innerHTML = sorted.map(s => {
-                const p = state.projects.find(proj => proj.id === s.projectId);
-                const pName = p ? p.name : 'Unknown Project';
-                const date = new Date(s.startTime).toLocaleDateString();
-                const dur = formatDuration(s.startTime, s.endTime);
-                
-                return `
-                <div class="session-item">
-                    <div class="session-details">
-                        <span class="session-project">${pName}</span>
-                        <span class="session-time">${date} • ${dur}</span>
-                    </div>
-                    <button class="icon-btn" onclick="openEdit('${s.id}')">
-                        <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                    </button>
-                </div>`;
-            }).join('');
-        }
-
-        function renderAccordion() {
-            const container = document.getElementById('projectAccordion');
-            container.innerHTML = state.projects.map(p => {
-                const pSessions = state.sessions.filter(s => s.projectId === p.id);
-                const totalMs = pSessions.reduce((acc, s) => acc + (new Date(s.endTime) - new Date(s.startTime)), 0);
-                const totalHrs = (totalMs / 3600000).toFixed(2);
-
-                const sessionHTML = pSessions.sort((a, b) => new Date(b.startTime) - new Date(a.startTime)).map(s => `
-                    <div class="session-item" style="border-radius: 0; border-bottom: 1px solid var(--border);">
-                        <div class="session-details">
-                            <span class="session-time">${new Date(s.startTime).toLocaleString()}</span>
-                            <span class="session-time">${formatDuration(s.startTime, s.endTime)}</span>
-                        </div>
-                        <button class="icon-btn" onclick="openEdit('${s.id}')">
-                            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                        </button>
-                    </div>
-                `).join('');
-
-                return `
-                <details>
-                    <summary>
-                        <span>${p.name} ${p.archived ? '(Archived)' : ''}</span>
-                        <span>${totalHrs} hrs</span>
-                    </summary>
-                    <div>${sessionHTML}</div>
-                    <div class="project-actions">
-                        ${!p.archived ? `<button class="btn-small" onclick="archiveProject('${p.id}')">Archive</button>` : ''}
-                        <button class="btn-small" style="color: var(--danger); border-color: var(--danger);" onclick="deleteProject('${p.id}')">Delete</button>
-                    </div>
-                </details>`;
-            }).join('');
-        }
-
-        // Export Data
-        function exportData() {
-            let csv = "Project,Start,End,Hours\n";
-            state.sessions.forEach(s => {
-                const p = state.projects.find(proj => proj.id === s.projectId);
-                const pName = p ? p.name.replace(/,/g, '') : 'Unknown';
-                const hrs = ((new Date(s.endTime) - new Date(s.startTime)) / 3600000).toFixed(2);
-                csv += `${pName},${s.startTime},${s.endTime},${hrs}\n`;
-            });
-            
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.setAttribute('href', url);
-            a.setAttribute('download', 'shop_time_export.csv');
-            a.click();
-        }
-
-        // Sync Logic
         function queueSync() {
-            // Overwrite queue to strictly 1 item to prevent QuotaExceededError when offline
+            // Strict single-item queue to prevent local storage quota leaks
             state.queue = [{ timestamp: Date.now(), data: { projects: state.projects, sessions: state.sessions } }];
             localStorage.setItem('queue', JSON.stringify(state.queue));
-            attemptSync();
+            
+            // Debounce the network request
+            clearTimeout(syncTimeout);
+            syncTimeout = setTimeout(attemptSync, 1500);
         }
 
         async function attemptSync() {
-            if (!navigator.onLine || state.queue.length === 0) return setSyncState('offline');
+            if (!navigator.onLine) return setSyncState('offline');
+            if (state.queue.length === 0) return setSyncState('synced');
             
             setSyncState('syncing');
-            const payload = state.queue[state.queue.length - 1].data; // Send latest state
+            const payload = state.queue[0].data;
 
             try {
                 const response = await fetch(WORKER_URL, {
@@ -477,6 +223,232 @@
             } catch (error) {
                 setSyncState('error');
             }
+        }
+
+        // Utility
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function toLocalInputFormat(isoString) {
+            if (!isoString) return '';
+            const d = new Date(isoString);
+            return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        }
+
+        function fromLocalInputFormat(localString) {
+            if (!localString) return null;
+            return new Date(localString).toISOString();
+        }
+
+        function triggerHaptic() {
+            if (navigator.vibrate) navigator.vibrate(50);
+        }
+
+        // Navigation
+        function switchView(viewName) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('view-' + viewName).classList.add('active');
+            const targetBtn = document.querySelector(`button[onclick="switchView('${viewName}')"]`);
+            if (targetBtn) targetBtn.classList.add('active');
+            
+            if(viewName === 'projects') renderAccordion();
+            if(viewName === 'tracker') renderRecent();
+        }
+
+        // Project Management
+        function addProject() {
+            const name = prompt("Enter new project name:");
+            if (!name || name.trim() === '') return;
+            state.projects.push({ id: generateId(), name: name.trim(), archived: false });
+            saveState();
+            renderProjects();
+        }
+
+        function archiveProject(id) {
+            if (!confirm("Archive this project? It will be hidden from new entries.")) return;
+            const p = state.projects.find(p => p.id === id);
+            if (p) p.archived = true;
+            saveState();
+            renderProjects();
+            renderAccordion();
+        }
+
+        function deleteProject(id) {
+            const hasActive = state.sessions.some(s => s.projectId === id && s.endTime === null);
+            if (hasActive) {
+                return alert("Cannot delete. This project has an open punch. Please punch out or assign an end time first.");
+            }
+            if (!confirm("Are you sure? This deletes the project and ALL associated time logs permanently.")) return;
+            state.projects = state.projects.filter(p => p.id !== id);
+            state.sessions = state.sessions.filter(s => s.projectId !== id);
+            saveState();
+            renderProjects();
+            renderAccordion();
+            renderRecent();
+        }
+
+        // Ledger Logic
+        function deleteSession(id) {
+            if (!confirm("Are you sure you want to delete this punch?")) return;
+            triggerHaptic();
+            state.sessions = state.sessions.filter(s => s.id !== id);
+            saveState();
+            renderRecent();
+            renderAccordion(); 
+        }
+
+        function punchIn() {
+            const select = document.getElementById('projectSelect');
+            if (!select.value) return alert("Select a project first.");
+            
+            const hasOpen = state.sessions.some(s => s.projectId === select.value && s.endTime === null);
+            if (hasOpen) return alert("You already have an open punch for this project.");
+            
+            triggerHaptic();
+
+            state.sessions.push({
+                id: generateId(),
+                projectId: select.value,
+                startTime: new Date().toISOString(),
+                endTime: null
+            });
+            
+            saveState();
+            renderRecent();
+        }
+
+        function punchOut(sessionId) {
+            triggerHaptic();
+            updateSession(sessionId, 'endTime', new Date().toISOString());
+        }
+
+        function updateSession(id, field, localValue) {
+            const session = state.sessions.find(s => s.id === id);
+            if (!session) return;
+            
+            // Prevent data corruption if user clears the input
+            if (!localValue && (field === 'startTime' || field === 'endTime')) {
+                return renderRecent(); // Re-render to revert the input to the saved state
+            }
+            
+            // Handle native datetime-local change vs explicit ISO punchOut
+            if (field === 'endTime' && localValue && !localValue.endsWith('Z')) {
+                session[field] = fromLocalInputFormat(localValue);
+            } else if (field === 'startTime' && localValue) {
+                session[field] = fromLocalInputFormat(localValue);
+            } else {
+                 session[field] = localValue;
+            }
+
+            saveState();
+            renderRecent();
+        }
+
+        // Rendering
+        function renderProjects() {
+            const select = document.getElementById('projectSelect');
+            const activeProjects = state.projects.filter(p => !p.archived);
+            
+            // Maintain current selection if possible
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">Select Project...</option>' + 
+                activeProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            if (currentVal && activeProjects.find(p => p.id === currentVal)) {
+                select.value = currentVal;
+            }
+        }
+
+        function calcHours(start, end) {
+            if (!start || !end) return '0.00';
+            const diff = new Date(end) - new Date(start);
+            return (diff / 3600000).toFixed(2);
+        }
+
+        function renderRecent() {
+            const list = document.getElementById('recentSessions');
+            // Sort: Open sessions first, then by newest start time
+            const sorted = [...state.sessions].sort((a, b) => {
+                if (a.endTime === null && b.endTime !== null) return -1;
+                if (a.endTime !== null && b.endTime === null) return 1;
+                return new Date(b.startTime) - new Date(a.startTime);
+            }).slice(0, 10);
+            
+            list.innerHTML = sorted.map(s => {
+                const p = state.projects.find(proj => proj.id === s.projectId);
+                const pName = p ? p.name : 'Unknown Project';
+                const hrs = s.endTime ? calcHours(s.startTime, s.endTime) : '---';
+                
+                // Stale check: > 12 hours without punch out
+                const isStale = s.endTime === null && (new Date() - new Date(s.startTime)) > 12 * 3600000;
+                
+                return `
+                <div class="ledger-item ${isStale ? 'stale' : ''}">
+                    <div class="ledger-header">
+                        <span class="ledger-project">${pName}</span>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="ledger-total">${hrs} hrs</span>
+                            <button class="icon-btn" style="padding: 0.25rem; border: none; background: transparent; color: var(--danger);" onclick="deleteSession('${s.id}')" aria-label="Delete Punch">
+                                <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="ledger-times">
+                        <div class="time-group">
+                            <span class="time-label">Start</span>
+                            <input type="datetime-local" value="${toLocalInputFormat(s.startTime)}" onchange="updateSession('${s.id}', 'startTime', this.value)">
+                        </div>
+                        <div class="time-group">
+                            <span class="time-label">End ${isStale ? '<span style="color: var(--danger)">(Missed Out)</span>' : ''}</span>
+                            ${s.endTime === null 
+                                ? `<button class="btn btn-stop" style="padding: 0.75rem; margin: 0; font-size: 0.9rem;" onclick="punchOut('${s.id}')">PUNCH OUT</button>`
+                                : `<input type="datetime-local" value="${toLocalInputFormat(s.endTime)}" onchange="updateSession('${s.id}', 'endTime', this.value)">`
+                            }
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderAccordion() {
+            const container = document.getElementById('projectAccordion');
+            container.innerHTML = state.projects.map(p => {
+                const pSessions = state.sessions.filter(s => s.projectId === p.id && s.endTime !== null);
+                const totalMs = pSessions.reduce((acc, s) => acc + (new Date(s.endTime) - new Date(s.startTime)), 0);
+                const totalHrs = (totalMs / 3600000).toFixed(2);
+
+                return `
+                <details>
+                    <summary>
+                        <span>${p.name} ${p.archived ? '(Archived)' : ''}</span>
+                        <span style="color: var(--accent)">${totalHrs} hrs</span>
+                    </summary>
+                    <div class="project-actions">
+                        ${!p.archived ? `<button class="btn btn-text" onclick="archiveProject('${p.id}')">Archive</button>` : ''}
+                        <button class="btn btn-text" style="color: var(--danger); border-color: var(--danger);" onclick="deleteProject('${p.id}')">Delete Data</button>
+                    </div>
+                </details>`;
+            }).join('');
+        }
+
+        // Export Data
+        function exportData() {
+            let csv = "Project,Start,End,Hours\n";
+            state.sessions.forEach(s => {
+                if (!s.endTime) return; // Only export completed punches
+                const p = state.projects.find(proj => proj.id === s.projectId);
+                const pName = p ? p.name.replace(/,/g, '') : 'Unknown';
+                const hrs = calcHours(s.startTime, s.endTime);
+                csv += `${pName},${s.startTime},${s.endTime},${hrs}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `shop_time_${new Date().toISOString().slice(0,10)}.csv`);
+            a.click();
         }
 
         function setSyncState(status) {
