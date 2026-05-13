@@ -169,18 +169,26 @@ function buildFinalObject(item, strain, brand, t1, t2, type, slug, dictEntry) {
 
     const price = parseFloat(item.bucket_price || item.price || 0);
 
-    // ==========================================
-    // THE FLOWER HEURISTIC (TWEAK 1)
-    // ==========================================
     let perUnitGrams = parseWeightToGrams(finalSize, item.available_weights);
     let totalWeightGrams = perUnitGrams ? (perUnitGrams * finalCount) : null;
 
+    // FIX: If API hid the weight in an array, map it to a readable string before the heuristic
+    if ((!finalSize || finalSize === "") && perUnitGrams) {
+        if (perUnitGrams === 3.5) finalSize = "3.5g";
+        else if (perUnitGrams === 7.0) finalSize = "7g";
+        else if (perUnitGrams === 14.0) finalSize = "14g";
+        else if (perUnitGrams === 28.0) finalSize = "28g";
+        else if (perUnitGrams === 1.0) finalSize = "1g";
+        else if (perUnitGrams === 0.5) finalSize = "0.5g";
+        else finalSize = `${perUnitGrams}g`;
+    }
+
+    // THE FLOWER HEURISTIC 
     if (t1 === "Flower" && (!totalWeightGrams || totalWeightGrams <= 0)) {
         if (price >= 160) { finalSize = "28g"; totalWeightGrams = 28.0; }
         else if (price >= 100) { finalSize = "14g"; totalWeightGrams = 14.0; }
         else if (price >= 60) { finalSize = "7g"; totalWeightGrams = 7.0; }
         else if (price >= 26) { finalSize = "3.5g"; totalWeightGrams = 3.5; }
-        // Anything under $26 is skipped to protect against 1g/Pre-Roll variance
     }
 
     let ppg = 0;
