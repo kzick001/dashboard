@@ -94,10 +94,16 @@
     .metric { color: #aaa; font-family: monospace; font-size: 12px; }
     
     /* Dual-Action Buttons */
-    .action-btn { cursor: pointer; font-size: 15px; color: #444; transition: 0.2s; user-select: none; text-align: center; }
-    .action-btn:hover { color: #888; transform: scale(1.1); }
-    .action-btn.fav-active { color: #ffd60a; } /* Yellow for Fav */
-    .action-btn.alert-active { color: var(--accent); } /* Purple for Alert */
+    .action-btn { cursor: pointer; font-size: 15px; transition: 0.2s; user-select: none; text-align: center; }
+    .action-btn:hover { transform: scale(1.1); }
+    
+    .fav-btn { color: #444; }
+    .fav-btn:hover { color: #888; }
+    .fav-btn.active { color: #ffd60a; text-shadow: 0 0 8px rgba(255, 214, 10, 0.4); }
+    
+    .alert-btn { filter: grayscale(100%) opacity(0.3); }
+    .alert-btn:hover { filter: grayscale(50%) opacity(0.8); }
+    .alert-btn.active { filter: grayscale(0%) opacity(1); }
 
     /* Ghost Row (Out of Stock) */
     .ghost-row { background: rgba(255, 69, 58, 0.05) !important; opacity: 0.6; transition: 0.3s; }
