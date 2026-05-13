@@ -271,8 +271,8 @@ function renderTable() {
 
                 html += `
                 <tr class="ghost-row">
-                    <td onclick="toggleFav('${key}')" class="action-btn ${isFav ? 'fav-active' : ''}">★</td>
-                    <td onclick="toggleAlert('${key}')" class="action-btn ${isAlert ? 'alert-active' : ''}">🔔</td>
+                    <td onclick="toggleFav('${key}')" class="action-btn fav-btn ${isFav ? 'active' : ''}">★</td>
+                    <td onclick="toggleAlert('${key}')" class="action-btn alert-btn ${isAlert ? 'active' : ''}">🔔</td>
                     <td class="brand">${dictItem.brand.toUpperCase()}</td>
                     <td class="strain">${dictItem.strain} <span class="ghost-badge">NOT LISTED</span></td>
                     <td>--</td><td>--</td>
@@ -295,8 +295,8 @@ function renderTable() {
 
         html += `
         <tr class="${rowClass}">
-            <td onclick="toggleFav('${item.compoundKey}')" class="action-btn ${isFav ? 'fav-active' : ''}">★</td>
-            <td onclick="toggleAlert('${item.compoundKey}')" class="action-btn ${isAlert ? 'alert-active' : ''}">🔔</td>
+            <td onclick="toggleFav('${item.compoundKey}')" class="action-btn fav-btn ${isFav ? 'active' : ''}">★</td>
+            <td onclick="toggleAlert('${item.compoundKey}')" class="action-btn alert-btn ${isAlert ? 'active' : ''}">🔔</td>
             <td class="brand">${item.brand}</td>
             <td class="strain">${strainDisplay}</td>
             <td><span style="color:var(--text-muted);">${item.t1} &rarr;</span> ${item.t2}</td>
