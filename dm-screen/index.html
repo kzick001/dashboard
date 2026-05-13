@@ -46,7 +46,7 @@
     .p-card.absent { filter: grayscale(1) opacity(0.4); order: 99; transform: scale(0.95); border-top-color: #444; }
     
     .p-header { display: flex; justify-content: space-between; align-items: center; }
-    .p-name { font-size: 1.2rem; font-weight: bold; margin: 0; color: var(--p-color, #fff); white-space: nowrap; }
+    .p-name { font-size: 1.2rem; font-weight: bold; margin: 0; color: var(--p-color, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .player-deck.collapsed .p-name { font-size: 1rem; margin-right: 1rem; }
     .player-deck.collapsed .card-details, .player-deck.collapsed .vital-grid-full { display: none; }
     
@@ -109,7 +109,7 @@
     .modal-content { background: var(--card); border: 1px solid #444; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; overflow: hidden; transform: translateY(0); transition: 0.3s ease; }
     .overlay-backdrop.hidden .modal-content { transform: translateY(20px); }
     .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; }
-    .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; max-height: 70vh; overflow-y: auto; }
+    .modal-body { padding: 1.5rem; display: flex; flex-direction: column; max-height: 70vh; overflow-y: auto; }
     .condition-badge { display: inline-block; background: var(--danger); color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; margin: 2px; }
     
     /* Popover Menu */
@@ -244,6 +244,10 @@
 
     async function syncToKV() {
       try {
+        const baseVersion = appState.version || 0;
+        appState.version = baseVersion + 1;
+        appState.last_modified = Date.now();
+        
         let payload = appState;
         const res = await fetch(WORKER_URL);
         if (res.ok) {
@@ -256,9 +260,20 @@
             loot_tables: Object.keys(appState.loot_tables).length > 0 ? appState.loot_tables : (remote.loot_tables || {})
           };
         }
-        await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        
+        const postRes = await fetch(WORKER_URL, { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ base_version: baseVersion, data: payload }) 
+        });
+        
+        if (!postRes.ok) throw new Error('Sync rejected by server');
         flashSync();
-      } catch (e) { console.error("KV Sync Failed"); }
+      } catch (e) { 
+        console.error("KV Sync Failed", e);
+        showToast("Sync Failed: Check connection.");
+        document.getElementById('sync-status-icon').style.color = 'var(--danger)';
+      }
     }
 
     async function init() {
@@ -274,6 +289,7 @@
           if (remote.players) appState.players = remote.players;
           if (remote.campaign_notes) appState.campaign_notes = remote.campaign_notes;
           if (remote.loot_tables) appState.loot_tables = remote.loot_tables;
+          if (remote.version) appState.version = remote.version;
         }
       } catch (e) { console.warn("Fetch failed, using local."); }
 
@@ -360,7 +376,7 @@
           <div class="p-card ${absentClass}" style="--p-color: ${pColor}">
             ${badgeHtml}
             <div class="p-header">
-              <h2 class="p-name">${escapeHtml(p.name)}</h2>
+              <h2 class="p-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h2>
               <div class="card-details">
                 <button class="btn-action btn-absent ${p.is_absent ? 'is-absent' : ''}" onclick="toggleAttendance(${idx})" title="Toggle Attendance">${p.is_absent ? SVGS.eyeOff : SVGS.eye}</button>
               </div>
@@ -416,21 +432,143 @@
       saveLocal(); syncToKV(); renderPlayerDeck();
     }
 
+    // --- Interactive Deep-Dive Player Modal ---
     function openPlayerModal(pIdx) {
       const p = appState.players[pIdx];
       document.getElementById('modal-name').innerText = p.name;
       document.getElementById('modal-name').style.color = colorPalette[pIdx % colorPalette.length];
       
-      let condHtml = (p.status?.conditions||[]).length > 0 ? p.status.conditions.map(c=>`<span class="condition-badge">${c}</span>`).join('') : '<span style="color:#666">Healthy</span>';
-      
+      // 1. Render Status
+      let condHtml = (p.status?.conditions||[]).length > 0 
+        ? p.status.conditions.map(c=>`<span class="condition-badge">${escapeHtml(c)}</span>`).join('') 
+        : '<span style="color:#666">Healthy</span>';
+
+      // 2. Render Pending Inbox
+      let pendingHtml = '';
+      if (p.achievements?.pending && p.achievements.pending.length > 0) {
+        pendingHtml = p.achievements.pending.map((ach, aIdx) => `
+          <div style="background: rgba(187, 134, 252, 0.1); border-left: 3px solid var(--accent); padding: 0.75rem; margin-bottom: 0.5rem; border-radius: 4px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <strong style="color:var(--accent)">${escapeHtml(ach.name)}</strong><br>
+                <span style="font-size:0.85rem; color:#aaa">${escapeHtml(ach.description)}</span>
+              </div>
+              <button class="btn-send" onclick="claimReward(${pIdx}, ${aIdx})">Claim</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // 3. Render Inventory
+      let invHtml = '';
+      const activeInv = p.inventory ? p.inventory.filter(i => !i.is_deleted) : [];
+      if (activeInv.length > 0) {
+        invHtml = p.inventory.map((item, iIdx) => {
+          if (item.is_deleted) return '';
+          return `
+          <div style="background:#111; border:1px solid #333; padding:0.5rem 0.75rem; margin-bottom:0.5rem; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <strong style="color:#ddd">${escapeHtml(item.name)}</strong> 
+              <span style="color:#666; font-size:0.8rem;">(x${item.quantity || 1})</span><br>
+              <span style="font-size:0.85rem; color:#888">${escapeHtml(item.flavor_text || item.mechanics || "")}</span>
+            </div>
+            <button class="btn-icon" style="color:var(--danger);" onclick="removeInventoryItem(${pIdx}, ${iIdx})" title="Remove Item">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+          </div>
+          `;
+        }).join('');
+      } else {
+        invHtml = '<div style="color:#666; font-size:0.9rem; padding:0.5rem 0;">Inventory is empty.</div>';
+      }
+
+      // 4. Inject into Modal Body
       document.getElementById('modal-body').innerHTML = `
-        <div><strong>Status:</strong> ${condHtml}</div>
-        <div><strong>Inventory:</strong> ${(p.inventory||[]).length} items</div>
-        <div><strong>Lore:</strong> <span style="color:#aaa; font-style:italic;">${escapeHtml(p.lore)||"None"}</span></div>
+        <div style="margin-bottom: 1rem;"><strong>Status:</strong> ${condHtml}</div>
+        
+        ${pendingHtml ? `<h4 style="margin: 0 0 0.5rem 0; color:var(--accent); text-transform:uppercase; font-size:0.8rem;">Inbox (Pending Loot)</h4>${pendingHtml}` : ''}
+        
+        <div style="margin-top: 1rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+            <h4 style="margin:0; color:#888; text-transform:uppercase; font-size:0.8rem;">Inventory</h4>
+            <button class="btn-send" style="padding:2px 6px; font-size:0.75rem;" onclick="addInventoryItem(${pIdx})">+ Add Item</button>
+          </div>
+          ${invHtml}
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <h4 style="margin:0 0 0.5rem 0; color:#888; text-transform:uppercase; font-size:0.8rem;">Character Lore & Notes</h4>
+          <textarea class="scratchpad-textarea" style="width:100%; box-sizing:border-box; background:#111; border:1px solid #333; border-radius:4px; min-height:80px; padding:0.5rem;" 
+            onblur="updatePlayerLore(${pIdx}, this.value)">${escapeHtml(p.lore || "")}</textarea>
+        </div>
       `;
       document.getElementById('player-modal').classList.remove('hidden');
     }
-    function closePlayerModal() { document.getElementById('player-modal').classList.add('hidden'); }
+
+    function closePlayerModal() { 
+      document.getElementById('player-modal').classList.add('hidden'); 
+    }
+
+    // Modal Interaction Helpers
+    function claimReward(pIdx, pendingIdx) {
+      pushState();
+      const p = appState.players[pIdx];
+      const achievement = p.achievements.pending.splice(pendingIdx, 1)[0];
+      
+      if (!p.inventory) p.inventory = [];
+      
+      if (achievement.rewards && achievement.rewards.items) {
+        achievement.rewards.items.forEach(newItem => {
+          p.inventory.push(newItem);
+        });
+      }
+      
+      saveLocal(); syncToKV(); renderPlayerDeck(); 
+      openPlayerModal(pIdx); 
+      showToast(`Claimed: ${achievement.name}`);
+    }
+
+    function removeInventoryItem(pIdx, invIdx) {
+      if(!confirm("Destroy this item?")) return;
+      pushState();
+      
+      const p = appState.players[pIdx];
+      p.inventory[invIdx].is_deleted = true;
+      p.inventory[invIdx].last_modified = Date.now();
+      
+      saveLocal(); syncToKV(); 
+      openPlayerModal(pIdx); 
+    }
+
+    function addInventoryItem(pIdx) {
+      const itemName = prompt("Enter item name:");
+      if (!itemName) return;
+      
+      pushState();
+      const p = appState.players[pIdx];
+      if (!p.inventory) p.inventory = [];
+      
+      p.inventory.push({
+        name: itemName,
+        flavor_text: "Added manually by Showrunner.",
+        mechanics: "",
+        quantity: 1
+      });
+      
+      saveLocal(); syncToKV(); 
+      openPlayerModal(pIdx); 
+    }
+
+    function updatePlayerLore(pIdx, newText) {
+      const p = appState.players[pIdx];
+      if (p.lore === newText) return; 
+      
+      pushState();
+      p.lore = newText;
+      
+      saveLocal(); syncToKV();
+    }
+
 
     // --- Zone 3A: Blueprint ---
     function renderBlueprint() {
@@ -444,7 +582,9 @@
       let mechHtml = (room.mechanics||[]).map(m => `<li>${parseMath(escapeHtml(m))}</li>`).join('');
       let encHtml = (room.encounters||[]).map(e => `<div style="background:#111; padding:1rem; border-left:3px solid var(--danger); margin-bottom:1rem;"><strong>${escapeHtml(e.name)}</strong> (CR ${e.cr||'?'})<br><span style="color:#aaa; font-size:0.9rem;">${escapeHtml(e.tactics)}</span></div>`).join('');
       
-      let lootHtml = (room.loot||[]).map((l, lIdx) => `
+      let lootHtml = (room.loot||[]).map((l, lIdx) => {
+        if (l.is_deleted) return '';
+        return `
         <div class="loot-card">
           <div><strong style="color:var(--warning)">${escapeHtml(l.achievement_name)}</strong><br><span style="font-size:0.85rem; color:#bbb">${escapeHtml(l.item_name)}</span></div>
           <div style="position:relative;">
@@ -455,7 +595,8 @@
              </div>
           </div>
         </div>
-      `).join('');
+        `;
+      }).join('');
 
       col.innerHTML = `
         <h1 style="color:var(--accent); margin-top:0;">${escapeHtml(room.title)}</h1>
@@ -474,7 +615,9 @@
     function awardLoot(lIdx, pIdx) {
       pushState();
       const room = appState.campaign_notes.rooms[currentRoomIndex];
-      const loot = room.loot.splice(lIdx, 1)[0]; // Remove from room
+      const loot = room.loot[lIdx];
+      loot.is_deleted = true;
+      loot.last_modified = Date.now();
       
       const player = appState.players[pIdx];
       if(!player.achievements) player.achievements = { pending: [] };
