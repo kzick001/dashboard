@@ -15,6 +15,10 @@
     body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; line-height: 1.5; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
     .hidden { display: none !important; }
 
+    /* Utility Classes (Restored) */
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    .flex-gap { display: flex; gap: 0.5rem; align-items: center; }
+
     /* Header Bar */
     header { background: var(--header); padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; z-index: 200; box-shadow: 0 2px 8px rgba(0,0,0,0.5); flex-shrink: 0; }
     .header-title { font-size: 1.2rem; font-weight: bold; letter-spacing: 0.1em; color: var(--accent); text-transform: uppercase; display: flex; align-items: center; gap: 1rem; }
@@ -228,13 +232,25 @@
     }
 
     async function syncToKV() {
-      // Background sync to master database to link with Player HUD
-      try { await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(appState) }); } 
-      catch (e) { console.error("KV Sync failed", e); }
+      try {
+        let payload = appState;
+        const res = await fetch(WORKER_URL);
+        if (res.ok) {
+          const remote = await res.json();
+          // Safe deep-merge to prevent notes.html from wiping out loot_tables or players
+          payload = {
+            ...remote,
+            ...appState,
+            players: appState.players && appState.players.length > 0 ? appState.players : (remote.players || []),
+            campaign_notes: appState.campaign_notes || remote.campaign_notes || { rooms: [], sessions: [] }
+          };
+        }
+        await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      } catch (e) { console.error("KV Sync failed", e); }
     }
 
     async function init() {
-      // 1. Fetch Master State from KV (if available) to ensure we have the players array
+      // 1. Fetch Master State from KV (if available)
       try {
         const response = await fetch(WORKER_URL);
         if (response.ok) {
@@ -253,7 +269,7 @@
         }
       }
 
-      // 2. Data Migration: Convert old global_scratchpad to Session array if needed
+      // 2. Data Migration
       if (!appState.campaign_notes) appState.campaign_notes = { rooms: [], sessions: [] };
       if (!appState.campaign_notes.sessions) {
         appState.campaign_notes.sessions = [];
@@ -332,7 +348,7 @@
 
     function renderStage() {
       const stage = document.getElementById('stage-content');
-      if (appState.campaign_notes.rooms.length === 0) {
+      if (!appState.campaign_notes.rooms || appState.campaign_notes.rooms.length === 0) {
         stage.innerHTML = `<h2 style="color:#555; text-align:center; margin-top:4rem;">Campaign is empty. Import notes to begin.</h2>`;
         return;
       }
@@ -394,6 +410,97 @@
       `;
     }
 
+    // --- Inline Editing ---
+    function makeEditable(val, pathArray, fieldName, isTextarea = false) {
+      const pJson = escapeJS(JSON.stringify(pathArray));
+      return `<span class="edit-wrapper">
+                <span class="edit-val">${val}</span>
+                <button class="edit-trigger" onclick="event.stopPropagation(); startInlineEdit(this, '${pJson}', '${fieldName}', ${isTextarea})">${SVG_PENCIL}</button>
+              </span>`;
+    }
+
+    function startInlineEdit(el, objectPathJSON, fieldName, isTextarea) {
+      const parent = el.closest('.edit-wrapper');
+      const textSpan = parent.querySelector('.edit-val');
+      const rawText = textSpan.innerText; 
+      
+      const input = document.createElement(isTextarea ? 'textarea' : 'input');
+      input.className = 'inline-input';
+      input.value = rawText;
+      
+      input.onblur = () => {
+        pushState();
+        let newVal = input.value.trim();
+        
+        const pathParts = JSON.parse(objectPathJSON);
+        let target = appState;
+        
+        for(let i=0; i < pathParts.length; i++) {
+          if (target[pathParts[i]] === undefined) target[pathParts[i]] = (typeof pathParts[i+1] === 'number') ? [] : {};
+          if (i === pathParts.length - 1 && fieldName === '') {
+             target[pathParts[i]] = newVal;
+          } else {
+             target = target[pathParts[i]];
+          }
+        }
+        if (fieldName !== '') target[fieldName] = newVal;
+        
+        saveLocal();
+        syncToKV();
+        renderStage(); // Just re-render stage
+      };
+      
+      input.onkeydown = (e) => { if(e.key === 'Enter' && !isTextarea) input.blur(); };
+      input.onclick = (e) => e.stopPropagation();
+      
+      parent.innerHTML = '';
+      parent.appendChild(input);
+      input.focus();
+    }
+
+    // --- Loot Awards ---
+    function toggleAwardMenu(rIdx, lIdx) {
+      document.querySelectorAll('.award-popover').forEach(el => {
+        if (el.id !== `award-menu-${rIdx}-${lIdx}`) el.classList.add('hidden');
+      });
+      const menu = document.getElementById(`award-menu-${rIdx}-${lIdx}`);
+      if (menu) menu.classList.toggle('hidden');
+    }
+
+    function confirmAward(rIdx, lIdx, playerName) {
+      const room = appState.campaign_notes.rooms[rIdx];
+      const lootObj = room.loot[lIdx];
+      const player = appState.players.find(p => p.name === playerName);
+
+      if(!player) return showToast("Player not found in database.");
+
+      pushState();
+      if(!player.achievements) player.achievements = { pending: [], claimed: [] };
+      if(!player.achievements.pending) player.achievements.pending = [];
+
+      player.achievements.pending.push({
+        name: lootObj.achievement_name,
+        description: lootObj.item_desc,
+        rewards: {
+          gold: 0,
+          items: [{
+            name: lootObj.item_name,
+            flavor_text: lootObj.item_desc,
+            mechanics: "Requires inspection.",
+            quantity: 1
+          }]
+        }
+      });
+
+      // Remove the loot so it can't be awarded twice
+      room.loot.splice(lIdx, 1);
+      
+      saveLocal();
+      syncToKV();
+      renderStage();
+      showToast(`${lootObj.item_name} awarded to ${playerName}!`);
+    }
+
     // --- Session Scratchpad Logic ---
     function renderScratchpad() {
       const select = document.getElementById('session-select');
@@ -415,4 +522,113 @@
     }
 
     function createNewSession() {
-      const title = prompt("Enter Session Title:", `Session ${appState.campaign_notes.sessions.length
+      const title = prompt("Enter Session Title:", `Session ${appState.campaign_notes.sessions.length + 1}`);
+      if(!title) return;
+      pushState();
+      const newSession = { id: Date.now(), title: title, content: "" };
+      appState.campaign_notes.sessions.push(newSession);
+      currentSessionId = newSession.id;
+      saveLocal();
+      syncToKV();
+      renderScratchpad();
+      showToast(`Created ${title}`);
+    }
+
+    // Scratchpad Debouncer
+    const DEBOUNCE_MS = 30000; // 30 seconds
+    let scratchTimer;
+    const textarea = document.getElementById('scratchpad-input');
+
+    textarea.addEventListener('input', (e) => {
+      setSyncIcon('syncing');
+      clearTimeout(scratchTimer);
+      scratchTimer = setTimeout(() => { commitScratchpad(e.target.value); }, DEBOUNCE_MS);
+    });
+
+    textarea.addEventListener('blur', (e) => {
+      clearTimeout(scratchTimer);
+      commitScratchpad(e.target.value);
+    });
+
+    function commitScratchpad(text) {
+      const session = appState.campaign_notes.sessions.find(s => s.id === currentSessionId);
+      if (!session || session.content === text) return;
+      pushState();
+      session.content = text;
+      saveLocal();
+      syncToKV();
+      setSyncIcon('success');
+    }
+
+    function setSyncIcon(status) {
+      const icon = document.getElementById('sync-status');
+      if (status === 'syncing') {
+        icon.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="#888" stroke-width="2" fill="none"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>`;
+      } else if (status === 'success') {
+        icon.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="var(--success)" stroke-width="2" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        setTimeout(() => { icon.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="#555" stroke-width="2" fill="none"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>`; }, 2000);
+      }
+    }
+
+    // --- Import Modal Logic ---
+    function toggleImportModal() {
+      document.getElementById('import-modal').classList.toggle('hidden');
+    }
+
+    function mergeNotes() {
+      const raw = document.getElementById('import-data').value;
+      let d; try { d = JSON.parse(raw); } catch(e) { return showToast("Invalid JSON"); }
+
+      if (!d.campaign_notes || !d.campaign_notes.rooms) return showToast("Missing campaign_notes.rooms array.");
+
+      pushState();
+      let count = 0;
+      if (!appState.campaign_notes) appState.campaign_notes = { rooms: [], sessions: [] };
+      if (!appState.campaign_notes.rooms) appState.campaign_notes.rooms = [];
+
+      d.campaign_notes.rooms.forEach(newRoom => {
+        const exIdx = appState.campaign_notes.rooms.findIndex(r => r.id === newRoom.id);
+        if (exIdx >= 0) {
+          appState.campaign_notes.rooms[exIdx] = { ...appState.campaign_notes.rooms[exIdx], ...newRoom };
+        } else {
+          appState.campaign_notes.rooms.push(newRoom);
+        }
+        count++;
+      });
+
+      saveLocal(); syncToKV(); renderAll();
+      toggleImportModal();
+      document.getElementById('import-data').value = '';
+      showToast(`Merged ${count} rooms.`);
+    }
+
+    function overwriteNotes() {
+      if(!confirm("HARD OVERWRITE: Erase all campaign notes and replace them? (Player data is safe)")) return;
+      const raw = document.getElementById('import-data').value;
+      let d; try { d = JSON.parse(raw); } catch(e) { return showToast("Invalid JSON"); }
+
+      if (!d.campaign_notes) return showToast("Missing campaign_notes object.");
+
+      pushState();
+      const existingSessions = appState.campaign_notes.sessions || [];
+      appState.campaign_notes = d.campaign_notes;
+      if (!appState.campaign_notes.sessions) appState.campaign_notes.sessions = existingSessions;
+
+      saveLocal(); syncToKV(); renderAll();
+      toggleImportModal();
+      document.getElementById('import-data').value = '';
+      showToast("Campaign Notes Overwritten.");
+    }
+
+    function renderAll() {
+      renderSidebar();
+      renderStage();
+      renderScratchpad();
+    }
+
+    // Boot App
+    init();
+
+  </script>
+</body>
+</html>
