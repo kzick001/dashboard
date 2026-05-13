@@ -267,12 +267,12 @@
             syncTimeout = setTimeout(attemptSync, 1500);
         }
 
-        async function attemptSync() {
+       async function attemptSync() {
             if (!navigator.onLine) return setSyncState('offline');
             if (state.queue.length === 0) return setSyncState('synced');
             
             setSyncState('syncing');
-            const payload = state.queue[0].data;
+            const payload = state.queue[0];
 
             try {
                 const response = await fetch(WORKER_URL, {
