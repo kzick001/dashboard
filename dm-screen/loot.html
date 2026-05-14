@@ -10,15 +10,35 @@
       --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --text-muted: #888;
       --accent: #bb86fc; --info: #74b9ff; --success: #03dac6; --danger: #cf6679; --warning: #f1c40f;
       --header: #0f0f0f; --nav-bg: #161616; --mag-bg: #0a0a0a;
+      --glass: rgba(20, 20, 25, 0.7); --glass-border: rgba(255, 255, 255, 0.1);
     }
     
-    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; line-height: 1.5; height: 100vh; overflow: hidden; display: flex; flex-direction: column; font-variant-numeric: tabular-nums; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+      background: var(--bg); color: var(--text); margin: 0; line-height: 1.5; 
+      height: 100vh; overflow: hidden; display: flex; flex-direction: column; font-variant-numeric: tabular-nums;
+    }
     .hidden { display: none !important; }
 
-    /* Header Bar */
-    header { background: var(--header); padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; z-index: 200; box-shadow: 0 2px 8px rgba(0,0,0,0.5); flex-shrink: 0; }
-    .header-title { font-size: 1.2rem; font-weight: bold; letter-spacing: 0.1em; color: var(--accent); text-transform: uppercase; display: flex; align-items: center; gap: 1rem; }
-    .header-controls { display: flex; gap: 1rem; align-items: center; color: var(--text-muted); }
+    /* --- Global Navbar & Action Bar --- */
+    .navbar {
+      height: 60px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+      border-bottom: 1px solid var(--glass-border); z-index: 200; flex-shrink: 0;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; letter-spacing: 0.15em; font-size: 1.2rem; color: #fff; text-shadow: 0 0 10px rgba(187,134,252,0.5); }
+    .nav-links { display: flex; gap: 1rem; }
+    .nav-link {
+      color: var(--text); text-decoration: none; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;
+      letter-spacing: 0.1em; padding: 6px 12px; border-radius: 20px; border: 1px solid transparent; transition: 0.3s;
+    }
+    .nav-link:hover { background: rgba(255,255,255,0.05); border-color: var(--glass-border); color: #fff; }
+    .nav-link.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(187,134,252,0.2); }
+
+    .global-controls {
+      padding: 10px 2rem; background: rgba(10,10,12,0.8); border-bottom: 1px solid #333;
+      display: flex; justify-content: flex-end; gap: 15px; flex-shrink: 0;
+    }
     
     /* SVG Buttons */
     .btn-icon { background: transparent; border: none; padding: 4px; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; transition: 0.2s; }
@@ -47,11 +67,11 @@
     .roller-container { background: #111; border: 1px solid #333; padding: 2rem; border-radius: 8px; text-align: center; width: 100%; max-width: 600px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); }
     .roller-input-group { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
     .dice-input { background: #050505; color: var(--accent); border: 2px solid #444; border-radius: 8px; font-size: 3rem; text-align: center; width: 120px; padding: 0.5rem; outline: none; font-family: monospace; transition: 0.2s; }
-    .dice-input:focus { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
+    .dice-input:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(187, 134, 252, 0.4); }
     .dice-input::-webkit-outer-spin-button, .dice-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     
     .btn-resolve { background: var(--accent); color: #000; font-size: 1.2rem; font-weight: bold; padding: 0.75rem 2rem; border-radius: 6px; border: none; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
-    .btn-resolve:hover { background: #d0a3ff; transform: translateY(-2px); box-shadow: 0 4px 12px var(--accent-glow); }
+    .btn-resolve:hover { background: #d0a3ff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(187, 134, 252, 0.4); }
 
     /* Result Cards */
     .result-container { width: 100%; max-width: 600px; margin-top: 2rem; }
@@ -99,9 +119,9 @@
     .popover-item:hover { background: rgba(3, 218, 198, 0.2); color: #fff; }
 
     /* Modals & Toasts */
-    #toast-container { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
-    .toast { background: rgba(30, 30, 30, 0.95); color: #fff; padding: 0.75rem 1.5rem; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 0.95rem; border: 1px solid var(--accent); animation: fadein 0.3s, fadeout 0.3s 2.7s forwards; }
-    @keyframes fadein { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+    .toast { background: rgba(10, 10, 12, 0.95); color: #fff; padding: 1rem 1.5rem; border-radius: 4px; border-left: 4px solid var(--accent); box-shadow: 0 4px 15px rgba(0,0,0,0.8); font-size: 0.95rem; animation: fadein 0.3s, fadeout 0.3s 3.7s forwards; }
+    @keyframes fadein { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
     @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
 
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 999; display: flex; align-items: center; justify-content: center; }
@@ -115,19 +135,24 @@
 </head>
 <body>
 
-  <header>
-    <div class="header-title">
-      SHOWRUNNER <span style="color:#555">|</span> LOOT TABLES
+  <nav class="navbar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+      SHOWRUNNER // LOOT
     </div>
-    <div class="header-controls">
-      <button class="btn-icon" onclick="undo()" title="Undo">
-        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3l-3 2.7"></path></svg>
-      </button>
-      <button class="btn-icon" onclick="redo()" title="Redo">
-        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>
-      </button>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Dashboard</a>
+      <a href="dm-players.html" class="nav-link">DM Players</a>
+      <a href="notes.html" class="nav-link">Notes</a>
+      <a href="loot.html" class="nav-link active">Loot</a>
+      <a href="data-forge.html" class="nav-link">Data Forge</a>
     </div>
-  </header>
+  </nav>
+
+  <div class="global-controls">
+    <button class="btn-icon" onclick="undo()" title="Undo" style="font-weight: bold; font-size: 0.85rem; letter-spacing: 0.05em;">⟲ UNDO</button>
+    <button class="btn-icon" onclick="redo()" title="Redo" style="font-weight: bold; font-size: 0.85rem; letter-spacing: 0.05em;">⟳ REDO</button>
+  </div>
 
   <div id="toast-container"></div>
 
@@ -181,14 +206,12 @@
         </button>
       </div>
 
-      <div id="result-container" class="result-container">
-        </div>
+      <div id="result-container" class="result-container"></div>
     </div>
 
     <div class="magazine-sidebar">
       <div class="magazine-header" id="magazine-title">Loaded: Bronze</div>
-      <div class="magazine-list" id="magazine-list">
-        </div>
+      <div class="magazine-list" id="magazine-list"></div>
     </div>
 
   </div>
@@ -205,7 +228,12 @@
       players: [ {name: "Chuck"}, {name: "Tilly"}, {name: "Hendrick"}, {name: "Jimothy"}, {name: "Aelar"} ]
     };
 
-    // Auto-seed empty slots if not present
+    let historyStack = [];
+    let redoStack = [];
+    let currentView = { type: 'tier', id: 'bronze' };
+    let stagedRoll = null;
+    let isPushing = false; // Prevents overlapping pushes
+
     function seedEmptySlots() {
       ['bronze', 'silver', 'gold', 'platinum'].forEach(tier => {
         if(appState.loot_tables.tiers[tier].length < 100) {
@@ -224,31 +252,63 @@
       });
     }
 
-    // Seed dummy data for testing
     function seedDummyData() {
       appState.loot_tables.tiers.bronze[0].item = { name: "The Lukewarm Energy Drink", type: "Consumable", desc: "Drinking this restores 1d4 hit points, but gives disadvantage on Sleight of Hand." };
       appState.loot_tables.tiers.bronze[1].item = { name: "Ward of the Fast-Food Emperor", type: "Armor (Shield)", desc: "A legendary buckler providing standard +2 AC." };
       appState.loot_tables.personal.Chuck[3].item = { name: "Gordon's Gourmet Fury-Rub", type: "Consumable", desc: "+1d4 Fire damage for 1 min. Weapon screams British insults at you." };
     }
 
-    let historyStack = [];
-    let redoStack = [];
-    let currentView = { type: 'tier', id: 'bronze' };
-    let stagedRoll = null; // { tableRef, index, item }
-
     function saveLocal() { localStorage.setItem('showrunner_loot', JSON.stringify(appState)); }
     
-    async function syncToKV() { 
-      try { 
-        let payload = appState;
-        const res = await fetch(WORKER_URL);
-        if (res.ok) {
-          const remote = await res.json();
-          // Merge safely: Keep remote keys (like campaign_notes), overlay our local state, and enforce our updated players array
-          payload = { ...remote, ...appState, players: appState.players };
+    // --- The Optimistic Locking Push Engine ---
+    async function mutateAndPush(mutationCallback, successMessage) {
+      if (isPushing) return showToast("Busy saving previous action...");
+      isPushing = true;
+      document.body.style.cursor = 'wait';
+      
+      try {
+        const fetchRes = await fetch(WORKER_URL);
+        if (!fetchRes.ok) throw new Error("Fetch failed");
+        let latestState = await fetchRes.json();
+
+        // Ensure loot tables object structure exists
+        if(!latestState.loot_tables) {
+          latestState.loot_tables = { tiers: { bronze: [], silver: [], gold: [], platinum: [] }, personal: {} };
         }
-        await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); 
-      } catch (e) {} 
+
+        // Apply surgical changes to the absolute freshest state
+        mutationCallback(latestState);
+
+        latestState.version = (latestState.version || 0) + 1;
+        latestState.last_modified = Date.now();
+
+        const payload = { 
+          base_version: latestState.version - 1, 
+          last_modified: latestState.last_modified,
+          data: latestState 
+        };
+        
+        const postRes = await fetch(WORKER_URL, { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload) 
+        });
+        
+        if (!postRes.ok) throw new Error("Version collision");
+
+        appState = latestState;
+        saveLocal();
+        renderAll();
+        if (successMessage) showToast(successMessage);
+
+      } catch (e) {
+        console.error(e);
+        showToast("Sync collision. Refreshing to latest live state...");
+        await init(); // Force a safe pull
+      } finally {
+        isPushing = false;
+        document.body.style.cursor = 'default';
+      }
     }
 
     async function init() {
@@ -256,16 +316,18 @@
       if (local) { try { appState = JSON.parse(local); } catch(e) {} }
       
       seedEmptySlots();
-      if(!local) seedDummyData(); // Only seed dummy if brand new
+      if(!local) seedDummyData();
       
-      // Attempt to pull players array from master DB so Awards menu matches exactly
       try {
         const response = await fetch(WORKER_URL);
         if (response.ok) {
           const data = await response.json();
+          if (data && data.loot_tables) appState.loot_tables = data.loot_tables;
           if (data && data.players) appState.players = data.players;
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn("Fetch failed. Using local state.");
+      }
 
       renderAll();
     }
@@ -279,15 +341,21 @@
     function undo() {
       if (historyStack.length === 0) return showToast("Nothing to undo.");
       redoStack.push(JSON.parse(JSON.stringify(appState)));
-      appState = historyStack.pop();
-      saveLocal(); syncToKV(); renderAll(); showToast("Undo successful.");
+      const prevState = historyStack.pop();
+      
+      mutateAndPush((state) => {
+        state.loot_tables = prevState.loot_tables;
+      }, "Undo successful.");
     }
     
     function redo() {
       if (redoStack.length === 0) return showToast("Nothing to redo.");
       historyStack.push(JSON.parse(JSON.stringify(appState)));
-      appState = redoStack.pop();
-      saveLocal(); syncToKV(); renderAll(); showToast("Redo successful.");
+      const nextState = redoStack.pop();
+      
+      mutateAndPush((state) => {
+        state.loot_tables = nextState.loot_tables;
+      }, "Redo successful.");
     }
 
     // --- Core UI Navigation ---
@@ -314,9 +382,9 @@
       const input = document.getElementById('dice-input');
       const rollVal = parseInt(input.value);
       const maxRoll = currentView.type === 'tier' ? 100 : 10;
-      
-      if (!rollVal || rollVal < 1 || rollVal > maxRoll) return showToast(`Enter a number between 1 and ${maxRoll}`);
 
+      if (!rollVal || rollVal < 1 || rollVal > maxRoll) return showToast(`Enter a number between 1 and ${maxRoll}`);
+      
       // 1. Intercept Mechanic (>= 90 on a Tier table)
       if (currentView.type === 'tier' && rollVal >= 90) {
         triggerIntercept();
@@ -354,9 +422,9 @@
     function resolveIntercept() {
       const player = document.getElementById('intercept-player').value;
       const rollVal = parseInt(document.getElementById('intercept-dice').value);
-      
+
       if (!rollVal || rollVal < 1 || rollVal > 10) return showToast("Enter a 1-10 roll.");
-      
+
       // Synchronize the entire UI state to the intercepted personal table
       selectView('personal', player);
       document.getElementById('dice-input').value = rollVal;
@@ -371,7 +439,7 @@
 
     function renderResultCard() {
       const rc = document.getElementById('result-container');
-      
+
       if (!stagedRoll.item) {
         rc.innerHTML = `
           <div class="result-card error">
@@ -387,6 +455,7 @@
       }
 
       const i = stagedRoll.item;
+
       rc.innerHTML = `
         <div class="result-card">
           <h2 class="result-title">${escapeHtml(i.name)}</h2>
@@ -432,38 +501,47 @@
       pushState();
       
       const item = stagedRoll.item;
-      const player = appState.players.find(p => p.name === playerName);
-      if(!player) return showToast("Player not found in database.");
+      const tableType = currentView.type;
+      const tableId = currentView.id;
+      const slotIndex = stagedRoll.index;
 
-      if (!player.achievements) player.achievements = { pending: [], claimed: [] };
-      if (!player.achievements.pending) player.achievements.pending = [];
-      
-      player.achievements.pending.push({
-        name: "Loot Roll Reward",
-        description: "Acquired from the rolling tables.",
-        rewards: { gold: 0, items: [ { name: item.name, flavor_text: item.desc, mechanics: "Requires inspection.", quantity: 1 } ] }
-      });
+      mutateAndPush((state) => {
+        const player = state.players.find(p => p.name === playerName);
+        if (!player) throw new Error("Player not found in database.");
 
-      // Deplete Ammunition
-      stagedRoll.tableRef[stagedRoll.index].item = null;
+        if (!player.achievements) player.achievements = { pending: [], claimed: [] };
+        if (!player.achievements.pending) player.achievements.pending = [];
+        
+        // Push Dynamic Achievement Payload
+        player.achievements.pending.push({
+          name: `Acquired: ${item.name}`,
+          is_acknowledged: false,
+          description: item.desc,
+          rewards: { 
+            gold: 0, 
+            items: [ { name: item.name, flavor_text: item.desc, mechanics: "Requires inspection.", quantity: 1 } ] 
+          }
+        });
 
-      saveLocal();
-      await syncToKV(); // Send to HUD safely
-      
+        // Deplete Ammunition from the Remote Server
+        const table = tableType === 'tier' ? state.loot_tables.tiers[tableId] : state.loot_tables.personal[tableId];
+        table[slotIndex].item = null;
+
+      }, `${item.name} awarded to ${playerName}!`);
+
+      // Immediately clear the staged roll UI to prevent accidental double-clicks
       document.getElementById('result-container').innerHTML = `
         <div class="result-card" style="border-top-color:var(--success); text-align:center;">
           <h2 style="color:var(--success)">Payload Delivered</h2>
           <p style="color:#aaa">${item.name} sent to ${playerName}'s HUD.</p>
         </div>`;
-      
       stagedRoll = null;
-      renderMagazine(); // Updates right column to show red warning
-      showToast("Awarded & Depleted.");
     }
 
     // --- Right Column (Magazine & Forge) ---
     function renderMagazine() {
       document.getElementById('magazine-title').innerText = `Loaded: ${currentView.id}`;
+
       const table = currentView.type === 'tier' ? appState.loot_tables.tiers[currentView.id] : appState.loot_tables.personal[currentView.id];
       
       let html = table.map((slot, index) => {
@@ -502,13 +580,13 @@
       if(!name) return showToast("Item requires a name.");
 
       pushState();
-      const table = currentView.type === 'tier' ? appState.loot_tables.tiers[currentView.id] : appState.loot_tables.personal[currentView.id];
-      table[index].item = { name, type, desc };
+      const tableType = currentView.type;
+      const tableId = currentView.id;
 
-      saveLocal();
-      syncToKV();
-      renderMagazine();
-      showToast("Slot loaded.");
+      mutateAndPush((state) => {
+        const table = tableType === 'tier' ? state.loot_tables.tiers[tableId] : state.loot_tables.personal[tableId];
+        table[index].item = { name, type, desc };
+      }, "Slot loaded.");
     }
 
     // --- Import Modals ---
@@ -516,40 +594,45 @@
 
     function mergeLoot() {
       const raw = document.getElementById('import-data').value;
-      let d; try { d = JSON.parse(raw); } catch(e) { return showToast("Invalid JSON"); }
+      let d;
+      try { d = JSON.parse(raw); } catch(e) { return showToast("Invalid JSON"); }
       if (!d.loot_tables) return showToast("Missing loot_tables object.");
 
       pushState();
       let count = 0;
 
-      // Merge Tiers
-      if (d.loot_tables.tiers) {
-        for (const tier in d.loot_tables.tiers) {
-          if (!appState.loot_tables.tiers[tier]) appState.loot_tables.tiers[tier] = [];
-          d.loot_tables.tiers[tier].forEach((newSlot, idx) => {
-            if (!appState.loot_tables.tiers[tier][idx] || appState.loot_tables.tiers[tier][idx].item === null) {
-              appState.loot_tables.tiers[tier][idx] = newSlot;
-              count++;
-            }
-          });
-        }
-      }
-      
-      // Merge Personal
-      if (d.loot_tables.personal) {
-        for (const p in d.loot_tables.personal) {
-          if (!appState.loot_tables.personal[p]) appState.loot_tables.personal[p] = [];
-          d.loot_tables.personal[p].forEach((newSlot, idx) => {
-            if (!appState.loot_tables.personal[p][idx] || appState.loot_tables.personal[p][idx].item === null) {
-              appState.loot_tables.personal[p][idx] = newSlot;
-              count++;
-            }
-          });
-        }
-      }
+      mutateAndPush((state) => {
+        if (!state.loot_tables) state.loot_tables = { tiers: {}, personal: {} };
 
-      saveLocal(); syncToKV(); renderAll(); toggleImportModal(); document.getElementById('import-data').value = '';
-      showToast(`Restocked ${count} empty slots.`);
+        // Merge Tiers
+        if (d.loot_tables.tiers) {
+          for (const tier in d.loot_tables.tiers) {
+            if (!state.loot_tables.tiers[tier]) state.loot_tables.tiers[tier] = [];
+            d.loot_tables.tiers[tier].forEach((newSlot, idx) => {
+              if (!state.loot_tables.tiers[tier][idx] || state.loot_tables.tiers[tier][idx].item === null) {
+                state.loot_tables.tiers[tier][idx] = newSlot;
+                count++;
+              }
+            });
+          }
+        }
+        
+        // Merge Personal
+        if (d.loot_tables.personal) {
+          for (const p in d.loot_tables.personal) {
+            if (!state.loot_tables.personal[p]) state.loot_tables.personal[p] = [];
+            d.loot_tables.personal[p].forEach((newSlot, idx) => {
+              if (!state.loot_tables.personal[p][idx] || state.loot_tables.personal[p][idx].item === null) {
+                state.loot_tables.personal[p][idx] = newSlot;
+                count++;
+              }
+            });
+          }
+        }
+      }, `Restocked ${count} empty slots.`);
+      
+      toggleImportModal(); 
+      document.getElementById('import-data').value = '';
     }
 
     // Boot
