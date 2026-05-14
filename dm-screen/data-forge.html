@@ -46,6 +46,13 @@
     .workspace {
       display: flex; height: calc(100vh - 60px); width: 100vw; padding: 1rem; gap: 1rem;
     }
+    
+    @media (max-width: 768px) {
+      .workspace { flex-direction: column; overflow-y: auto; }
+      .pane { min-height: 400px; flex: none; }
+      .pane.collapsed { min-height: 45px; flex: 0 0 45px; }
+      .pane-title-vertical { writing-mode: horizontal-tb; transform: none; padding: 0 1rem; line-height: 45px; text-align: left; }
+    }
 
     /* Individual Pane styling */
     .pane {
@@ -88,7 +95,7 @@
       line-height: 1.5; overflow-y: auto;
     }
     #tagged-input { border-left: 2px solid var(--accent); background: rgba(187,134,252,0.02); }
-    pre { background: var(--code-bg); color: var(--code-text); margin: 0; }
+    pre { background: var(--code-bg); color: var(--code-text); margin: 0; white-space: pre-wrap; word-wrap: break-word; }
     
     /* Scrollbars */
     ::-webkit-scrollbar { width: 8px; }
@@ -190,8 +197,6 @@
       document.getElementById(id).classList.add('collapsed');
     }
     function expandPane(id) {
-      // Optional: If you want accordion style (only 2 open max), you can collapse others here.
-      // For now, let the user arrange them freely.
       document.getElementById(id).classList.remove('collapsed');
     }
     function showToast(msg) {
@@ -267,17 +272,37 @@
     // --- Engine 3: Pull, Merge, Push ---
     async function mergeAndPush() {
       const pushBtn = document.getElementById('btn-push');
-      pushBtn.disabled = true; pushBtn.innerText = "[ TRANSMITTING... ]";
+      pushBtn.disabled = true; 
+      pushBtn.innerText = "[ TRANSMITTING... ]";
+      // Clear previous success styling
+      pushBtn.style.borderColor = '';
+      pushBtn.style.color = '';
 
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        
         // 1. PULL Latest
-        const fetchRes = await fetch(WORKER_URL);
+        const fetchRes = await fetch(WORKER_URL, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
         if (!fetchRes.ok) throw new Error("Fetch failed");
         let latestState = await fetchRes.json();
 
-        // 2. MERGE
-        if (!latestState.content) latestState.content = {};
-        latestState.content.rooms = compiledRooms; 
+        // 2. MERGE (Preserve existing data & enforce soft deletes)
+        if (!latestState.content) latestState.content = { rooms: [] };
+        if (!latestState.content.rooms) latestState.content.rooms = [];
+        
+        compiledRooms.forEach(newRoom => {
+          const existingIdx = latestState.content.rooms.findIndex(r => r.room_id === newRoom.room_id);
+          if (existingIdx >= 0) {
+            // Update existing room and ensure it is active
+            latestState.content.rooms[existingIdx] = { ...latestState.content.rooms[existingIdx], ...newRoom, is_deleted: false };
+          } else {
+            // Append new room
+            latestState.content.rooms.push({ ...newRoom, is_deleted: false });
+          }
+        });
 
         // 3. INCREMENT & TIMESTAMP
         latestState.version = (latestState.version || 0) + 1;
