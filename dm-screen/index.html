@@ -5,7 +5,9 @@
   <title>Showrunner | DM Dashboard</title>
   <style>
     :root {
-      --bg: #0f0f12;
+      --bg: #0a0a0c;
+      --glass: rgba(20, 20, 25, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.1);
       --panel: #1a1a24;
       --accent: #bb86fc;
       --danger: #ff4757;
@@ -18,18 +20,44 @@
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
 
     body {
-      margin: 0; padding: 20px;
+      margin: 0; padding: 0;
       background-color: var(--bg);
       color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at top left, rgba(187,134,252,0.05) 0%, transparent 40%),
+        radial-gradient(circle at bottom right, rgba(3,218,198,0.05) 0%, transparent 40%);
     }
 
-    /* Header & Sync Status */
-    .header-bar {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--border);
+    /* --- Global Navbar --- */
+    .navbar {
+      height: 60px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+      border-bottom: 1px solid var(--glass-border); z-index: 100; position: sticky; top: 0;
     }
-    .header-bar h1 { margin: 0; color: var(--accent); font-size: 1.5rem; text-transform: uppercase; letter-spacing: 0.1em; }
-    
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; letter-spacing: 0.15em; font-size: 1.2rem; color: #fff; text-shadow: 0 0 10px rgba(187,134,252,0.5); }
+    .nav-links { display: flex; gap: 1rem; }
+    .nav-link {
+      color: var(--text); text-decoration: none; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;
+      letter-spacing: 0.1em; padding: 6px 12px; border-radius: 20px; border: 1px solid transparent; transition: 0.3s;
+    }
+    .nav-link:hover { background: rgba(255,255,255,0.05); border-color: var(--glass-border); color: #fff; }
+    .nav-link.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(187,134,252,0.2); }
+
+    /* --- Global Controls --- */
+    .global-controls {
+      padding: 15px 2rem; background: rgba(10,10,12,0.8); border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;
+    }
+    .room-selector-group { flex: 1; display: flex; align-items: center; gap: 10px; }
+    .room-selector-group label { color: var(--accent); font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.9rem; }
+    .room-selector-group select {
+      background: #111; color: #fff; padding: 8px 12px; border-radius: 4px;
+      width: 100%; max-width: 400px; box-sizing: border-box; border: 1px solid #444; outline: none; font-weight: bold;
+    }
+    .room-selector-group select:focus { border-color: var(--accent); }
+
     .status-badge {
       display: inline-flex; align-items: center; gap: 8px;
       background: #222; padding: 6px 12px; border-radius: 4px; border: 1px solid var(--border);
@@ -38,25 +66,24 @@
     .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); }
     .status-dot.online { background: var(--success); box-shadow: 0 0 8px var(--success); }
 
-    /* Grid Layout */
-    .dashboard-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px;
-    }
+    /* --- Workspace & Grid --- */
+    .workspace { padding: 2rem; }
+    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; }
 
     /* Player Control Panel */
     .player-card {
       background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
       padding: 15px; display: flex; flex-direction: column; gap: 15px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5); position: relative;
     }
     .player-header {
       display: flex; justify-content: space-between; align-items: center;
       border-bottom: 1px solid #333; padding-bottom: 10px;
     }
-    .player-name { margin: 0; font-size: 1.2rem; color: #fff; text-transform: uppercase; }
+    .player-name { margin: 0; font-size: 1.3rem; color: #fff; text-transform: uppercase; letter-spacing: 0.05em; }
     
     /* Control Sections */
-    .control-group { background: #111; padding: 10px; border-radius: 6px; border: 1px solid #222; }
+    .control-group { background: #111; padding: 12px; border-radius: 6px; border: 1px solid #222; }
     .control-group h4 { margin: 0 0 10px 0; font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
 
     /* Toggles */
@@ -73,26 +100,27 @@
     .input-row { display: flex; gap: 8px; margin-bottom: 8px; }
     input[type="text"], select {
       flex: 1; background: #222; border: 1px solid #444; color: #fff;
-      padding: 8px; border-radius: 4px; outline: none;
+      padding: 8px; border-radius: 4px; outline: none; font-size: 0.9rem;
     }
     input[type="text"]:focus, select:focus { border-color: var(--accent); }
     
     .btn-action {
       background: rgba(187, 134, 252, 0.1); border: 1px solid var(--accent); color: var(--accent);
-      padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.2s;
+      padding: 10px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.2s; font-size: 0.85rem; letter-spacing: 0.05em;
     }
     .btn-action:hover { background: var(--accent); color: #000; }
     .btn-danger { border-color: var(--danger); color: var(--danger); background: rgba(255, 71, 87, 0.1); }
-    .btn-danger:hover { background: var(--danger); color: #000; }
+    .btn-danger:hover:not(:disabled) { background: var(--danger); color: #000; }
+    .btn-danger:disabled { border-color: #444; color: #666; cursor: not-allowed; background: transparent; }
 
     /* Pending Receipts */
-    .receipt-log { font-size: 0.8rem; color: #aaa; max-height: 80px; overflow-y: auto; }
-    .receipt-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #333; }
+    .receipt-log { font-size: 0.8rem; color: #aaa; max-height: 100px; overflow-y: auto; background: #0a0a0c; padding: 8px; border-radius: 4px; border: 1px solid #222; }
+    .receipt-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #222; }
+    .receipt-item:last-child { border-bottom: none; }
     .receipt-pending { color: var(--warning); }
     .receipt-cleared { color: var(--success); }
 
-    /* Utilities */
-    .btn-system { background: #333; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    .btn-system { background: #333; color: #fff; border: 1px solid #555; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8rem; letter-spacing: 0.05em; }
     .btn-system:hover { background: #555; }
     
     #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 4000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
@@ -104,19 +132,40 @@
 </head>
 <body>
 
-  <div class="header-bar">
-    <h1>Showrunner Command</h1>
-    <div>
-      <button class="btn-system" onclick="seedDatabase()">[ INITIALIZE / SEED DATABASE ]</button>
-      <div class="status-badge" style="margin-left: 15px;">
+  <nav class="navbar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+      SHOWRUNNER // COMMAND
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link active">Dashboard</a>
+      <a href="dm-players.html" class="nav-link">DM Players</a>
+      <a href="notes.html" class="nav-link">Notes</a>
+      <a href="loot.html" class="nav-link">Loot</a>
+      <a href="data-forge.html" class="nav-link">Data Forge</a>
+    </div>
+  </nav>
+
+  <div class="global-controls">
+    <div class="room-selector-group">
+      <label for="global-room-select">Active Room Context:</label>
+      <select id="global-room-select" onchange="updateQuickActions()">
+        <option value="">-- No Room Selected --</option>
+      </select>
+    </div>
+    <div style="display: flex; gap: 15px; align-items: center;">
+      <button class="btn-system" onclick="seedDatabase()" title="Emergency tool to initialize missing players">[ SEED ROSTER ]</button>
+      <div class="status-badge">
         <div id="connection-dot" class="status-dot"></div>
-        <span id="connection-text">OFFLINE</span>
+        <span id="connection-text">AWAITING SYNC</span>
       </div>
     </div>
   </div>
 
-  <div id="dashboard-grid" class="dashboard-grid">
-    <div style="color: #666; font-style: italic;">Awaiting network sync...</div>
+  <div class="workspace">
+    <div id="dashboard-grid" class="dashboard-grid">
+      <div style="color: #666; font-style: italic; padding: 20px;">Establishing secure connection...</div>
+    </div>
   </div>
 
   <div id="toast-container"></div>
@@ -125,10 +174,11 @@
     const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
     let dmState = null;
     let isPushing = false;
+    let isFirstLoad = true;
 
     // --- Core Sync Engine ---
     async function pollNetwork() {
-      if (isPushing) return; // Don't interrupt a save
+      if (isPushing) return; 
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 4000);
@@ -136,41 +186,46 @@
         clearTimeout(timeoutId);
 
         if (res.ok) {
-          const data = await res.json();
-          dmState = data;
-          document.getElementById('connection-dot').classList.add('online');
+          dmState = await res.json();
+          document.getElementById('connection-dot').className = 'status-dot online';
           document.getElementById('connection-text').innerText = `SYNCED (v${dmState.version || 0})`;
-          renderDashboard();
+          
+          if (isFirstLoad) {
+            renderRoomSelector();
+            renderDashboardGrid();
+            isFirstLoad = false;
+          } else {
+            // Surgical UI update prevents erasing text inputs while typing
+            updateLiveUI(); 
+          }
         }
       } catch (e) {
-        document.getElementById('connection-dot').classList.remove('online');
+        document.getElementById('connection-dot').className = 'status-dot';
         document.getElementById('connection-text').innerText = "CONNECTION LOST";
       }
     }
 
-    // Start 5-second rapid polling for DM monitoring
+    // Start 5-second rapid polling
     pollNetwork();
     setInterval(pollNetwork, 5000);
 
-    // --- The Universal Mutator (Optimistic Locking) ---
+    // --- The Optimistic Locking Push Engine ---
     async function mutateAndPush(mutationCallback, successMessage) {
       if (isPushing) return showToast("Busy saving previous action...");
       isPushing = true;
+      document.body.style.cursor = 'wait';
       
       try {
-        // 1. Get latest state
         const fetchRes = await fetch(WORKER_URL);
         if (!fetchRes.ok) throw new Error("Fetch failed");
         let latestState = await fetchRes.json();
 
-        // 2. Apply the specific change
+        // Apply surgical changes to the absolute freshest state
         mutationCallback(latestState);
 
-        // 3. Increment & Timestamp
         latestState.version = (latestState.version || 0) + 1;
         latestState.last_modified = Date.now();
 
-        // 4. Push
         const payload = { 
           base_version: latestState.version - 1, 
           last_modified: latestState.last_modified,
@@ -186,16 +241,84 @@
         if (!postRes.ok) throw new Error("Version collision");
 
         dmState = latestState;
-        renderDashboard();
-        showToast(successMessage);
+        updateLiveUI(); // Re-sync UI immediately
+        if (successMessage) showToast(successMessage);
 
       } catch (e) {
         console.error(e);
-        showToast("Collision detected. Retrying is required.");
-        pollNetwork(); // Refresh UI to latest state
+        showToast("Sync collision. Refreshing to latest live state...");
+        pollNetwork(); // Pull freshest state on failure
       } finally {
         isPushing = false;
+        document.body.style.cursor = 'default';
       }
+    }
+
+    // --- Autofill Ecosystem ---
+    function renderRoomSelector() {
+      const select = document.getElementById('global-room-select');
+      const currentVal = select.value;
+      select.innerHTML = '<option value="">-- No Room Selected --</option>';
+      
+      if (dmState.campaign_notes && dmState.campaign_notes.rooms) {
+        dmState.campaign_notes.rooms.forEach((room, index) => {
+          if (!room.is_deleted) {
+            select.innerHTML += `<option value="${index}">${escapeHtml(room.room_id)}</option>`;
+          }
+        });
+      }
+      select.value = currentVal; 
+      updateQuickActions();
+    }
+
+    function updateQuickActions() {
+      const roomIdx = document.getElementById('global-room-select').value;
+      const achSelects = document.querySelectorAll('.quick-ach-select');
+      const memoSelects = document.querySelectorAll('.quick-memo-select');
+      
+      if (roomIdx === "") {
+        achSelects.forEach(s => s.innerHTML = '<option value="">-- Quick Autofill --</option>');
+        memoSelects.forEach(s => s.innerHTML = '<option value="">-- Quick Threat --</option>');
+        return;
+      }
+
+      const room = dmState.campaign_notes.rooms[roomIdx];
+      
+      // Populate Achievement/Loot options
+      let achHtml = '<option value="">-- Quick Autofill --</option>';
+      (room.achievements || []).forEach((ach, i) => {
+        let title = ach.raw_text.replace('#ACHIEVEMENT', '').split(/Reward:/i)[0].trim();
+        achHtml += `<option value="${i}">${escapeHtml(title)}</option>`;
+      });
+      achSelects.forEach(s => s.innerHTML = achHtml);
+
+      // Populate Memos (NPCs & Tooltips)
+      let memoHtml = '<option value="">-- Quick Threat --</option>';
+      let memoIndex = 0;
+      (room.npcs || []).forEach(npc => { memoHtml += `<option value="${escapeHtml(npc.raw_text.replace('#NPC', '').trim())}">[NPC] ${escapeHtml(npc.raw_text.substring(0,25))}...</option>`; });
+      (room.tooltips || []).forEach(tt => { memoHtml += `<option value="${escapeHtml(tt.raw_text.replace('#TOOLTIP', '').trim())}">[TOOLTIP] ${escapeHtml(tt.raw_text.substring(0,25))}...</option>`; });
+      memoSelects.forEach(s => s.innerHTML = memoHtml);
+    }
+
+    function fillAchievementData(playerIdx) {
+      const roomIdx = document.getElementById('global-room-select').value;
+      const achIdx = document.getElementById(`quick-ach-${playerIdx}`).value;
+      if (!roomIdx || achIdx === "") return;
+
+      const room = dmState.campaign_notes.rooms[roomIdx];
+      const achText = room.achievements[achIdx].raw_text.replace('#ACHIEVEMENT', '');
+      
+      const parts = achText.split(/Reward:/i);
+      const title = parts[0].trim();
+      const itemDesc = parts[1] ? parts[1].split('.')[0].trim() : "Unknown Item"; 
+
+      document.getElementById(`ach-title-${playerIdx}`).value = title;
+      document.getElementById(`loot-name-${playerIdx}`).value = itemDesc;
+    }
+
+    function fillMemoData(playerIdx) {
+      const memoText = document.getElementById(`quick-memo-${playerIdx}`).value;
+      if (memoText !== "") document.getElementById(`memo-text-${playerIdx}`).value = memoText;
     }
 
     // --- Action Handlers ---
@@ -203,81 +326,59 @@
       mutateAndPush((state) => {
         const p = state.players[playerIdx];
         if (!p.status.conditions) p.status.conditions = [];
-        
         const cLower = conditionStr.toLowerCase();
         const existingIdx = p.status.conditions.findIndex(c => c.toLowerCase() === cLower);
         
-        if (existingIdx >= 0) {
-          p.status.conditions.splice(existingIdx, 1); // Remove
-        } else {
-          p.status.conditions.push(conditionStr); // Add
-        }
-      }, `Condition updated for ${dmState.players[playerIdx].name}`);
+        if (existingIdx >= 0) p.status.conditions.splice(existingIdx, 1);
+        else p.status.conditions.push(conditionStr);
+      }, null); // Silent success
     }
 
     function dispatchLoot(playerIdx) {
-      const titleInput = document.getElementById(`loot-title-${playerIdx}`);
-      const rarityInput = document.getElementById(`loot-rarity-${playerIdx}`);
-      const title = titleInput.value.trim();
-      if (!title) return showToast("Item title cannot be blank.");
+      const title = document.getElementById(`ach-title-${playerIdx}`).value.trim();
+      const itemName = document.getElementById(`loot-name-${playerIdx}`).value.trim();
+      const rarity = document.getElementById(`loot-rarity-${playerIdx}`).value;
+
+      if (!title || !itemName) return showToast("Both Title and Item Name are required.");
 
       mutateAndPush((state) => {
         const p = state.players[playerIdx];
+        if (!p.achievements) p.achievements = { pending: [] };
         if (!p.achievements.pending) p.achievements.pending = [];
         
         p.achievements.pending.push({
           name: title,
           is_acknowledged: false,
-          rewards: { items: [{ rarity: rarityInput.value }] }
+          description: itemName,
+          rewards: { items: [{ name: itemName, rarity: rarity }] }
         });
-      }, `Loot dispatched to ${dmState.players[playerIdx].name}`);
+      }, `Transmitted [${title}] to ${dmState.players[playerIdx].name}`);
+    }
+
+    function dispatchMemo(playerIdx) {
+      const msg = document.getElementById(`memo-text-${playerIdx}`).value.trim();
+      if (!msg) return showToast("Memo cannot be blank.");
+
+      mutateAndPush((state) => {
+        const p = state.players[playerIdx];
+        if (!p.override) p.override = {};
+        p.override = { is_active: true, message: msg };
+      }, `Override sent to ${dmState.players[playerIdx].name}`);
     }
 
     function clearLoot(playerIdx) {
-      // Deletes all items that have been acknowledged to keep JSON clean
       mutateAndPush((state) => {
         const p = state.players[playerIdx];
-        if (p.achievements.pending) {
+        if (p.achievements?.pending) {
           p.achievements.pending = p.achievements.pending.filter(item => !item.is_acknowledged);
         }
       }, `Receipts cleared for ${dmState.players[playerIdx].name}`);
     }
 
-    function dispatchMemo(playerIdx) {
-      const memoInput = document.getElementById(`memo-text-${playerIdx}`);
-      const msg = memoInput.value.trim();
-      if (!msg) return showToast("Memo cannot be blank.");
-
-      mutateAndPush((state) => {
-        const p = state.players[playerIdx];
-        p.override = { is_active: true, message: msg };
-      }, `Override sent to ${dmState.players[playerIdx].name}`);
-    }
-
-    // --- Emergency Database Seeder ---
-    function seedDatabase() {
-      if(!confirm("WARNING: This will wipe the current database and reconstruct the 5-player roster. Proceed?")) return;
-      
-      const seedState = {
-        version: 0,
-        players: [
-          { name: "Chuck", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } },
-          { name: "Tilly", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } },
-          { name: "Hendrick", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } },
-          { name: "Aelar", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } },
-          { name: "Jimothy", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } }
-        ]
-      };
-
-      mutateAndPush((state) => {
-        state.players = seedState.players;
-      }, "Database Initialized.");
-    }
-
     // --- UI Rendering ---
-    function renderDashboard() {
+    function renderDashboardGrid() {
       if (!dmState || !dmState.players || dmState.players.length === 0) {
-        document.getElementById('dashboard-grid').innerHTML = `<div style="color:var(--danger)">Database is empty. Click INITIALIZE above.</div>`;
+        document.getElementById('dashboard-grid').innerHTML = `<div style="color:var(--danger)">Roster empty.</div>`;
         return;
       }
 
@@ -286,84 +387,131 @@
 
       dmState.players.forEach((p, idx) => {
         if (p.is_deleted) return;
-
-        const conds = (p.status?.conditions || []).map(c => c.toLowerCase());
-        const isPoisoned = conds.includes('poisoned');
-        const isBleeding = conds.includes('bleeding');
-        const isBlinded = conds.includes('blinded');
-        const isCritical = conds.includes('critical trauma');
-
-        const pendingItems = p.achievements?.pending || [];
-        const hasCleared = pendingItems.some(i => i.is_acknowledged);
-
-        let receiptHtml = '';
-        if (pendingItems.length === 0) {
-          receiptHtml = `<div class="receipt-item" style="color:#555;">Inbox clear.</div>`;
-        } else {
-          pendingItems.forEach(i => {
-            const statusClass = i.is_acknowledged ? 'receipt-cleared' : 'receipt-pending';
-            const statusIcon = i.is_acknowledged ? '✓ ACKNOWLEDGED' : '⚠ PENDING';
-            receiptHtml += `<div class="receipt-item"><span style="color:#fff">${escapeHtml(i.name)}</span> <span class="${statusClass}">${statusIcon}</span></div>`;
-          });
-        }
-
-        const isOverrideActive = p.override?.is_active;
-
         html += `
           <div class="player-card">
             <div class="player-header">
               <h2 class="player-name">${escapeHtml(p.name)}</h2>
-              ${isOverrideActive ? '<span style="color:var(--danger); font-size:0.8rem; font-weight:bold;">⚠ SYSTEM LOCKED</span>' : ''}
+              <div id="override-badge-${idx}"></div>
             </div>
 
             <div class="control-group">
               <h4>VFX / Conditions</h4>
               <div class="toggle-grid">
-                <button class="btn-toggle ${isBleeding ? 'active' : ''}" onclick="toggleCondition(${idx}, 'Bleeding')">Bleeding</button>
-                <button class="btn-toggle ${isPoisoned ? 'active poison' : ''}" onclick="toggleCondition(${idx}, 'Poisoned')">Poisoned</button>
-                <button class="btn-toggle ${isBlinded ? 'active' : ''}" onclick="toggleCondition(${idx}, 'Blinded')">Blinded</button>
-                <button class="btn-toggle ${isCritical ? 'active' : ''}" onclick="toggleCondition(${idx}, 'Critical Trauma')">Critical</button>
+                <button id="cond-bleed-${idx}" class="btn-toggle" onclick="toggleCondition(${idx}, 'Bleeding')">Bleeding</button>
+                <button id="cond-poison-${idx}" class="btn-toggle" onclick="toggleCondition(${idx}, 'Poisoned')">Poisoned</button>
+                <button id="cond-blind-${idx}" class="btn-toggle" onclick="toggleCondition(${idx}, 'Blinded')">Blinded</button>
+                <button id="cond-crit-${idx}" class="btn-toggle" onclick="toggleCondition(${idx}, 'Critical Trauma')">Critical</button>
               </div>
             </div>
 
             <div class="control-group">
-              <h4>Dispatch Supply Drop</h4>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h4>Dispatch Achievement & Loot</h4>
+                <select id="quick-ach-${idx}" class="quick-ach-select" onchange="fillAchievementData(${idx})" style="background: #222; color: var(--accent); border: 1px solid #444; max-width: 160px; padding: 4px; font-size: 0.8rem; border-radius: 4px;">
+                  <option value="">-- Quick Autofill --</option>
+                </select>
+              </div>
+              <div class="input-row"><input type="text" id="ach-title-${idx}" placeholder="Achievement Title..."></div>
               <div class="input-row">
-                <input type="text" id="loot-title-${idx}" placeholder="Achievement Title...">
-                <select id="loot-rarity-${idx}" style="max-width: 120px;">
+                <input type="text" id="loot-name-${idx}" placeholder="Reward Item Name...">
+                <select id="loot-rarity-${idx}" style="max-width: 110px;">
                   <option value="standard" selected>Standard</option>
                   <option value="rare">Rare</option>
                   <option value="contraband">Contraband</option>
                 </select>
               </div>
-              <button class="btn-action" style="width: 100%;" onclick="dispatchLoot(${idx})">TRANSMIT LOOT</button>
+              <button class="btn-action" style="width: 100%;" onclick="dispatchLoot(${idx})">TRANSMIT TO HUD</button>
             </div>
 
             <div class="control-group">
-              <h4>Direct Override Memo</h4>
-              <div class="input-row">
-                <input type="text" id="memo-text-${idx}" placeholder="Type corporate threat...">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h4>Direct Override Memo</h4>
+                <select id="quick-memo-${idx}" class="quick-memo-select" onchange="fillMemoData(${idx})" style="background: #222; color: var(--warning); border: 1px solid #444; max-width: 160px; padding: 4px; font-size: 0.8rem; border-radius: 4px;">
+                  <option value="">-- Quick Threat --</option>
+                </select>
               </div>
-              <button class="btn-action btn-danger" style="width: 100%;" onclick="dispatchMemo(${idx})" ${isOverrideActive ? 'disabled' : ''}>
-                ${isOverrideActive ? 'AWAITING COMPLIANCE...' : 'LOCK SCREEN & SEND'}
-              </button>
+              <div class="input-row"><input type="text" id="memo-text-${idx}" placeholder="Type corporate threat..."></div>
+              <button id="btn-override-${idx}" class="btn-action btn-danger" style="width: 100%;" onclick="dispatchMemo(${idx})">LOCK SCREEN & SEND</button>
             </div>
 
             <div class="control-group">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                 <h4>Pending Receipts</h4>
-                ${hasCleared ? `<button class="btn-icon" style="background:transparent; border:none; color:var(--accent); cursor:pointer; font-size:0.7rem;" onclick="clearLoot(${idx})">CLEAR LOG</button>` : ''}
+                <button id="clear-btn-${idx}" class="btn-toggle" style="display:none; background:transparent; border:none; color:var(--accent); cursor:pointer; font-size:0.7rem; padding: 0;" onclick="clearLoot(${idx})">[ CLEAR COMPLETED ]</button>
               </div>
-              <div class="receipt-log">
-                ${receiptHtml}
-              </div>
+              <div class="receipt-log" id="receipt-log-${idx}"></div>
             </div>
-
           </div>
         `;
       });
 
       grid.innerHTML = html;
+      updateQuickActions();
+      updateLiveUI(); // Initial state sync
+    }
+
+    // Surgical UI Updates (Prevents DOM Clobbering)
+    function updateLiveUI() {
+      if (!dmState || !dmState.players) return;
+      
+      dmState.players.forEach((p, idx) => {
+        if (p.is_deleted) return;
+        
+        // 1. Update Receipts
+        const logDiv = document.getElementById(`receipt-log-${idx}`);
+        if (logDiv) {
+          const pendingItems = p.achievements?.pending || [];
+          let receiptHtml = '';
+          let hasCleared = false;
+          if (pendingItems.length === 0) {
+            receiptHtml = `<div class="receipt-item" style="color:#555;">Inbox clear.</div>`;
+          } else {
+            pendingItems.forEach(i => {
+              if (i.is_acknowledged) hasCleared = true;
+              const statusClass = i.is_acknowledged ? 'receipt-cleared' : 'receipt-pending';
+              const statusIcon = i.is_acknowledged ? '✓ ACKNOWLEDGED' : '⚠ PENDING';
+              receiptHtml += `<div class="receipt-item"><span style="color:#fff">${escapeHtml(i.name)}</span> <span class="${statusClass}">${statusIcon}</span></div>`;
+            });
+          }
+          logDiv.innerHTML = receiptHtml;
+          
+          const clearBtn = document.getElementById(`clear-btn-${idx}`);
+          if (clearBtn) clearBtn.style.display = hasCleared ? 'inline-block' : 'none';
+        }
+
+        // 2. Update Conditions
+        const conds = (p.status?.conditions || []).map(c => c.toLowerCase());
+        const bindTgl = (id, check) => { const el = document.getElementById(id); if(el) el.className = `btn-toggle ${check}`; };
+        
+        bindTgl(`cond-bleed-${idx}`, conds.includes('bleeding') ? 'active' : '');
+        bindTgl(`cond-poison-${idx}`, conds.includes('poisoned') ? 'active poison' : '');
+        bindTgl(`cond-blind-${idx}`, conds.includes('blinded') ? 'active' : '');
+        bindTgl(`cond-crit-${idx}`, (conds.includes('critical trauma') || conds.includes('critical')) ? 'active' : '');
+
+        // 3. Update Override Button Status
+        const overrideBtn = document.getElementById(`btn-override-${idx}`);
+        const overrideBadge = document.getElementById(`override-badge-${idx}`);
+        if (overrideBtn) {
+          const isLocked = p.override?.is_active;
+          overrideBtn.disabled = isLocked;
+          overrideBtn.innerText = isLocked ? 'AWAITING COMPLIANCE...' : 'LOCK SCREEN & SEND';
+          if (overrideBadge) overrideBadge.innerHTML = isLocked ? '<span style="color:var(--danger); font-size:0.8rem; font-weight:bold;">⚠ SYSTEM LOCKED</span>' : '';
+        }
+      });
+    }
+
+    // --- Emergency Seeder ---
+    function seedDatabase() {
+      if(!confirm("WARNING: This will wipe the current player roster (Notes/Loot are safe). Proceed?")) return;
+      mutateAndPush((state) => {
+        state.players = [
+          { name: "Chuck", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } },
+          { name: "Tilly", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } },
+          { name: "Hendrick", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } },
+          { name: "Aelar", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } },
+          { name: "Jimothy", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } }
+        ];
+      }, "Roster Seeded.");
     }
 
     function showToast(msg) {
