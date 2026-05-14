@@ -225,7 +225,7 @@
       </div>
       <div class="identity-text">
         <h1 id="player-name-display">AWAITING LOGIN</h1>
-        <span>DUNGEON CRAWLER | WORLD: EARTH</span>
+        <span>DUNGEON CRAWLER WORLD: EARTH</span>
       </div>
     </div>
 
@@ -240,7 +240,7 @@
   <div id="roster-modal" class="modal-overlay hidden" onclick="if(event.target===this) document.getElementById('roster-modal').classList.add('hidden')">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Select Identity</h3>
+        <h3>Select Crawler</h3>
         <button class="btn-icon" style="padding: 6px;" onclick="document.getElementById('roster-modal').classList.add('hidden')">
           <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
@@ -252,14 +252,14 @@
   <div id="inbox-modal" class="modal-overlay hidden" onclick="if(event.target===this) closeInboxModal()">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Corporate Inbox</h3>
+        <h3>Notifications</h3>
         <button class="btn-icon" style="padding: 6px;" onclick="closeInboxModal()">
           <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
       <div id="modal-loot-list"></div>
       <button id="btn-acknowledge" class="btn-ack hidden" onclick="acknowledgeAll()">Acknowledge Receipt</button>
-      <div id="receipt-msg" class="receipt-msg hidden">Signal sent to Management. Waiting for processing...</div>
+      <div id="receipt-msg" class="receipt-msg hidden">Signal sent. Waiting for processing...</div>
     </div>
   </div>
 
@@ -269,7 +269,7 @@
         <h3>[ PRIORITY TRANSMISSION ]</h3>
       </div>
       <div id="memo-text"></div>
-      <button id="btn-comply" class="btn-ack btn-danger" onclick="complyWithMemo()">[ I COMPLY ]</button>
+      <button id="btn-comply" class="btn-ack btn-danger" onclick="complyWithMemo()">[ COMPLY ]</button>
     </div>
   </div>
 
@@ -284,11 +284,11 @@
     let localState = { 
       version: 0, 
       players: [
-        { name: "Chuck (Variant Human Battlemaster)", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } },
-        { name: "Tilly (High Elf Rogue)", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } },
-        { name: "Hendrick (Mountain Dwarf Cleric)", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } },
-        { name: "Omen (Tiefling Warlock)", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } },
-        { name: "Zephyr (Tabaxi Monk)", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } }
+        { name: "Chuck", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } },
+        { name: "Tilly", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } },
+        { name: "Hendrick", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } },
+        { name: "Aelar", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } },
+        { name: "Jimothy", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } }
       ]
     };
     
@@ -314,7 +314,7 @@
         
         fullMessage = `[SYS_BROADCAST] ${sub} ${act} ${reslt} ${sign}`;
       } catch (e) {
-        fullMessage = "[SYS_BROADCAST] MANAGEMENT IS CURRENTLY UNAVAILABLE. PLEASE CONTINUE TO BLEED PRODUCTIVELY.";
+        fullMessage = "[SYS_BROADCAST] MANAGEMENT IS CURRENTLY UNAVAILABLE. PLEASE CONTINUE TO KILL PRODUCTIVELY.";
       }
 
       const track = document.querySelector('.marquee-track');
