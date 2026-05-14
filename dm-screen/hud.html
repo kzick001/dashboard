@@ -28,31 +28,39 @@
 
     .hidden { display: none !important; }
 
-    /* --- 1. Procedural AI Marquee --- */
+    /* --- 1. Procedural AI Marquee (Double-Track) --- */
     .ai-marquee-container {
       position: absolute;
       top: 0; left: 0; width: 100%;
       background: rgba(0, 0, 0, 0.95);
       border-bottom: 1px solid var(--ai-terminal);
-      padding: 4px 0;
+      padding: 6px 0;
       overflow: hidden;
       display: flex;
+      white-space: nowrap;
       z-index: 100;
       box-shadow: 0 2px 10px rgba(0,0,0,0.8);
     }
+    
+    .marquee-track {
+      display: flex;
+      width: max-content;
+      animation: scroll-left 40s linear infinite; /* Adjust for scroll speed */
+    }
+
     .ai-marquee-text {
-      white-space: nowrap;
       font-family: monospace;
       font-size: 0.8rem;
       font-weight: bold;
       color: var(--ai-terminal);
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      animation: scroll-left 20s linear infinite;
+      padding-right: 50px; /* Gap between the repeating phrases */
     }
+
     @keyframes scroll-left {
-      0% { transform: translateX(100vw); }
-      100% { transform: translateX(-100%); }
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); } /* Slides exactly half the track, then snaps seamlessly */
     }
 
     /* --- 2. HUD Wrapper & Form Factors --- */
@@ -70,7 +78,7 @@
 
     /* Layout A: Horizontal Strip */
     .hud-wrapper.horizontal {
-      top: 25px; /* Just below marquee */
+      top: 30px; /* Just below marquee */
       left: 0;
       width: 100%;
       height: 60px;
@@ -160,8 +168,9 @@
 <body>
 
   <div class="ai-marquee-container">
-    <div class="ai-marquee-text" id="ai-marquee-text">
-      [SYS_BROADCAST] CONNECTING TO MANAGEMENT TERMINAL... PLEASE HOLD.
+    <div class="marquee-track">
+      <span class="ai-marquee-text"></span>
+      <span class="ai-marquee-text" aria-hidden="true"></span>
     </div>
   </div>
 
@@ -222,7 +231,7 @@
     let localState = { players: [], version: 0 };
     let activePlayerIndex = null;
 
-    // --- Phase 1: Procedural AI Marquee (Dynamic Fetch) ---
+    // --- Phase 1: Procedural AI Marquee (Dynamic Fetch & Double-Track) ---
     async function generateAiMessage() {
       try {
         const res = await fetch('ticker.json');
@@ -234,10 +243,18 @@
         const reslt = data.results[Math.floor(Math.random() * data.results.length)];
         const sign = data.signoffs[Math.floor(Math.random() * data.signoffs.length)];
         
-        document.getElementById('ai-marquee-text').innerText = `[SYS] ${sub} ${act} ${reslt} ${sign}`;
+        const fullMessage = `[SYS_BROADCAST] ${sub} ${act} ${reslt} ${sign}`;
+        
+        // Inject into both spans for the infinite scroll illusion
+        document.querySelectorAll('.ai-marquee-text').forEach(el => {
+          el.innerText = fullMessage;
+        });
       } catch (e) {
         console.warn("Failed to load ticker data, using fallback.");
-        document.getElementById('ai-marquee-text').innerText = "[SYS_BROADCAST] MANAGEMENT IS CURRENTLY UNAVAILABLE. PLEASE CONTINUE TO BLEED PRODUCTIVELY.";
+        const fallbackMsg = "[SYS_BROADCAST] MANAGEMENT IS CURRENTLY UNAVAILABLE. PLEASE CONTINUE TO BLEED PRODUCTIVELY.";
+        document.querySelectorAll('.ai-marquee-text').forEach(el => {
+          el.innerText = fallbackMsg;
+        });
       }
     }
     
