@@ -9,22 +9,36 @@
     :root {
       --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --text-muted: #888;
       --accent: #bb86fc; --info: #74b9ff; --success: #03dac6; --danger: #cf6679;
-      --header: #0f0f0f; --nav-bg: #161616; --scratch-bg: #0a0a0a;
+      --nav-bg: #161616; --scratch-bg: #0a0a0a;
+      --glass: rgba(20, 20, 25, 0.7); --glass-border: rgba(255, 255, 255, 0.1);
     }
     
-    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; line-height: 1.5; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; line-height: 1.5; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
     .hidden { display: none !important; }
 
-    /* Utility Classes (Restored) */
     .flex-between { display: flex; justify-content: space-between; align-items: center; }
     .flex-gap { display: flex; gap: 0.5rem; align-items: center; }
 
-    /* Header Bar */
-    header { background: var(--header); padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; z-index: 200; box-shadow: 0 2px 8px rgba(0,0,0,0.5); flex-shrink: 0; }
-    .header-title { font-size: 1.2rem; font-weight: bold; letter-spacing: 0.1em; color: var(--accent); text-transform: uppercase; display: flex; align-items: center; gap: 1rem; }
-    .header-controls { display: flex; gap: 1rem; align-items: center; color: var(--text-muted); font-size: 0.9rem; }
-    
-    /* SVG Buttons */
+    /* --- Global Navbar & Controls --- */
+    .navbar {
+      height: 60px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+      border-bottom: 1px solid var(--glass-border); z-index: 200; flex-shrink: 0;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; letter-spacing: 0.15em; font-size: 1.2rem; color: #fff; text-shadow: 0 0 10px rgba(187,134,252,0.5); }
+    .nav-links { display: flex; gap: 1rem; }
+    .nav-link {
+      color: var(--text); text-decoration: none; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;
+      letter-spacing: 0.1em; padding: 6px 12px; border-radius: 20px; border: 1px solid transparent; transition: 0.3s;
+    }
+    .nav-link:hover { background: rgba(255,255,255,0.05); border-color: var(--glass-border); color: #fff; }
+    .nav-link.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(187,134,252,0.2); }
+
+    .global-controls {
+      padding: 10px 2rem; background: rgba(10,10,12,0.8); border-bottom: 1px solid #333;
+      display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+    }
+
     .btn-icon { background: transparent; border: none; padding: 4px; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; transition: 0.2s; }
     .btn-icon:hover { color: #fff; background: rgba(255,255,255,0.1); }
     .btn-icon.active { color: var(--accent); }
@@ -36,12 +50,9 @@
     .showrunner-layout.hide-both { grid-template-columns: 0px 1fr 0px; }
 
     @media (max-width: 900px) {
-      .showrunner-layout, .showrunner-layout.hide-left, .showrunner-layout.hide-right, .showrunner-layout.hide-both { 
-        display: flex; flex-direction: column; overflow-y: auto; 
-      }
+      .showrunner-layout, .showrunner-layout.hide-left, .showrunner-layout.hide-right, .showrunner-layout.hide-both { display: flex; flex-direction: column; overflow-y: auto; }
       .nav-sidebar, .scratchpad-sidebar { width: 100%; height: 350px; flex-shrink: 0; border: none; border-bottom: 1px solid #333; }
       .main-stage { overflow: visible; padding: 1.5rem; }
-      .stage-content { padding-bottom: 2rem; }
     }
 
     /* Columns */
@@ -58,33 +69,30 @@
     .scratchpad-header { padding: 0.75rem 1rem; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; background: #111; }
     .scratchpad-textarea { flex-grow: 1; background: transparent; border: none; color: #bbb; padding: 1.5rem; font-family: monospace; font-size: 0.95rem; resize: none; outline: none; line-height: 1.6; }
 
-    /* Session Dropdown UI */
     .session-select { background: #222; color: #fff; border: 1px solid #444; padding: 4px 8px; border-radius: 4px; font-size: 0.9rem; outline: none; cursor: pointer; max-width: 180px; }
     .session-select:focus { border-color: var(--accent); }
 
     /* Visual Hierarchy Components */
     .read-aloud-block { background: #1a1e24; border-left: 4px solid var(--info); padding: 1.25rem 1.5rem; font-family: 'Georgia', serif; font-style: italic; font-size: 1.15rem; color: #d1d5db; border-radius: 0 4px 4px 0; margin: 1.5rem 0; line-height: 1.6; }
-    .ai-terminal { background: #050505; border: 1px solid #333; color: #55efc4; font-family: monospace; padding: 1rem 1.5rem; border-radius: 4px; margin: 1.5rem 0; font-size: 0.95rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
-    .ai-terminal::before { content: ">_ "; color: #55efc4; }
-    .mechanics-list { list-style-type: none; padding: 0; margin: 1.5rem 0; }
-    .mechanics-list li { background: rgba(255,255,255,0.03); border: 1px solid #333; padding: 1rem; margin-bottom: 0.5rem; border-radius: 4px; }
+    .mechanics-block { background: rgba(255,255,255,0.03); border: 1px solid #333; padding: 1.5rem; border-radius: 4px; margin: 1.5rem 0; white-space: pre-wrap; font-size: 1.05rem; line-height: 1.6;}
+    
+    .ai-terminal { background: #050505; border: 1px solid #333; color: #55efc4; font-family: monospace; padding: 1rem 1.5rem; border-radius: 4px; margin: 1.5rem 0; font-size: 0.95rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); white-space: pre-wrap;}
+    .ai-terminal::before { content: ">_ SYSTEM: "; color: var(--accent); font-weight: bold;}
+    
+    .npc-card { background: #1f1f1f; border-top: 3px solid var(--danger); padding: 1.5rem; border-radius: 6px; margin: 1.5rem 0; white-space: pre-wrap;}
+    .loot-card { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 1rem 1.5rem; border-radius: 4px; margin-bottom: 0.5rem; border-left: 3px solid #f1c40f; }
     .math-highlight { color: #ffeaa7; font-weight: bold; background: rgba(255, 234, 167, 0.1); padding: 0 4px; border-radius: 2px; }
 
-    .encounter-card { background: #1f1f1f; border-top: 3px solid var(--danger); padding: 1.5rem; border-radius: 6px; margin: 1.5rem 0; }
-    .quote-pill { display: inline-block; background: rgba(255, 255, 255, 0.1); border-left: 2px solid var(--accent); padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; margin: 4px 4px 4px 0; font-style: italic; }
-
-    .loot-card { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 1rem 1.5rem; border-radius: 4px; margin-bottom: 0.5rem; border-left: 3px solid #f1c40f; }
-
     /* Inline Editing */
-    .edit-wrapper { position: relative; display: inline-flex; width: 100%; align-items: center; }
+    .edit-wrapper { position: relative; display: inline-block; width: 100%; align-items: center; }
     .edit-val { width: 100%; white-space: pre-wrap; overflow-wrap: break-word; word-break: break-word; }
     .edit-trigger { opacity: 0; position: absolute; right: 0; top: 0; background: rgba(0,0,0,0.8); border: 1px solid #555; border-radius: 4px; padding: 4px; color: var(--info); cursor: pointer; transition: 0.2s; }
     .edit-wrapper:hover .edit-trigger { opacity: 1; }
     .inline-input { background: #111; color: #fff; border: 1px dashed var(--info); padding: 4px; border-radius: 3px; font-family: inherit; font-size: inherit; font-style: inherit; outline: none; width: 100%; box-sizing: border-box; resize: vertical; min-height: 2em; }
 
-    /* Modals, Toasts & Popovers */
+    /* Modals & Toasts */
     #toast-container { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
-    .toast { background: rgba(30, 30, 30, 0.95); color: #fff; padding: 0.75rem 1.5rem; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 0.95rem; border: 1px solid var(--accent); animation: fadein 0.3s, fadeout 0.3s 2.7s forwards; }
+    .toast { background: rgba(10, 10, 12, 0.95); color: #fff; padding: 0.75rem 1.5rem; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 0.95rem; border: 1px solid var(--accent); animation: fadein 0.3s, fadeout 0.3s 2.7s forwards; }
     @keyframes fadein { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
     
@@ -94,70 +102,48 @@
     .btn-send:hover { background: var(--accent); color: #000; }
     .btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
 
-    /* Context Popover for Awards */
     .award-wrapper { position: relative; display: inline-block; }
     .award-popover { position: absolute; right: 0; top: 110%; background: #222; border: 1px solid #555; border-radius: 6px; width: 180px; z-index: 50; box-shadow: 0 8px 16px rgba(0,0,0,0.8); display: flex; flex-direction: column; overflow: hidden; }
     .popover-title { padding: 8px 12px; font-size: 0.8rem; color: #888; border-bottom: 1px solid #444; background: #1a1a1a; text-transform: uppercase; letter-spacing: 0.05em; }
     .popover-item { padding: 10px 12px; font-size: 0.95rem; cursor: pointer; transition: 0.1s; }
     .popover-item:hover { background: rgba(187, 134, 252, 0.2); color: #fff; }
-
-    /* System Import Modal */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 999; display: flex; align-items: center; justify-content: center; }
-    .modal-content { background: var(--card); padding: 2rem; border-radius: 8px; border: 1px solid #444; width: 90%; max-width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-    .modal-content h2 { margin-top: 0; color: var(--accent); }
-    .modal-content textarea { width: 100%; background: #111; color: #fff; border: 1px solid #444; padding: 0.75rem; border-radius: 4px; font-family: monospace; box-sizing: border-box; resize: vertical; margin: 1rem 0; outline: none; }
-    .modal-content textarea:focus { border-color: var(--accent); }
   </style>
 </head>
 <body>
 
-  <header>
-    <div class="header-title">
-      <button class="btn-icon" onclick="toggleLeft()" title="Toggle Index" id="btn-left">
-        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-      </button>
-      SHOWRUNNER <span style="color:#555">|</span> NOTES
+  <nav class="navbar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+      SHOWRUNNER // NOTES
     </div>
-    <div class="header-controls">
-      <button class="btn-icon" onclick="undo()" title="Undo">
-        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3l-3 2.7"></path></svg>
-      </button>
-      <button class="btn-icon" onclick="redo()" title="Redo">
-        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>
-      </button>
-      <button class="btn-icon" onclick="toggleRight()" title="Toggle Scratchpad" id="btn-right">
-        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="15" y1="3" x2="15" y2="21"></line></svg>
-      </button>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Dashboard</a>
+      <a href="dm-players.html" class="nav-link">DM Players</a>
+      <a href="notes.html" class="nav-link active">Notes</a>
+      <a href="loot.html" class="nav-link">Loot</a>
+      <a href="data-forge.html" class="nav-link">Data Forge</a>
     </div>
-  </header>
+  </nav>
+
+  <div class="global-controls">
+    <button class="btn-icon" onclick="toggleLeft()" title="Toggle Index" id="btn-left">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+    </button>
+    <div class="flex-gap">
+      <button class="btn-icon" onclick="undo()" title="Undo">⟲</button>
+      <button class="btn-icon" onclick="redo()" title="Redo">⟳</button>
+    </div>
+    <button class="btn-icon" onclick="toggleRight()" title="Toggle Scratchpad" id="btn-right">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+    </button>
+  </div>
 
   <div id="toast-container"></div>
-
-  <div id="import-modal" class="modal-overlay hidden">
-    <div class="modal-content">
-      <h2>Data Management</h2>
-      <p style="color:#aaa; font-size:0.9rem;">Paste a JSON patch to merge new rooms into your campaign, or perform a hard overwrite to replace everything.</p>
-      <textarea id="import-data" rows="8" placeholder='{ "campaign_notes": { "rooms": [ ... ] } }'></textarea>
-      <div class="flex-between">
-        <div class="flex-gap">
-          <button class="btn btn-send" onclick="mergeNotes()">+ Merge Notes</button>
-          <button class="btn btn-danger" onclick="overwriteNotes()">⚠ Hard Overwrite</button>
-        </div>
-        <button class="btn" onclick="toggleImportModal()">Cancel</button>
-      </div>
-    </div>
-  </div>
 
   <div class="showrunner-layout" id="main-layout">
     
     <div class="nav-sidebar">
       <div class="nav-list" id="nav-list"></div>
-      <div style="padding: 1rem; border-top: 1px solid #333;">
-        <button class="btn" style="width: 100%; justify-content: center;" onclick="toggleImportModal()">
-          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-          Import Notes
-        </button>
-      </div>
     </div>
 
     <div class="main-stage" id="main-stage">
@@ -185,106 +171,79 @@
 
   <script>
     const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
-    
-    let appState = {
-      campaign_notes: {
-        sessions: [
-          { id: Date.now(), title: "Session 1", content: "Initial campaign setup notes..." }
-        ],
-        rooms: [
-          {
-            id: "room_17a",
-            title: "Room 17a: The Waiting Area",
-            read_aloud: "The air in this wide anteroom smells of cheap carpet cleaner and simmering resentment. A labyrinth of faded velvet ropes zigzags toward a faux-wood podium...",
-            mechanics: [
-              "Line-Skipper's Penance: Any Crawler who attempts to climb over or duck under the velvet ropes instead of walking the maze triggers the trap. The ropes animate, lashing out like whips (+5 to hit, 1d4 bludgeoning damage) and grappling the target (Escape DC 13 Dexterity/Acrobatics)."
-            ],
-            ai_tooltip: "[SCANNING ENVIRONMENT...] Target: The Bowl of Mints. Oh, look. Complimentary refreshments... Go on. Pop one in.",
-            encounters: [
-              {
-                name: "\"Brenda,\" The Eternal Hostess",
-                cr: "3",
-                tactics: "She won't actively attack unless a Crawler attempts to bypass the podium or attack her first.",
-                quotes: ["PARTY OF FOUR? IT'S GOING TO BE A FORTY-FIVE MINUTE WAIT."]
-              }
-            ],
-            loot: [
-              {
-                achievement_name: "Karen In Training",
-                item_name: "The Vibrating Pager of Anticipation",
-                item_desc: "A chunky, greasy plastic coaster. It buzzes aggressively."
-              }
-            ]
-          }
-        ]
-      },
-      players: [] // Pulled from KV to populate award menus
-    };
-
+    let appState = { campaign_notes: { rooms: [], sessions: [] }, players: [] };
     let historyStack = [];
     let redoStack = [];
     let currentRoomIndex = 0; 
     let currentSessionId = null;
+    let isPushing = false;
 
-    // --- Core Systems & Migration ---
-    function saveLocal() {
-      localStorage.setItem('showrunner_state', JSON.stringify(appState));
-    }
+    function saveLocal() { localStorage.setItem('showrunner_state', JSON.stringify(appState)); }
 
-    async function syncToKV() {
+    // --- The Optimistic Locking Push Engine ---
+    async function mutateAndPush(mutationCallback, successMessage) {
+      if (isPushing) return showToast("Busy saving previous action...");
+      isPushing = true;
+      document.body.style.cursor = 'wait';
+      
       try {
-        let payload = appState;
-        const res = await fetch(WORKER_URL);
-        if (res.ok) {
-          const remote = await res.json();
-          // Safe deep-merge to prevent notes.html from wiping out loot_tables or players
-          payload = {
-            ...remote,
-            ...appState,
-            players: appState.players && appState.players.length > 0 ? appState.players : (remote.players || []),
-            campaign_notes: appState.campaign_notes || remote.campaign_notes || { rooms: [], sessions: [] }
-          };
-        }
-        await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      } catch (e) { console.error("KV Sync failed", e); }
+        const fetchRes = await fetch(WORKER_URL);
+        if (!fetchRes.ok) throw new Error("Fetch failed");
+        let latestState = await fetchRes.json();
+
+        // Apply surgical changes
+        mutationCallback(latestState);
+
+        latestState.version = (latestState.version || 0) + 1;
+        latestState.last_modified = Date.now();
+
+        const payload = { 
+          base_version: latestState.version - 1, 
+          last_modified: latestState.last_modified,
+          data: latestState 
+        };
+        
+        const postRes = await fetch(WORKER_URL, { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload) 
+        });
+        
+        if (!postRes.ok) throw new Error("Version collision");
+
+        appState = latestState;
+        saveLocal();
+        renderAll();
+        if (successMessage) showToast(successMessage);
+
+      } catch (e) {
+        console.error(e);
+        showToast("Sync collision. Refreshing to latest live state...");
+        await init(); 
+      } finally {
+        isPushing = false;
+        document.body.style.cursor = 'default';
+      }
     }
 
     async function init() {
-      // 1. Fetch Master State from KV (if available)
       try {
         const response = await fetch(WORKER_URL);
         if (response.ok) {
           const data = await response.json();
           if (data && data.campaign_notes) appState = data;
-          else if (data && data.players) {
-            // Keep local notes, just grab the players
-            appState.players = data.players;
-          }
+          else if (data && data.players) appState.players = data.players;
         }
       } catch (e) {
-        // Fallback to local storage
         const local = localStorage.getItem('showrunner_state');
-        if (local) {
-          try { appState = JSON.parse(local); } catch(err) { console.warn("Local state corrupt."); }
-        }
+        if (local) { try { appState = JSON.parse(local); } catch(err) {} }
       }
 
-      // 2. Data Migration
       if (!appState.campaign_notes) appState.campaign_notes = { rooms: [], sessions: [] };
-      if (!appState.campaign_notes.sessions) {
-        appState.campaign_notes.sessions = [];
-        if (appState.campaign_notes.global_scratchpad) {
-          appState.campaign_notes.sessions.push({
-            id: Date.now(),
-            title: "Legacy Scratchpad",
-            content: appState.campaign_notes.global_scratchpad
-          });
-          delete appState.campaign_notes.global_scratchpad;
-        } else {
-          appState.campaign_notes.sessions.push({ id: Date.now(), title: "Session 1", content: "" });
-        }
+      if (!appState.campaign_notes.sessions) appState.campaign_notes.sessions = [];
+      if (appState.campaign_notes.sessions.length === 0) {
+        appState.campaign_notes.sessions.push({ id: Date.now(), title: "Session 1", content: "" });
       }
-      
       currentSessionId = appState.campaign_notes.sessions[0].id;
       renderAll();
     }
@@ -298,15 +257,15 @@
     function undo() {
       if (historyStack.length === 0) return showToast("Nothing to undo.");
       redoStack.push(JSON.parse(JSON.stringify(appState)));
-      appState = historyStack.pop();
-      saveLocal(); syncToKV(); renderAll(); showToast("Undo successful.");
+      const prevState = historyStack.pop();
+      mutateAndPush((state) => { state.campaign_notes = prevState.campaign_notes; }, "Undo successful.");
     }
     
     function redo() {
       if (redoStack.length === 0) return showToast("Nothing to redo.");
       historyStack.push(JSON.parse(JSON.stringify(appState)));
-      appState = redoStack.pop();
-      saveLocal(); syncToKV(); renderAll(); showToast("Redo successful.");
+      const nextState = redoStack.pop();
+      mutateAndPush((state) => { state.campaign_notes = nextState.campaign_notes; }, "Redo successful.");
     }
 
     // --- Helpers ---
@@ -314,8 +273,7 @@
       const c = document.getElementById('toast-container');
       const t = document.createElement('div');
       t.className = 'toast'; t.innerText = msg;
-      c.appendChild(t);
-      setTimeout(() => t.remove(), 3000);
+      c.appendChild(t); setTimeout(() => t.remove(), 3000);
     }
     function escapeJS(str) { return str ? str.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;') : ''; }
     function escapeHtml(str) { return str ? str.toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
@@ -323,7 +281,7 @@
 
     const SVG_PENCIL = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
     const SVG_AWARD = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>`;
-    
+
     // --- Layout Toggles ---
     function toggleLeft() { document.getElementById('main-layout').classList.toggle('hide-left'); document.getElementById('btn-left').classList.toggle('active');}
     function toggleRight() { document.getElementById('main-layout').classList.toggle('hide-right'); document.getElementById('btn-right').classList.toggle('active');}
@@ -334,7 +292,10 @@
       let html = '';
       if (appState.campaign_notes && appState.campaign_notes.rooms) {
         appState.campaign_notes.rooms.forEach((room, idx) => {
-          html += `<div class="nav-item ${currentRoomIndex === idx ? 'active' : ''}" onclick="selectRoom(${idx})" title="${escapeHtml(room.title)}">${escapeHtml(room.title)}</div>`;
+          if (!room.is_deleted) {
+             const title = room.room_id || room.title || `Room ${idx}`;
+             html += `<div class="nav-item ${currentRoomIndex === idx ? 'active' : ''}" onclick="selectRoom(${idx})" title="${escapeHtml(title)}">${escapeHtml(title)}</div>`;
+          }
         });
       }
       list.innerHTML = html || `<div style="padding:1rem; color:#666; font-size:0.9rem;">No rooms imported yet.</div>`;
@@ -342,75 +303,88 @@
 
     function selectRoom(index) {
       currentRoomIndex = index;
-      renderSidebar();
-      renderStage();
+      renderAll();
     }
 
     function renderStage() {
       const stage = document.getElementById('stage-content');
       if (!appState.campaign_notes.rooms || appState.campaign_notes.rooms.length === 0) {
-        stage.innerHTML = `<h2 style="color:#555; text-align:center; margin-top:4rem;">Campaign is empty. Import notes to begin.</h2>`;
+        stage.innerHTML = `<h2 style="color:#555; text-align:center; margin-top:4rem;">Campaign is empty. Import Data Forge JSON to begin.</h2>`;
         return;
       }
 
       const room = appState.campaign_notes.rooms[currentRoomIndex];
       if (!room) return;
       const rPath = ['campaign_notes', 'rooms', currentRoomIndex];
+      const title = room.room_id || room.title || "Untitled Room";
 
-      let mechanicsHtml = '';
-      if (room.mechanics) {
-        mechanicsHtml = room.mechanics.map((m, mIdx) => `<li>${makeEditable(parseMath(escapeHtml(m)), [...rPath, 'mechanics', mIdx], '', true)}</li>`).join('');
-      }
+      // 1. Core Properties
+      let html = `<h1 style="color:var(--accent); font-size:2rem; border-bottom:1px solid #333; padding-bottom:10px;">${makeEditable(escapeHtml(title), rPath, 'room_id')}</h1>`;
       
-      let encountersHtml = '';
-      if (room.encounters) {
-        encountersHtml = room.encounters.map(enc => `
-          <div class="encounter-card">
-            <div class="flex-between" style="margin-bottom:1rem;">
-               <h3 style="margin:0; color:var(--danger)">⚔️ ${escapeHtml(enc.name)}</h3>
-               <span class="badge active">CR ${enc.cr || '?'}</span>
-            </div>
-            <p style="font-size:0.9rem; color:#ccc;">${escapeHtml(enc.tactics)}</p>
-            <div>${(enc.quotes || []).map(q => `<span class="quote-pill">"${escapeHtml(q)}"</span>`).join('')}</div>
-          </div>
-        `).join('');
+      const readAloud = room.readaloud || room.read_aloud || "";
+      if (readAloud) html += `<div class="read-aloud-block">${makeEditable(escapeHtml(readAloud), rPath, 'readaloud', true)}</div>`;
+      
+      const mechanics = room.mechanics || "";
+      if (mechanics) {
+         // Handle both old array schema and new string schema
+         const mechString = Array.isArray(mechanics) ? mechanics.join('\n') : mechanics;
+         html += `<div class="mechanics-block">${makeEditable(parseMath(escapeHtml(mechString)), rPath, 'mechanics', true)}</div>`;
       }
 
-      let lootHtml = '';
-      if (room.loot) {
-        lootHtml = room.loot.map((l, lIdx) => `
-          <div class="loot-card">
-            <div>
-              <strong style="color:#f1c40f">${escapeHtml(l.achievement_name)}</strong><br>
-              <span style="font-size:0.9rem; color:#bbb">${escapeHtml(l.item_name)}</span>
-            </div>
-            <div class="award-wrapper">
-              <button class="btn btn-send" onclick="toggleAwardMenu(${currentRoomIndex}, ${lIdx})">
-                ${SVG_AWARD} Award to Player
-              </button>
-              <div id="award-menu-${currentRoomIndex}-${lIdx}" class="award-popover hidden">
-                 <div class="popover-title">Select Character:</div>
-                 ${(appState.players && appState.players.length > 0) 
-                    ? appState.players.map(p => `<div class="popover-item" onclick="confirmAward(${currentRoomIndex}, ${lIdx}, '${escapeJS(p.name)}')">${escapeHtml(p.name)}</div>`).join('') 
-                    : '<div style="padding:10px 12px; font-size:0.85rem; color:#888;">No players found</div>'}
-                 <div class="popover-item" style="color:var(--danger); border-top:1px solid #333;" onclick="toggleAwardMenu(${currentRoomIndex}, ${lIdx})">Cancel</div>
-              </div>
-            </div>
-          </div>
-        `).join('');
+      // 2. Data Forge Array Blocks
+      if (room.npcs && room.npcs.length > 0) {
+        room.npcs.forEach((npc, nIdx) => {
+          html += `<div class="npc-card">${makeEditable(escapeHtml(npc.raw_text), [...rPath, 'npcs', nIdx], 'raw_text', true)}</div>`;
+        });
       }
 
-      stage.innerHTML = `
-        <h1 style="color:var(--accent); font-size:2rem;">${makeEditable(escapeHtml(room.title), rPath, 'title')}</h1>
-        <div class="read-aloud-block">${makeEditable(escapeHtml(room.read_aloud), rPath, 'read_aloud', true)}</div>
-        <ul class="mechanics-list">${mechanicsHtml}</ul>
-        ${room.ai_tooltip ? `<div class="ai-terminal">${makeEditable(escapeHtml(room.ai_tooltip), rPath, 'ai_tooltip', true)}</div>` : ''}
-        ${encountersHtml}
-        ${(room.loot && room.loot.length > 0) ? `<h3 style="margin-top:2rem; border-bottom:1px solid #333; padding-bottom:0.5rem;">Rewards & Loot</h3>${lootHtml}` : ''}
-      `;
+      if (room.tooltips && room.tooltips.length > 0) {
+        room.tooltips.forEach((tt, tIdx) => {
+          html += `<div class="ai-terminal">${makeEditable(escapeHtml(tt.raw_text), [...rPath, 'tooltips', tIdx], 'raw_text', true)}</div>`;
+        });
+      }
+
+      // 3. Loot & Achievements
+      const combinedLoot = [...(room.loot || []), ...(room.achievements || [])];
+      if (combinedLoot.length > 0) {
+        html += `<h3 style="margin-top:2rem; border-bottom:1px solid #333; padding-bottom:0.5rem; color:#f1c40f;">Achievements & Loot</h3>`;
+        
+        // Handle Legacy Loot schema + New Data Forge schema
+        combinedLoot.forEach((l, lIdx) => {
+           const isLegacy = (l.achievement_name !== undefined);
+           const rawText = isLegacy ? `${l.achievement_name} Reward: ${l.item_name}. ${l.item_desc}` : l.raw_text.replace('#ACHIEVEMENT', '').replace('#LOOT', '').trim();
+           
+           const parts = rawText.split(/Reward:/i);
+           const achTitle = parts[0].trim();
+           const itemDesc = parts[1] ? parts[1].trim() : "Unknown Item";
+           
+           // If we are editing, we must edit the exact path
+           const editPath = isLegacy ? [...rPath, 'loot', lIdx] : 
+                            (room.achievements && room.achievements.includes(l) ? [...rPath, 'achievements', room.achievements.indexOf(l)] : [...rPath, 'loot', room.loot.indexOf(l)]);
+           const editField = isLegacy ? 'achievement_name' : 'raw_text';
+
+           html += `
+             <div class="loot-card">
+                <div>
+                  <strong style="color:#f1c40f">${makeEditable(escapeHtml(achTitle), editPath, editField, true)}</strong><br>
+                  <span style="font-size:0.9rem; color:#bbb">${escapeHtml(itemDesc)}</span>
+                </div>
+                <div class="award-wrapper">
+                  <button class="btn btn-send" onclick="toggleAwardMenu(${currentRoomIndex}, ${lIdx})">${SVG_AWARD} Award</button>
+                  <div id="award-menu-${currentRoomIndex}-${lIdx}" class="award-popover hidden">
+                     <div class="popover-title">Select Character:</div>
+                     ${(appState.players && appState.players.length > 0) ? appState.players.map(p => `<div class="popover-item" onclick="confirmAward(${currentRoomIndex}, '${escapeJS(rawText)}', '${escapeJS(p.name)}')">${escapeHtml(p.name)}</div>`).join('') : '<div style="padding:10px; color:#888;">No players found</div>'}
+                     <div class="popover-item" style="color:var(--danger); border-top:1px solid #333;" onclick="toggleAwardMenu(${currentRoomIndex}, ${lIdx})">Cancel</div>
+                  </div>
+                </div>
+             </div>`;
+        });
+      }
+
+      stage.innerHTML = html;
     }
 
-    // --- Inline Editing ---
+    // --- Inline Editing (Optimistic Lock Supported) ---
     function makeEditable(val, pathArray, fieldName, isTextarea = false) {
       const pJson = escapeJS(JSON.stringify(pathArray));
       return `<span class="edit-wrapper">
@@ -429,25 +403,21 @@
       input.value = rawText;
       
       input.onblur = () => {
-        pushState();
-        let newVal = input.value.trim();
-        
+        const newVal = input.value.trim();
         const pathParts = JSON.parse(objectPathJSON);
-        let target = appState;
         
-        for(let i=0; i < pathParts.length; i++) {
-          if (target[pathParts[i]] === undefined) target[pathParts[i]] = (typeof pathParts[i+1] === 'number') ? [] : {};
-          if (i === pathParts.length - 1 && fieldName === '') {
-             target[pathParts[i]] = newVal;
-          } else {
-             target = target[pathParts[i]];
+        mutateAndPush((state) => {
+          let target = state;
+          for(let i=0; i < pathParts.length; i++) {
+            if (target[pathParts[i]] === undefined) target[pathParts[i]] = (typeof pathParts[i+1] === 'number') ? [] : {};
+            if (i === pathParts.length - 1 && fieldName === '') {
+               target[pathParts[i]] = newVal;
+            } else {
+               target = target[pathParts[i]];
+            }
           }
-        }
-        if (fieldName !== '') target[fieldName] = newVal;
-        
-        saveLocal();
-        syncToKV();
-        renderStage(); // Just re-render stage
+          if (fieldName !== '') target[fieldName] = newVal;
+        }, null);
       };
       
       input.onkeydown = (e) => { if(e.key === 'Enter' && !isTextarea) input.blur(); };
@@ -460,45 +430,34 @@
 
     // --- Loot Awards ---
     function toggleAwardMenu(rIdx, lIdx) {
-      document.querySelectorAll('.award-popover').forEach(el => {
-        if (el.id !== `award-menu-${rIdx}-${lIdx}`) el.classList.add('hidden');
-      });
+      document.querySelectorAll('.award-popover').forEach(el => el.classList.add('hidden'));
       const menu = document.getElementById(`award-menu-${rIdx}-${lIdx}`);
-      if (menu) menu.classList.toggle('hidden');
+      if (menu) menu.classList.remove('hidden');
     }
 
-    function confirmAward(rIdx, lIdx, playerName) {
-      const room = appState.campaign_notes.rooms[rIdx];
-      const lootObj = room.loot[lIdx];
-      const player = appState.players.find(p => p.name === playerName);
+    function confirmAward(rIdx, rawAchText, playerName) {
+      const parts = rawAchText.split(/Reward:/i);
+      const title = parts[0].trim();
+      const itemDesc = parts[1] ? parts[1].trim() : "Unknown Item";
+      const itemName = parts[1] ? parts[1].split('.')[0].trim() : "Unknown Item";
 
-      if(!player) return showToast("Player not found in database.");
+      mutateAndPush((state) => {
+        const player = state.players.find(p => p.name === playerName);
+        if(!player) throw new Error("Player not found");
 
-      pushState();
-      if(!player.achievements) player.achievements = { pending: [], claimed: [] };
-      if(!player.achievements.pending) player.achievements.pending = [];
-
-      player.achievements.pending.push({
-        name: lootObj.achievement_name,
-        description: lootObj.item_desc,
-        rewards: {
-          gold: 0,
-          items: [{
-            name: lootObj.item_name,
-            flavor_text: lootObj.item_desc,
-            mechanics: "Requires inspection.",
-            quantity: 1
-          }]
-        }
-      });
-
-      // Remove the loot so it can't be awarded twice
-      room.loot.splice(lIdx, 1);
-      
-      saveLocal();
-      syncToKV();
-      renderStage();
-      showToast(`${lootObj.item_name} awarded to ${playerName}!`);
+        if(!player.achievements) player.achievements = { pending: [], claimed: [] };
+        if(!player.achievements.pending) player.achievements.pending = [];
+        
+        player.achievements.pending.push({
+          name: title,
+          is_acknowledged: false,
+          description: itemDesc,
+          rewards: {
+            gold: 0,
+            items: [{ name: itemName, flavor_text: itemDesc, mechanics: "Requires inspection.", quantity: 1 }]
+          }
+        });
+      }, `${itemName} awarded to ${playerName}!`);
     }
 
     // --- Session Scratchpad Logic ---
@@ -524,39 +483,36 @@
     function createNewSession() {
       const title = prompt("Enter Session Title:", `Session ${appState.campaign_notes.sessions.length + 1}`);
       if(!title) return;
-      pushState();
-      const newSession = { id: Date.now(), title: title, content: "" };
-      appState.campaign_notes.sessions.push(newSession);
-      currentSessionId = newSession.id;
-      saveLocal();
-      syncToKV();
-      renderScratchpad();
-      showToast(`Created ${title}`);
+      mutateAndPush((state) => {
+        const newSession = { id: Date.now(), title: title, content: "" };
+        state.campaign_notes.sessions.push(newSession);
+        currentSessionId = newSession.id;
+      }, `Created ${title}`);
     }
 
-    // Scratchpad Debouncer
-    const DEBOUNCE_MS = 30000; // 30 seconds
+    const DEBOUNCE_MS = 30000;
     let scratchTimer;
     const textarea = document.getElementById('scratchpad-input');
-
+    
     textarea.addEventListener('input', (e) => {
       setSyncIcon('syncing');
       clearTimeout(scratchTimer);
       scratchTimer = setTimeout(() => { commitScratchpad(e.target.value); }, DEBOUNCE_MS);
     });
-
+    
     textarea.addEventListener('blur', (e) => {
       clearTimeout(scratchTimer);
       commitScratchpad(e.target.value);
     });
-
+    
     function commitScratchpad(text) {
       const session = appState.campaign_notes.sessions.find(s => s.id === currentSessionId);
       if (!session || session.content === text) return;
-      pushState();
-      session.content = text;
-      saveLocal();
-      syncToKV();
+      
+      mutateAndPush((state) => {
+         const remoteSession = state.campaign_notes.sessions.find(s => s.id === currentSessionId);
+         if(remoteSession) remoteSession.content = text;
+      }, null);
       setSyncIcon('success');
     }
 
@@ -570,65 +526,13 @@
       }
     }
 
-    // --- Import Modal Logic ---
-    function toggleImportModal() {
-      document.getElementById('import-modal').classList.toggle('hidden');
-    }
-
-    function mergeNotes() {
-      const raw = document.getElementById('import-data').value;
-      let d; try { d = JSON.parse(raw); } catch(e) { return showToast("Invalid JSON"); }
-
-      if (!d.campaign_notes || !d.campaign_notes.rooms) return showToast("Missing campaign_notes.rooms array.");
-
-      pushState();
-      let count = 0;
-      if (!appState.campaign_notes) appState.campaign_notes = { rooms: [], sessions: [] };
-      if (!appState.campaign_notes.rooms) appState.campaign_notes.rooms = [];
-
-      d.campaign_notes.rooms.forEach(newRoom => {
-        const exIdx = appState.campaign_notes.rooms.findIndex(r => r.id === newRoom.id);
-        if (exIdx >= 0) {
-          appState.campaign_notes.rooms[exIdx] = { ...appState.campaign_notes.rooms[exIdx], ...newRoom };
-        } else {
-          appState.campaign_notes.rooms.push(newRoom);
-        }
-        count++;
-      });
-
-      saveLocal(); syncToKV(); renderAll();
-      toggleImportModal();
-      document.getElementById('import-data').value = '';
-      showToast(`Merged ${count} rooms.`);
-    }
-
-    function overwriteNotes() {
-      if(!confirm("HARD OVERWRITE: Erase all campaign notes and replace them? (Player data is safe)")) return;
-      const raw = document.getElementById('import-data').value;
-      let d; try { d = JSON.parse(raw); } catch(e) { return showToast("Invalid JSON"); }
-
-      if (!d.campaign_notes) return showToast("Missing campaign_notes object.");
-
-      pushState();
-      const existingSessions = appState.campaign_notes.sessions || [];
-      appState.campaign_notes = d.campaign_notes;
-      if (!appState.campaign_notes.sessions) appState.campaign_notes.sessions = existingSessions;
-
-      saveLocal(); syncToKV(); renderAll();
-      toggleImportModal();
-      document.getElementById('import-data').value = '';
-      showToast("Campaign Notes Overwritten.");
-    }
-
     function renderAll() {
       renderSidebar();
       renderStage();
       renderScratchpad();
     }
 
-    // Boot App
     init();
-
   </script>
 </body>
 </html>
