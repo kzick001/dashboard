@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Showrunner | Crawler Terminal</title>
+  <style>
+    :root {
+      --bg: rgba(15, 15, 18, 0.85);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --accent: #bb86fc;
+      --danger: #ff4757;
+      --success: #03dac6;
+      --text: #e0e0e0;
+      --text-muted: #888;
+      --ai-terminal: #ffeb3b;
+    }
+
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+    body, html {
+      margin: 0; padding: 0;
+      height: 100vh; width: 100vw;
+      color: var(--text);
+      overflow: hidden;
+      background: radial-gradient(circle at center, #1a1a24 0%, #050505 100%);
+    }
+
+    .hidden { display: none !important; }
+
+    /* --- 1. Procedural AI Marquee --- */
+    .ai-marquee-container {
+      position: absolute;
+      top: 0; left: 0; width: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      border-bottom: 1px solid var(--ai-terminal);
+      padding: 6px 0;
+      overflow: hidden;
+      display: flex;
+      white-space: nowrap;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.8);
+    }
+    .marquee-track {
+      display: flex;
+      width: max-content;
+      animation: scroll-left 40s linear infinite;
+    }
+    .ai-marquee-text {
+      font-family: monospace;
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: var(--ai-terminal);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding-right: 50px;
+    }
+    @keyframes scroll-left {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* --- 2. Security Theater Login Layer --- */
+    .login-layer {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      transition: opacity 0.5s ease;
+    }
+    .btn-login-main {
+      background: transparent;
+      border: 2px solid var(--accent);
+      color: var(--accent);
+      padding: 15px 40px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      letter-spacing: 0.1em;
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: uppercase;
+      box-shadow: 0 0 20px rgba(187, 134, 252, 0.3), inset 0 0 10px rgba(187, 134, 252, 0.2);
+      transition: 0.3s;
+    }
+    .btn-login-main:hover {
+      background: var(--accent);
+      color: #000;
+      box-shadow: 0 0 30px rgba(187, 134, 252, 0.6);
+    }
+
+    /* --- 3. HUD Wrapper & Form Factors --- */
+    .hud-wrapper {
+      position: absolute;
+      background: var(--bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      display: flex;
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      z-index: 50;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    }
+
+    /* Layout A: Horizontal Strip */
+    .hud-wrapper.horizontal {
+      top: 30px; left: 0;
+      width: 100%; height: 90px;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      border-left: none; border-right: none;
+    }
+
+    /* Layout B: Corporate Pager (Compact Box) */
+    .hud-wrapper.pager {
+      bottom: 20px; right: 20px;
+      width: 320px; height: auto; min-height: 180px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      border-radius: 12px;
+      gap: 1rem;
+    }
+
+    .hud-wing { display: flex; align-items: center; gap: 1rem; flex: 1; }
+    .hud-wing.right { justify-content: flex-end; }
+    .hud-wrapper.pager .hud-wing { width: 100%; justify-content: space-between; flex: none; }
+
+    /* --- 4. The Centerpiece (Avatar & Identity) --- */
+    .hud-center {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      justify-content: center;
+    }
+    .hud-wrapper.pager .hud-center {
+      flex-direction: column;
+      text-align: center;
+      gap: 0.5rem;
+    }
+
+    .avatar-ring {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      padding: 3px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.5s ease;
+      background: #333; /* Fallback ring color */
+      flex-shrink: 0;
+    }
+    .hud-wrapper.pager .avatar-ring { width: 80px; height: 80px; }
+    
+    .avatar-ring img {
+      width: 100%; height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #111;
+      border: 2px solid #000;
+    }
+
+    /* Condition Glow States */
+    .ring-healthy { background: linear-gradient(135deg, #555, #222); box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+    .ring-warning { background: linear-gradient(135deg, #f1c40f, #e67e22); box-shadow: 0 0 15px rgba(241, 196, 15, 0.5); }
+    .ring-poisoned { background: linear-gradient(135deg, #2ecc71, #27ae60); box-shadow: 0 0 20px rgba(46, 204, 113, 0.6); }
+    .ring-bleeding { background: linear-gradient(135deg, #ff4757, #c0392b); box-shadow: 0 0 20px rgba(255, 71, 87, 0.6); animation: pulse-bleed 2s infinite; }
+    .ring-critical { background: #ff0000; box-shadow: 0 0 30px #ff0000; animation: pulse-crit 0.8s infinite; }
+
+    @keyframes pulse-bleed { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+    @keyframes pulse-crit { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+    .identity-text h1 { margin: 0; font-size: 1.5rem; letter-spacing: 0.05em; color: #fff; text-transform: uppercase; }
+    .identity-text span { font-size: 0.7rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap; }
+
+    /* Utilities */
+    .sync-antenna { color: var(--text-muted); cursor: pointer; transition: 0.3s; display: flex; align-items: center; }
+    .sync-antenna:hover { color: var(--success); }
+    .spinning { animation: spin 1s linear infinite; color: var(--success); }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    .btn-icon { background: transparent; border: 1px solid #444; color: #888; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: 0.2s; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+    .btn-icon:hover { color: #fff; border-color: #888; background: rgba(255,255,255,0.1); }
+    .btn-icon.icon-only { padding: 6px; }
+
+    /* --- 5. Notification Pill --- */
+    .notification-pill { background: #222; border: 1px solid #444; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    .notification-pill:hover { background: #333; }
+    
+    @keyframes hostilePulse {
+      0% { box-shadow: 0 0 0 0 rgba(187, 134, 252, 0.6); background-color: var(--accent); color: #000; border-color: var(--accent); }
+      70% { box-shadow: 0 0 0 15px rgba(187, 134, 252, 0); background-color: var(--accent); color: #000; border-color: var(--accent); }
+      100% { box-shadow: 0 0 0 0 rgba(187, 134, 252, 0); background-color: var(--accent); color: #000; border-color: var(--accent); }
+    }
+    .pulse-anim { animation: hostilePulse 1.5s infinite; }
+
+    /* --- 6. Modals (Roster & Inbox) --- */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+    .modal-content { background: var(--bg); border: 1px solid #333; border-top: 3px solid var(--accent); border-radius: 8px; width: 90%; max-width: 450px; padding: 1.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.9); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #222; padding-bottom: 0.5rem; }
+    .modal-header h3 { margin: 0; color: var(--accent); text-transform: uppercase; font-size: 1rem; letter-spacing: 0.05em; }
+    
+    /* Roster Grid */
+    .roster-grid { display: grid; grid-template-columns: 1fr; gap: 0.5rem; }
+    .roster-btn { background: #111; border: 1px solid #333; color: #fff; padding: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; border-radius: 4px; text-align: left; transition: 0.2s; }
+    .roster-btn:hover { background: rgba(187, 134, 252, 0.1); border-color: var(--accent); }
+
+    /* Inbox Loot Items */
+    .loot-item { background: #111; border: 1px solid #222; border-left: 4px solid #444; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem; }
+    .loot-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: rgba(0,0,0,0.5); border-radius: 50%; flex-shrink: 0; }
+    .loot-title { font-weight: bold; color: #fff; font-size: 1.1rem; }
+    
+    .btn-ack { width: 100%; background: rgba(187, 134, 252, 0.1); border: 1px solid var(--accent); color: var(--accent); padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 1rem; }
+    .btn-ack:hover { background: var(--accent); color: #000; }
+    .btn-ack:disabled { background: #222; border-color: #444; color: #666; cursor: not-allowed; }
+
+    .receipt-msg { text-align: center; color: var(--success); font-size: 0.8rem; margin-top: 1rem; font-style: italic; }
+
+    /* Toasts */
+    #toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+    .toast { background: rgba(0, 0, 0, 0.9); color: #fff; padding: 0.75rem 1.5rem; border-radius: 20px; border: 1px solid #444; font-size: 0.85rem; animation: fadein 0.3s, fadeout 0.3s 2.7s forwards; }
+    @keyframes fadein { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
+  </style>
+</head>
+<body>
+
+  <div class="ai-marquee-container">
+    <div class="marquee-track">
+      <span class="ai-marquee-text"></span>
+      <span class="ai-marquee-text" aria-hidden="true"></span>
+    </div>
+  </div>
+
+  <div id="login-layer" class="login-layer">
+    <button class="btn-login-main" onclick="openLoginModal()">[ SYSTEM LOGIN ]</button>
+  </div>
+
+  <div id="hud-layer" class="hud-wrapper horizontal hidden">
+    
+    <div class="hud-wing left">
+      <div class="sync-antenna" id="sync-btn" onclick="forceSync()" title="Force Sync">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+      </div>
+      <button class="btn-icon" onclick="logout()">LOG OUT</button>
+    </div>
+
+    <div class="hud-center">
+      <div id="avatar-ring" class="avatar-ring ring-healthy">
+        <img id="avatar-img" src="" alt="Avatar" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' fill=\'%23555\' viewBox=\'0 0 24 24\'><path d=\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\'/></svg>'">
+      </div>
+      <div class="identity-text">
+        <h1 id="player-name-display">AWAITING LOGIN</h1>
+        <span>DUNGEON CRAWLER | WORLD: EARTH</span>
+      </div>
+    </div>
+
+    <div class="hud-wing right">
+      <div id="notification-pill" class="notification-pill hidden" onclick="openInboxModal()">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+        <span id="pill-text">NEW ACHIEVEMENT!</span>
+      </div>
+      <button class="btn-icon icon-only" onclick="toggleLayout()" title="Toggle HUD Shape">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="roster-modal" class="modal-overlay hidden" onclick="if(event.target===this) document.getElementById('roster-modal').classList.add('hidden')">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Select Identity</h3>
+        <button class="btn-icon icon-only" style="border:none;" onclick="document.getElementById('roster-modal').classList.add('hidden')">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div id="roster-grid" class="roster-grid">
+        </div>
+    </div>
+  </div>
+
+  <div id="inbox-modal" class="modal-overlay hidden" onclick="if(event.target===this) closeInboxModal()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Corporate Inbox</h3>
+        <button class="btn-icon icon-only" style="border:none;" onclick="closeInboxModal()">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      
+      <div id="modal-loot-list">
+        </div>
+
+      <button id="btn-acknowledge" class="btn-ack hidden" onclick="acknowledgeAll()">Acknowledge Receipt</button>
+      <div id="receipt-msg" class="receipt-msg hidden">Signal sent to Management. Waiting for processing...</div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script>
+    const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
+    let localState = { players: [], version: 0 };
+    let activePlayerIndex = null;
+
+    // --- Phase 1: Procedural AI Marquee ---
+    async function generateAiMessage() {
+      let fullMessage = "";
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch('ticker.json', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        if (!res.ok) throw new Error("Ticker file not found");
+        const data = await res.json();
+        
+        const sub = data.subjects[Math.floor(Math.random() * data.subjects.length)];
+        const act = data.actions[Math.floor(Math.random() * data.actions.length)];
+        const reslt = data.results[Math.floor(Math.random() * data.results.length)];
+        const sign = data.signoffs[Math.floor(Math.random() * data.signoffs.length)];
+        
+        fullMessage = `[SYS_BROADCAST] ${sub} ${act} ${reslt} ${sign}`;
+      } catch (e) {
+        fullMessage = "[SYS_BROADCAST] MANAGEMENT IS CURRENTLY UNAVAILABLE. PLEASE CONTINUE TO BLEED PRODUCTIVELY.";
+      }
+
+      // Force a DOM reflow to reset CSS animation smoothly
+      const track = document.querySelector('.marquee-track');
+      if (track) {
+        track.style.animation = 'none';
+        track.offsetHeight; 
+        track.style.animation = ''; 
+      }
+
+      document.querySelectorAll('.ai-marquee-text').forEach(el => {
+        el.innerText = fullMessage;
+      });
+    }
+    
+    generateAiMessage();
+    setInterval(generateAiMessage, 180000);
+
+    // --- Phase 2: Safe Polling Engine ---
+    async function pollDatabase(isManual = false) {
+      const antenna = document.getElementById('sync-btn');
+      if(antenna) antenna.classList.add('spinning');
+
+      try {
+        const res = await fetch(WORKER_URL);
+        if (!res.ok) throw new Error("Network error");
+        const remote = await res.json();
+        
+        if (remote.version !== localState.version || isManual || localState.players.length === 0) {
+          localState = remote;
+          if (activePlayerIndex !== null) renderIdentity();
+          if (isManual) showToast("Terminal Synchronized.");
+        }
+      } catch (e) {
+        if (isManual) showToast("Connection failed.");
+      } finally {
+        if(antenna) setTimeout(() => antenna.classList.remove('spinning'), 500);
+      }
+    }
+
+    function forceSync() { pollDatabase(true); }
+
+    // Start 60s loop
+    pollDatabase(true).then(() => {
+      // Auto-login check after first poll
+      const savedIdx = localStorage.getItem('showrunner_active_player');
+      if (savedIdx !== null && localState.players[savedIdx] && !localState.players[savedIdx].is_deleted) {
+        authenticatePlayer(parseInt(savedIdx), localState.players[savedIdx].name, true);
+      }
+    });
+    setInterval(() => pollDatabase(false), 60000);
+
+    // --- Phase 3: Security Theater Login ---
+    function openLoginModal() {
+      const rosterContainer = document.getElementById('roster-grid');
+      rosterContainer.innerHTML = '';
+      
+      if (!localState.players || localState.players.length === 0) {
+        rosterContainer.innerHTML = '<div style="color:#888; text-align:center;">No Crawlers detected in database.</div>';
+      } else {
+        localState.players.forEach((p, idx) => {
+          if (!p.is_deleted) {
+            rosterContainer.innerHTML += `
+              <button class="roster-btn" onclick="authenticatePlayer(${idx}, '${escapeJS(p.name)}')">
+                ${escapeHtml(p.name)}
+              </button>
+            `;
+          }
+        });
+      }
+      document.getElementById('roster-modal').classList.remove('hidden');
+    }
+
+    function authenticatePlayer(idx, name, isAutoLogin = false) {
+      activePlayerIndex = idx;
+      localStorage.setItem('showrunner_active_player', idx);
+      
+      document.getElementById('roster-modal').classList.add('hidden');
+      document.getElementById('login-layer').style.opacity = '0';
+      setTimeout(() => {
+        document.getElementById('login-layer').classList.add('hidden');
+        document.getElementById('hud-layer').classList.remove('hidden');
+      }, 500);
+      
+      renderIdentity();
+      if (!isAutoLogin) showToast(`Identity Confirmed: ${name}`);
+    }
+
+    function logout() {
+      activePlayerIndex = null;
+      localStorage.removeItem('showrunner_active_player');
+      document.getElementById('hud-layer').classList.add('hidden');
+      const login = document.getElementById('login-layer');
+      login.classList.remove('hidden');
+      setTimeout(() => login.style.opacity = '1', 50);
+    }
+
+    // --- Phase 4: Centerpiece Rendering (Avatar & Rings) ---
+    function renderIdentity() {
+      if (activePlayerIndex === null || !localState.players[activePlayerIndex] || localState.players[activePlayerIndex].is_deleted) {
+        logout(); return;
+      }
+      
+      const player = localState.players[activePlayerIndex];
+
+      // Format filename (e.g., "Chuck" -> "chuck.png")
+      const safeFileName = player.name.toLowerCase().replace(/\s+/g, '_') + '.png';
+      document.getElementById('avatar-img').src = safeFileName;
+      
+      document.getElementById('player-name-display').innerText = player.name;
+
+      // Condition Ring Evaluator
+      const ring = document.getElementById('avatar-ring');
+      ring.className = 'avatar-ring'; // Reset
+      
+      if (player.status && player.status.conditions && player.status.conditions.length > 0) {
+        const conditions = player.status.conditions.map(c => c.toLowerCase());
+        
+        if (conditions.includes('critical trauma') || conditions.includes('critical')) {
+          ring.classList.add('ring-critical');
+        } else if (conditions.includes('bleeding')) {
+          ring.classList.add('ring-bleeding');
+        } else if (conditions.includes('poisoned') || conditions.includes('poison')) {
+          ring.classList.add('ring-poisoned');
+        } else {
+          ring.classList.add('ring-warning');
+        }
+      } else {
+        ring.classList.add('ring-healthy');
+      }
+
+      evaluateNotifications(player);
+    }
+
+    // --- Phase 5: Anti-Spoiler Notification Machine ---
+    function evaluateNotifications(player) {
+      const pending = player.achievements?.pending || [];
+      const pillBtn = document.getElementById('notification-pill');
+      
+      if (pending.length === 0) {
+        pillBtn.classList.add('hidden');
+        return;
+      }
+
+      pillBtn.classList.remove('hidden');
+      document.getElementById('pill-text').innerText = `NEW ACHIEVEMENT! (${pending.length})`;
+
+      const hasUnread = pending.some(item => !item.is_acknowledged);
+      if (hasUnread) {
+        pillBtn.classList.add('pulse-anim');
+      } else {
+        pillBtn.classList.remove('pulse-anim');
+      }
+    }
+
+    function openInboxModal() {
+      if (activePlayerIndex === null) return;
+      const player = localState.players[activePlayerIndex];
+      const pending = player.achievements?.pending || [];
+      
+      const listEl = document.getElementById('modal-loot-list');
+      const ackBtn = document.getElementById('btn-acknowledge');
+      const receiptMsg = document.getElementById('receipt-msg');
+
+      let html = '';
+      let hasUnread = false;
+
+      pending.forEach(item => {
+        if (!item.is_acknowledged) hasUnread = true;
+        const actualItem = (item.rewards && item.rewards.items) ? item.rewards.items[0] : item;
+        
+        // Dynamic Rarity Colors (Anti-Spoiler)
+        const rarity = (actualItem.rarity || 'standard').toLowerCase();
+        let chestColor = '#b87333'; // Bronze
+        if (rarity === 'rare') chestColor = '#f1c40f'; // Gold
+        else if (rarity === 'contraband') chestColor = '#bb86fc'; // Purple
+
+        html += `
+          <div class="loot-item" style="border-left-color: ${item.is_acknowledged ? '#444' : chestColor}">
+            <div class="loot-icon" style="color: ${item.is_acknowledged ? '#666' : chestColor}">
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 12H2v8h20v-8z"></path><path d="M22 12V8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v4"></path><path d="M12 12v3"></path></svg>
+            </div>
+            <span class="loot-title" style="color: ${item.is_acknowledged ? '#888' : '#fff'}">${escapeHtml(item.name || actualItem.name)}</span>
+          </div>
+        `;
+      });
+
+      listEl.innerHTML = html;
+
+      if (hasUnread) {
+        ackBtn.classList.remove('hidden');
+        ackBtn.disabled = false;
+        receiptMsg.classList.add('hidden');
+      } else {
+        ackBtn.classList.add('hidden');
+        receiptMsg.classList.remove('hidden');
+      }
+
+      document.getElementById('inbox-modal').classList.remove('hidden');
+    }
+
+    function closeInboxModal() { document.getElementById('inbox-modal').classList.add('hidden'); }
+
+    async function acknowledgeAll() {
+      const ackBtn = document.getElementById('btn-acknowledge');
+      ackBtn.disabled = true;
+      ackBtn.innerText = "Transmitting...";
+
+      try {
+        const latestRes = await fetch(WORKER_URL);
+        if (!latestRes.ok) throw new Error("Fetch failed");
+        const remoteState = await latestRes.json();
+        
+        const remotePlayer = remoteState.players ? remoteState.players[activePlayerIndex] : null;
+        if (!remotePlayer || remotePlayer.is_deleted) throw new Error("Player invalid");
+        
+        if (remotePlayer.achievements && remotePlayer.achievements.pending) {
+          remotePlayer.achievements.pending.forEach(item => { item.is_acknowledged = true; });
+        }
+        
+        remoteState.version = (remoteState.version || 0) + 1;
+        remoteState.last_modified = Date.now();
+
+        const payload = { base_version: remoteState.version - 1, data: remoteState };
+        const postRes = await fetch(WORKER_URL, { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload) 
+        });
+        
+        if (!postRes.ok) throw new Error("Push failed");
+
+        localState = remoteState;
+        renderIdentity(); // Re-evaluates notifications
+        closeInboxModal();
+        showToast("Signal sent to Management.");
+
+      } catch (e) {
+        ackBtn.disabled = false;
+        ackBtn.innerText = "Acknowledge Receipt";
+        showToast("Sync collision. Fetching latest state...");
+        pollDatabase(true);
+      }
+    }
+
+    // --- Utility Functions ---
+    function toggleLayout() {
+      const hud = document.getElementById('hud-layer');
+      if (hud.classList.contains('horizontal')) {
+        hud.classList.remove('horizontal');
+        hud.classList.add('pager');
+      } else {
+        hud.classList.remove('pager');
+        hud.classList.add('horizontal');
+      }
+    }
+
+    function showToast(msg) {
+      const c = document.getElementById('toast-container');
+      const t = document.createElement('div');
+      t.className = 'toast'; t.innerText = msg;
+      c.appendChild(t); setTimeout(() => t.remove(), 3000);
+    }
+
+    function escapeHtml(str) { return str ? str.toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
+    function escapeJS(str) { return str ? str.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;') : ''; }
+
+  </script>
+</body>
+</html>
