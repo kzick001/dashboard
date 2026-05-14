@@ -453,8 +453,10 @@
       
       const player = localState.players[activePlayerIndex];
 
-      // Format filename (e.g., "Chuck" -> "chuck.png")
-      const safeFileName = player.name.toLowerCase().replace(/\s+/g, '_') + '.png';
+      // Extract ONLY the first word (e.g., "Chuck (Fighter)" -> "chuck.png")
+      const firstName = player.name.split(/[\s(]/)[0];
+      const safeFileName = firstName.toLowerCase() + '.png';
+      
       document.getElementById('avatar-img').src = safeFileName;
       
       document.getElementById('player-name-display').innerText = player.name;
