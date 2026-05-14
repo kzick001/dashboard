@@ -74,8 +74,8 @@
         .btn-text { background: transparent; border: 1px solid var(--border); color: var(--text); font-size: 0.9rem; padding: 0.5rem 1rem; border-radius: 8px; }
 
         /* Modal Overlays */
-        .modal-overlay { visibility: hidden; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; opacity: 0; transition: opacity 0.2s ease, visibility 0.2s; display: flex; }
-        .modal-overlay.active { visibility: visible; opacity: 1; }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; opacity: 0; transition: opacity 0.2s ease; }
+        .modal-overlay.active { display: flex; opacity: 1; }
         .modal { background: var(--surface); width: 100%; max-width: 400px; padding: 1.5rem; border-radius: 20px; display: flex; flex-direction: column; gap: 1.25rem; box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: translateY(20px); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .modal-overlay.active .modal { transform: translateY(0); }
         .modal h3 { font-size: 1.25rem; font-weight: 600; text-align: center; }
@@ -206,7 +206,6 @@
         const AUTH_KEY = 'WISE_CHEL';
         
         let state = {
-            version: parseInt(localStorage.getItem('state_version') || '0'),
             projects: JSON.parse(localStorage.getItem('projects') || '[]'),
             sessions: JSON.parse(localStorage.getItem('sessions') || '[]'),
             queue: JSON.parse(localStorage.getItem('queue') || '[]')
@@ -214,27 +213,9 @@
 
         let syncTimeout = null;
 
-        // Core Initialization
-        async function init() {
-            if (navigator.onLine && state.queue.length === 0) {
-                setSyncState('syncing');
-                try {
-                    const response = await fetch(WORKER_URL, {
-                        headers: { 'Authorization': `Bearer ${AUTH_KEY}` }
-                    });
-                    if (response.ok) {
-                        const remote = await response.json();
-                        if ((remote.version || 0) > state.version || state.version === 0) {
-                            state.version = remote.version || Date.now();
-                            state.projects = remote.projects || state.projects;
-                            state.sessions = remote.sessions || state.sessions;
-                            persistLocal();
-                        }
-                    }
-                } catch (e) {
-                    console.error('Hydration failed');
-                }
-            }
+        // Core Initialization & Migration
+        function init() {
+            migrateData();
             renderProjects();
             renderRecent();
             renderAccordion();
@@ -242,56 +223,118 @@
             attemptSync();
         }
 
-        // Persistence & Sync
-        function persistLocal() {
-            localStorage.setItem('state_version', state.version.toString());
-            localStorage.setItem('projects', JSON.stringify(state.projects));
-            localStorage.setItem('sessions', JSON.stringify(state.sessions));
+        // Backward Compatibility Guard
+        function migrateData() {
+            let changed = false;
+            
+            state.projects.forEach(p => {
+                if (p.updatedAt === undefined) {
+                    p.updatedAt = 0;
+                    p.deleted = false;
+                    changed = true;
+                }
+            });
+            
+            state.sessions.forEach(s => {
+                if (s.updatedAt === undefined) {
+                    s.updatedAt = 0;
+                    s.deleted = false;
+                    changed = true;
+                }
+            });
+
+            if (changed) {
+                localStorage.setItem('projects', JSON.stringify(state.projects));
+                localStorage.setItem('sessions', JSON.stringify(state.sessions));
+            }
         }
 
+        // Persistence & Sync
         function saveState() {
-            state.version = Date.now();
-            persistLocal();
+            localStorage.setItem('projects', JSON.stringify(state.projects));
+            localStorage.setItem('sessions', JSON.stringify(state.sessions));
             queueSync();
         }
 
         function queueSync() {
-            const previousVersion = parseInt(localStorage.getItem('state_version') || '0');
-            state.queue = [{ 
-                last_modified: Date.now(), 
-                base_version: previousVersion,
-                data: { version: state.version, projects: state.projects, sessions: state.sessions } 
-            }];
+            // Strict single-item queue to hold pending mutations
+            state.queue = [{ timestamp: Date.now() }];
             localStorage.setItem('queue', JSON.stringify(state.queue));
+            
             clearTimeout(syncTimeout);
             syncTimeout = setTimeout(attemptSync, 1500);
         }
 
-       async function attemptSync() {
-            if (!navigator.onLine) return setSyncState('offline');
-            if (state.queue.length === 0) return setSyncState('synced');
+        // CRDT LWW Merge Logic
+        function mergeArrays(localArr, remoteArr) {
+            const map = new Map();
             
+            // Map local data first
+            localArr.forEach(item => map.set(item.id, item));
+            
+            // Map remote data, overwriting if remote updatedAt is greater
+            remoteArr.forEach(remoteItem => {
+                const localItem = map.get(remoteItem.id);
+                if (!localItem || remoteItem.updatedAt > localItem.updatedAt) {
+                    map.set(remoteItem.id, remoteItem);
+                }
+            });
+            
+            return Array.from(map.values());
+        }
+
+        async function attemptSync() {
+            if (!navigator.onLine) return setSyncState('offline');
             setSyncState('syncing');
-            const payload = state.queue[0];
 
             try {
-                const response = await fetch(WORKER_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTH_KEY}` },
-                    body: JSON.stringify(payload)
+                // 1. PULL
+                const pullResponse = await fetch(WORKER_URL, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${AUTH_KEY}` }
                 });
 
-                if (response.ok) {
-                    state.queue = [];
-                    localStorage.setItem('queue', JSON.stringify(state.queue));
-                    setSyncState('synced');
-                } else if (response.status === 409) {
-                    state.queue = [];
-                    await init();
+                if (!pullResponse.ok) throw new Error("Pull failed");
+                const remoteData = await pullResponse.json();
+
+                // 2. MERGE
+                state.projects = mergeArrays(state.projects, remoteData.projects || []);
+                state.sessions = mergeArrays(state.sessions, remoteData.sessions || []);
+
+                // Save merged state locally silently
+                localStorage.setItem('projects', JSON.stringify(state.projects));
+                localStorage.setItem('sessions', JSON.stringify(state.sessions));
+
+                // Re-render UI with merged data
+                renderProjects();
+                renderRecent();
+                renderAccordion();
+
+                // 3. PUSH (Only if we have pending local changes)
+                if (state.queue.length > 0) {
+                    const pushPayload = { projects: state.projects, sessions: state.sessions };
+                    
+                    const pushResponse = await fetch(WORKER_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${AUTH_KEY}`
+                        },
+                        body: JSON.stringify(pushPayload)
+                    });
+
+                    if (pushResponse.ok) {
+                        state.queue = [];
+                        localStorage.setItem('queue', JSON.stringify(state.queue));
+                        setSyncState('synced');
+                    } else {
+                        throw new Error("Push failed");
+                    }
                 } else {
-                    setSyncState('error');
+                    setSyncState('synced');
                 }
             } catch (error) {
+                console.error("Sync Error:", error);
                 setSyncState('error');
             }
         }
@@ -328,11 +371,17 @@
             if(viewName === 'tracker') renderRecent();
         }
 
-        // Project Management
+        // Project Management (Soft Deletes Implemented)
         function addProject() {
             const name = prompt("Enter new project name:");
             if (!name || name.trim() === '') return;
-            state.projects.push({ id: generateId(), name: name.trim(), archived: false });
+            state.projects.push({ 
+                id: generateId(), 
+                name: name.trim(), 
+                archived: false,
+                deleted: false,
+                updatedAt: Date.now()
+            });
             saveState();
             renderProjects();
         }
@@ -340,25 +389,33 @@
         function archiveProject(id) {
             if (!confirm("Archive this project? It will be hidden from new entries.")) return;
             const p = state.projects.find(p => p.id === id);
-            if (p) p.archived = true;
-            saveState();
-            renderProjects();
-            renderAccordion();
+            if (p) {
+                p.archived = true;
+                p.updatedAt = Date.now();
+                saveState();
+                renderProjects();
+                renderAccordion();
+            }
         }
 
         function deleteProject(id) {
-            const hasActive = state.sessions.some(s => s.projectId === id && s.endTime === null && !s.is_deleted);
+            const hasActive = state.sessions.some(s => s.projectId === id && s.endTime === null && !s.deleted);
             if (hasActive) {
                 return alert("Cannot delete. This project has an open punch. Please punch out or assign an end time first.");
             }
-            if (!confirm("Are you sure? This deletes the project and ALL associated time logs permanently.")) return;
+            if (!confirm("Are you sure? This deletes the project and ALL associated time logs permanently on all devices.")) return;
             
-            const now = Date.now();
             const p = state.projects.find(p => p.id === id);
-            if (p) { p.is_deleted = true; p.last_modified = now; }
+            if (p) {
+                p.deleted = true;
+                p.updatedAt = Date.now();
+            }
             
             state.sessions.forEach(s => {
-                if (s.projectId === id) { s.is_deleted = true; s.last_modified = now; }
+                if (s.projectId === id) {
+                    s.deleted = true;
+                    s.updatedAt = Date.now();
+                }
             });
             
             saveState();
@@ -367,25 +424,26 @@
             renderRecent();
         }
 
-        // Ledger & Manual Logic
+        // Ledger & Manual Logic (Soft Deletes Implemented)
         function deleteSession(id) {
             if (!confirm("Are you sure you want to delete this punch?")) return;
             triggerHaptic();
-            const session = state.sessions.find(s => s.id === id);
-            if (session) {
-                session.is_deleted = true;
-                session.last_modified = Date.now();
+            
+            const s = state.sessions.find(s => s.id === id);
+            if (s) {
+                s.deleted = true;
+                s.updatedAt = Date.now();
+                saveState();
+                renderRecent();
+                renderAccordion(); 
             }
-            saveState();
-            renderRecent();
-            renderAccordion(); 
         }
 
         function punchIn() {
             const select = document.getElementById('projectSelect');
             if (!select.value) return alert("Select a project first.");
             
-            const hasOpen = state.sessions.some(s => s.projectId === select.value && s.endTime === null);
+            const hasOpen = state.sessions.some(s => s.projectId === select.value && s.endTime === null && !s.deleted);
             if (hasOpen) return alert("You already have an open punch for this project.");
             
             triggerHaptic();
@@ -394,7 +452,9 @@
                 id: generateId(),
                 projectId: select.value,
                 startTime: new Date().toISOString(),
-                endTime: null
+                endTime: null,
+                deleted: false,
+                updatedAt: Date.now()
             });
             
             saveState();
@@ -411,7 +471,7 @@
             if (!session) return;
             
             if (!localValue && (field === 'startTime' || field === 'endTime')) {
-                return renderRecent();
+                return renderRecent(); 
             }
             
             if (field === 'endTime' && localValue && !localValue.endsWith('Z')) {
@@ -422,6 +482,7 @@
                  session[field] = localValue;
             }
 
+            session.updatedAt = Date.now();
             saveState();
             renderRecent();
         }
@@ -468,7 +529,9 @@
                 id: generateId(),
                 projectId: projectId,
                 startTime: start,
-                endTime: end
+                endTime: end,
+                deleted: false,
+                updatedAt: Date.now()
             });
             
             saveState();
@@ -477,10 +540,10 @@
             closeManualModal();
         }
 
-        // Rendering
+        // Rendering (Filtered by Tombstones)
         function renderProjects() {
             const select = document.getElementById('projectSelect');
-            const activeProjects = state.projects.filter(p => !p.archived && !p.is_deleted);
+            const activeProjects = state.projects.filter(p => !p.deleted && !p.archived);
             
             const currentVal = select.value;
             select.innerHTML = '<option value="">Select Project...</option>' + 
@@ -498,7 +561,10 @@
 
         function renderRecent() {
             const list = document.getElementById('recentSessions');
-            const sorted = [...state.sessions].filter(s => !s.is_deleted).sort((a, b) => {
+            
+            const activeSessions = state.sessions.filter(s => !s.deleted);
+            
+            const sorted = [...activeSessions].sort((a, b) => {
                 if (a.endTime === null && b.endTime !== null) return -1;
                 if (a.endTime !== null && b.endTime === null) return 1;
                 return new Date(b.startTime) - new Date(a.startTime);
@@ -541,8 +607,11 @@
 
         function renderAccordion() {
             const container = document.getElementById('projectAccordion');
-            container.innerHTML = state.projects.filter(p => !p.is_deleted).map(p => {
-                const pSessions = state.sessions.filter(s => s.projectId === p.id && s.endTime !== null && !s.is_deleted);
+            
+            const activeProjects = state.projects.filter(p => !p.deleted);
+            
+            container.innerHTML = activeProjects.map(p => {
+                const pSessions = state.sessions.filter(s => s.projectId === p.id && s.endTime !== null && !s.deleted);
                 const totalMs = pSessions.reduce((acc, s) => acc + (new Date(s.endTime) - new Date(s.startTime)), 0);
                 const totalHrs = (totalMs / 3600000).toFixed(2);
 
@@ -563,8 +632,9 @@
         // Export Data
         function exportData() {
             let csv = "Project,Start,End,Hours\n";
-            state.sessions.forEach(s => {
-                if (!s.endTime) return;
+            const validSessions = state.sessions.filter(s => !s.deleted && s.endTime);
+            
+            validSessions.forEach(s => {
                 const p = state.projects.find(proj => proj.id === s.projectId);
                 const pName = p ? p.name.replace(/,/g, '') : 'Unknown';
                 const hrs = calcHours(s.startTime, s.endTime);
