@@ -207,7 +207,7 @@
   </div>
 
   <div id="login-layer" class="login-layer">
-    <button id="btn-login-main" class="btn-login-main" disabled>[ ESTABLISHING LINK... ]</button>
+    <button id="btn-login-main" class="btn-login-main" onclick="openLoginModal()">[ SYSTEM LOGIN ]</button>
   </div>
 
   <div id="hud-layer" class="hud-wrapper hidden">
@@ -277,9 +277,22 @@
 
   <script>
     const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
-    let localState = { players: [], version: 0 };
+    
+    // --- THE HARDCODED HYBRID ROSTER ---
+    // Edit these names/classes to match your exact players.
+    // The HUD will use this safely even if the database is empty or offline!
+    let localState = { 
+      version: 0, 
+      players: [
+        { name: "Chuck (Variant Human Battlemaster)", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } },
+        { name: "Tilly (High Elf Rogue)", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } },
+        { name: "Hendrick (Mountain Dwarf Cleric)", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } },
+        { name: "Omen (Tiefling Warlock)", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } },
+        { name: "Zephyr (Tabaxi Monk)", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } }
+      ]
+    };
+    
     let activePlayerIndex = null;
-
     const LOGIN_BTN_HTML = `<button id="btn-login-main" class="btn-login-main" onclick="openLoginModal()">[ SYSTEM LOGIN ]</button>`;
 
     // --- Phase 1: Procedural AI Marquee ---
@@ -310,7 +323,7 @@
     }
     generateAiMessage(); setInterval(generateAiMessage, 180000);
 
-    // --- Phase 2: Safe Polling Engine ---
+    // --- Phase 2: Hybrid Polling Engine ---
     async function pollDatabase(isManual = false) {
       const antenna = document.getElementById('sync-btn');
       if(antenna) antenna.classList.add('spinning');
@@ -321,29 +334,19 @@
         const res = await fetch(WORKER_URL, { signal: controller.signal });
         clearTimeout(timeoutId);
 
-        if (!res.ok) throw new Error("Network error");
-        const remote = await res.json();
-        
-        if (remote.version !== localState.version || isManual || localState.players.length === 0) {
-          localState = remote;
+        if (res.ok) {
+          const remote = await res.json();
+          // If the DB has players, use them! If it's empty/unconfigured, keep the hardcoded roster but sync version.
+          if (remote.players && remote.players.length > 0) {
+            localState = remote;
+          } else {
+            localState.version = remote.version || localState.version;
+          }
           if (activePlayerIndex !== null) renderIdentity();
           if (isManual) showToast("Terminal Synchronized.");
         }
-        
-        const loginBtn = document.getElementById('btn-login-main');
-        if (loginBtn && localState.players.length > 0) {
-          loginBtn.disabled = false;
-          loginBtn.innerText = "[ SYSTEM LOGIN ]";
-          loginBtn.onclick = openLoginModal;
-        }
       } catch (e) {
-        const loginBtn = document.getElementById('btn-login-main');
-        if (loginBtn && localState.players.length === 0) {
-          loginBtn.disabled = false;
-          loginBtn.innerText = "[ CONNECTION FAILED - RETRY ]";
-          loginBtn.onclick = () => pollDatabase(true);
-        }
-        if (isManual) showToast("Connection failed.");
+        if (isManual) showToast("Connection failed. Running in Offline Mode.");
       } finally {
         if(antenna) setTimeout(() => antenna.classList.remove('spinning'), 500);
       }
@@ -351,13 +354,15 @@
 
     function forceSync() { pollDatabase(true); }
 
-    pollDatabase(true).then(() => {
-      const savedIdx = localStorage.getItem('showrunner_active_player');
-      if (savedIdx !== null && localState.players[savedIdx] && !localState.players[savedIdx].is_deleted) {
-        authenticatePlayer(parseInt(savedIdx), localState.players[savedIdx].name, true);
-      }
-    });
+    // Start background polling (No longer blocks login!)
+    pollDatabase(false);
     setInterval(() => pollDatabase(false), 60000);
+
+    // Auto-login check immediately on script load
+    const savedIdx = localStorage.getItem('showrunner_active_player');
+    if (savedIdx !== null && localState.players[savedIdx] && !localState.players[savedIdx].is_deleted) {
+      authenticatePlayer(parseInt(savedIdx), localState.players[savedIdx].name, true);
+    }
 
     // --- Phase 3: Security Theater & Dystopian Loader ---
     function openLoginModal() {
