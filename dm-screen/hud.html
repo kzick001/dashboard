@@ -55,7 +55,10 @@
       color: var(--ai-terminal);
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      padding-right: 50px; /* Gap between the repeating phrases */
+      padding-right: 50px;
+      min-width: 100vw;
+      display: inline-block;
+      box-sizing: border-box;
     }
 
     @keyframes scroll-left {
@@ -233,8 +236,13 @@
 
     // --- Phase 1: Procedural AI Marquee (Dynamic Fetch & Double-Track) ---
     async function generateAiMessage() {
+      let fullMessage = "";
       try {
-        const res = await fetch('ticker.json');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch('ticker.json', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
         if (!res.ok) throw new Error("Ticker file not found");
         const data = await res.json();
         
@@ -243,19 +251,24 @@
         const reslt = data.results[Math.floor(Math.random() * data.results.length)];
         const sign = data.signoffs[Math.floor(Math.random() * data.signoffs.length)];
         
-        const fullMessage = `[SYS_BROADCAST] ${sub} ${act} ${reslt} ${sign}`;
-        
-        // Inject into both spans for the infinite scroll illusion
-        document.querySelectorAll('.ai-marquee-text').forEach(el => {
-          el.innerText = fullMessage;
-        });
+        fullMessage = `[SYS_BROADCAST] ${sub} ${act} ${reslt} ${sign}`;
       } catch (e) {
-        console.warn("Failed to load ticker data, using fallback.");
-        const fallbackMsg = "[SYS_BROADCAST] MANAGEMENT IS CURRENTLY UNAVAILABLE. PLEASE CONTINUE TO BLEED PRODUCTIVELY.";
-        document.querySelectorAll('.ai-marquee-text').forEach(el => {
-          el.innerText = fallbackMsg;
-        });
+        console.warn("Ticker load failed:", e.message);
+        fullMessage = "[SYS_BROADCAST] MANAGEMENT IS CURRENTLY UNAVAILABLE. PLEASE CONTINUE TO BLEED PRODUCTIVELY.";
       }
+
+      // Force a DOM reflow to reset the CSS animation
+      const track = document.querySelector('.marquee-track');
+      if (track) {
+        track.style.animation = 'none';
+        track.offsetHeight; 
+        track.style.animation = ''; 
+      }
+
+      // Inject into both spans for the infinite scroll illusion
+      document.querySelectorAll('.ai-marquee-text').forEach(el => {
+        el.innerText = fullMessage;
+      });
     }
     
     // Cycle AI text every 3 minutes
@@ -306,12 +319,15 @@
       // 1. Populate Dropdown Safely
       const selectEl = document.getElementById('roster-select');
       if (localState.players) {
-        selectEl.innerHTML = '<option value="" disabled selected>Select Character...</option>';
-        localState.players.forEach((p, idx) => {
-          if (!p.is_deleted) {
-            selectEl.innerHTML += `<option value="${idx}">${escapeHtml(p.name)}</option>`;
-          }
-        });
+        const activeRoster = localState.players.map((p, i) => ({...p, i})).filter(p => !p.is_deleted);
+        
+        // Prevent aggressive DOM wiping if roster size is stable
+        if (selectEl.options.length - 1 !== activeRoster.length) {
+          selectEl.innerHTML = '<option value="" disabled selected>Select Character...</option>';
+          activeRoster.forEach(p => {
+            selectEl.innerHTML += `<option value="${p.i}">${escapeHtml(p.name)}</option>`;
+          });
+        }
         
         const savedIdx = localStorage.getItem('showrunner_active_player');
         if (activePlayerIndex !== null && localState.players[activePlayerIndex] && !localState.players[activePlayerIndex].is_deleted) {
@@ -445,10 +461,15 @@
         remoteState.last_modified = Date.now();
 
         // 4. Push Back
+        const payload = { 
+          base_version: remoteState.version - 1, 
+          last_modified: remoteState.last_modified,
+          data: remoteState 
+        };
         const postRes = await fetch(WORKER_URL, { 
           method: 'POST', 
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ base_version: remoteState.version - 1, data: remoteState }) 
+          body: JSON.stringify(payload) 
         });
         
         if (!postRes.ok) throw new Error("Push failed");
@@ -463,7 +484,8 @@
         console.error(e);
         ackBtn.disabled = false;
         ackBtn.innerText = "Acknowledge Receipt";
-        showToast("Network Error: Could not reach Management.");
+        showToast("Sync collision. Fetching latest state...");
+        pollDatabase(true);
       }
     }
 
