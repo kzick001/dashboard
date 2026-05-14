@@ -2,708 +2,376 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Showrunner | Master Dashboard</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='none' stroke='white' stroke-width='4' stroke-linejoin='round' d='M50 5 L90 30 L90 70 L50 95 L10 70 L10 30 Z M50 5 L50 45 M10 30 L50 45 L90 30 M10 70 L50 45 L90 70 M50 95 L50 45'/></svg>">
-  
+  <title>Showrunner | DM Dashboard</title>
   <style>
     :root {
-      --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --text-muted: #888;
-      --accent: #bb86fc; --info: #74b9ff; --success: #03dac6; --danger: #cf6679;
-      --header: #0f0f0f; --nav-bg: #161616; --blueprint-bg: #1a1e24; --scratch-bg: #050505;
-    }
-    
-    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; font-variant-numeric: tabular-nums; }
-    .hidden { display: none !important; }
-
-    /* Custom Scrollbars */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #555; }
-
-    /* Zone 1: Command Header */
-    header { background: var(--header); border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1.5rem; z-index: 200; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
-    .brand { font-size: 1.2rem; font-weight: bold; letter-spacing: 0.1em; color: var(--accent); text-transform: uppercase; display: flex; align-items: center; gap: 1rem; }
-    .nav-links { display: flex; gap: 0.75rem; align-items: center; }
-    .nav-btn { background: transparent; color: #aaa; border: 1px solid #444; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.85rem; font-weight: bold; transition: 0.2s; }
-    .nav-btn:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: #888; }
-    .nav-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(187, 134, 252, 0.1); }
-    
-    .btn-icon { background: transparent; border: none; padding: 4px; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; border-radius: 4px; transition: 0.2s; }
-    .btn-icon:hover { color: #fff; background: rgba(255,255,255,0.1); }
-    select.time-advance { background: #111; color: #fff; border: 1px solid #444; padding: 4px 8px; border-radius: 4px; outline: none; font-size: 0.85rem; cursor: pointer; }
-
-    /* Main Workspace & Flex Morphing */
-    .main-workspace { display: flex; flex-direction: column; flex-grow: 1; position: relative; overflow: hidden; }
-
-    /* Zone 2: Player Deck */
-    .player-deck { flex: 1 1 50%; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 1rem; padding: 1.5rem; overflow-y: auto; transition: flex 0.3s ease, padding 0.3s ease; background: radial-gradient(circle at center, #1a1a1a 0%, var(--bg) 100%); }
-    .player-deck.collapsed { flex: 0 0 90px; padding: 0.5rem 1.5rem; overflow-y: hidden; align-items: center; gap: 0.5rem; }
-    
-    /* Player Cards */
-    .p-card { background: var(--card); width: 260px; padding: 1rem; border-radius: 8px; border: 1px solid #333; border-top: 4px solid var(--p-color, var(--accent)); display: flex; flex-direction: column; gap: 0.75rem; transition: all 0.3s ease; position: relative; }
-    .player-deck.collapsed .p-card { width: auto; flex-direction: row; align-items: center; padding: 0.5rem 1rem; }
-    .p-card.absent { filter: grayscale(1) opacity(0.4); order: 99; transform: scale(0.95); border-top-color: #444; }
-    
-    .p-header { display: flex; justify-content: space-between; align-items: center; }
-    .p-name { font-size: 1.2rem; font-weight: bold; margin: 0; color: var(--p-color, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .player-deck.collapsed .p-name { font-size: 1rem; margin-right: 1rem; }
-    .player-deck.collapsed .card-details, .player-deck.collapsed .vital-grid-full { display: none; }
-    
-    .vital-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; background: #111; padding: 0.5rem; border-radius: 6px; border: 1px inset #222; }
-    .player-deck.collapsed .vital-grid { display: flex; gap: 1rem; padding: 0; border: none; background: transparent; }
-    .vital-stat { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-    .vital-label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; display: flex; align-items: center; gap: 4px; }
-    .editable-input { background: transparent; color: #fff; border: 1px dashed transparent; border-radius: 3px; font-family: inherit; font-size: 1rem; font-weight: bold; width: 45px; text-align: right; outline: none; transition: 0.2s; }
-    .editable-input:hover { border-color: #444; }
-    .editable-input:focus { border-style: solid; border-color: var(--accent); background: #000; }
-    
-    .card-actions { display: flex; gap: 0.5rem; margin-top: auto; }
-    .btn-action { flex-grow: 1; background: #222; border: 1px solid #444; color: #ccc; padding: 4px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 4px; }
-    .btn-action:hover { background: #333; color: #fff; border-color: var(--accent); }
-    .btn-absent { flex-grow: 0; width: 30px; }
-    .btn-absent.is-absent { background: var(--danger); border-color: var(--danger); color: #000; }
-    .pending-badge { background: var(--accent); color: #000; font-size: 0.65rem; font-weight: bold; padding: 2px 6px; border-radius: 10px; position: absolute; top: -10px; right: -10px; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-
-    /* Dividers */
-    .divider { background: #222; display: flex; align-items: center; justify-content: center; color: #888; cursor: pointer; transition: 0.2s; z-index: 10; user-select: none; }
-    .divider:hover { background: #333; color: var(--accent); }
-    .divider.horizontal { height: 16px; border-top: 1px solid #111; border-bottom: 1px solid #111; width: 100%; flex-shrink: 0; }
-    .divider.vertical { width: 16px; border-left: 1px solid #111; border-right: 1px solid #111; height: 100%; flex-shrink: 0; }
-
-    /* Zone 3: Narrative Split */
-    .narrative-split { flex: 1 1 50%; display: flex; flex-direction: row; transition: flex 0.3s ease; overflow: hidden; }
-    .narrative-split.expanded { flex: 1 1 100%; }
-    @media (max-width: 900px) {
-      .narrative-split { flex-direction: column; overflow-y: auto; }
-      .blueprint-col, .scratchpad-col { flex: 0 0 auto; min-height: 400px; overflow: visible; }
+      --bg: #0f0f12;
+      --panel: #1a1a24;
+      --accent: #bb86fc;
+      --danger: #ff4757;
+      --success: #03dac6;
+      --warning: #f1c40f;
+      --text: #e0e0e0;
+      --border: #333;
     }
 
-    /* 3A: Blueprint Column */
-    .blueprint-col { flex: 1 1 60%; background: var(--blueprint-bg); overflow-y: auto; padding: 1.5rem 2rem; transition: flex 0.3s ease; box-sizing: border-box; }
-    .read-aloud { border-left: 4px solid var(--info); padding: 1rem; font-family: 'Georgia', serif; font-style: italic; color: #d1d5db; background: rgba(0,0,0,0.2); margin-bottom: 1rem; }
-    .mechanics-list { padding-left: 1.5rem; color: #ccc; font-size: 0.95rem; }
-    .mechanics-list li { margin-bottom: 0.5rem; }
-    .math-highlight { color: #ffeaa7; font-weight: bold; background: rgba(255, 234, 167, 0.1); padding: 0 4px; border-radius: 2px; }
-    .loot-card { background: rgba(0,0,0,0.3); border-left: 3px solid #f1c40f; padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; border-radius: 4px; }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
 
-    /* 3B: Scratchpad Column */
-    .scratchpad-col { flex: 1 1 40%; background: var(--scratch-bg); display: flex; flex-direction: column; transition: flex 0.3s ease, border 0.3s ease; overflow: hidden; }
-    .scratchpad-col.collapsed { flex: 0 0 0px; padding: 0; border: none; }
-    .scratchpad-header { padding: 0.5rem 1rem; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; background: #111; flex-shrink: 0; }
-    .scratchpad-textarea { flex-grow: 1; background: transparent; border: none; color: #bbb; padding: 1rem; font-family: monospace; font-size: 0.95rem; resize: none; outline: none; line-height: 1.6; }
+    body {
+      margin: 0; padding: 20px;
+      background-color: var(--bg);
+      color: var(--text);
+    }
 
-    /* Zone 4: Navigation Drawer */
-    .nav-drawer { position: absolute; top: 0; left: 0; bottom: 0; width: 280px; background: var(--nav-bg); border-right: 1px solid #333; z-index: 150; transform: translateX(-100%); transition: transform 0.3s ease; display: flex; flex-direction: column; box-shadow: 4px 0 15px rgba(0,0,0,0.8); }
-    .nav-drawer.open { transform: translateX(0); }
-    .drawer-header { padding: 1rem; background: #111; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; color: #aaa; font-weight: bold; letter-spacing: 0.05em; }
-    .drawer-list { overflow-y: auto; flex-grow: 1; padding: 0.5rem 0; }
-    .drawer-item { padding: 0.75rem 1.5rem; color: #ccc; cursor: pointer; border-left: 3px solid transparent; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .drawer-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
-    .drawer-item.active { border-left-color: var(--accent); background: rgba(187, 134, 252, 0.1); color: #fff; font-weight: bold; }
-    .drawer-category { padding: 0.5rem 1.5rem; font-size: 0.75rem; color: #666; text-transform: uppercase; margin-top: 0.5rem; }
-
-    /* Overlay / Modals */
-    .overlay-backdrop { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); backdrop-filter: blur(3px); z-index: 1000; display: flex; align-items: center; justify-content: center; opacity: 1; transition: 0.2s; }
-    .overlay-backdrop.hidden { opacity: 0; pointer-events: none; }
-    .modal-content { background: var(--card); border: 1px solid #444; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; flex-direction: column; overflow: hidden; transform: translateY(0); transition: 0.3s ease; }
-    .overlay-backdrop.hidden .modal-content { transform: translateY(20px); }
-    .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; }
-    .modal-body { padding: 1.5rem; display: flex; flex-direction: column; max-height: 70vh; overflow-y: auto; }
-    .condition-badge { display: inline-block; background: var(--danger); color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; margin: 2px; }
+    /* Header & Sync Status */
+    .header-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--border);
+    }
+    .header-bar h1 { margin: 0; color: var(--accent); font-size: 1.5rem; text-transform: uppercase; letter-spacing: 0.1em; }
     
-    /* Popover Menu */
-    .popover { position: absolute; background: #222; border: 1px solid #555; border-radius: 6px; width: 180px; z-index: 50; box-shadow: 0 8px 16px rgba(0,0,0,0.8); display: flex; flex-direction: column; overflow: hidden; }
-    .popover-title { padding: 6px 12px; font-size: 0.75rem; color: #888; border-bottom: 1px solid #444; background: #1a1a1a; text-transform: uppercase; }
-    .popover-item { padding: 8px 12px; font-size: 0.9rem; cursor: pointer; transition: 0.1s; }
-    .popover-item:hover { background: rgba(3, 218, 198, 0.2); color: #fff; }
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #222; padding: 6px 12px; border-radius: 4px; border: 1px solid var(--border);
+      font-weight: bold; font-size: 0.85rem;
+    }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); }
+    .status-dot.online { background: var(--success); box-shadow: 0 0 8px var(--success); }
 
-    /* Toasts & Sync */
-    #toast-container { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
-    .toast { background: rgba(30, 30, 30, 0.95); color: #fff; padding: 0.75rem 1.5rem; border-radius: 6px; border: 1px solid var(--accent); animation: fadein 0.3s, fadeout 0.3s 2.7s forwards; }
-    @keyframes fadein { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    /* Grid Layout */
+    .dashboard-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px;
+    }
+
+    /* Player Control Panel */
+    .player-card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+      padding: 15px; display: flex; flex-direction: column; gap: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .player-header {
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid #333; padding-bottom: 10px;
+    }
+    .player-name { margin: 0; font-size: 1.2rem; color: #fff; text-transform: uppercase; }
+    
+    /* Control Sections */
+    .control-group { background: #111; padding: 10px; border-radius: 6px; border: 1px solid #222; }
+    .control-group h4 { margin: 0 0 10px 0; font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* Toggles */
+    .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn-toggle {
+      background: #222; border: 1px solid #444; color: #aaa; padding: 8px;
+      border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8rem; transition: 0.2s;
+    }
+    .btn-toggle:hover { border-color: #666; }
+    .btn-toggle.active { background: rgba(255, 71, 87, 0.1); border-color: var(--danger); color: var(--danger); }
+    .btn-toggle.active.poison { border-color: var(--success); color: var(--success); background: rgba(3, 218, 198, 0.1); }
+    
+    /* Inputs & Actions */
+    .input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    input[type="text"], select {
+      flex: 1; background: #222; border: 1px solid #444; color: #fff;
+      padding: 8px; border-radius: 4px; outline: none;
+    }
+    input[type="text"]:focus, select:focus { border-color: var(--accent); }
+    
+    .btn-action {
+      background: rgba(187, 134, 252, 0.1); border: 1px solid var(--accent); color: var(--accent);
+      padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.2s;
+    }
+    .btn-action:hover { background: var(--accent); color: #000; }
+    .btn-danger { border-color: var(--danger); color: var(--danger); background: rgba(255, 71, 87, 0.1); }
+    .btn-danger:hover { background: var(--danger); color: #000; }
+
+    /* Pending Receipts */
+    .receipt-log { font-size: 0.8rem; color: #aaa; max-height: 80px; overflow-y: auto; }
+    .receipt-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #333; }
+    .receipt-pending { color: var(--warning); }
+    .receipt-cleared { color: var(--success); }
+
+    /* Utilities */
+    .btn-system { background: #333; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    .btn-system:hover { background: #555; }
+    
+    #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 4000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+    .toast { background: var(--panel); color: #fff; padding: 1rem 1.5rem; border-radius: 4px; border-left: 4px solid var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.5); animation: fadein 0.3s, fadeout 0.3s 3.7s forwards; }
+    @keyframes fadein { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
     @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
-    #sync-status-icon { transition: 0.3s; }
-    .btn-send { background: rgba(187, 134, 252, 0.1); border: 1px solid var(--accent); color: var(--accent); padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: 0.2s; }
-    .btn-send:hover { background: var(--accent); color: #000; }
+
   </style>
 </head>
 <body>
 
-  <header>
-    <div class="brand">
-      <button class="btn-icon" onclick="toggleNavDrawer()" title="Campaign Navigator">
-        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-      </button>
-      SHOWRUNNER
+  <div class="header-bar">
+    <h1>Showrunner Command</h1>
+    <div>
+      <button class="btn-system" onclick="seedDatabase()">[ INITIALIZE / SEED DATABASE ]</button>
+      <div class="status-badge" style="margin-left: 15px;">
+        <div id="connection-dot" class="status-dot"></div>
+        <span id="connection-text">OFFLINE</span>
+      </div>
     </div>
-    
-    <div class="nav-links">
-      <span id="sync-status-icon" title="Data Synced" style="color:#555;">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
-      </span>
-      <button class="btn-icon" onclick="undo()" title="Undo"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3l-3 2.7"></path></svg></button>
-      <button class="btn-icon" onclick="redo()" title="Redo"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg></button>
-      
-      <select class="time-advance" onchange="advanceTime(this.value)">
-        <option value="" disabled selected>⌛ Rests...</option>
-        <option value="short">Short Rest</option>
-        <option value="long">Long Rest</option>
-        <option value="dawn">Dawn</option>
-      </select>
-      
-      <span style="border-left: 1px solid #444; height: 20px; margin: 0 0.5rem;"></span>
-      <a href="index.html" class="nav-btn active">Dashboard</a>
-      <a href="players.html" class="nav-btn">Players</a>
-      <a href="notes.html" class="nav-btn">Notes</a>
-      <a href="loot.html" class="nav-btn">Loot</a>
-    </div>
-  </header>
+  </div>
+
+  <div id="dashboard-grid" class="dashboard-grid">
+    <div style="color: #666; font-style: italic;">Awaiting network sync...</div>
+  </div>
 
   <div id="toast-container"></div>
 
-  <div class="main-workspace">
-    
-    <div id="nav-drawer" class="nav-drawer">
-      <div class="drawer-header">
-        NAVIGATOR
-        <button class="btn-icon" onclick="toggleNavDrawer()"><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-      </div>
-      <div class="drawer-list" id="drawer-list"></div>
-    </div>
-
-    <div id="player-deck" class="player-deck">
-      </div>
-
-    <div class="divider horizontal" onclick="toggleDeck()" title="Toggle Combat/Exploration Mode">
-      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="7 10 12 15 17 10"></polyline></svg>
-    </div>
-
-    <div id="narrative-split" class="narrative-split">
-      
-      <div id="blueprint-col" class="blueprint-col">
-        <h2 style="color:#555; text-align:center; margin-top:3rem;">Select a Room from the Navigator.</h2>
-      </div>
-
-      <div class="divider vertical" onclick="toggleScratchpad()" title="Toggle Scratchpad">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="15 18 9 12 15 6"></polyline></svg>
-      </div>
-
-      <div id="scratchpad-col" class="scratchpad-col">
-        <div class="scratchpad-header">
-          <select id="session-select" style="background:#222; color:#fff; border:1px solid #444; border-radius:4px; padding:2px 6px; outline:none;" onchange="changeSession(this.value)"></select>
-          <button class="btn-icon" onclick="createSession()" title="New Session"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
-        </div>
-        <textarea id="scratchpad-input" class="scratchpad-textarea" placeholder="Live session notes..."></textarea>
-      </div>
-
-    </div>
-  </div>
-
-  <div id="player-modal" class="overlay-backdrop hidden" onclick="if(event.target===this) closePlayerModal()">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 id="modal-name" style="margin:0; color:var(--accent);">Player Name</h2>
-        <button class="btn-icon" onclick="closePlayerModal()"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-      </div>
-      <div id="modal-body" class="modal-body"></div>
-    </div>
-  </div>
-
   <script>
     const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
-    const colorPalette = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe'];
-    
-    // SVGs for dynamic injection
-    const SVGS = {
-      heart: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`,
-      shield: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>`,
-      eye: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
-      eyeOff: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`,
-      coin: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v8M8 12h8"></path></svg>`,
-      award: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>`
-    };
+    let dmState = null;
+    let isPushing = false;
 
-    // Unified Master State
-    let appState = {
-      players: [],
-      campaign_notes: { sessions: [{ id: Date.now(), title: "Session 1", content: "" }], rooms: [] },
-      loot_tables: {}
-    };
-
-    // Pointers & Timers
-    let currentRoomIndex = null;
-    let currentSessionId = null;
-    let historyStack = [];
-    let redoStack = [];
-    const MAX_HISTORY = 15;
-    let scratchTimer;
-
-    // --- State Engine ---
-    function saveLocal() { localStorage.setItem('showrunner_master', JSON.stringify(appState)); }
-
-    async function syncToKV() {
+    // --- Core Sync Engine ---
+    async function pollNetwork() {
+      if (isPushing) return; // Don't interrupt a save
       try {
-        const baseVersion = appState.version || 0;
-        appState.version = baseVersion + 1;
-        appState.last_modified = Date.now();
-        
-        let payload = appState;
-        const res = await fetch(WORKER_URL);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const res = await fetch(WORKER_URL, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
         if (res.ok) {
-          const remote = await res.json();
-          // Deep merge to prevent overwriting remote objects with empty local defaults
-          payload = { 
-            ...remote, 
-            ...appState, 
-            players: appState.players.length > 0 ? appState.players : (remote.players || []),
-            loot_tables: Object.keys(appState.loot_tables).length > 0 ? appState.loot_tables : (remote.loot_tables || {})
-          };
+          const data = await res.json();
+          dmState = data;
+          document.getElementById('connection-dot').classList.add('online');
+          document.getElementById('connection-text').innerText = `SYNCED (v${dmState.version || 0})`;
+          renderDashboard();
         }
+      } catch (e) {
+        document.getElementById('connection-dot').classList.remove('online');
+        document.getElementById('connection-text').innerText = "CONNECTION LOST";
+      }
+    }
+
+    // Start 5-second rapid polling for DM monitoring
+    pollNetwork();
+    setInterval(pollNetwork, 5000);
+
+    // --- The Universal Mutator (Optimistic Locking) ---
+    async function mutateAndPush(mutationCallback, successMessage) {
+      if (isPushing) return showToast("Busy saving previous action...");
+      isPushing = true;
+      
+      try {
+        // 1. Get latest state
+        const fetchRes = await fetch(WORKER_URL);
+        if (!fetchRes.ok) throw new Error("Fetch failed");
+        let latestState = await fetchRes.json();
+
+        // 2. Apply the specific change
+        mutationCallback(latestState);
+
+        // 3. Increment & Timestamp
+        latestState.version = (latestState.version || 0) + 1;
+        latestState.last_modified = Date.now();
+
+        // 4. Push
+        const payload = { 
+          base_version: latestState.version - 1, 
+          last_modified: latestState.last_modified,
+          data: latestState 
+        };
         
         const postRes = await fetch(WORKER_URL, { 
           method: 'POST', 
-          headers: { 'Content-Type': 'application/json' }, 
-          body: JSON.stringify({ base_version: baseVersion, data: payload }) 
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload) 
         });
         
-        if (!postRes.ok) throw new Error('Sync rejected by server');
-        flashSync();
-      } catch (e) { 
-        console.error("KV Sync Failed", e);
-        showToast("Sync Failed: Check connection.");
-        document.getElementById('sync-status-icon').style.color = 'var(--danger)';
+        if (!postRes.ok) throw new Error("Version collision");
+
+        dmState = latestState;
+        renderDashboard();
+        showToast(successMessage);
+
+      } catch (e) {
+        console.error(e);
+        showToast("Collision detected. Retrying is required.");
+        pollNetwork(); // Refresh UI to latest state
+      } finally {
+        isPushing = false;
       }
     }
 
-    async function init() {
-      // 1. Load Local
-      const local = localStorage.getItem('showrunner_master');
-      if (local) { try { appState = JSON.parse(local); } catch(e){} }
-
-      // 2. Fetch Remote Overrides
-      try {
-        const res = await fetch(WORKER_URL);
-        if (res.ok) {
-          const remote = await res.json();
-          if (remote.players) appState.players = remote.players;
-          if (remote.campaign_notes) appState.campaign_notes = remote.campaign_notes;
-          if (remote.loot_tables) appState.loot_tables = remote.loot_tables;
-          if (remote.version) appState.version = remote.version;
+    // --- Action Handlers ---
+    function toggleCondition(playerIdx, conditionStr) {
+      mutateAndPush((state) => {
+        const p = state.players[playerIdx];
+        if (!p.status.conditions) p.status.conditions = [];
+        
+        const cLower = conditionStr.toLowerCase();
+        const existingIdx = p.status.conditions.findIndex(c => c.toLowerCase() === cLower);
+        
+        if (existingIdx >= 0) {
+          p.status.conditions.splice(existingIdx, 1); // Remove
+        } else {
+          p.status.conditions.push(conditionStr); // Add
         }
-      } catch (e) { console.warn("Fetch failed, using local."); }
-
-      // Sanitize
-      if (!appState.campaign_notes.sessions || appState.campaign_notes.sessions.length === 0) {
-        appState.campaign_notes.sessions = [{ id: Date.now(), title: "Session 1", content: "" }];
-      }
-      currentSessionId = appState.campaign_notes.sessions[0].id;
-
-      renderAll();
+      }, `Condition updated for ${dmState.players[playerIdx].name}`);
     }
 
-    function pushState() {
-      historyStack.push(JSON.parse(JSON.stringify(appState)));
-      if(historyStack.length > MAX_HISTORY) historyStack.shift();
-      redoStack = [];
-    }
-    function undo() {
-      if (historyStack.length === 0) return showToast("Nothing to undo.");
-      redoStack.push(JSON.parse(JSON.stringify(appState)));
-      appState = historyStack.pop();
-      saveLocal(); syncToKV(); renderAll(); showToast("Undo successful.");
-    }
-    function redo() {
-      if (redoStack.length === 0) return showToast("Nothing to redo.");
-      historyStack.push(JSON.parse(JSON.stringify(appState)));
-      appState = redoStack.pop();
-      saveLocal(); syncToKV(); renderAll(); showToast("Redo successful.");
+    function dispatchLoot(playerIdx) {
+      const titleInput = document.getElementById(`loot-title-${playerIdx}`);
+      const rarityInput = document.getElementById(`loot-rarity-${playerIdx}`);
+      const title = titleInput.value.trim();
+      if (!title) return showToast("Item title cannot be blank.");
+
+      mutateAndPush((state) => {
+        const p = state.players[playerIdx];
+        if (!p.achievements.pending) p.achievements.pending = [];
+        
+        p.achievements.pending.push({
+          name: title,
+          is_acknowledged: false,
+          rewards: { items: [{ rarity: rarityInput.value }] }
+        });
+      }, `Loot dispatched to ${dmState.players[playerIdx].name}`);
     }
 
-    // --- UI Morphing Toggles ---
-    function toggleDeck() {
-      const deck = document.getElementById('player-deck');
-      const split = document.getElementById('narrative-split');
-      deck.classList.toggle('collapsed');
-      split.classList.toggle('expanded');
-    }
-    function toggleScratchpad() {
-      document.getElementById('scratchpad-col').classList.toggle('collapsed');
-    }
-    function toggleNavDrawer() {
-      document.getElementById('nav-drawer').classList.toggle('open');
+    function clearLoot(playerIdx) {
+      // Deletes all items that have been acknowledged to keep JSON clean
+      mutateAndPush((state) => {
+        const p = state.players[playerIdx];
+        if (p.achievements.pending) {
+          p.achievements.pending = p.achievements.pending.filter(item => !item.is_acknowledged);
+        }
+      }, `Receipts cleared for ${dmState.players[playerIdx].name}`);
     }
 
-    // --- Render Dispatcher ---
-    function renderAll() {
-      renderNavDrawer();
-      renderPlayerDeck();
-      renderBlueprint();
-      renderScratchpad();
+    function dispatchMemo(playerIdx) {
+      const memoInput = document.getElementById(`memo-text-${playerIdx}`);
+      const msg = memoInput.value.trim();
+      if (!msg) return showToast("Memo cannot be blank.");
+
+      mutateAndPush((state) => {
+        const p = state.players[playerIdx];
+        p.override = { is_active: true, message: msg };
+      }, `Override sent to ${dmState.players[playerIdx].name}`);
     }
 
-    // --- Zone 4: Nav Drawer ---
-    function renderNavDrawer() {
-      let html = `<div class="drawer-category">Active Rooms</div>`;
-      if(appState.campaign_notes.rooms.length === 0) html += `<div style="padding:1rem; color:#666; font-size:0.85rem;">No rooms loaded.</div>`;
-      appState.campaign_notes.rooms.forEach((r, idx) => {
-        html += `<div class="drawer-item ${currentRoomIndex === idx ? 'active' : ''}" onclick="selectRoom(${idx})">${escapeHtml(r.title)}</div>`;
-      });
-      document.getElementById('drawer-list').innerHTML = html;
-    }
-    function selectRoom(idx) {
-      currentRoomIndex = idx;
-      toggleNavDrawer();
-      renderNavDrawer();
-      renderBlueprint();
+    // --- Emergency Database Seeder ---
+    function seedDatabase() {
+      if(!confirm("WARNING: This will wipe the current database and reconstruct the 5-player roster. Proceed?")) return;
+      
+      const seedState = {
+        version: 0,
+        players: [
+          { name: "Chuck", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } },
+          { name: "Tilly", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } },
+          { name: "Hendrick", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } },
+          { name: "Aelar", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } },
+          { name: "Jimothy", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } }
+        ]
+      };
+
+      mutateAndPush((state) => {
+        state.players = seedState.players;
+      }, "Database Initialized.");
     }
 
-    // --- Zone 2: Player Deck ---
-    function renderPlayerDeck() {
-      const deck = document.getElementById('player-deck');
-      if (appState.players.length === 0) {
-        deck.innerHTML = `<h3 style="color:#555; width:100%; text-align:center;">No players imported.</h3>`;
+    // --- UI Rendering ---
+    function renderDashboard() {
+      if (!dmState || !dmState.players || dmState.players.length === 0) {
+        document.getElementById('dashboard-grid').innerHTML = `<div style="color:var(--danger)">Database is empty. Click INITIALIZE above.</div>`;
         return;
       }
 
-      deck.innerHTML = appState.players.map((p, idx) => {
-        const pColor = colorPalette[idx % colorPalette.length];
-        const absentClass = p.is_absent ? 'absent' : '';
-        const pendingCount = (p.achievements && p.achievements.pending) ? p.achievements.pending.length : 0;
-        const badgeHtml = pendingCount > 0 ? `<div class="pending-badge">${pendingCount}</div>` : '';
+      const grid = document.getElementById('dashboard-grid');
+      let html = '';
 
-        return `
-          <div class="p-card ${absentClass}" style="--p-color: ${pColor}">
-            ${badgeHtml}
-            <div class="p-header">
-              <h2 class="p-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h2>
-              <div class="card-details">
-                <button class="btn-action btn-absent ${p.is_absent ? 'is-absent' : ''}" onclick="toggleAttendance(${idx})" title="Toggle Attendance">${p.is_absent ? SVGS.eyeOff : SVGS.eye}</button>
-              </div>
-            </div>
-            
-            <div class="vital-grid vital-grid-full">
-              <div class="vital-stat"><span class="vital-label">${SVGS.heart} HP</span><input type="text" class="editable-input" value="${p.stats?.hp_max||0}" onblur="updateStat(${idx}, 'hp_max', this.value)" onkeydown="if(event.key==='Enter') this.blur()"></div>
-              <div class="vital-stat"><span class="vital-label">${SVGS.shield} AC</span><input type="text" class="editable-input" value="${p.stats?.ac||0}" onblur="updateStat(${idx}, 'ac', this.value)" onkeydown="if(event.key==='Enter') this.blur()"></div>
-              <div class="vital-stat"><span class="vital-label">${SVGS.eye} PP</span><input type="text" class="editable-input" value="${p.stats?.passive_perception||0}" onblur="updateStat(${idx}, 'passive_perception', this.value)" onkeydown="if(event.key==='Enter') this.blur()"></div>
-              <div class="vital-stat"><span class="vital-label">${SVGS.coin} GP</span><input type="text" class="editable-input" value="${p.gold||0}" onblur="updateStat(${idx}, 'gold', this.value)" onkeydown="if(event.key==='Enter') this.blur()"></div>
-            </div>
+      dmState.players.forEach((p, idx) => {
+        if (p.is_deleted) return;
 
-            <div class="vital-grid hidden-full" style="display:none;">
-               <div class="vital-stat"><span class="vital-label">${SVGS.heart}</span><input type="text" class="editable-input" value="${p.stats?.hp_max||0}" onblur="updateStat(${idx}, 'hp_max', this.value)" onkeydown="if(event.key==='Enter') this.blur()"></div>
-               <div class="vital-stat"><span class="vital-label">${SVGS.shield}</span><span style="font-weight:bold">${p.stats?.ac||0}</span></div>
-            </div>
-            
-            <div class="card-actions card-details">
-              <button class="btn-action" onclick="openPlayerModal(${idx})">Details / Inventory</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-      
-      // CSS trick: display:none on inline style vs class depending on collapsed state
-      if(deck.classList.contains('collapsed')) {
-         deck.querySelectorAll('.vital-grid-full').forEach(el => el.style.display = 'none');
-         deck.querySelectorAll('.hidden-full').forEach(el => el.style.display = 'flex');
-      }
-    }
+        const conds = (p.status?.conditions || []).map(c => c.toLowerCase());
+        const isPoisoned = conds.includes('poisoned');
+        const isBleeding = conds.includes('bleeding');
+        const isBlinded = conds.includes('blinded');
+        const isCritical = conds.includes('critical trauma');
 
-    function updateStat(pIdx, field, valStr) {
-      const val = valStr.trim();
-      if(!val) return renderPlayerDeck(); // Restore UI if user clears input
-      pushState();
-      
-      const p = appState.players[pIdx];
-      if (!p.stats) p.stats = {}; // Prevent TypeError if missing
-      let curr = field === 'gold' ? (p.gold||0) : (p.stats[field]||0);
-      
-      if(val.startsWith('+')) curr += parseInt(val.substring(1)) || 0;
-      else if(val.startsWith('-')) curr -= parseInt(val.substring(1)) || 0;
-      else curr = parseInt(val) || 0;
+        const pendingItems = p.achievements?.pending || [];
+        const hasCleared = pendingItems.some(i => i.is_acknowledged);
 
-      if(field === 'gold') p.gold = curr; else p.stats[field] = curr;
-      
-      saveLocal(); syncToKV(); renderPlayerDeck();
-    }
-
-    function toggleAttendance(pIdx) {
-      pushState();
-      appState.players[pIdx].is_absent = !appState.players[pIdx].is_absent;
-      saveLocal(); syncToKV(); renderPlayerDeck();
-    }
-
-    // --- Interactive Deep-Dive Player Modal ---
-    function openPlayerModal(pIdx) {
-      const p = appState.players[pIdx];
-      document.getElementById('modal-name').innerText = p.name;
-      document.getElementById('modal-name').style.color = colorPalette[pIdx % colorPalette.length];
-      
-      // 1. Render Status
-      let condHtml = (p.status?.conditions||[]).length > 0 
-        ? p.status.conditions.map(c=>`<span class="condition-badge">${escapeHtml(c)}</span>`).join('') 
-        : '<span style="color:#666">Healthy</span>';
-
-      // 2. Render Pending Inbox
-      let pendingHtml = '';
-      if (p.achievements?.pending && p.achievements.pending.length > 0) {
-        pendingHtml = p.achievements.pending.map((ach, aIdx) => `
-          <div style="background: rgba(187, 134, 252, 0.1); border-left: 3px solid var(--accent); padding: 0.75rem; margin-bottom: 0.5rem; border-radius: 4px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <div>
-                <strong style="color:var(--accent)">${escapeHtml(ach.name)}</strong><br>
-                <span style="font-size:0.85rem; color:#aaa">${escapeHtml(ach.description)}</span>
-              </div>
-              <button class="btn-send" onclick="claimReward(${pIdx}, ${aIdx})">Claim</button>
-            </div>
-          </div>
-        `).join('');
-      }
-
-      // 3. Render Inventory
-      let invHtml = '';
-      const activeInv = p.inventory ? p.inventory.filter(i => !i.is_deleted) : [];
-      if (activeInv.length > 0) {
-        invHtml = p.inventory.map((item, iIdx) => {
-          if (item.is_deleted) return '';
-          return `
-          <div style="background:#111; border:1px solid #333; padding:0.5rem 0.75rem; margin-bottom:0.5rem; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
-            <div>
-              <strong style="color:#ddd">${escapeHtml(item.name)}</strong> 
-              <span style="color:#666; font-size:0.8rem;">(x${item.quantity || 1})</span><br>
-              <span style="font-size:0.85rem; color:#888">${escapeHtml(item.flavor_text || item.mechanics || "")}</span>
-            </div>
-            <button class="btn-icon" style="color:var(--danger);" onclick="removeInventoryItem(${pIdx}, ${iIdx})" title="Remove Item">
-              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-            </button>
-          </div>
-          `;
-        }).join('');
-      } else {
-        invHtml = '<div style="color:#666; font-size:0.9rem; padding:0.5rem 0;">Inventory is empty.</div>';
-      }
-
-      // 4. Inject into Modal Body
-      document.getElementById('modal-body').innerHTML = `
-        <div style="margin-bottom: 1rem;"><strong>Status:</strong> ${condHtml}</div>
-        
-        ${pendingHtml ? `<h4 style="margin: 0 0 0.5rem 0; color:var(--accent); text-transform:uppercase; font-size:0.8rem;">Inbox (Pending Loot)</h4>${pendingHtml}` : ''}
-        
-        <div style="margin-top: 1rem;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
-            <h4 style="margin:0; color:#888; text-transform:uppercase; font-size:0.8rem;">Inventory</h4>
-            <button class="btn-send" style="padding:2px 6px; font-size:0.75rem;" onclick="addInventoryItem(${pIdx})">+ Add Item</button>
-          </div>
-          ${invHtml}
-        </div>
-
-        <div style="margin-top: 1.5rem;">
-          <h4 style="margin:0 0 0.5rem 0; color:#888; text-transform:uppercase; font-size:0.8rem;">Character Lore & Notes</h4>
-          <textarea class="scratchpad-textarea" style="width:100%; box-sizing:border-box; background:#111; border:1px solid #333; border-radius:4px; min-height:80px; padding:0.5rem;" 
-            onblur="updatePlayerLore(${pIdx}, this.value)">${escapeHtml(p.lore || "")}</textarea>
-        </div>
-      `;
-      document.getElementById('player-modal').classList.remove('hidden');
-    }
-
-    function closePlayerModal() { 
-      document.getElementById('player-modal').classList.add('hidden'); 
-    }
-
-    // Modal Interaction Helpers
-    function claimReward(pIdx, pendingIdx) {
-      pushState();
-      const p = appState.players[pIdx];
-      const achievement = p.achievements.pending.splice(pendingIdx, 1)[0];
-      
-      if (!p.inventory) p.inventory = [];
-      
-      if (achievement.rewards && achievement.rewards.items) {
-        achievement.rewards.items.forEach(newItem => {
-          p.inventory.push(newItem);
-        });
-      }
-      
-      saveLocal(); syncToKV(); renderPlayerDeck(); 
-      openPlayerModal(pIdx); 
-      showToast(`Claimed: ${achievement.name}`);
-    }
-
-    function removeInventoryItem(pIdx, invIdx) {
-      if(!confirm("Destroy this item?")) return;
-      pushState();
-      
-      const p = appState.players[pIdx];
-      p.inventory[invIdx].is_deleted = true;
-      p.inventory[invIdx].last_modified = Date.now();
-      
-      saveLocal(); syncToKV(); 
-      openPlayerModal(pIdx); 
-    }
-
-    function addInventoryItem(pIdx) {
-      const itemName = prompt("Enter item name:");
-      if (!itemName) return;
-      
-      pushState();
-      const p = appState.players[pIdx];
-      if (!p.inventory) p.inventory = [];
-      
-      p.inventory.push({
-        name: itemName,
-        flavor_text: "Added manually by Showrunner.",
-        mechanics: "",
-        quantity: 1
-      });
-      
-      saveLocal(); syncToKV(); 
-      openPlayerModal(pIdx); 
-    }
-
-    function updatePlayerLore(pIdx, newText) {
-      const p = appState.players[pIdx];
-      if (p.lore === newText) return; 
-      
-      pushState();
-      p.lore = newText;
-      
-      saveLocal(); syncToKV();
-    }
-
-
-    // --- Zone 3A: Blueprint ---
-    function renderBlueprint() {
-      const col = document.getElementById('blueprint-col');
-      if (currentRoomIndex === null || !appState.campaign_notes.rooms[currentRoomIndex]) {
-        col.innerHTML = `<h2 style="color:#555; text-align:center; margin-top:3rem;">Select a Room from the Navigator.</h2>`;
-        return;
-      }
-      
-      const room = appState.campaign_notes.rooms[currentRoomIndex];
-      let mechHtml = (room.mechanics||[]).map(m => `<li>${parseMath(escapeHtml(m))}</li>`).join('');
-      let encHtml = (room.encounters||[]).map(e => `<div style="background:#111; padding:1rem; border-left:3px solid var(--danger); margin-bottom:1rem;"><strong>${escapeHtml(e.name)}</strong> (CR ${e.cr||'?'})<br><span style="color:#aaa; font-size:0.9rem;">${escapeHtml(e.tactics)}</span></div>`).join('');
-      
-      let lootHtml = (room.loot||[]).map((l, lIdx) => {
-        if (l.is_deleted) return '';
-        return `
-        <div class="loot-card">
-          <div><strong style="color:var(--warning)">${escapeHtml(l.achievement_name)}</strong><br><span style="font-size:0.85rem; color:#bbb">${escapeHtml(l.item_name)}</span></div>
-          <div style="position:relative;">
-             <button class="btn-send" onclick="toggleAwardMenu(${lIdx})">${SVGS.award} Award</button>
-             <div id="award-menu-${lIdx}" class="popover hidden" style="right:0;">
-                <div class="popover-title">Select Player:</div>
-                ${appState.players.map((p, pIdx) => `<div class="popover-item" onclick="awardLoot(${lIdx}, ${pIdx})">${escapeHtml(p.name)}</div>`).join('')}
-             </div>
-          </div>
-        </div>
-        `;
-      }).join('');
-
-      col.innerHTML = `
-        <h1 style="color:var(--accent); margin-top:0;">${escapeHtml(room.title)}</h1>
-        <div class="read-aloud">${escapeHtml(room.read_aloud)}</div>
-        <ul class="mechanics-list">${mechHtml}</ul>
-        ${encHtml}
-        ${lootHtml ? `<h3 style="border-bottom:1px solid #333; padding-bottom:4px;">Rewards</h3>${lootHtml}` : ''}
-      `;
-    }
-
-    function toggleAwardMenu(lIdx) {
-      document.querySelectorAll('.popover').forEach(el => { if(el.id !== `award-menu-${lIdx}`) el.classList.add('hidden'); });
-      document.getElementById(`award-menu-${lIdx}`).classList.toggle('hidden');
-    }
-
-    function awardLoot(lIdx, pIdx) {
-      pushState();
-      const room = appState.campaign_notes.rooms[currentRoomIndex];
-      const loot = room.loot[lIdx];
-      loot.is_deleted = true;
-      loot.last_modified = Date.now();
-      
-      const player = appState.players[pIdx];
-      if(!player.achievements) player.achievements = { pending: [] };
-      if(!player.achievements.pending) player.achievements.pending = [];
-      
-      player.achievements.pending.push({
-        name: loot.achievement_name, description: loot.item_desc || "Room Loot",
-        rewards: { gold: 0, items: [{ name: loot.item_name, flavor_text: loot.item_desc, quantity: 1 }] }
-      });
-      
-      saveLocal(); syncToKV(); renderBlueprint(); renderPlayerDeck();
-      showToast(`Awarded ${loot.item_name} to ${player.name}`);
-    }
-
-    // --- Zone 3B: Scratchpad ---
-    function renderScratchpad() {
-      const select = document.getElementById('session-select');
-      const textarea = document.getElementById('scratchpad-input');
-      
-      select.innerHTML = appState.campaign_notes.sessions.map(s => `<option value="${s.id}" ${s.id === currentSessionId ? 'selected' : ''}>${escapeHtml(s.title)}</option>`).join('');
-      const curr = appState.campaign_notes.sessions.find(s => s.id === currentSessionId);
-      textarea.value = curr ? curr.content : '';
-    }
-
-    function changeSession(idStr) { currentSessionId = parseInt(idStr); renderScratchpad(); }
-    function createSession() {
-      const title = prompt("Session Title:", `Session ${appState.campaign_notes.sessions.length + 1}`);
-      if(!title) return;
-      pushState();
-      const s = { id: Date.now(), title, content: "" };
-      appState.campaign_notes.sessions.push(s);
-      currentSessionId = s.id;
-      saveLocal(); syncToKV(); renderScratchpad();
-    }
-
-    document.getElementById('scratchpad-input').addEventListener('input', (e) => {
-      clearTimeout(scratchTimer);
-      document.getElementById('sync-status-icon').style.color = '#888';
-      scratchTimer = setTimeout(() => commitScratchpad(e.target.value), 30000);
-    });
-    document.getElementById('scratchpad-input').addEventListener('blur', (e) => {
-      clearTimeout(scratchTimer); commitScratchpad(e.target.value);
-    });
-
-    function commitScratchpad(text) {
-      const s = appState.campaign_notes.sessions.find(x => x.id === currentSessionId);
-      if(!s || s.content === text) return;
-      pushState();
-      s.content = text;
-      saveLocal(); syncToKV();
-    }
-
-    // --- Tools ---
-    async function advanceTime(type) {
-      if(!type) return;
-      pushState();
-      appState.players.forEach(p => {
-        if(type === 'long') {
-          if(p.stats) p.stats.hp_current = p.stats.hp_max || 0;
-          if(p.status && p.status.conditions) p.status.conditions = p.status.conditions.filter(c => !['poisoned','blinded','deafened'].includes(c.toLowerCase()));
+        let receiptHtml = '';
+        if (pendingItems.length === 0) {
+          receiptHtml = `<div class="receipt-item" style="color:#555;">Inbox clear.</div>`;
+        } else {
+          pendingItems.forEach(i => {
+            const statusClass = i.is_acknowledged ? 'receipt-cleared' : 'receipt-pending';
+            const statusIcon = i.is_acknowledged ? '✓ ACKNOWLEDGED' : '⚠ PENDING';
+            receiptHtml += `<div class="receipt-item"><span style="color:#fff">${escapeHtml(i.name)}</span> <span class="${statusClass}">${statusIcon}</span></div>`;
+          });
         }
-        (p.inventory||[]).forEach(i => {
-          if(i.charges && (i.charges.reset_on === type || (type === 'long' && i.charges.reset_on === 'short'))) i.charges.current = i.charges.max;
-        });
+
+        const isOverrideActive = p.override?.is_active;
+
+        html += `
+          <div class="player-card">
+            <div class="player-header">
+              <h2 class="player-name">${escapeHtml(p.name)}</h2>
+              ${isOverrideActive ? '<span style="color:var(--danger); font-size:0.8rem; font-weight:bold;">⚠ SYSTEM LOCKED</span>' : ''}
+            </div>
+
+            <div class="control-group">
+              <h4>VFX / Conditions</h4>
+              <div class="toggle-grid">
+                <button class="btn-toggle ${isBleeding ? 'active' : ''}" onclick="toggleCondition(${idx}, 'Bleeding')">Bleeding</button>
+                <button class="btn-toggle ${isPoisoned ? 'active poison' : ''}" onclick="toggleCondition(${idx}, 'Poisoned')">Poisoned</button>
+                <button class="btn-toggle ${isBlinded ? 'active' : ''}" onclick="toggleCondition(${idx}, 'Blinded')">Blinded</button>
+                <button class="btn-toggle ${isCritical ? 'active' : ''}" onclick="toggleCondition(${idx}, 'Critical Trauma')">Critical</button>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <h4>Dispatch Supply Drop</h4>
+              <div class="input-row">
+                <input type="text" id="loot-title-${idx}" placeholder="Achievement Title...">
+                <select id="loot-rarity-${idx}" style="max-width: 120px;">
+                  <option value="standard" selected>Standard</option>
+                  <option value="rare">Rare</option>
+                  <option value="contraband">Contraband</option>
+                </select>
+              </div>
+              <button class="btn-action" style="width: 100%;" onclick="dispatchLoot(${idx})">TRANSMIT LOOT</button>
+            </div>
+
+            <div class="control-group">
+              <h4>Direct Override Memo</h4>
+              <div class="input-row">
+                <input type="text" id="memo-text-${idx}" placeholder="Type corporate threat...">
+              </div>
+              <button class="btn-action btn-danger" style="width: 100%;" onclick="dispatchMemo(${idx})" ${isOverrideActive ? 'disabled' : ''}>
+                ${isOverrideActive ? 'AWAITING COMPLIANCE...' : 'LOCK SCREEN & SEND'}
+              </button>
+            </div>
+
+            <div class="control-group">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                <h4>Pending Receipts</h4>
+                ${hasCleared ? `<button class="btn-icon" style="background:transparent; border:none; color:var(--accent); cursor:pointer; font-size:0.7rem;" onclick="clearLoot(${idx})">CLEAR LOG</button>` : ''}
+              </div>
+              <div class="receipt-log">
+                ${receiptHtml}
+              </div>
+            </div>
+
+          </div>
+        `;
       });
-      document.querySelector('.time-advance').value = "";
-      saveLocal(); await syncToKV(); renderPlayerDeck(); showToast(`${type.toUpperCase()} REST Applied`);
+
+      grid.innerHTML = html;
     }
 
-    function flashSync() {
-      const el = document.getElementById('sync-status-icon');
-      el.style.color = 'var(--success)';
-      setTimeout(() => el.style.color = '#555', 2000);
-    }
-    
     function showToast(msg) {
       const c = document.getElementById('toast-container');
-      const t = document.createElement('div');
-      t.className = 'toast'; t.innerText = msg;
-      c.appendChild(t); setTimeout(() => t.remove(), 3000);
+      const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
+      c.appendChild(t); setTimeout(() => t.remove(), 4000);
     }
-    function escapeHtml(s) { return s?s.toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'):''; }
-    function escapeJS(s) { return s?s.toString().replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;'):''; }
-    function parseMath(t) { return t?t.replace(/\b(\d+d\d+(?:\s*[+-]\s*\d+)?|DC\s*\d+)\b/gi, '<span class="math-highlight">$&</span>'):''; }
-
-    init();
+    function escapeHtml(str) { return str ? str.toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
   </script>
 </body>
 </html>
