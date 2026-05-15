@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Showrunner // Data Forge V2.0.2</title>
+  <title>Showrunner // Data Forge V2.0.3</title>
   <style>
     :root {
       --bg: #0a0a0c;
@@ -142,7 +142,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-      SHOWRUNNER // DATA FORGE V2.0.2
+      SHOWRUNNER // DATA FORGE V2.0.3
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">Dashboard</a>
@@ -212,36 +212,28 @@
   <script>
     const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
     
-    // Global State
     let currentMode = 'rooms';
-    let compiledData = null; // Holds the parsed JSON before push
+    let compiledData = null; 
 
-    // Contextual Placeholders
     const placeholders = {
       rooms: `Paste your raw MS Word or Obsidian notes here...\n\nExpected format:\nROOM 17a: THE WAITING AREA\nVISUALS & READ-ALOUD\nDM NOTES & MECHANICS\nNAME: Brenda\nAI TOOLTIP\nNEW ACHIEVEMENT!\nLOOT & REWARDS`,
-      loot: `Paste your D100 Loot Tables here...\n\nExpected format:\nSILVER TIER (THE UNCOMMON LOOT)\n[Roll 55-56] ITEM: The Whipping Antenna TYPE: Weapon (Rapier) DESCRIPTION: A flexible spike...\n[Roll 57-58] ITEM: The Axe TYPE: Weapon DESCRIPTION: A red axe...`,
+      loot: `Paste your Loot Tables here...\n\nExpected format for Tiers:\nTABLE: Silver\n[Roll 55-56] ITEM: The Whipping Antenna TYPE: Weapon (Rapier) DESCRIPTION: A flexible spike...\n\nExpected format for Personal:\nPERSONAL: Chuck\nITEM: The Oversized Clown-Boots of Stealth\nType: Armor (Feet)\nDescription: Finally, shoes that fit...`,
       roster: `Paste your Player Data blocks here...\n\nExpected format:\nChuck (Played by: Chuck)\nBuild: Battlemaster Fighter\nVitals: Max HP: 28 | AC: 16 | Passive Perception: 12\nEconomy: 133gp\nInventory & Curses:\n* [NEW] The 'Push, Don't Pull' Sign (Wondrous Item): Once per day...`
     };
 
-    // Initialize UI
     document.getElementById('raw-input').placeholder = placeholders.rooms;
 
-    // --- UI/UX Functions ---
     function switchMode(mode) {
       currentMode = mode;
-      
       document.querySelectorAll('.btn-mode').forEach(btn => btn.classList.remove('active'));
       document.getElementById(`mode-${mode}`).classList.add('active');
-      
       document.getElementById('raw-input').placeholder = placeholders[mode];
       document.getElementById('raw-input').value = '';
       document.getElementById('tagged-input').value = '';
       document.getElementById('json-preview').innerText = 'Awaiting compilation...';
       document.getElementById('btn-push').disabled = true;
 
-      expandPane('pane1');
-      collapsePane('pane2');
-      collapsePane('pane3');
+      expandPane('pane1'); collapsePane('pane2'); collapsePane('pane3');
       showToast(`${mode.toUpperCase()} MODE ACTIVATED.`);
     }
 
@@ -271,31 +263,53 @@
           .replace(/LOOT & REWARDS/g, '#LOOT');
       } 
       else if (currentMode === 'loot') {
-        taggedText = rawText.split('\n').map(line => {
-            // Fuzzy Table Matcher (matches "TABLE: Silver" OR "SILVER TIER")
-            const tableMatch = line.match(/^(?:TABLE:\s*(.*)|(.*)\s+TIER.*)/i);
-            if (tableMatch && !line.includes('DESCRIPTION')) {
-                return '#TABLE ' + (tableMatch[1] || tableMatch[2]).trim();
+        const lines = rawText.split('\n');
+        let inItemBlock = false;
+        let slotCounter = 1;
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          
+          // Fuzzy Matchers for Headers
+          const tableMatch = line.match(/^(?:TABLE:\s*(.*)|(.*)\s+TIER.*)/i);
+          if (tableMatch && !line.includes('DESCRIPTION')) {
+            taggedText += `\n#TABLE ${tableMatch[1] || tableMatch[2]}\n`;
+            slotCounter = 1; continue;
+          }
+          const personalMatch = line.match(/^PERSONAL:\s*(.*)/i);
+          if (personalMatch) {
+            taggedText += `\n#PERSONAL_TABLE ${personalMatch[1]}\n`;
+            slotCounter = 1; continue;
+          }
+
+          // D100 Formatted Item
+          if (line.match(/TYPE:/i) && line.match(/DESCRIPTION:|DESC:/i) && line.match(/Roll\s*([0-9]+(?:-[0-9]+)?)/i)) {
+            inItemBlock = false;
+            const rollMatch = line.match(/Roll\s*([0-9]+(?:-[0-9]+)?)/i);
+            const itemMatch = line.match(/ITEM:\s*(.*?)\s+TYPE:/i);
+            const typeMatch = line.match(/TYPE:\s*(.*?)\s+(?:DESCRIPTION|DESC):/i);
+            const descMatch = line.match(/(?:DESCRIPTION|DESC):\s*(.*)/i);
+            taggedText += `\n#SLOT ${rollMatch[1]}\nNAME: ${itemMatch ? itemMatch[1].trim() : ''}\nTYPE: ${typeMatch ? typeMatch[1].trim() : ''}\nDESC: ${descMatch ? descMatch[1].trim() : ''}\n`;
+            continue;
+          }
+
+          // Personal Table Block Formatted Item
+          if (line.match(/^ITEM:\s*(.*)/i)) {
+            inItemBlock = true;
+            taggedText += `\n#SLOT ${slotCounter++}\nNAME: ${line.replace(/ITEM:/i, '').trim()}\nTYPE: Unknown\nDESC: `;
+            continue;
+          }
+
+          // Append to Description if inside an Item Block
+          if (inItemBlock && line !== '') {
+            // Check if this line is declaring a type
+            if (line.match(/^(?:Type|Weapon|Armor|Wondrous).*?,/i) || line.match(/^Type:/i)) {
+               taggedText = taggedText.replace(/TYPE: Unknown/, `TYPE: ${line.replace(/Type:/i, '').trim()}`);
+            } else {
+               taggedText += `${line} `; // Append all other text (bullets, mechanics) to the DESC block
             }
-            
-            // Fuzzy Slot Matcher (must have TYPE and DESCRIPTION to be considered a loot item)
-            if (line.match(/TYPE:/i) && line.match(/DESCRIPTION:|DESC:/i)) {
-                const rollMatch = line.match(/Roll\s*([0-9]+(?:-[0-9]+)?)/i);
-                const itemMatch = line.match(/ITEM:\s*(.*?)\s+TYPE:/i);
-                const typeMatch = line.match(/TYPE:\s*(.*?)\s+(?:DESCRIPTION|DESC):/i);
-                const descMatch = line.match(/(?:DESCRIPTION|DESC):\s*(.*)/i);
-                
-                // Fallbacks for broken formatting
-                const roll = rollMatch ? rollMatch[1] : '[ERROR]';
-                const name = itemMatch ? itemMatch[1].trim() : '[REQUIRES MANUAL ENTRY]';
-                const type = typeMatch ? typeMatch[1].trim() : 'Unknown';
-                const desc = descMatch ? descMatch[1].trim() : '';
-                
-                return `#SLOT ${roll}\nNAME: ${name}\nTYPE: ${type}\nDESC: ${desc}`;
-            }
-            // Leave narrative fluff alone, JSON compiler ignores it.
-            return line;
-        }).join('\n');
+          }
+        }
       } 
       else if (currentMode === 'roster') {
         taggedText = rawText
@@ -306,7 +320,7 @@
           .replace(/^Inventory & Curses:/gm, '#INVENTORY');
       }
 
-      document.getElementById('tagged-input').value = taggedText;
+      document.getElementById('tagged-input').value = taggedText.trim();
       collapsePane('pane1');
       expandPane('pane2');
       showToast("Auto-tagging complete. Please review.");
@@ -338,16 +352,23 @@
         });
       } 
       else if (currentMode === 'loot') {
-        // Updated portability wrapper
         compiledData = { loot_tables: { tiers: {}, personal: {} } };
-        const tables = text.split('#TABLE ').filter(b => b.trim());
+        
+        // Handle both Global Tiers and Personal Tables
+        const tables = text.split(/(?=#TABLE|#PERSONAL_TABLE)/).filter(b => b.trim());
         
         tables.forEach(tBlock => {
+          const isPersonal = tBlock.startsWith('#PERSONAL_TABLE');
           const slots = tBlock.split('#SLOT ');
-          const tName = slots[0].trim().toLowerCase();
-          const isTier = ['bronze','silver','gold','platinum'].includes(tName);
-          const tRef = isTier ? compiledData.loot_tables.tiers : compiledData.loot_tables.personal;
           
+          let tName = "";
+          if (isPersonal) {
+             tName = slots[0].replace('#PERSONAL_TABLE', '').trim();
+          } else {
+             tName = slots[0].replace('#TABLE', '').trim().toLowerCase();
+          }
+          
+          const tRef = isPersonal ? compiledData.loot_tables.personal : compiledData.loot_tables.tiers;
           tRef[tName] = []; 
           
           for(let i=1; i < slots.length; i++) {
@@ -369,7 +390,7 @@
                 targetSlots.push(parseInt(rollRange) - 1);
              }
              
-             if (name && name !== '[REQUIRES MANUAL ENTRY]' && !isNaN(targetSlots[0])) {
+             if (name && !isNaN(targetSlots[0])) {
                tRef[tName].push({ targetSlots, item: { name, type, desc } });
              }
           }
@@ -445,14 +466,13 @@
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000);
         
-        // 1. PULL Latest
         const fetchRes = await fetch(WORKER_URL, { signal: controller.signal });
         clearTimeout(timeoutId);
         
         if (!fetchRes.ok) throw new Error("Fetch failed");
         let latestState = await fetchRes.json();
 
-        // 2. ROUTER: Merge based on mode
+        // ROUTER: Merge based on mode
         if (currentMode === 'rooms') {
           if (!latestState.campaign_notes) latestState.campaign_notes = { rooms: [] };
           if (!latestState.campaign_notes.rooms) latestState.campaign_notes.rooms = [];
@@ -473,7 +493,6 @@
                   if(!latestState.loot_tables[cat][tName]) latestState.loot_tables[cat][tName] = [];
                   const tRef = latestState.loot_tables[cat][tName];
                   
-                  // Pad the array if it's shorter than the required length
                   const maxSlots = cat === 'tiers' ? 100 : 10;
                   while(tRef.length < maxSlots) tRef.push({ roll: tRef.length + 1, item: null });
 
@@ -494,12 +513,11 @@
           compiledData.forEach(newP => {
              const p = latestState.players.find(x => x.name.toLowerCase() === newP.name.toLowerCase());
              if(p) {
-                // Update existing player safely
-                p.is_deleted = false; // Restore if previously soft-deleted
+                p.is_deleted = false; 
                 if(newP.stats.hp_max) {
                    if(!p.stats) p.stats = {};
                    p.stats.hp_max = newP.stats.hp_max;
-                   p.stats.hp_current = newP.stats.hp_max; // Assume reset upon bulk ingestion
+                   p.stats.hp_current = newP.stats.hp_max; 
                    p.stats.ac = newP.stats.ac;
                    p.stats.passive_perception = newP.stats.passive_perception;
                 }
@@ -507,12 +525,10 @@
                 
                 if(!p.inventory) p.inventory = [];
                 newP.new_inventory.forEach(ni => {
-                   // Enforce idempotency: prevent duplicate inventory injections
                    const exists = p.inventory.some(item => item.name.toLowerCase() === ni.name.toLowerCase());
                    if (!exists) p.inventory.push(ni);
                 });
              } else {
-                // Seed completely new player
                 latestState.players.push({
                    name: newP.name, 
                    stats: newP.stats, 
@@ -526,16 +542,10 @@
           });
         }
 
-        // 3. INCREMENT & TIMESTAMP
         latestState.version = (latestState.version || 0) + 1;
         latestState.last_modified = Date.now();
 
-        // 4. PUSH
-        const payload = { 
-          base_version: latestState.version - 1, 
-          last_modified: latestState.last_modified,
-          data: latestState 
-        };
+        const payload = { base_version: latestState.version - 1, last_modified: latestState.last_modified, data: latestState };
         
         const postController = new AbortController();
         const postTimeoutId = setTimeout(() => postController.abort(), 8000);
