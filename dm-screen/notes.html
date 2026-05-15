@@ -58,6 +58,7 @@
     /* Columns */
     .nav-sidebar { background: var(--nav-bg); border-right: 1px solid #333; display: flex; flex-direction: column; overflow: hidden; }
     .nav-list { overflow-y: auto; flex-grow: 1; padding: 1rem 0; }
+    .nav-category { padding: 0.5rem 1.5rem; font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 0.1em; }
     .nav-item { padding: 0.75rem 1.5rem; cursor: pointer; border-left: 3px solid transparent; color: #aaa; transition: 0.1s; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
     .nav-item.active { border-left-color: var(--accent); background: rgba(187, 134, 252, 0.1); color: #fff; font-weight: bold; }
@@ -148,7 +149,7 @@
 
     <div class="main-stage" id="main-stage">
       <div class="stage-content" id="stage-content">
-        <h2 style="color:#555; text-align:center; margin-top:4rem;">Select a room from the index.</h2>
+        <h2 style="color:#555; text-align:center; margin-top:4rem;">Select an item from the index.</h2>
       </div>
     </div>
 
@@ -174,8 +175,9 @@
     let appState = { campaign_notes: { rooms: [], sessions: [] }, players: [] };
     let historyStack = [];
     let redoStack = [];
-    let currentRoomIndex = 0; 
-    let currentSessionId = null;
+    
+    let currentView = { type: 'room', index: 0 }; 
+    let currentSessionId = null; // Independent tracker for the right-hand Scratchpad
     let isPushing = false;
 
     function saveLocal() { localStorage.setItem('showrunner_state', JSON.stringify(appState)); }
@@ -231,8 +233,8 @@
         const response = await fetch(WORKER_URL);
         if (response.ok) {
           const data = await response.json();
-          if (data && data.campaign_notes) appState = data;
-          else if (data && data.players) appState.players = data.players;
+          if (data && data.campaign_notes) appState.campaign_notes = data.campaign_notes;
+          if (data && data.players) appState.players = data.players;
         }
       } catch (e) {
         const local = localStorage.getItem('showrunner_state');
@@ -241,10 +243,19 @@
 
       if (!appState.campaign_notes) appState.campaign_notes = { rooms: [], sessions: [] };
       if (!appState.campaign_notes.sessions) appState.campaign_notes.sessions = [];
+      
       if (appState.campaign_notes.sessions.length === 0) {
-        appState.campaign_notes.sessions.push({ id: Date.now(), title: "Session 1", content: "" });
+        appState.campaign_notes.sessions.push({ id: Date.now(), title: "Session 1", content: "", is_deleted: false });
       }
+      
+      // Default views
       currentSessionId = appState.campaign_notes.sessions[0].id;
+      if (appState.campaign_notes.rooms && appState.campaign_notes.rooms.length > 0) {
+          currentView = { type: 'room', index: 0 };
+      } else {
+          currentView = { type: 'session', index: 0 };
+      }
+
       renderAll();
     }
 
@@ -286,102 +297,128 @@
     function toggleLeft() { document.getElementById('main-layout').classList.toggle('hide-left'); document.getElementById('btn-left').classList.toggle('active');}
     function toggleRight() { document.getElementById('main-layout').classList.toggle('hide-right'); document.getElementById('btn-right').classList.toggle('active');}
 
-    // --- Rendering ---
+    // --- Rendering Navigation ---
     function renderSidebar() {
       const list = document.getElementById('nav-list');
       let html = '';
-      if (appState.campaign_notes && appState.campaign_notes.rooms) {
+
+      // 1. Rooms Index
+      html += `<div class="nav-category">Active Rooms</div>`;
+      if (appState.campaign_notes && appState.campaign_notes.rooms && appState.campaign_notes.rooms.length > 0) {
         appState.campaign_notes.rooms.forEach((room, idx) => {
           if (!room.is_deleted) {
              const title = room.room_id || room.title || `Room ${idx}`;
-             html += `<div class="nav-item ${currentRoomIndex === idx ? 'active' : ''}" onclick="selectRoom(${idx})" title="${escapeHtml(title)}">${escapeHtml(title)}</div>`;
+             const isActive = (currentView.type === 'room' && currentView.index === idx);
+             html += `<div class="nav-item ${isActive ? 'active' : ''}" onclick="selectNav('room', ${idx})" title="${escapeHtml(title)}">${escapeHtml(title)}</div>`;
+          }
+        });
+      } else {
+        html += `<div style="padding:0.5rem 1.5rem; color:#555; font-size:0.85rem; font-style:italic;">No rooms prepped.</div>`;
+      }
+
+      // 2. Session Archives
+      html += `<div class="nav-category" style="margin-top: 1.5rem;">Session Archives</div>`;
+      if (appState.campaign_notes && appState.campaign_notes.sessions && appState.campaign_notes.sessions.length > 0) {
+        appState.campaign_notes.sessions.forEach((session, idx) => {
+          if (!session.is_deleted) {
+             const title = session.title || `Session ${idx}`;
+             const isActive = (currentView.type === 'session' && currentView.index === idx);
+             html += `<div class="nav-item ${isActive ? 'active' : ''}" onclick="selectNav('session', ${idx})" title="${escapeHtml(title)}">${escapeHtml(title)}</div>`;
           }
         });
       }
-      list.innerHTML = html || `<div style="padding:1rem; color:#666; font-size:0.9rem;">No rooms imported yet.</div>`;
+
+      list.innerHTML = html;
     }
 
-    function selectRoom(index) {
-      currentRoomIndex = index;
+    function selectNav(type, index) {
+      currentView = { type, index };
       renderAll();
     }
 
+    // --- Rendering Stage ---
     function renderStage() {
       const stage = document.getElementById('stage-content');
-      if (!appState.campaign_notes.rooms || appState.campaign_notes.rooms.length === 0) {
-        stage.innerHTML = `<h2 style="color:#555; text-align:center; margin-top:4rem;">Campaign is empty. Import Data Forge JSON to begin.</h2>`;
-        return;
-      }
-
-      const room = appState.campaign_notes.rooms[currentRoomIndex];
-      if (!room) return;
-      const rPath = ['campaign_notes', 'rooms', currentRoomIndex];
-      const title = room.room_id || room.title || "Untitled Room";
-
-      // 1. Core Properties
-      let html = `<h1 style="color:var(--accent); font-size:2rem; border-bottom:1px solid #333; padding-bottom:10px;">${makeEditable(escapeHtml(title), rPath, 'room_id')}</h1>`;
       
-      const readAloud = room.readaloud || room.read_aloud || "";
-      if (readAloud) html += `<div class="read-aloud-block">${makeEditable(escapeHtml(readAloud), rPath, 'readaloud', true)}</div>`;
-      
-      const mechanics = room.mechanics || "";
-      if (mechanics) {
-         // Handle both old array schema and new string schema
-         const mechString = Array.isArray(mechanics) ? mechanics.join('\n') : mechanics;
-         html += `<div class="mechanics-block">${makeEditable(parseMath(escapeHtml(mechString)), rPath, 'mechanics', true)}</div>`;
-      }
+      // VIEW A: ROOM PREP
+      if (currentView.type === 'room') {
+        const room = appState.campaign_notes.rooms[currentView.index];
+        if (!room) {
+          stage.innerHTML = `<h2 style="color:#555; text-align:center; margin-top:4rem;">Select an item from the index.</h2>`;
+          return;
+        }
 
-      // 2. Data Forge Array Blocks
-      if (room.npcs && room.npcs.length > 0) {
-        room.npcs.forEach((npc, nIdx) => {
-          html += `<div class="npc-card">${makeEditable(escapeHtml(npc.raw_text), [...rPath, 'npcs', nIdx], 'raw_text', true)}</div>`;
-        });
-      }
+        const rPath = ['campaign_notes', 'rooms', currentView.index];
+        const title = room.room_id || room.title || "Untitled Room";
 
-      if (room.tooltips && room.tooltips.length > 0) {
-        room.tooltips.forEach((tt, tIdx) => {
-          html += `<div class="ai-terminal">${makeEditable(escapeHtml(tt.raw_text), [...rPath, 'tooltips', tIdx], 'raw_text', true)}</div>`;
-        });
-      }
-
-      // 3. Loot & Achievements
-      const combinedLoot = [...(room.loot || []), ...(room.achievements || [])];
-      if (combinedLoot.length > 0) {
-        html += `<h3 style="margin-top:2rem; border-bottom:1px solid #333; padding-bottom:0.5rem; color:#f1c40f;">Achievements & Loot</h3>`;
+        let html = `<h1 style="color:var(--accent); font-size:2rem; border-bottom:1px solid #333; padding-bottom:10px;">${makeEditable(escapeHtml(title), rPath, 'room_id')}</h1>`;
         
-        // Handle Legacy Loot schema + New Data Forge schema
-        combinedLoot.forEach((l, lIdx) => {
-           const isLegacy = (l.achievement_name !== undefined);
-           const rawText = isLegacy ? `${l.achievement_name} Reward: ${l.item_name}. ${l.item_desc}` : l.raw_text.replace('#ACHIEVEMENT', '').replace('#LOOT', '').trim();
-           
-           const parts = rawText.split(/Reward:/i);
-           const achTitle = parts[0].trim();
-           const itemDesc = parts[1] ? parts[1].trim() : "Unknown Item";
-           
-           // If we are editing, we must edit the exact path
-           const editPath = isLegacy ? [...rPath, 'loot', lIdx] : 
-                            (room.achievements && room.achievements.includes(l) ? [...rPath, 'achievements', room.achievements.indexOf(l)] : [...rPath, 'loot', room.loot.indexOf(l)]);
-           const editField = isLegacy ? 'achievement_name' : 'raw_text';
+        const readAloud = room.readaloud || room.read_aloud || "";
+        if (readAloud) html += `<div class="read-aloud-block">${makeEditable(escapeHtml(readAloud), rPath, 'readaloud', true)}</div>`;
+        
+        const mechanics = room.mechanics || "";
+        if (mechanics) {
+           const mechString = Array.isArray(mechanics) ? mechanics.join('\n') : mechanics;
+           html += `<div class="mechanics-block">${makeEditable(parseMath(escapeHtml(mechString)), rPath, 'mechanics', true)}</div>`;
+        }
 
-           html += `
-             <div class="loot-card">
-                <div>
-                  <strong style="color:#f1c40f">${makeEditable(escapeHtml(achTitle), editPath, editField, true)}</strong><br>
-                  <span style="font-size:0.9rem; color:#bbb">${escapeHtml(itemDesc)}</span>
-                </div>
-                <div class="award-wrapper">
-                  <button class="btn btn-send" onclick="toggleAwardMenu(${currentRoomIndex}, ${lIdx})">${SVG_AWARD} Award</button>
-                  <div id="award-menu-${currentRoomIndex}-${lIdx}" class="award-popover hidden">
-                     <div class="popover-title">Select Character:</div>
-                     ${(appState.players && appState.players.length > 0) ? appState.players.map(p => `<div class="popover-item" onclick="confirmAward(${currentRoomIndex}, '${escapeJS(rawText)}', '${escapeJS(p.name)}')">${escapeHtml(p.name)}</div>`).join('') : '<div style="padding:10px; color:#888;">No players found</div>'}
-                     <div class="popover-item" style="color:var(--danger); border-top:1px solid #333;" onclick="toggleAwardMenu(${currentRoomIndex}, ${lIdx})">Cancel</div>
+        if (room.npcs && room.npcs.length > 0) {
+          room.npcs.forEach((npc, nIdx) => { html += `<div class="npc-card">${makeEditable(escapeHtml(npc.raw_text), [...rPath, 'npcs', nIdx], 'raw_text', true)}</div>`; });
+        }
+
+        if (room.tooltips && room.tooltips.length > 0) {
+          room.tooltips.forEach((tt, tIdx) => { html += `<div class="ai-terminal">${makeEditable(escapeHtml(tt.raw_text), [...rPath, 'tooltips', tIdx], 'raw_text', true)}</div>`; });
+        }
+
+        // Backward compatibility for pre-existing room loot
+        const combinedLoot = [...(room.loot || []), ...(room.achievements || [])];
+        if (combinedLoot.length > 0) {
+          html += `<h3 style="margin-top:2rem; border-bottom:1px solid #333; padding-bottom:0.5rem; color:#f1c40f;">Achievements & Loot</h3>`;
+          combinedLoot.forEach((l, lIdx) => {
+             const isLegacy = (l.achievement_name !== undefined);
+             const rawText = isLegacy ? `${l.achievement_name} Reward: ${l.item_name}. ${l.item_desc}` : l.raw_text.replace('#ACHIEVEMENT', '').replace('#LOOT', '').trim();
+             const parts = rawText.split(/Reward:/i);
+             const achTitle = parts[0].trim();
+             const itemDesc = parts[1] ? parts[1].trim() : "Unknown Item";
+             
+             const editPath = isLegacy ? [...rPath, 'loot', lIdx] : (room.achievements && room.achievements.includes(l) ? [...rPath, 'achievements', room.achievements.indexOf(l)] : [...rPath, 'loot', room.loot.indexOf(l)]);
+             const editField = isLegacy ? 'achievement_name' : 'raw_text';
+
+             html += `
+               <div class="loot-card">
+                  <div>
+                    <strong style="color:#f1c40f">${makeEditable(escapeHtml(achTitle), editPath, editField, true)}</strong><br>
+                    <span style="font-size:0.9rem; color:#bbb">${escapeHtml(itemDesc)}</span>
                   </div>
-                </div>
-             </div>`;
-        });
-      }
+                  <div class="award-wrapper">
+                    <button class="btn btn-send" onclick="toggleAwardMenu(${currentView.index}, ${lIdx})">${SVG_AWARD} Award</button>
+                    <div id="award-menu-${currentView.index}-${lIdx}" class="award-popover hidden">
+                       <div class="popover-title">Select Character:</div>
+                       ${(appState.players && appState.players.length > 0) ? appState.players.map(p => `<div class="popover-item" onclick="confirmAward(${currentView.index}, '${escapeJS(rawText)}', '${escapeJS(p.name)}')">${escapeHtml(p.name)}</div>`).join('') : '<div style="padding:10px; color:#888;">No players found</div>'}
+                       <div class="popover-item" style="color:var(--danger); border-top:1px solid #333;" onclick="toggleAwardMenu(${currentView.index}, ${lIdx})">Cancel</div>
+                    </div>
+                  </div>
+               </div>`;
+          });
+        }
+        stage.innerHTML = html;
+      } 
+      // VIEW B: SESSION ARCHIVE
+      else if (currentView.type === 'session') {
+        const session = appState.campaign_notes.sessions[currentView.index];
+        if (!session) return;
+        
+        const sPath = ['campaign_notes', 'sessions', currentView.index];
 
-      stage.innerHTML = html;
+        stage.innerHTML = `
+          <h1 style="color:var(--accent); font-size:2rem; border-bottom:1px solid #333; padding-bottom:10px;">
+            ${makeEditable(escapeHtml(session.title || "Untitled Session"), sPath, 'title')}
+          </h1>
+          <div class="mechanics-block" style="font-family: Georgia, serif; font-size: 1.15rem; line-height: 1.8;">
+            ${makeEditable(escapeHtml(session.content || "No content recorded."), sPath, 'content', true)}
+          </div>
+        `;
+      }
     }
 
     // --- Inline Editing (Optimistic Lock Supported) ---
@@ -428,7 +465,7 @@
       input.focus();
     }
 
-    // --- Loot Awards ---
+    // --- Legacy Room Awards ---
     function toggleAwardMenu(rIdx, lIdx) {
       document.querySelectorAll('.award-popover').forEach(el => el.classList.add('hidden'));
       const menu = document.getElementById(`award-menu-${rIdx}-${lIdx}`);
@@ -460,16 +497,18 @@
       }, `${itemName} awarded to ${playerName}!`);
     }
 
-    // --- Session Scratchpad Logic ---
+    // --- Session Scratchpad Logic (Right Sidebar) ---
     function renderScratchpad() {
       const select = document.getElementById('session-select');
       const textarea = document.getElementById('scratchpad-input');
       
       let optionsHtml = '';
       appState.campaign_notes.sessions.forEach(session => {
-        optionsHtml += `<option value="${session.id}" ${session.id === currentSessionId ? 'selected' : ''}>${escapeHtml(session.title)}</option>`;
+        if (!session.is_deleted) {
+          optionsHtml += `<option value="${session.id}" ${session.id === currentSessionId ? 'selected' : ''}>${escapeHtml(session.title)}</option>`;
+        }
       });
-      select.innerHTML = optionsHtml;
+      select.innerHTML = optionsHtml || '<option>No Sessions</option>';
 
       const currentSession = appState.campaign_notes.sessions.find(s => s.id === currentSessionId);
       textarea.value = currentSession ? currentSession.content : "";
@@ -484,7 +523,8 @@
       const title = prompt("Enter Session Title:", `Session ${appState.campaign_notes.sessions.length + 1}`);
       if(!title) return;
       mutateAndPush((state) => {
-        const newSession = { id: Date.now(), title: title, content: "" };
+        const newSession = { id: Date.now(), title: title, content: "", is_deleted: false };
+        if (!state.campaign_notes.sessions) state.campaign_notes.sessions = [];
         state.campaign_notes.sessions.push(newSession);
         currentSessionId = newSession.id;
       }, `Created ${title}`);
