@@ -2,39 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Showrunner | DM Dashboard</title>
+  <title>Showrunner | Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='none' stroke='white' stroke-width='4' stroke-linejoin='round' d='M50 5 L90 30 L90 70 L50 95 L10 70 L10 30 Z M50 5 L50 45 M10 30 L50 45 L90 30 M10 70 L50 45 L90 70 M50 95 L50 45'/></svg>">
+  
   <style>
     :root {
-      --bg: #0a0a0c;
-      --glass: rgba(20, 20, 25, 0.7);
-      --glass-border: rgba(255, 255, 255, 0.1);
-      --panel: #1a1a24;
-      --accent: #bb86fc;
-      --danger: #ff4757;
-      --success: #03dac6;
-      --warning: #f1c40f;
-      --text: #e0e0e0;
-      --border: #333;
+      --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --text-muted: #888;
+      --accent: #bb86fc; --info: #74b9ff; --success: #03dac6; --danger: #cf6679; --warning: #f1c40f;
+      --nav-bg: #161616;
+      --glass: rgba(20, 20, 25, 0.7); --glass-border: rgba(255, 255, 255, 0.1);
     }
-
-    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-
-    body {
-      margin: 0; padding: 0;
-      background-color: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
-      background-image: 
-        radial-gradient(circle at top left, rgba(187,134,252,0.05) 0%, transparent 40%),
-        radial-gradient(circle at bottom right, rgba(3,218,198,0.05) 0%, transparent 40%);
+    
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+      background: var(--bg); color: var(--text); margin: 0; line-height: 1.5; 
+      height: 100vh; overflow: hidden; display: flex; flex-direction: column; font-variant-numeric: tabular-nums;
     }
 
     /* --- Global Navbar --- */
     .navbar {
       height: 60px; display: flex; align-items: center; justify-content: space-between;
       padding: 0 2rem; background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-      border-bottom: 1px solid var(--glass-border); z-index: 100; position: sticky; top: 0;
+      border-bottom: 1px solid var(--glass-border); z-index: 200; flex-shrink: 0;
     }
     .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; letter-spacing: 0.15em; font-size: 1.2rem; color: #fff; text-shadow: 0 0 10px rgba(187,134,252,0.5); }
     .nav-links { display: flex; gap: 1rem; }
@@ -45,89 +34,45 @@
     .nav-link:hover { background: rgba(255,255,255,0.05); border-color: var(--glass-border); color: #fff; }
     .nav-link.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(187,134,252,0.2); }
 
-    /* --- Global Controls --- */
-    .global-controls {
-      padding: 15px 2rem; background: rgba(10,10,12,0.8); border-bottom: 1px solid var(--border);
-      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;
+    /* --- Dashboard Layout --- */
+    .dashboard-layout {
+      display: grid; grid-template-columns: 1fr 380px; gap: 2rem; padding: 2rem; flex-grow: 1; overflow-y: auto;
     }
-    .room-selector-group { flex: 1; display: flex; align-items: center; gap: 10px; }
-    .room-selector-group label { color: var(--accent); font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.9rem; }
-    .room-selector-group select {
-      background: #111; color: #fff; padding: 8px 12px; border-radius: 4px;
-      width: 100%; max-width: 400px; box-sizing: border-box; border: 1px solid #444; outline: none; font-weight: bold;
+    @media (max-width: 900px) {
+      .dashboard-layout { grid-template-columns: 1fr; }
     }
-    .room-selector-group select:focus { border-color: var(--accent); }
 
-    .status-badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: #222; padding: 6px 12px; border-radius: 4px; border: 1px solid var(--border);
-      font-weight: bold; font-size: 0.85rem;
-    }
-    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); }
-    .status-dot.online { background: var(--success); box-shadow: 0 0 8px var(--success); }
-
-    /* --- Workspace & Grid --- */
-    .workspace { padding: 2rem; }
-    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; }
-
-    /* Player Control Panel */
-    .player-card {
-      background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
-      padding: 15px; display: flex; flex-direction: column; gap: 15px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5); position: relative;
-    }
-    .player-header {
-      display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid #333; padding-bottom: 10px;
-    }
-    .player-name { margin: 0; font-size: 1.3rem; color: #fff; text-transform: uppercase; letter-spacing: 0.05em; }
+    /* --- Left Column: Party Overview --- */
+    .section-title { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.15em; border-bottom: 1px solid #333; padding-bottom: 0.5rem; margin-bottom: 1rem; }
     
-    /* Control Sections */
-    .control-group { background: #111; padding: 12px; border-radius: 6px; border: 1px solid #222; }
-    .control-group h4 { margin: 0 0 10px 0; font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
+    .roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .roster-card { background: var(--card); padding: 1.5rem; border-radius: 8px; border: 1px solid #333; border-left: 4px solid var(--player-color, var(--accent)); display: flex; flex-direction: column; gap: 0.5rem; }
+    .roster-card h3 { margin: 0; color: #fff; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .vitals-row { display: flex; justify-content: space-between; background: #111; padding: 0.5rem 1rem; border-radius: 4px; border: 1px solid #222; }
+    .vital-stat { display: flex; flex-direction: column; align-items: center; font-size: 0.8rem; color: var(--text-muted); }
+    .vital-stat span { font-size: 1.1rem; color: #fff; font-weight: bold; }
 
-    /* Toggles */
-    .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .btn-toggle {
-      background: #222; border: 1px solid #444; color: #aaa; padding: 8px;
-      border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8rem; transition: 0.2s;
-    }
-    .btn-toggle:hover { border-color: #666; }
-    .btn-toggle.active { background: rgba(255, 71, 87, 0.1); border-color: var(--danger); color: var(--danger); }
-    .btn-toggle.active.poison { border-color: var(--success); color: var(--success); background: rgba(3, 218, 198, 0.1); }
+    /* --- Right Column: Trophy Room --- */
+    .trophy-panel { display: flex; flex-direction: column; gap: 1rem; }
+    .trophy-card { background: #1a1e24; border-top: 4px solid var(--warning); padding: 1.5rem; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 0.75rem; animation: fadein 0.3s ease-out; }
+    .trophy-title { font-size: 1.1rem; color: #fff; font-weight: bold; }
+    .trophy-desc { font-size: 0.9rem; color: #ccc; line-height: 1.5; white-space: pre-wrap; }
     
-    /* Inputs & Actions */
-    .input-row { display: flex; gap: 8px; margin-bottom: 8px; }
-    input[type="text"], select {
-      flex: 1; background: #222; border: 1px solid #444; color: #fff;
-      padding: 8px; border-radius: 4px; outline: none; font-size: 0.9rem;
-    }
-    input[type="text"]:focus, select:focus { border-color: var(--accent); }
+    .dispatch-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; border-top: 1px solid #333; padding-top: 1rem; }
+    .trophy-select { flex-grow: 1; background: #111; color: #fff; border: 1px solid #444; padding: 6px; border-radius: 4px; outline: none; font-size: 0.9rem; }
+    .trophy-select:focus { border-color: var(--warning); }
     
-    .btn-action {
-      background: rgba(187, 134, 252, 0.1); border: 1px solid var(--accent); color: var(--accent);
-      padding: 10px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.2s; font-size: 0.85rem; letter-spacing: 0.05em;
-    }
-    .btn-action:hover { background: var(--accent); color: #000; }
-    .btn-danger { border-color: var(--danger); color: var(--danger); background: rgba(255, 71, 87, 0.1); }
-    .btn-danger:hover:not(:disabled) { background: var(--danger); color: #000; }
-    .btn-danger:disabled { border-color: #444; color: #666; cursor: not-allowed; background: transparent; }
+    button { cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 0.9rem; border: 1px solid transparent; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; }
+    .btn-send { background: rgba(3, 218, 198, 0.1); border-color: var(--success); color: var(--success); }
+    .btn-send:hover { background: var(--success); color: #000; }
+    .btn-danger { background: rgba(207, 102, 121, 0.1); border-color: var(--danger); color: var(--danger); padding: 6px 10px; }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
 
-    /* Pending Receipts */
-    .receipt-log { font-size: 0.8rem; color: #aaa; max-height: 100px; overflow-y: auto; background: #0a0a0c; padding: 8px; border-radius: 4px; border: 1px solid #222; }
-    .receipt-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #222; }
-    .receipt-item:last-child { border-bottom: none; }
-    .receipt-pending { color: var(--warning); }
-    .receipt-cleared { color: var(--success); }
-
-    .btn-system { background: #333; color: #fff; border: 1px solid #555; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8rem; letter-spacing: 0.05em; }
-    .btn-system:hover { background: #555; }
-    
-    #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 4000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
-    .toast { background: var(--panel); color: #fff; padding: 1rem 1.5rem; border-radius: 4px; border-left: 4px solid var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.5); animation: fadein 0.3s, fadeout 0.3s 3.7s forwards; }
-    @keyframes fadein { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+    /* Modals & Toasts */
+    #toast-container { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+    .toast { background: rgba(10, 10, 12, 0.95); color: #fff; padding: 0.75rem 1.5rem; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 0.95rem; border: 1px solid var(--accent); animation: fadein 0.3s, fadeout 0.3s 2.7s forwards; }
+    @keyframes fadein { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
-
   </style>
 </head>
 <body>
@@ -135,7 +80,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-      SHOWRUNNER // COMMAND
+      SHOWRUNNER // DASHBOARD
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link active">Dashboard</a>
@@ -146,72 +91,38 @@
     </div>
   </nav>
 
-  <div class="global-controls">
-    <div class="room-selector-group">
-      <label for="global-room-select">Active Room Context:</label>
-      <select id="global-room-select" onchange="updateQuickActions()">
-        <option value="">-- No Room Selected --</option>
-      </select>
-    </div>
-    <div style="display: flex; gap: 15px; align-items: center;">
-      <button class="btn-system" onclick="seedDatabase()" title="Emergency tool to initialize missing players">[ SEED ROSTER ]</button>
-      <div class="status-badge">
-        <div id="connection-dot" class="status-dot"></div>
-        <span id="connection-text">AWAITING SYNC</span>
+  <div id="toast-container"></div>
+
+  <div class="dashboard-layout">
+    
+    <div>
+      <div class="section-title">Active Roster</div>
+      <div class="roster-grid" id="roster-container">
+        <div style="color: #666; font-style: italic;">Loading roster...</div>
       </div>
     </div>
-  </div>
 
-  <div class="workspace">
-    <div id="dashboard-grid" class="dashboard-grid">
-      <div style="color: #666; font-style: italic; padding: 20px;">Establishing secure connection...</div>
+    <div>
+      <div class="section-title" style="color: var(--warning); display: flex; justify-content: space-between; align-items: center;">
+        Global Trophy Queue
+        <button onclick="init()" style="background:transparent; color:#888; border:1px solid #444; padding:2px 6px; font-size:0.7rem;">⟳ SYNC</button>
+      </div>
+      <div class="trophy-panel" id="trophy-queue-container">
+        <div style="color: #666; font-style: italic;">Loading queue...</div>
+      </div>
     </div>
-  </div>
 
-  <div id="toast-container"></div>
+  </div>
 
   <script>
     const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
-    let dmState = null;
+    let appState = { players: [], achievement_queue: [] };
     let isPushing = false;
-    let isFirstLoad = true;
-
-    // --- Core Sync Engine ---
-    async function pollNetwork() {
-      if (isPushing) return; 
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000);
-        const res = await fetch(WORKER_URL, { signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        if (res.ok) {
-          dmState = await res.json();
-          document.getElementById('connection-dot').className = 'status-dot online';
-          document.getElementById('connection-text').innerText = `SYNCED (v${dmState.version || 0})`;
-          
-          if (isFirstLoad) {
-            renderRoomSelector();
-            renderDashboardGrid();
-            isFirstLoad = false;
-          } else {
-            // Surgical UI update prevents erasing text inputs while typing
-            updateLiveUI(); 
-          }
-        }
-      } catch (e) {
-        document.getElementById('connection-dot').className = 'status-dot';
-        document.getElementById('connection-text').innerText = "CONNECTION LOST";
-      }
-    }
-
-    // Start 5-second rapid polling
-    pollNetwork();
-    setInterval(pollNetwork, 5000);
+    const colorPalette = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe'];
 
     // --- The Optimistic Locking Push Engine ---
     async function mutateAndPush(mutationCallback, successMessage) {
-      if (isPushing) return showToast("Busy saving previous action...");
+      if (isPushing) return showToast("Busy syncing...");
       isPushing = true;
       document.body.style.cursor = 'wait';
       
@@ -220,9 +131,14 @@
         if (!fetchRes.ok) throw new Error("Fetch failed");
         let latestState = await fetchRes.json();
 
-        // Apply surgical changes to the absolute freshest state
+        // 1. Ensure Schema Exists
+        if (!latestState.achievement_queue) latestState.achievement_queue = [];
+        if (!latestState.players) latestState.players = [];
+
+        // 2. Apply Mutations
         mutationCallback(latestState);
 
+        // 3. Versioning
         latestState.version = (latestState.version || 0) + 1;
         latestState.last_modified = Date.now();
 
@@ -232,294 +148,169 @@
           data: latestState 
         };
         
+        const postController = new AbortController();
+        const postTimeoutId = setTimeout(() => postController.abort(), 8000);
+        
         const postRes = await fetch(WORKER_URL, { 
           method: 'POST', 
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload) 
+          body: JSON.stringify(payload),
+          signal: postController.signal
         });
+        clearTimeout(postTimeoutId);
         
         if (!postRes.ok) throw new Error("Version collision");
 
-        dmState = latestState;
-        updateLiveUI(); // Re-sync UI immediately
+        appState = latestState;
+        renderAll();
         if (successMessage) showToast(successMessage);
 
       } catch (e) {
         console.error(e);
         showToast("Sync collision. Refreshing to latest live state...");
-        pollNetwork(); // Pull freshest state on failure
+        await init(); 
       } finally {
         isPushing = false;
         document.body.style.cursor = 'default';
       }
     }
 
-    // --- Autofill Ecosystem ---
-    function renderRoomSelector() {
-      const select = document.getElementById('global-room-select');
-      const currentVal = select.value;
-      select.innerHTML = '<option value="">-- No Room Selected --</option>';
-      
-      if (dmState.campaign_notes && dmState.campaign_notes.rooms) {
-        dmState.campaign_notes.rooms.forEach((room, index) => {
-          if (!room.is_deleted) {
-            select.innerHTML += `<option value="${index}">${escapeHtml(room.room_id)}</option>`;
+    async function init() {
+      try {
+        const response = await fetch(WORKER_URL);
+        if (response.ok) {
+          const data = await response.json();
+          if (data) {
+              appState.players = data.players || [];
+              appState.achievement_queue = data.achievement_queue || [];
           }
-        });
-      }
-      select.value = currentVal; 
-      updateQuickActions();
-    }
-
-    function updateQuickActions() {
-      const roomIdx = document.getElementById('global-room-select').value;
-      const achSelects = document.querySelectorAll('.quick-ach-select');
-      const memoSelects = document.querySelectorAll('.quick-memo-select');
-      
-      if (roomIdx === "") {
-        achSelects.forEach(s => s.innerHTML = '<option value="">-- Quick Autofill --</option>');
-        memoSelects.forEach(s => s.innerHTML = '<option value="">-- Quick Threat --</option>');
-        return;
-      }
-
-      const room = dmState.campaign_notes.rooms[roomIdx];
-      
-      // Populate Achievement/Loot options
-      let achHtml = '<option value="">-- Quick Autofill --</option>';
-      (room.achievements || []).forEach((ach, i) => {
-        let title = ach.raw_text.replace('#ACHIEVEMENT', '').split(/Reward:/i)[0].trim();
-        achHtml += `<option value="${i}">${escapeHtml(title)}</option>`;
-      });
-      achSelects.forEach(s => s.innerHTML = achHtml);
-
-      // Populate Memos (NPCs & Tooltips)
-      let memoHtml = '<option value="">-- Quick Threat --</option>';
-      let memoIndex = 0;
-      (room.npcs || []).forEach(npc => { memoHtml += `<option value="${escapeHtml(npc.raw_text.replace('#NPC', '').trim())}">[NPC] ${escapeHtml(npc.raw_text.substring(0,25))}...</option>`; });
-      (room.tooltips || []).forEach(tt => { memoHtml += `<option value="${escapeHtml(tt.raw_text.replace('#TOOLTIP', '').trim())}">[TOOLTIP] ${escapeHtml(tt.raw_text.substring(0,25))}...</option>`; });
-      memoSelects.forEach(s => s.innerHTML = memoHtml);
-    }
-
-    function fillAchievementData(playerIdx) {
-      const roomIdx = document.getElementById('global-room-select').value;
-      const achIdx = document.getElementById(`quick-ach-${playerIdx}`).value;
-      if (!roomIdx || achIdx === "") return;
-
-      const room = dmState.campaign_notes.rooms[roomIdx];
-      const achText = room.achievements[achIdx].raw_text.replace('#ACHIEVEMENT', '');
-      
-      const parts = achText.split(/Reward:/i);
-      const title = parts[0].trim();
-      const itemDesc = parts[1] ? parts[1].split('.')[0].trim() : "Unknown Item"; 
-
-      document.getElementById(`ach-title-${playerIdx}`).value = title;
-      document.getElementById(`loot-name-${playerIdx}`).value = itemDesc;
-    }
-
-    function fillMemoData(playerIdx) {
-      const memoText = document.getElementById(`quick-memo-${playerIdx}`).value;
-      if (memoText !== "") document.getElementById(`memo-text-${playerIdx}`).value = memoText;
-    }
-
-    // --- Action Handlers ---
-    function toggleCondition(playerIdx, conditionStr) {
-      mutateAndPush((state) => {
-        const p = state.players[playerIdx];
-        if (!p.status.conditions) p.status.conditions = [];
-        const cLower = conditionStr.toLowerCase();
-        const existingIdx = p.status.conditions.findIndex(c => c.toLowerCase() === cLower);
-        
-        if (existingIdx >= 0) p.status.conditions.splice(existingIdx, 1);
-        else p.status.conditions.push(conditionStr);
-      }, null); // Silent success
-    }
-
-    function dispatchLoot(playerIdx) {
-      const title = document.getElementById(`ach-title-${playerIdx}`).value.trim();
-      const itemName = document.getElementById(`loot-name-${playerIdx}`).value.trim();
-      const rarity = document.getElementById(`loot-rarity-${playerIdx}`).value;
-
-      if (!title || !itemName) return showToast("Both Title and Item Name are required.");
-
-      mutateAndPush((state) => {
-        const p = state.players[playerIdx];
-        if (!p.achievements) p.achievements = { pending: [] };
-        if (!p.achievements.pending) p.achievements.pending = [];
-        
-        p.achievements.pending.push({
-          name: title,
-          is_acknowledged: false,
-          description: itemName,
-          rewards: { items: [{ name: itemName, rarity: rarity }] }
-        });
-      }, `Transmitted [${title}] to ${dmState.players[playerIdx].name}`);
-    }
-
-    function dispatchMemo(playerIdx) {
-      const msg = document.getElementById(`memo-text-${playerIdx}`).value.trim();
-      if (!msg) return showToast("Memo cannot be blank.");
-
-      mutateAndPush((state) => {
-        const p = state.players[playerIdx];
-        if (!p.override) p.override = {};
-        p.override = { is_active: true, message: msg };
-      }, `Override sent to ${dmState.players[playerIdx].name}`);
-    }
-
-    function clearLoot(playerIdx) {
-      mutateAndPush((state) => {
-        const p = state.players[playerIdx];
-        if (p.achievements?.pending) {
-          p.achievements.pending = p.achievements.pending.filter(item => !item.is_acknowledged);
         }
-      }, `Receipts cleared for ${dmState.players[playerIdx].name}`);
+      } catch (e) {
+        console.warn("Fetch failed.");
+      }
+      renderAll();
     }
 
     // --- UI Rendering ---
-    function renderDashboardGrid() {
-      if (!dmState || !dmState.players || dmState.players.length === 0) {
-        document.getElementById('dashboard-grid').innerHTML = `<div style="color:var(--danger)">Roster empty.</div>`;
+    function renderAll() {
+      renderRoster();
+      renderTrophyQueue();
+    }
+
+    function renderRoster() {
+      const container = document.getElementById('roster-container');
+      if (!appState.players || appState.players.length === 0) {
+        container.innerHTML = `<div style="color: #666; font-style: italic;">No players found.</div>`;
         return;
       }
 
-      const grid = document.getElementById('dashboard-grid');
       let html = '';
-
-      dmState.players.forEach((p, idx) => {
+      appState.players.forEach((p, idx) => {
         if (p.is_deleted) return;
+        const color = colorPalette[idx % colorPalette.length];
+        
         html += `
-          <div class="player-card">
-            <div class="player-header">
-              <h2 class="player-name">${escapeHtml(p.name)}</h2>
-              <div id="override-badge-${idx}"></div>
+          <div class="roster-card" style="--player-color: ${color}">
+            <h3>${escapeHtml(p.name)}</h3>
+            <div class="vitals-row">
+              <div class="vital-stat">HP <span>${p.stats?.hp_max || 0}</span></div>
+              <div class="vital-stat">AC <span>${p.stats?.ac || 0}</span></div>
+              <div class="vital-stat">PP <span>${p.stats?.passive_perception || 0}</span></div>
+              <div class="vital-stat">Gold <span style="color:var(--warning);">${p.gold || 0}</span></div>
             </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html || `<div style="color: #666; font-style: italic;">All players deleted.</div>`;
+    }
 
-            <div class="control-group">
-              <h4>VFX / Conditions</h4>
-              <div class="toggle-grid">
-                <button id="cond-bleed-${idx}" class="btn-toggle" onclick="toggleCondition(${idx}, 'Bleeding')">Bleeding</button>
-                <button id="cond-poison-${idx}" class="btn-toggle" onclick="toggleCondition(${idx}, 'Poisoned')">Poisoned</button>
-                <button id="cond-blind-${idx}" class="btn-toggle" onclick="toggleCondition(${idx}, 'Blinded')">Blinded</button>
-                <button id="cond-crit-${idx}" class="btn-toggle" onclick="toggleCondition(${idx}, 'Critical Trauma')">Critical</button>
-              </div>
-            </div>
+    function renderTrophyQueue() {
+      const container = document.getElementById('trophy-queue-container');
+      if (!appState.achievement_queue || appState.achievement_queue.length === 0) {
+        container.innerHTML = `<div style="padding:1.5rem; background:#111; border:1px dashed #333; border-radius:6px; color:#666; text-align:center;">Trophy Queue is empty.</div>`;
+        return;
+      }
 
-            <div class="control-group">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h4>Dispatch Achievement & Loot</h4>
-                <select id="quick-ach-${idx}" class="quick-ach-select" onchange="fillAchievementData(${idx})" style="background: #222; color: var(--accent); border: 1px solid #444; max-width: 160px; padding: 4px; font-size: 0.8rem; border-radius: 4px;">
-                  <option value="">-- Quick Autofill --</option>
-                </select>
-              </div>
-              <div class="input-row"><input type="text" id="ach-title-${idx}" placeholder="Achievement Title..."></div>
-              <div class="input-row">
-                <input type="text" id="loot-name-${idx}" placeholder="Reward Item Name...">
-                <select id="loot-rarity-${idx}" style="max-width: 110px;">
-                  <option value="standard" selected>Standard</option>
-                  <option value="rare">Rare</option>
-                  <option value="contraband">Contraband</option>
-                </select>
-              </div>
-              <button class="btn-action" style="width: 100%;" onclick="dispatchLoot(${idx})">TRANSMIT TO HUD</button>
-            </div>
+      let html = '';
+      let hasVisible = false;
 
-            <div class="control-group">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h4>Direct Override Memo</h4>
-                <select id="quick-memo-${idx}" class="quick-memo-select" onchange="fillMemoData(${idx})" style="background: #222; color: var(--warning); border: 1px solid #444; max-width: 160px; padding: 4px; font-size: 0.8rem; border-radius: 4px;">
-                  <option value="">-- Quick Threat --</option>
-                </select>
-              </div>
-              <div class="input-row"><input type="text" id="memo-text-${idx}" placeholder="Type corporate threat..."></div>
-              <button id="btn-override-${idx}" class="btn-action btn-danger" style="width: 100%;" onclick="dispatchMemo(${idx})">LOCK SCREEN & SEND</button>
-            </div>
+      // Build active player dropdown options
+      const playerOptions = appState.players
+        .filter(p => !p.is_deleted)
+        .map(p => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`)
+        .join('');
 
-            <div class="control-group">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                <h4>Pending Receipts</h4>
-                <button id="clear-btn-${idx}" class="btn-toggle" style="display:none; background:transparent; border:none; color:var(--accent); cursor:pointer; font-size:0.7rem; padding: 0;" onclick="clearLoot(${idx})">[ CLEAR COMPLETED ]</button>
-              </div>
-              <div class="receipt-log" id="receipt-log-${idx}"></div>
+      appState.achievement_queue.forEach((trophy, idx) => {
+        if (trophy.is_deleted) return;
+        hasVisible = true;
+        
+        html += `
+          <div class="trophy-card">
+            <div class="trophy-title">${escapeHtml(trophy.name)}</div>
+            <div class="trophy-desc">${escapeHtml(trophy.description)}</div>
+            <div class="dispatch-row">
+              <select id="trophy-target-${idx}" class="trophy-select">
+                <option value="" disabled selected>Assign to...</option>
+                ${playerOptions}
+              </select>
+              <button class="btn-send" onclick="dispatchTrophy(${idx})">Send</button>
+              <button class="btn-danger" onclick="discardTrophy(${idx})" title="Discard">X</button>
             </div>
           </div>
         `;
       });
 
-      grid.innerHTML = html;
-      updateQuickActions();
-      updateLiveUI(); // Initial state sync
+      container.innerHTML = hasVisible ? html : `<div style="padding:1.5rem; background:#111; border:1px dashed #333; border-radius:6px; color:#666; text-align:center;">Trophy Queue is empty.</div>`;
     }
 
-    // Surgical UI Updates (Prevents DOM Clobbering)
-    function updateLiveUI() {
-      if (!dmState || !dmState.players) return;
-      
-      dmState.players.forEach((p, idx) => {
-        if (p.is_deleted) return;
-        
-        // 1. Update Receipts
-        const logDiv = document.getElementById(`receipt-log-${idx}`);
-        if (logDiv) {
-          const pendingItems = p.achievements?.pending || [];
-          let receiptHtml = '';
-          let hasCleared = false;
-          if (pendingItems.length === 0) {
-            receiptHtml = `<div class="receipt-item" style="color:#555;">Inbox clear.</div>`;
-          } else {
-            pendingItems.forEach(i => {
-              if (i.is_acknowledged) hasCleared = true;
-              const statusClass = i.is_acknowledged ? 'receipt-cleared' : 'receipt-pending';
-              const statusIcon = i.is_acknowledged ? '✓ ACKNOWLEDGED' : '⚠ PENDING';
-              receiptHtml += `<div class="receipt-item"><span style="color:#fff">${escapeHtml(i.name)}</span> <span class="${statusClass}">${statusIcon}</span></div>`;
-            });
-          }
-          logDiv.innerHTML = receiptHtml;
-          
-          const clearBtn = document.getElementById(`clear-btn-${idx}`);
-          if (clearBtn) clearBtn.style.display = hasCleared ? 'inline-block' : 'none';
-        }
+    // --- Core Dispatch Actions ---
+    function dispatchTrophy(queueIndex) {
+      const targetEl = document.getElementById(`trophy-target-${queueIndex}`);
+      const targetPlayerName = targetEl ? targetEl.value : null;
+      if (!targetPlayerName) return showToast("Select a player first.");
 
-        // 2. Update Conditions
-        const conds = (p.status?.conditions || []).map(c => c.toLowerCase());
-        const bindTgl = (id, check) => { const el = document.getElementById(id); if(el) el.className = `btn-toggle ${check}`; };
-        
-        bindTgl(`cond-bleed-${idx}`, conds.includes('bleeding') ? 'active' : '');
-        bindTgl(`cond-poison-${idx}`, conds.includes('poisoned') ? 'active poison' : '');
-        bindTgl(`cond-blind-${idx}`, conds.includes('blinded') ? 'active' : '');
-        bindTgl(`cond-crit-${idx}`, (conds.includes('critical trauma') || conds.includes('critical')) ? 'active' : '');
-
-        // 3. Update Override Button Status
-        const overrideBtn = document.getElementById(`btn-override-${idx}`);
-        const overrideBadge = document.getElementById(`override-badge-${idx}`);
-        if (overrideBtn) {
-          const isLocked = p.override?.is_active;
-          overrideBtn.disabled = isLocked;
-          overrideBtn.innerText = isLocked ? 'AWAITING COMPLIANCE...' : 'LOCK SCREEN & SEND';
-          if (overrideBadge) overrideBadge.innerHTML = isLocked ? '<span style="color:var(--danger); font-size:0.8rem; font-weight:bold;">⚠ SYSTEM LOCKED</span>' : '';
-        }
-      });
-    }
-
-    // --- Emergency Seeder ---
-    function seedDatabase() {
-      if(!confirm("WARNING: This will wipe the current player roster (Notes/Loot are safe). Proceed?")) return;
       mutateAndPush((state) => {
-        state.players = [
-          { name: "Chuck", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } },
-          { name: "Tilly", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } },
-          { name: "Hendrick", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } },
-          { name: "Aelar", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } },
-          { name: "Jimothy", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, override: { is_active: false, message: "" } }
-        ];
-      }, "Roster Seeded.");
+        // 1. Soft-delete from global queue
+        const trophy = state.achievement_queue[queueIndex];
+        trophy.is_deleted = true;
+        
+        // 2. Find Target Player
+        const p = state.players.find(x => x.name === targetPlayerName);
+        if (!p) throw new Error("Player not found in sync state.");
+
+        // 3. Inject clean clone
+        if (!p.achievements) p.achievements = { pending: [], claimed: [] };
+        if (!p.achievements.pending) p.achievements.pending = [];
+        
+        // Strip the is_deleted flag so it arrives actively on the HUD
+        const { is_deleted, ...cleanTrophy } = trophy;
+        p.achievements.pending.push(cleanTrophy);
+
+      }, `Trophy sent to ${targetPlayerName}!`);
     }
 
+    function discardTrophy(queueIndex) {
+      if(!confirm("Are you sure you want to discard this achievement?")) return;
+      
+      mutateAndPush((state) => {
+        state.achievement_queue[queueIndex].is_deleted = true;
+      }, "Trophy discarded.");
+    }
+
+    // --- Utilities ---
     function showToast(msg) {
       const c = document.getElementById('toast-container');
-      const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
-      c.appendChild(t); setTimeout(() => t.remove(), 4000);
+      const t = document.createElement('div');
+      t.className = 'toast'; t.innerText = msg;
+      c.appendChild(t); setTimeout(() => t.remove(), 3000);
     }
     function escapeHtml(str) { return str ? str.toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
+
+    // Boot
+    init();
+    
+    // Auto-poll every 30s to keep Dashboard fresh
+    setInterval(init, 30000);
   </script>
 </body>
 </html>
