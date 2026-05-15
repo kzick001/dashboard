@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Showrunner // Data Forge V2.0.4</title>
+  <title>Showrunner // Data Forge V2.1</title>
   <style>
     :root {
       --bg: #0a0a0c;
@@ -142,7 +142,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-      SHOWRUNNER // DATA FORGE V2.0.4
+      SHOWRUNNER // DATA FORGE V2.1
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">Dashboard</a>
@@ -158,6 +158,7 @@
       <button id="mode-rooms" class="btn-mode active" onclick="switchMode('rooms')">1. Campaign Notes</button>
       <button id="mode-loot" class="btn-mode" onclick="switchMode('loot')">2. Loot Tables</button>
       <button id="mode-roster" class="btn-mode" onclick="switchMode('roster')">3. Roster Injection</button>
+      <button id="mode-sessions" class="btn-mode" onclick="switchMode('sessions')">4. Session Recaps</button>
     </div>
   </div>
 
@@ -227,7 +228,8 @@
     const placeholders = {
       rooms: `Paste your raw MS Word or Obsidian notes here...\n\nExpected format:\nROOM 17a: THE WAITING AREA\nVISUALS & READ-ALOUD\nDM NOTES & MECHANICS\nNAME: Brenda\nAI TOOLTIP\nNEW ACHIEVEMENT!\nLOOT & REWARDS`,
       loot: `Paste your Loot Tables here...\n\nExpected format for Tiers:\nTABLE: Silver\n[Roll 55-56] ITEM: The Whipping Antenna TYPE: Weapon (Rapier) DESCRIPTION: A flexible spike...\n\nExpected format for Personal:\nPERSONAL: Chuck\nThe Oversized Clown-Boots of Stealth\nType: Armor (Feet)\nDescription: Finally, shoes that fit...`,
-      roster: `Paste your Player Data blocks here...\n\nExpected format:\nChuck (Played by: Chuck)\nBuild: Battlemaster Fighter\nVitals: Max HP: 28 | AC: 16 | Passive Perception: 12\nEconomy: 133gp\nInventory & Curses:\n* [NEW] The 'Push, Don't Pull' Sign (Wondrous Item): Once per day...`
+      roster: `Paste your Player Data blocks here...\n\nExpected format:\nChuck (Played by: Chuck)\nBuild: Battlemaster Fighter\nVitals: Max HP: 28 | AC: 16 | Passive Perception: 12\nEconomy: 133gp\nInventory & Curses:\n* [NEW] The 'Push, Don't Pull' Sign (Wondrous Item): Once per day...`,
+      sessions: `Paste your Session Recaps here...\n\nExpected format:\nSESSION: 04 - The Slop Pit Incident\nThe party bravely ran away from the slop monster, abandoning their dignity...\n\nACHIEVEMENT: "Slop Glutton"\nReward: The Severed Manticore Tail. Chuck ate 5 raw cubes of slop.`
     };
 
     document.getElementById('raw-input').placeholder = placeholders.rooms;
@@ -346,7 +348,6 @@
           if (inItemBlock) {
             const typeMatch = line.match(/^(?:Type:|Type\s+-|Weapon|Armor|Wondrous|Consumable)/i);
             if (typeMatch && taggedText.includes('TYPE: Unknown')) {
-               // Replace the most recent 'TYPE: Unknown' securely
                const typeStr = line.replace(/^Type:\s*/i, '').trim();
                const lastIdx = taggedText.lastIndexOf('TYPE: Unknown');
                if (lastIdx !== -1) {
@@ -366,6 +367,11 @@
           .replace(/Vitals:.*?Max HP: (\d+).*?AC: (\d+).*?Passive Perception: (\d+)/gm, '#VITALS HP:$1 AC:$2 PP:$3')
           .replace(/^Economy: (\d+).*/gm, '#GOLD $1')
           .replace(/^Inventory & Curses:/gm, '#INVENTORY');
+      }
+      else if (currentMode === 'sessions') {
+        taggedText = rawText
+          .replace(/^SESSION:\s*(.*)/gm, '#SESSION $1')
+          .replace(/^ACHIEVEMENT:\s*(.*)/gm, '#ACHIEVEMENT $1');
       }
 
       document.getElementById('tagged-input').value = taggedText.trim();
@@ -402,7 +408,6 @@
       else if (currentMode === 'loot') {
         compiledData = { loot_tables: { tiers: {}, personal: {} } };
         
-        // Handle both Global Tiers and Personal Tables
         const tables = text.split(/(?=#TABLE|#PERSONAL_TABLE)/).filter(b => b.trim());
         
         tables.forEach(tBlock => {
@@ -430,7 +435,7 @@
                 if(l.startsWith('NAME:')) name = l.replace('NAME:','').trim();
                 else if(l.startsWith('TYPE:')) type = l.replace('TYPE:','').trim();
                 else if(l.startsWith('DESC:')) desc = l.replace('DESC:','').trim();
-                else if(name) desc += "\n" + l.trim(); // Appends stray multi-lines to description
+                else if(name) desc += "\n" + l.trim(); 
              });
              
              let targetSlots = [];
@@ -496,6 +501,40 @@
           compiledData.push(pObj);
         });
       }
+      else if (currentMode === 'sessions') {
+        compiledData = { session_log: null, achievements: [] };
+        
+        // Extract Session Log safely
+        const sessionParts = text.split('#SESSION ');
+        if (sessionParts.length > 1) {
+           const narrativeChunk = sessionParts[1].split('#ACHIEVEMENT')[0];
+           const lines = narrativeChunk.split('\n').filter(line => line.trim() !== '');
+           
+           compiledData.session_log = { 
+             id: Date.now(), 
+             title: lines[0] ? lines[0].trim() : "Untitled Session", 
+             content: lines.slice(1).join('\n').trim(),
+             is_deleted: false
+           };
+        }
+
+        // Extract Floating Achievements into Global Queue
+        const achBlocks = text.split('#ACHIEVEMENT ').slice(1);
+        achBlocks.forEach(ach => {
+           const parts = ach.split(/Reward:/i);
+           const title = parts[0].trim().replace(/"/g, '');
+           const itemDesc = parts[1] ? parts[1].trim() : "Unknown";
+           const itemName = parts[1] ? parts[1].split('.')[0].trim() : "Unknown";
+
+           compiledData.achievements.push({
+             name: title,
+             is_acknowledged: false,
+             is_deleted: false,
+             description: itemDesc,
+             rewards: { items: [{ name: itemName, flavor_text: itemDesc, mechanics: "", quantity: 1 }] }
+           });
+        });
+      }
 
       document.getElementById('json-preview').innerText = JSON.stringify(compiledData, null, 2);
       document.getElementById('btn-push').disabled = false;
@@ -524,7 +563,7 @@
 
         // ROUTER: Merge based on mode
         if (currentMode === 'rooms') {
-          if (!latestState.campaign_notes) latestState.campaign_notes = { rooms: [] };
+          if (!latestState.campaign_notes) latestState.campaign_notes = { rooms: [], sessions: [] };
           if (!latestState.campaign_notes.rooms) latestState.campaign_notes.rooms = [];
           
           compiledData.forEach(newRoom => {
@@ -590,6 +629,19 @@
                 });
              }
           });
+        }
+        else if (currentMode === 'sessions') {
+          // Push Narrative Recap
+          if (compiledData.session_log) {
+            if (!latestState.campaign_notes) latestState.campaign_notes = { rooms: [], sessions: [] };
+            if (!latestState.campaign_notes.sessions) latestState.campaign_notes.sessions = [];
+            latestState.campaign_notes.sessions.push(compiledData.session_log);
+          }
+          // Push Floating Achievements to Global Queue
+          if (compiledData.achievements.length > 0) {
+            if (!latestState.achievement_queue) latestState.achievement_queue = [];
+            compiledData.achievements.forEach(ach => latestState.achievement_queue.push(ach));
+          }
         }
 
         latestState.version = (latestState.version || 0) + 1;
