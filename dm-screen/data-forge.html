@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Showrunner // Data Forge V2.0.1</title>
+  <title>Showrunner // Data Forge V2.0.2</title>
   <style>
     :root {
       --bg: #0a0a0c;
@@ -142,7 +142,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-      SHOWRUNNER // DATA FORGE V2
+      SHOWRUNNER // DATA FORGE V2.0.2
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">Dashboard</a>
@@ -219,7 +219,7 @@
     // Contextual Placeholders
     const placeholders = {
       rooms: `Paste your raw MS Word or Obsidian notes here...\n\nExpected format:\nROOM 17a: THE WAITING AREA\nVISUALS & READ-ALOUD\nDM NOTES & MECHANICS\nNAME: Brenda\nAI TOOLTIP\nNEW ACHIEVEMENT!\nLOOT & REWARDS`,
-      loot: `Paste your D100 Loot Tables here...\n\nExpected format:\nTABLE: Silver\n[Roll 55-56] ITEM: The Whipping Antenna TYPE: Weapon (Rapier) DESCRIPTION: A flexible spike...\n[Roll 57-58] ITEM: The Axe TYPE: Weapon DESCRIPTION: A red axe...`,
+      loot: `Paste your D100 Loot Tables here...\n\nExpected format:\nSILVER TIER (THE UNCOMMON LOOT)\n[Roll 55-56] ITEM: The Whipping Antenna TYPE: Weapon (Rapier) DESCRIPTION: A flexible spike...\n[Roll 57-58] ITEM: The Axe TYPE: Weapon DESCRIPTION: A red axe...`,
       roster: `Paste your Player Data blocks here...\n\nExpected format:\nChuck (Played by: Chuck)\nBuild: Battlemaster Fighter\nVitals: Max HP: 28 | AC: 16 | Passive Perception: 12\nEconomy: 133gp\nInventory & Curses:\n* [NEW] The 'Push, Don't Pull' Sign (Wondrous Item): Once per day...`
     };
 
@@ -271,10 +271,31 @@
           .replace(/LOOT & REWARDS/g, '#LOOT');
       } 
       else if (currentMode === 'loot') {
-        taggedText = rawText
-          .replace(/^TABLE:\s*(.*)/gm, '#TABLE $1')
-          .replace(/\[Roll\s+(\d+)(?:-(\d+))?\]\s*ITEM:\s*(.*?)\s+TYPE:\s*(.*?)\s+(?:DESCRIPTION|DESC):\s*(.*)/gm, 
-                   '#SLOT $1-$2\nNAME: $3\nTYPE: $4\nDESC: $5');
+        taggedText = rawText.split('\n').map(line => {
+            // Fuzzy Table Matcher (matches "TABLE: Silver" OR "SILVER TIER")
+            const tableMatch = line.match(/^(?:TABLE:\s*(.*)|(.*)\s+TIER.*)/i);
+            if (tableMatch && !line.includes('DESCRIPTION')) {
+                return '#TABLE ' + (tableMatch[1] || tableMatch[2]).trim();
+            }
+            
+            // Fuzzy Slot Matcher (must have TYPE and DESCRIPTION to be considered a loot item)
+            if (line.match(/TYPE:/i) && line.match(/DESCRIPTION:|DESC:/i)) {
+                const rollMatch = line.match(/Roll\s*([0-9]+(?:-[0-9]+)?)/i);
+                const itemMatch = line.match(/ITEM:\s*(.*?)\s+TYPE:/i);
+                const typeMatch = line.match(/TYPE:\s*(.*?)\s+(?:DESCRIPTION|DESC):/i);
+                const descMatch = line.match(/(?:DESCRIPTION|DESC):\s*(.*)/i);
+                
+                // Fallbacks for broken formatting
+                const roll = rollMatch ? rollMatch[1] : '[ERROR]';
+                const name = itemMatch ? itemMatch[1].trim() : '[REQUIRES MANUAL ENTRY]';
+                const type = typeMatch ? typeMatch[1].trim() : 'Unknown';
+                const desc = descMatch ? descMatch[1].trim() : '';
+                
+                return `#SLOT ${roll}\nNAME: ${name}\nTYPE: ${type}\nDESC: ${desc}`;
+            }
+            // Leave narrative fluff alone, JSON compiler ignores it.
+            return line;
+        }).join('\n');
       } 
       else if (currentMode === 'roster') {
         taggedText = rawText
@@ -317,14 +338,15 @@
         });
       } 
       else if (currentMode === 'loot') {
-        compiledData = { tiers: {}, personal: {} };
+        // Updated portability wrapper
+        compiledData = { loot_tables: { tiers: {}, personal: {} } };
         const tables = text.split('#TABLE ').filter(b => b.trim());
         
         tables.forEach(tBlock => {
           const slots = tBlock.split('#SLOT ');
           const tName = slots[0].trim().toLowerCase();
           const isTier = ['bronze','silver','gold','platinum'].includes(tName);
-          const tRef = isTier ? compiledData.tiers : compiledData.personal;
+          const tRef = isTier ? compiledData.loot_tables.tiers : compiledData.loot_tables.personal;
           
           tRef[tName] = []; 
           
@@ -347,7 +369,7 @@
                 targetSlots.push(parseInt(rollRange) - 1);
              }
              
-             if (name && !isNaN(targetSlots[0])) {
+             if (name && name !== '[REQUIRES MANUAL ENTRY]' && !isNaN(targetSlots[0])) {
                tRef[tName].push({ targetSlots, item: { name, type, desc } });
              }
           }
@@ -443,10 +465,11 @@
         } 
         else if (currentMode === 'loot') {
           if (!latestState.loot_tables) latestState.loot_tables = { tiers: {}, personal: {} };
+          const newTables = compiledData.loot_tables;
           
           ['tiers', 'personal'].forEach(cat => {
-            if(compiledData[cat]) {
-               Object.keys(compiledData[cat]).forEach(tName => {
+            if(newTables[cat]) {
+               Object.keys(newTables[cat]).forEach(tName => {
                   if(!latestState.loot_tables[cat][tName]) latestState.loot_tables[cat][tName] = [];
                   const tRef = latestState.loot_tables[cat][tName];
                   
@@ -454,7 +477,7 @@
                   const maxSlots = cat === 'tiers' ? 100 : 10;
                   while(tRef.length < maxSlots) tRef.push({ roll: tRef.length + 1, item: null });
 
-                  compiledData[cat][tName].forEach(entry => {
+                  newTables[cat][tName].forEach(entry => {
                      entry.targetSlots.forEach(sIdx => {
                          if(sIdx >= 0 && sIdx < maxSlots) {
                              tRef[sIdx].item = entry.item;
