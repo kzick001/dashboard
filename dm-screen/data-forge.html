@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Showrunner // Data Forge V2.0.3</title>
+  <title>Showrunner // Data Forge V2.0.4</title>
   <style>
     :root {
       --bg: #0a0a0c;
@@ -96,10 +96,10 @@
     }
     .pane-header-title { font-size: 0.85rem; font-weight: bold; color: #fff; letter-spacing: 0.1em; }
     .btn-min {
-      background: transparent; border: 1px solid #444; color: #aaa; width: 24px; height: 24px;
-      border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      background: transparent; border: 1px solid #444; color: #aaa; width: 26px; height: 26px;
+      border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;
     }
-    .btn-min:hover { color: #fff; border-color: #fff; }
+    .btn-min:hover { color: #fff; border-color: #fff; background: rgba(255,255,255,0.1); }
 
     /* Pane Content & Inputs */
     .pane-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -142,7 +142,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-      SHOWRUNNER // DATA FORGE V2.0.3
+      SHOWRUNNER // DATA FORGE V2.0.4
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">Dashboard</a>
@@ -167,7 +167,10 @@
       <div class="pane-title-vertical" onclick="expandPane('pane1')">1. RAW INGEST</div>
       <div class="pane-header">
         <span class="pane-header-title">1. RAW INGEST</span>
-        <button class="btn-min" onclick="collapsePane('pane1')" title="Minimize">_</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-min" onclick="copyPane('raw-input')" title="Copy to Clipboard"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+          <button class="btn-min" onclick="collapsePane('pane1')" title="Minimize">_</button>
+        </div>
       </div>
       <div class="pane-content">
         <textarea id="raw-input"></textarea>
@@ -181,7 +184,10 @@
       <div class="pane-title-vertical" onclick="expandPane('pane2')">2. TAGGED SYNTAX</div>
       <div class="pane-header">
         <span class="pane-header-title">2. TAGGED SYNTAX</span>
-        <button class="btn-min" onclick="collapsePane('pane2')" title="Minimize">_</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-min" onclick="copyPane('tagged-input')" title="Copy to Clipboard"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+          <button class="btn-min" onclick="collapsePane('pane2')" title="Minimize">_</button>
+        </div>
       </div>
       <div class="pane-content">
         <textarea id="tagged-input" placeholder="Awaiting syntax transformation..."></textarea>
@@ -195,7 +201,10 @@
       <div class="pane-title-vertical" onclick="expandPane('pane3')">3. DATABASE PREVIEW</div>
       <div class="pane-header">
         <span class="pane-header-title">3. DATABASE PREVIEW (JSON)</span>
-        <button class="btn-min" onclick="collapsePane('pane3')" title="Minimize">_</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-min" onclick="copyPane('json-preview')" title="Copy to Clipboard"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+          <button class="btn-min" onclick="collapsePane('pane3')" title="Minimize">_</button>
+        </div>
       </div>
       <div class="pane-content">
         <pre><code id="json-preview">Awaiting compilation...</code></pre>
@@ -217,7 +226,7 @@
 
     const placeholders = {
       rooms: `Paste your raw MS Word or Obsidian notes here...\n\nExpected format:\nROOM 17a: THE WAITING AREA\nVISUALS & READ-ALOUD\nDM NOTES & MECHANICS\nNAME: Brenda\nAI TOOLTIP\nNEW ACHIEVEMENT!\nLOOT & REWARDS`,
-      loot: `Paste your Loot Tables here...\n\nExpected format for Tiers:\nTABLE: Silver\n[Roll 55-56] ITEM: The Whipping Antenna TYPE: Weapon (Rapier) DESCRIPTION: A flexible spike...\n\nExpected format for Personal:\nPERSONAL: Chuck\nITEM: The Oversized Clown-Boots of Stealth\nType: Armor (Feet)\nDescription: Finally, shoes that fit...`,
+      loot: `Paste your Loot Tables here...\n\nExpected format for Tiers:\nTABLE: Silver\n[Roll 55-56] ITEM: The Whipping Antenna TYPE: Weapon (Rapier) DESCRIPTION: A flexible spike...\n\nExpected format for Personal:\nPERSONAL: Chuck\nThe Oversized Clown-Boots of Stealth\nType: Armor (Feet)\nDescription: Finally, shoes that fit...`,
       roster: `Paste your Player Data blocks here...\n\nExpected format:\nChuck (Played by: Chuck)\nBuild: Battlemaster Fighter\nVitals: Max HP: 28 | AC: 16 | Passive Perception: 12\nEconomy: 133gp\nInventory & Curses:\n* [NEW] The 'Push, Don't Pull' Sign (Wondrous Item): Once per day...`
     };
 
@@ -244,6 +253,13 @@
       const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
       c.appendChild(t); setTimeout(() => t.remove(), 4000);
     }
+    
+    function copyPane(id) {
+      const el = document.getElementById(id);
+      const text = el.tagName === 'TEXTAREA' ? el.value : el.innerText;
+      if (!text || text === 'Awaiting compilation...') return showToast("Nothing to copy!");
+      navigator.clipboard.writeText(text).then(() => showToast("Copied to clipboard!"));
+    }
 
     // --- Engine 1: Auto-Tagging Regex Pipeline ---
     function executeAutoTag() {
@@ -269,8 +285,9 @@
 
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i].trim();
-          
-          // Fuzzy Matchers for Headers
+          if (!line) continue;
+
+          // Headers
           const tableMatch = line.match(/^(?:TABLE:\s*(.*)|(.*)\s+TIER.*)/i);
           if (tableMatch && !line.includes('DESCRIPTION')) {
             taggedText += `\n#TABLE ${tableMatch[1] || tableMatch[2]}\n`;
@@ -282,31 +299,62 @@
             slotCounter = 1; continue;
           }
 
-          // D100 Formatted Item
+          // D100 Single-Line Formatted Item
           if (line.match(/TYPE:/i) && line.match(/DESCRIPTION:|DESC:/i) && line.match(/Roll\s*([0-9]+(?:-[0-9]+)?)/i)) {
             inItemBlock = false;
             const rollMatch = line.match(/Roll\s*([0-9]+(?:-[0-9]+)?)/i);
             const itemMatch = line.match(/ITEM:\s*(.*?)\s+TYPE:/i);
             const typeMatch = line.match(/TYPE:\s*(.*?)\s+(?:DESCRIPTION|DESC):/i);
             const descMatch = line.match(/(?:DESCRIPTION|DESC):\s*(.*)/i);
-            taggedText += `\n#SLOT ${rollMatch[1]}\nNAME: ${itemMatch ? itemMatch[1].trim() : ''}\nTYPE: ${typeMatch ? typeMatch[1].trim() : ''}\nDESC: ${descMatch ? descMatch[1].trim() : ''}\n`;
+            
+            const roll = rollMatch ? rollMatch[1] : '[ERROR]';
+            const name = itemMatch ? itemMatch[1].trim() : '[REQUIRES MANUAL ENTRY]';
+            const type = typeMatch ? typeMatch[1].trim() : 'Unknown';
+            const desc = descMatch ? descMatch[1].trim() : '';
+
+            taggedText += `\n#SLOT ${roll}\nNAME: ${name}\nTYPE: ${type}\nDESC: ${desc}\n`;
             continue;
           }
 
-          // Personal Table Block Formatted Item
+          // Explicit ITEM: Tag
           if (line.match(/^ITEM:\s*(.*)/i)) {
             inItemBlock = true;
-            taggedText += `\n#SLOT ${slotCounter++}\nNAME: ${line.replace(/ITEM:/i, '').trim()}\nTYPE: Unknown\nDESC: `;
+            taggedText += `\n#SLOT ${slotCounter++}\nNAME: ${line.replace(/^ITEM:\s*/i, '').trim()}\nTYPE: Unknown\nDESC: `;
             continue;
+          }
+
+          // IMPLICIT TITLE DETECTION (Look-Ahead Heuristic)
+          const propertyRegex = /^(?:Type:|Description:|Desc:|Mechanics:|Mechanic:|•|Weapon|Armor|Wondrous|Consumable)/i;
+          const isProperty = line.match(propertyRegex);
+          
+          if (!isProperty) {
+             let nextLine = "";
+             for (let j = i + 1; j < lines.length; j++) {
+                 if (lines[j].trim() !== "") { nextLine = lines[j].trim(); break; }
+             }
+             const nextIsProperty = nextLine.match(propertyRegex);
+             
+             // If next line is a property AND current line isn't a massive paragraph (like intro fluff)
+             if (nextIsProperty && line.split(' ').length < 15) {
+                 inItemBlock = true;
+                 taggedText += `\n#SLOT ${slotCounter++}\nNAME: ${line}\nTYPE: Unknown\nDESC: `;
+                 continue;
+             }
           }
 
           // Append to Description if inside an Item Block
-          if (inItemBlock && line !== '') {
-            // Check if this line is declaring a type
-            if (line.match(/^(?:Type|Weapon|Armor|Wondrous).*?,/i) || line.match(/^Type:/i)) {
-               taggedText = taggedText.replace(/TYPE: Unknown/, `TYPE: ${line.replace(/Type:/i, '').trim()}`);
+          if (inItemBlock) {
+            const typeMatch = line.match(/^(?:Type:|Type\s+-|Weapon|Armor|Wondrous|Consumable)/i);
+            if (typeMatch && taggedText.includes('TYPE: Unknown')) {
+               // Replace the most recent 'TYPE: Unknown' securely
+               const typeStr = line.replace(/^Type:\s*/i, '').trim();
+               const lastIdx = taggedText.lastIndexOf('TYPE: Unknown');
+               if (lastIdx !== -1) {
+                  taggedText = taggedText.substring(0, lastIdx) + `TYPE: ${typeStr}` + taggedText.substring(lastIdx + 13);
+               }
             } else {
-               taggedText += `${line} `; // Append all other text (bullets, mechanics) to the DESC block
+               let cleanLine = line.replace(/^(?:Description:|Desc:|Mechanics:|Mechanic:)\s*/i, '');
+               taggedText += `${cleanLine} `;
             }
           }
         }
@@ -368,6 +416,8 @@
              tName = slots[0].replace('#TABLE', '').trim().toLowerCase();
           }
           
+          if (!tName) return;
+          
           const tRef = isPersonal ? compiledData.loot_tables.personal : compiledData.loot_tables.tiers;
           tRef[tName] = []; 
           
@@ -378,8 +428,9 @@
              
              lines.slice(1).forEach(l => {
                 if(l.startsWith('NAME:')) name = l.replace('NAME:','').trim();
-                if(l.startsWith('TYPE:')) type = l.replace('TYPE:','').trim();
-                if(l.startsWith('DESC:')) desc = l.replace('DESC:','').trim();
+                else if(l.startsWith('TYPE:')) type = l.replace('TYPE:','').trim();
+                else if(l.startsWith('DESC:')) desc = l.replace('DESC:','').trim();
+                else if(name) desc += "\n" + l.trim(); // Appends stray multi-lines to description
              });
              
              let targetSlots = [];
@@ -390,7 +441,7 @@
                 targetSlots.push(parseInt(rollRange) - 1);
              }
              
-             if (name && !isNaN(targetSlots[0])) {
+             if (name && name !== '[REQUIRES MANUAL ENTRY]' && !isNaN(targetSlots[0])) {
                tRef[tName].push({ targetSlots, item: { name, type, desc } });
              }
           }
@@ -420,7 +471,6 @@
                  inInventory = true;
              }
              else if(inInventory && l.trim() !== '') {
-                 // Inventory Parsing Magic
                  let iName = l.trim();
                  let iType = "Item";
                  let iDesc = "";
