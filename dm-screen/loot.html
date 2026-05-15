@@ -232,21 +232,30 @@
     let redoStack = [];
     let currentView = { type: 'tier', id: 'bronze' };
     let stagedRoll = null;
-    let isPushing = false; // Prevents overlapping pushes
+    let isPushing = false;
 
     function seedEmptySlots() {
+      // Deeply ensure the schema exists so we never hit 'undefined'
+      if (!appState.loot_tables) appState.loot_tables = { tiers: {}, personal: {} };
+      if (!appState.loot_tables.tiers) appState.loot_tables.tiers = {};
+      if (!appState.loot_tables.personal) appState.loot_tables.personal = {};
+
+      // Safely seed Tiers
       ['bronze', 'silver', 'gold', 'platinum'].forEach(tier => {
-        if(appState.loot_tables.tiers[tier].length < 100) {
+        if (!appState.loot_tables.tiers[tier]) appState.loot_tables.tiers[tier] = [];
+        if (appState.loot_tables.tiers[tier].length < 100) {
           for(let i = appState.loot_tables.tiers[tier].length; i < 100; i++) {
             appState.loot_tables.tiers[tier].push({ roll: i+1, item: null });
           }
         }
       });
-      ['Chuck', 'Tilly', 'Hendrick', 'Jimothy', 'Aelar'].forEach(p => {
-        if(!appState.loot_tables.personal[p]) appState.loot_tables.personal[p] = [];
-        if(appState.loot_tables.personal[p].length < 10) {
-          for(let i = appState.loot_tables.personal[p].length; i < 10; i++) {
-            appState.loot_tables.personal[p].push({ roll: i+1, item: null });
+      
+      // Safely seed Personal Tables
+      appState.players.forEach(p => {
+        if (!appState.loot_tables.personal[p.name]) appState.loot_tables.personal[p.name] = [];
+        if (appState.loot_tables.personal[p.name].length < 10) {
+          for(let i = appState.loot_tables.personal[p.name].length; i < 10; i++) {
+            appState.loot_tables.personal[p.name].push({ roll: i+1, item: null });
           }
         }
       });
@@ -255,7 +264,9 @@
     function seedDummyData() {
       appState.loot_tables.tiers.bronze[0].item = { name: "The Lukewarm Energy Drink", type: "Consumable", desc: "Drinking this restores 1d4 hit points, but gives disadvantage on Sleight of Hand." };
       appState.loot_tables.tiers.bronze[1].item = { name: "Ward of the Fast-Food Emperor", type: "Armor (Shield)", desc: "A legendary buckler providing standard +2 AC." };
-      appState.loot_tables.personal.Chuck[3].item = { name: "Gordon's Gourmet Fury-Rub", type: "Consumable", desc: "+1d4 Fire damage for 1 min. Weapon screams British insults at you." };
+      if (appState.loot_tables.personal.Chuck) {
+          appState.loot_tables.personal.Chuck[3].item = { name: "Gordon's Gourmet Fury-Rub", type: "Consumable", desc: "+1d4 Fire damage for 1 min. Weapon screams British insults at you." };
+      }
     }
 
     function saveLocal() { localStorage.setItem('showrunner_loot', JSON.stringify(appState)); }
@@ -315,9 +326,6 @@
       const local = localStorage.getItem('showrunner_loot');
       if (local) { try { appState = JSON.parse(local); } catch(e) {} }
       
-      seedEmptySlots();
-      if(!local) seedDummyData();
-      
       try {
         const response = await fetch(WORKER_URL);
         if (response.ok) {
@@ -329,6 +337,21 @@
         console.warn("Fetch failed. Using local state.");
       }
 
+      // Case-Insensitive Normalization
+      if (appState.loot_tables && appState.loot_tables.personal) {
+          const fixedPersonal = {};
+          Object.keys(appState.loot_tables.personal).forEach(k => {
+              const pMatch = appState.players.find(p => p.name.toLowerCase() === k.toLowerCase());
+              const actualName = pMatch ? pMatch.name : k;
+              fixedPersonal[actualName] = appState.loot_tables.personal[k];
+          });
+          appState.loot_tables.personal = fixedPersonal;
+      }
+
+      // Run seed AFTER the fetch guarantees schema integrity
+      seedEmptySlots();
+      if(!local) seedDummyData();
+      
       renderAll();
     }
 
@@ -542,7 +565,9 @@
     function renderMagazine() {
       document.getElementById('magazine-title').innerText = `Loaded: ${currentView.id}`;
 
-      const table = currentView.type === 'tier' ? appState.loot_tables.tiers[currentView.id] : appState.loot_tables.personal[currentView.id];
+      // Array fallback logic for safety
+      let table = currentView.type === 'tier' ? appState.loot_tables.tiers[currentView.id] : appState.loot_tables.personal[currentView.id];
+      table = table || []; 
       
       let html = table.map((slot, index) => {
         if (slot.item === null) {
