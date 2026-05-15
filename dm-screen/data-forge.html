@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Showrunner // Data Forge</title>
+  <title>Showrunner // Data Forge V2.0.1</title>
   <style>
     :root {
       --bg: #0a0a0c;
@@ -21,7 +21,7 @@
 
     body, html {
       margin: 0; padding: 0; height: 100vh; width: 100vw;
-      background-color: var(--bg); color: var(--text); overflow: hidden;
+      background-color: var(--bg); color: var(--text); overflow: hidden; display: flex; flex-direction: column;
       background-image: 
         radial-gradient(circle at top left, rgba(187,134,252,0.05) 0%, transparent 40%),
         radial-gradient(circle at bottom right, rgba(3,218,198,0.05) 0%, transparent 40%);
@@ -31,7 +31,7 @@
     .navbar {
       height: 60px; display: flex; align-items: center; justify-content: space-between;
       padding: 0 2rem; background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-      border-bottom: 1px solid var(--glass-border); z-index: 100;
+      border-bottom: 1px solid var(--glass-border); z-index: 100; flex-shrink: 0;
     }
     .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; letter-spacing: 0.15em; font-size: 1.2rem; color: #fff; text-shadow: 0 0 10px rgba(187,134,252,0.5); }
     .nav-links { display: flex; gap: 1rem; }
@@ -42,9 +42,23 @@
     .nav-link:hover { background: rgba(255,255,255,0.05); border-color: var(--glass-border); color: #fff; }
     .nav-link.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(187,134,252,0.2); }
 
+    /* --- Mode Selector --- */
+    .mode-selector-container {
+      padding: 1rem 2rem 0 2rem; flex-shrink: 0;
+    }
+    .mode-selector {
+      display: flex; flex-wrap: wrap; gap: 10px; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border);
+    }
+    .btn-mode {
+      flex: 1; background: transparent; color: var(--text-muted); border: 1px solid transparent; padding: 10px;
+      border-radius: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; transition: 0.3s;
+    }
+    .btn-mode:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .btn-mode.active { background: rgba(187, 134, 252, 0.15); color: var(--accent); border-color: var(--accent); box-shadow: 0 0 15px rgba(187, 134, 252, 0.2); }
+
     /* --- Workspace (3-Pane Grid) --- */
     .workspace {
-      display: flex; height: calc(100vh - 60px); width: 100vw; padding: 1rem; gap: 1rem;
+      display: flex; flex: 1; width: 100vw; padding: 1rem 2rem 2rem 2rem; gap: 1rem; min-height: 0;
     }
     
     @media (max-width: 768px) {
@@ -128,7 +142,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-      SHOWRUNNER // DATA FORGE
+      SHOWRUNNER // DATA FORGE V2
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">Dashboard</a>
@@ -136,9 +150,16 @@
       <a href="notes.html" class="nav-link">Notes</a>
       <a href="loot.html" class="nav-link">Loot</a>
       <a href="data-forge.html" class="nav-link active">Data Forge</a>
-      <a href="players/players.html" class="nav-link" target="_blank" style="color:var(--success); border-color:var(--success);">Player HUD ↗</a>
     </div>
   </nav>
+
+  <div class="mode-selector-container">
+    <div class="mode-selector">
+      <button id="mode-rooms" class="btn-mode active" onclick="switchMode('rooms')">1. Campaign Notes</button>
+      <button id="mode-loot" class="btn-mode" onclick="switchMode('loot')">2. Loot Tables</button>
+      <button id="mode-roster" class="btn-mode" onclick="switchMode('roster')">3. Roster Injection</button>
+    </div>
+  </div>
 
   <div class="workspace">
     
@@ -149,7 +170,7 @@
         <button class="btn-min" onclick="collapsePane('pane1')" title="Minimize">_</button>
       </div>
       <div class="pane-content">
-        <textarea id="raw-input" placeholder="Paste your raw MS Word or Obsidian notes here...&#10;&#10;Expected format examples:&#10;ROOM 17a: THE WAITING AREA&#10;VISUALS & READ-ALOUD&#10;DM NOTES & MECHANICS&#10;NAME: Brenda&#10;AI TOOLTIP&#10;NEW ACHIEVEMENT!&#10;LOOT & REWARDS"></textarea>
+        <textarea id="raw-input"></textarea>
       </div>
       <div class="pane-footer">
         <button class="btn-action btn-primary" onclick="executeAutoTag()">[ 1. EXECUTE AUTO-TAG ]</button>
@@ -163,7 +184,7 @@
         <button class="btn-min" onclick="collapsePane('pane2')" title="Minimize">_</button>
       </div>
       <div class="pane-content">
-        <textarea id="tagged-input" placeholder="#ROOM Title...&#10;#READALOUD...&#10;#MECHANICS..."></textarea>
+        <textarea id="tagged-input" placeholder="Awaiting syntax transformation..."></textarea>
       </div>
       <div class="pane-footer">
         <button class="btn-action btn-primary" onclick="compileToJson()">[ 2. COMPILE TO JSON ]</button>
@@ -190,37 +211,81 @@
 
   <script>
     const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
-    let compiledRooms = [];
+    
+    // Global State
+    let currentMode = 'rooms';
+    let compiledData = null; // Holds the parsed JSON before push
 
-    // --- UI/UX Collapse Functions ---
-    function collapsePane(id) {
-      document.getElementById(id).classList.add('collapsed');
+    // Contextual Placeholders
+    const placeholders = {
+      rooms: `Paste your raw MS Word or Obsidian notes here...\n\nExpected format:\nROOM 17a: THE WAITING AREA\nVISUALS & READ-ALOUD\nDM NOTES & MECHANICS\nNAME: Brenda\nAI TOOLTIP\nNEW ACHIEVEMENT!\nLOOT & REWARDS`,
+      loot: `Paste your D100 Loot Tables here...\n\nExpected format:\nTABLE: Silver\n[Roll 55-56] ITEM: The Whipping Antenna TYPE: Weapon (Rapier) DESCRIPTION: A flexible spike...\n[Roll 57-58] ITEM: The Axe TYPE: Weapon DESCRIPTION: A red axe...`,
+      roster: `Paste your Player Data blocks here...\n\nExpected format:\nChuck (Played by: Chuck)\nBuild: Battlemaster Fighter\nVitals: Max HP: 28 | AC: 16 | Passive Perception: 12\nEconomy: 133gp\nInventory & Curses:\n* [NEW] The 'Push, Don't Pull' Sign (Wondrous Item): Once per day...`
+    };
+
+    // Initialize UI
+    document.getElementById('raw-input').placeholder = placeholders.rooms;
+
+    // --- UI/UX Functions ---
+    function switchMode(mode) {
+      currentMode = mode;
+      
+      document.querySelectorAll('.btn-mode').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`mode-${mode}`).classList.add('active');
+      
+      document.getElementById('raw-input').placeholder = placeholders[mode];
+      document.getElementById('raw-input').value = '';
+      document.getElementById('tagged-input').value = '';
+      document.getElementById('json-preview').innerText = 'Awaiting compilation...';
+      document.getElementById('btn-push').disabled = true;
+
+      expandPane('pane1');
+      collapsePane('pane2');
+      collapsePane('pane3');
+      showToast(`${mode.toUpperCase()} MODE ACTIVATED.`);
     }
-    function expandPane(id) {
-      document.getElementById(id).classList.remove('collapsed');
-    }
+
+    function collapsePane(id) { document.getElementById(id).classList.add('collapsed'); }
+    function expandPane(id) { document.getElementById(id).classList.remove('collapsed'); }
     function showToast(msg) {
       const c = document.getElementById('toast-container');
       const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
       c.appendChild(t); setTimeout(() => t.remove(), 4000);
     }
 
-    // --- Engine 1: Auto-Tagging Regex ---
+    // --- Engine 1: Auto-Tagging Regex Pipeline ---
     function executeAutoTag() {
       const rawText = document.getElementById('raw-input').value;
       if (!rawText.trim()) return showToast("Please paste raw notes first.");
       
-      let taggedText = rawText
-        .replace(/^ROOM (.*)/gm, '#ROOM $1')
-        .replace(/VISUALS & READ-ALOUD/g, '#READALOUD')
-        .replace(/DM NOTES & MECHANICS/g, '#MECHANICS')
-        .replace(/^NAME: (.*)/gm, '#NPC $1')
-        .replace(/AI TOOLTIP/g, '#TOOLTIP')
-        .replace(/NEW ACHIEVEMENT!/g, '#ACHIEVEMENT')
-        .replace(/LOOT & REWARDS/g, '#LOOT');
+      let taggedText = '';
+
+      if (currentMode === 'rooms') {
+        taggedText = rawText
+          .replace(/^ROOM (.*)/gm, '#ROOM $1')
+          .replace(/VISUALS & READ-ALOUD/g, '#READALOUD')
+          .replace(/DM NOTES & MECHANICS/g, '#MECHANICS')
+          .replace(/^NAME: (.*)/gm, '#NPC $1')
+          .replace(/AI TOOLTIP/g, '#TOOLTIP')
+          .replace(/NEW ACHIEVEMENT!/g, '#ACHIEVEMENT')
+          .replace(/LOOT & REWARDS/g, '#LOOT');
+      } 
+      else if (currentMode === 'loot') {
+        taggedText = rawText
+          .replace(/^TABLE:\s*(.*)/gm, '#TABLE $1')
+          .replace(/\[Roll\s+(\d+)(?:-(\d+))?\]\s*ITEM:\s*(.*?)\s+TYPE:\s*(.*?)\s+(?:DESCRIPTION|DESC):\s*(.*)/gm, 
+                   '#SLOT $1-$2\nNAME: $3\nTYPE: $4\nDESC: $5');
+      } 
+      else if (currentMode === 'roster') {
+        taggedText = rawText
+          .replace(/^(.*?) \(Played by: (.*?)\)/gm, '#PLAYER $1')
+          .replace(/^Build: (.*)/gm, '#LORE Build: $1')
+          .replace(/Vitals:.*?Max HP: (\d+).*?AC: (\d+).*?Passive Perception: (\d+)/gm, '#VITALS HP:$1 AC:$2 PP:$3')
+          .replace(/^Economy: (\d+).*/gm, '#GOLD $1')
+          .replace(/^Inventory & Curses:/gm, '#INVENTORY');
+      }
 
       document.getElementById('tagged-input').value = taggedText;
-      
       collapsePane('pane1');
       expandPane('pane2');
       showToast("Auto-tagging complete. Please review.");
@@ -231,50 +296,126 @@
       const text = document.getElementById('tagged-input').value;
       if (!text.trim()) return showToast("No tagged syntax found.");
       
-      compiledRooms = []; 
-      
-      // Split by #ROOM, ignore any intro junk before the first room
-      const blocks = text.split('#ROOM ').filter(b => b.trim() !== '');
-      
-      blocks.forEach(block => {
-        let roomObj = {
-          room_id: "", readaloud: "", mechanics: "",
-          npcs: [], tooltips: [], achievements: [], loot: []
-        };
+      if (currentMode === 'rooms') {
+        compiledData = []; 
+        const blocks = text.split('#ROOM ').filter(b => b.trim() !== '');
+        blocks.forEach(block => {
+          let roomObj = { room_id: "", readaloud: "", mechanics: "", npcs: [], tooltips: [], achievements: [], loot: [] };
+          const sections = block.split(/(?=#READALOUD|#MECHANICS|#NPC|#TOOLTIP|#ACHIEVEMENT|#LOOT)/);
+          roomObj.room_id = sections[0].trim();
 
-        // Sub-split by any hashtag, preserving the tags themselves in the string
-        const sections = block.split(/(?=#READALOUD|#MECHANICS|#NPC|#TOOLTIP|#ACHIEVEMENT|#LOOT)/);
+          for (let i = 1; i < sections.length; i++) {
+            let sec = sections[i].trim();
+            if (sec.startsWith('#READALOUD')) roomObj.readaloud = sec.replace('#READALOUD', '').trim();
+            else if (sec.startsWith('#MECHANICS')) roomObj.mechanics = sec.replace('#MECHANICS', '').trim();
+            else if (sec.startsWith('#NPC')) roomObj.npcs.push({ raw_text: sec.replace('#NPC', '').trim() });
+            else if (sec.startsWith('#TOOLTIP')) roomObj.tooltips.push({ raw_text: sec.replace('#TOOLTIP', '').trim() });
+            else if (sec.startsWith('#ACHIEVEMENT')) roomObj.achievements.push({ raw_text: sec.replace('#ACHIEVEMENT', '').trim() });
+            else if (sec.startsWith('#LOOT')) roomObj.loot.push({ raw_text: sec.replace('#LOOT', '').trim() });
+          }
+          compiledData.push(roomObj);
+        });
+      } 
+      else if (currentMode === 'loot') {
+        compiledData = { tiers: {}, personal: {} };
+        const tables = text.split('#TABLE ').filter(b => b.trim());
         
-        // Section 0 is always the Room ID / Title
-        roomObj.room_id = sections[0].trim();
+        tables.forEach(tBlock => {
+          const slots = tBlock.split('#SLOT ');
+          const tName = slots[0].trim().toLowerCase();
+          const isTier = ['bronze','silver','gold','platinum'].includes(tName);
+          const tRef = isTier ? compiledData.tiers : compiledData.personal;
+          
+          tRef[tName] = []; 
+          
+          for(let i=1; i < slots.length; i++) {
+             const lines = slots[i].trim().split('\n');
+             const rollRange = lines[0].trim(); 
+             let name="", type="", desc="";
+             
+             lines.slice(1).forEach(l => {
+                if(l.startsWith('NAME:')) name = l.replace('NAME:','').trim();
+                if(l.startsWith('TYPE:')) type = l.replace('TYPE:','').trim();
+                if(l.startsWith('DESC:')) desc = l.replace('DESC:','').trim();
+             });
+             
+             let targetSlots = [];
+             if(rollRange.includes('-')) {
+                const parts = rollRange.split('-');
+                for(let r=parseInt(parts[0]); r <= parseInt(parts[1] || parts[0]); r++) targetSlots.push(r - 1);
+             } else {
+                targetSlots.push(parseInt(rollRange) - 1);
+             }
+             
+             if (name && !isNaN(targetSlots[0])) {
+               tRef[tName].push({ targetSlots, item: { name, type, desc } });
+             }
+          }
+        });
+      } 
+      else if (currentMode === 'roster') {
+        compiledData = [];
+        const players = text.split('#PLAYER ').filter(b => b.trim());
+        
+        players.forEach(pBlock => {
+          const lines = pBlock.split('\n');
+          let pObj = { name: lines[0].trim(), stats: {}, gold: 0, new_inventory: [] };
+          let inInventory = false;
+          
+          lines.slice(1).forEach(l => {
+             if(l.startsWith('#VITALS')) {
+                 const vMatch = l.match(/HP:(\d+) AC:(\d+) PP:(\d+)/);
+                 if(vMatch) {
+                    pObj.stats = { hp_max: parseInt(vMatch[1]), hp_current: parseInt(vMatch[1]), ac: parseInt(vMatch[2]), passive_perception: parseInt(vMatch[3]) };
+                 }
+             }
+             else if(l.startsWith('#GOLD')) {
+                 const gMatch = l.match(/#GOLD (\d+)/);
+                 if(gMatch) pObj.gold = parseInt(gMatch[1]);
+             }
+             else if(l.startsWith('#INVENTORY')) {
+                 inInventory = true;
+             }
+             else if(inInventory && l.trim() !== '') {
+                 // Inventory Parsing Magic
+                 let iName = l.trim();
+                 let iType = "Item";
+                 let iDesc = "";
+                 
+                 if (iName.startsWith('*')) iName = iName.substring(1).trim();
+                 if (iName.startsWith('[NEW]')) iName = iName.substring(5).trim();
 
-        // Route remaining chunks
-        for (let i = 1; i < sections.length; i++) {
-          let sec = sections[i].trim();
-          if (sec.startsWith('#READALOUD')) roomObj.readaloud = sec.replace('#READALOUD', '').trim();
-          else if (sec.startsWith('#MECHANICS')) roomObj.mechanics = sec.replace('#MECHANICS', '').trim();
-          else if (sec.startsWith('#NPC')) roomObj.npcs.push({ raw_text: sec.replace('#NPC', '').trim() });
-          else if (sec.startsWith('#TOOLTIP')) roomObj.tooltips.push({ raw_text: sec.replace('#TOOLTIP', '').trim() });
-          else if (sec.startsWith('#ACHIEVEMENT')) roomObj.achievements.push({ raw_text: sec.replace('#ACHIEVEMENT', '').trim() });
-          else if (sec.startsWith('#LOOT')) roomObj.loot.push({ raw_text: sec.replace('#LOOT', '').trim() });
-        }
-        compiledRooms.push(roomObj);
-      });
+                 const parts = iName.split(':');
+                 if (parts.length > 1) {
+                     iName = parts[0].trim();
+                     iDesc = parts.slice(1).join(':').trim();
+                 }
 
-      document.getElementById('json-preview').innerText = JSON.stringify(compiledRooms, null, 2);
-      
+                 const typeMatch = iName.match(/(.*?)\s*\((.*?)\)$/);
+                 if(typeMatch) {
+                     iName = typeMatch[1].trim();
+                     iType = typeMatch[2].trim();
+                 }
+
+                 pObj.new_inventory.push({ name: iName, flavor_text: iType, mechanics: iDesc, quantity: 1, is_deleted: false });
+             }
+          });
+          compiledData.push(pObj);
+        });
+      }
+
+      document.getElementById('json-preview').innerText = JSON.stringify(compiledData, null, 2);
       document.getElementById('btn-push').disabled = false;
       collapsePane('pane2');
       expandPane('pane3');
       showToast("JSON Compiled. Ready for upload.");
     }
 
-    // --- Engine 3: Pull, Merge, Push ---
+    // --- Engine 3: Smart Push Router ---
     async function mergeAndPush() {
       const pushBtn = document.getElementById('btn-push');
       pushBtn.disabled = true; 
       pushBtn.innerText = "[ TRANSMITTING... ]";
-      // Clear previous success styling
       pushBtn.style.borderColor = '';
       pushBtn.style.color = '';
 
@@ -289,20 +430,78 @@
         if (!fetchRes.ok) throw new Error("Fetch failed");
         let latestState = await fetchRes.json();
 
-        // 2. MERGE (Preserve existing data & enforce soft deletes)
-        if (!latestState.content) latestState.content = { rooms: [] };
-        if (!latestState.content.rooms) latestState.content.rooms = [];
-        
-        compiledRooms.forEach(newRoom => {
-          const existingIdx = latestState.content.rooms.findIndex(r => r.room_id === newRoom.room_id);
-          if (existingIdx >= 0) {
-            // Update existing room and ensure it is active
-            latestState.content.rooms[existingIdx] = { ...latestState.content.rooms[existingIdx], ...newRoom, is_deleted: false };
-          } else {
-            // Append new room
-            latestState.content.rooms.push({ ...newRoom, is_deleted: false });
-          }
-        });
+        // 2. ROUTER: Merge based on mode
+        if (currentMode === 'rooms') {
+          if (!latestState.campaign_notes) latestState.campaign_notes = { rooms: [] };
+          if (!latestState.campaign_notes.rooms) latestState.campaign_notes.rooms = [];
+          
+          compiledData.forEach(newRoom => {
+            const existingIdx = latestState.campaign_notes.rooms.findIndex(r => r.room_id === newRoom.room_id);
+            if (existingIdx >= 0) latestState.campaign_notes.rooms[existingIdx] = { ...latestState.campaign_notes.rooms[existingIdx], ...newRoom, is_deleted: false };
+            else latestState.campaign_notes.rooms.push({ ...newRoom, is_deleted: false });
+          });
+        } 
+        else if (currentMode === 'loot') {
+          if (!latestState.loot_tables) latestState.loot_tables = { tiers: {}, personal: {} };
+          
+          ['tiers', 'personal'].forEach(cat => {
+            if(compiledData[cat]) {
+               Object.keys(compiledData[cat]).forEach(tName => {
+                  if(!latestState.loot_tables[cat][tName]) latestState.loot_tables[cat][tName] = [];
+                  const tRef = latestState.loot_tables[cat][tName];
+                  
+                  // Pad the array if it's shorter than the required length
+                  const maxSlots = cat === 'tiers' ? 100 : 10;
+                  while(tRef.length < maxSlots) tRef.push({ roll: tRef.length + 1, item: null });
+
+                  compiledData[cat][tName].forEach(entry => {
+                     entry.targetSlots.forEach(sIdx => {
+                         if(sIdx >= 0 && sIdx < maxSlots) {
+                             tRef[sIdx].item = entry.item;
+                         }
+                     });
+                  });
+               });
+            }
+          });
+        }
+        else if (currentMode === 'roster') {
+          if (!latestState.players) latestState.players = [];
+          
+          compiledData.forEach(newP => {
+             const p = latestState.players.find(x => x.name.toLowerCase() === newP.name.toLowerCase());
+             if(p) {
+                // Update existing player safely
+                p.is_deleted = false; // Restore if previously soft-deleted
+                if(newP.stats.hp_max) {
+                   if(!p.stats) p.stats = {};
+                   p.stats.hp_max = newP.stats.hp_max;
+                   p.stats.hp_current = newP.stats.hp_max; // Assume reset upon bulk ingestion
+                   p.stats.ac = newP.stats.ac;
+                   p.stats.passive_perception = newP.stats.passive_perception;
+                }
+                if(newP.gold) p.gold = newP.gold;
+                
+                if(!p.inventory) p.inventory = [];
+                newP.new_inventory.forEach(ni => {
+                   // Enforce idempotency: prevent duplicate inventory injections
+                   const exists = p.inventory.some(item => item.name.toLowerCase() === ni.name.toLowerCase());
+                   if (!exists) p.inventory.push(ni);
+                });
+             } else {
+                // Seed completely new player
+                latestState.players.push({
+                   name: newP.name, 
+                   stats: newP.stats, 
+                   gold: newP.gold, 
+                   inventory: newP.new_inventory, 
+                   is_deleted: false, 
+                   status: { conditions: [] }, 
+                   achievements: { pending: [] }
+                });
+             }
+          });
+        }
 
         // 3. INCREMENT & TIMESTAMP
         latestState.version = (latestState.version || 0) + 1;
@@ -315,11 +514,16 @@
           data: latestState 
         };
         
+        const postController = new AbortController();
+        const postTimeoutId = setTimeout(() => postController.abort(), 8000);
+        
         const postRes = await fetch(WORKER_URL, { 
           method: 'POST', 
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload) 
+          body: JSON.stringify(payload),
+          signal: postController.signal
         });
+        clearTimeout(postTimeoutId);
         
         if (!postRes.ok) throw new Error("Version collision");
 
