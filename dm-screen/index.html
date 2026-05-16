@@ -3,6 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <title>Showrunner | Dashboard</title>
+  
+  <script>
+    const SECURE_PIN = "goddammit_doughnut"; 
+    let savedPin = localStorage.getItem('showrunner_pin');
+    
+    if (savedPin !== SECURE_PIN) {
+      document.documentElement.style.display = 'none'; 
+      let input = prompt("ACCESS RESTRICTED: Enter Showrunner PIN.");
+      
+      if (input === SECURE_PIN) {
+        localStorage.setItem('showrunner_pin', input);
+        document.documentElement.style.display = ''; 
+      } else {
+        window.location.href = "https://kzick001.github.io/dashboard/dm-screen/players/players.html"; 
+      }
+    }
+  </script>
+
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='none' stroke='white' stroke-width='4' stroke-linejoin='round' d='M50 5 L90 30 L90 70 L50 95 L10 70 L10 30 Z M50 5 L50 45 M10 30 L50 45 L90 30 M10 70 L50 45 L90 70 M50 95 L50 45'/></svg>">
   
   <style>
@@ -105,7 +123,10 @@
     <div>
       <div class="section-title" style="color: var(--warning); display: flex; justify-content: space-between; align-items: center;">
         Global Trophy Queue
-        <button onclick="init()" style="background:transparent; color:#888; border:1px solid #444; padding:2px 6px; font-size:0.7rem;">⟳ SYNC</button>
+        <div style="display:flex; gap:8px;">
+          <button onclick="manuallyForgeTrophy()" style="background:transparent; color:var(--success); border:1px solid var(--success); padding:2px 6px; font-size:0.7rem; cursor:pointer;">+ FORGE TROPHY</button>
+          <button onclick="init()" style="background:transparent; color:#888; border:1px solid #444; padding:2px 6px; font-size:0.7rem; cursor:pointer;">⟳ SYNC</button>
+        </div>
       </div>
       <div class="trophy-panel" id="trophy-queue-container">
         <div style="color: #666; font-style: italic;">Loading queue...</div>
@@ -264,6 +285,25 @@
     }
 
     // --- Core Dispatch Actions ---
+    function manuallyForgeTrophy() {
+      let name = prompt("Trophy Name:");
+      if (!name) return;
+      name = name.substring(0, 60).replace(/[<>]/g, ''); // Sanitize
+
+      let desc = prompt("Reward/Description:");
+      desc = desc ? desc.substring(0, 200).replace(/[<>]/g, '') : "A heroic deed.";
+      
+      mutateAndPush((state) => {
+        if (!state.achievement_queue) state.achievement_queue = [];
+        state.achievement_queue.push({
+          name: name,
+          description: desc,
+          is_acknowledged: false, is_deleted: false,
+          rewards: { gold: 0, items: [] }
+        });
+      }, "Trophy forged and added to queue.");
+    }
+
     function dispatchTrophy(queueIndex) {
       const targetEl = document.getElementById(`trophy-target-${queueIndex}`);
       const targetPlayerName = targetEl ? targetEl.value : null;
