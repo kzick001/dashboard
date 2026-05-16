@@ -3,6 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <title>Showrunner | Loot Tables</title>
+
+  <script>
+    const SECURE_PIN = "goddammit_doughnut"; 
+    let savedPin = localStorage.getItem('showrunner_pin');
+    
+    if (savedPin !== SECURE_PIN) {
+      document.documentElement.style.display = 'none'; 
+      let input = prompt("ACCESS RESTRICTED: Enter Showrunner PIN.");
+      
+      if (input === SECURE_PIN) {
+        localStorage.setItem('showrunner_pin', input);
+        document.documentElement.style.display = ''; 
+      } else {
+        window.location.href = "https://kzick001.github.io/dashboard/dm-screen/players/players.html"; 
+      }
+    }
+  </script>
+
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='none' stroke='white' stroke-width='4' stroke-linejoin='round' d='M50 5 L90 30 L90 70 L50 95 L10 70 L10 30 Z M50 5 L50 45 M10 30 L50 45 L90 30 M10 70 L50 45 L90 70 M50 95 L50 45'/></svg>">
   
   <style>
@@ -19,6 +37,7 @@
       height: 100vh; overflow: hidden; display: flex; flex-direction: column; font-variant-numeric: tabular-nums;
     }
     .hidden { display: none !important; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; width: 100%; }
 
     /* --- Global Navbar & Action Bar --- */
     .navbar {
@@ -242,7 +261,7 @@
         if (!appState.loot_tables.tiers[tier]) appState.loot_tables.tiers[tier] = [];
         if (appState.loot_tables.tiers[tier].length < 100) {
           for(let i = appState.loot_tables.tiers[tier].length; i < 100; i++) {
-            appState.loot_tables.tiers[tier].push({ roll: i+1, item: null });
+            appState.loot_tables.tiers[tier].push({ roll: i+1, item: { name: "Empty Slot", type: "none", quantity: 0 } });
           }
         }
       });
@@ -251,7 +270,7 @@
         if (!appState.loot_tables.personal[p.name]) appState.loot_tables.personal[p.name] = [];
         if (appState.loot_tables.personal[p.name].length < 10) {
           for(let i = appState.loot_tables.personal[p.name].length; i < 10; i++) {
-            appState.loot_tables.personal[p.name].push({ roll: i+1, item: null });
+            appState.loot_tables.personal[p.name].push({ roll: i+1, item: { name: "Empty Slot", type: "none", quantity: 0 } });
           }
         }
       });
@@ -395,7 +414,7 @@
       const slotIndex = rollVal - 1;
       const slot = table[slotIndex];
 
-      stagedRoll = { tableRef: table, index: slotIndex, item: slot ? slot.item : null };
+      stagedRoll = { tableRef: table, index: slotIndex, item: (slot && slot.item && slot.item.type !== 'none') ? slot.item : null };
       renderResultCard();
     }
 
@@ -431,21 +450,21 @@
       const slotIndex = rollVal - 1;
       const slot = table[slotIndex];
 
-      stagedRoll = { tableRef: table, index: slotIndex, item: slot ? slot.item : null };
+      stagedRoll = { tableRef: table, index: slotIndex, item: (slot && slot.item && slot.item.type !== 'none') ? slot.item : null };
       renderResultCard();
     }
 
     function renderResultCard() {
       const rc = document.getElementById('result-container');
 
-      if (!stagedRoll.item) {
+      if (!stagedRoll || !stagedRoll.item) {
         rc.innerHTML = `
           <div class="result-card error">
             <h2 class="result-title" style="color:var(--danger)">SLOT EMPTY</h2>
             <p class="result-mechanics">The Kouateen are displeased. This slot has already been depleted and was not restocked.</p>
             <div class="action-row">
               <button class="btn-action" style="color:var(--info)" onclick="document.getElementById('dice-input').focus()">Roll Again</button>
-              <button class="btn-action" style="color:var(--danger)" onclick="const btn = document.getElementById('forge-btn-${stagedRoll.index}'); btn.click(); btn.scrollIntoView({behavior: 'smooth', block: 'center'});">Backfill Now</button>
+              <button class="btn-action" style="color:var(--danger)" onclick="const btn = document.getElementById('forge-btn-${stagedRoll ? stagedRoll.index : 0}'); if(btn) { btn.click(); btn.scrollIntoView({behavior: 'smooth', block: 'center'}); }">Backfill Now</button>
             </div>
           </div>
         `;
@@ -513,12 +532,13 @@
           description: item.desc,
           rewards: { 
             gold: 0, 
-            items: [ { name: item.name, flavor_text: item.desc, mechanics: "Requires inspection.", quantity: 1 } ] 
+            items: [ { name: item.name, flavor_text: item.type, mechanics: item.desc, quantity: 1 } ] 
           }
         });
 
+        // Defensive clear
         const table = tableType === 'tier' ? state.loot_tables.tiers[tableId] : state.loot_tables.personal[tableId];
-        table[slotIndex].item = null;
+        table[slotIndex].item = { name: "Empty Slot", type: "none", quantity: 0 };
 
       }, `${item.name} awarded to ${playerName}!`);
 
@@ -530,6 +550,16 @@
       stagedRoll = null;
     }
 
+    function clearSlot(slotIndex) {
+      if(!confirm("Clear this slot? The item will be deleted.")) return;
+      pushState();
+      mutateAndPush((state) => {
+        const table = currentView.type === 'tier' ? state.loot_tables.tiers[currentView.id] : state.loot_tables.personal[currentView.id];
+        // Revert to defensive schema
+        table[slotIndex].item = { name: "Empty Slot", type: "none", quantity: 0 };
+      }, "Slot cleared.");
+    }
+
     function renderMagazine() {
       document.getElementById('magazine-title').innerText = `Loaded: ${currentView.id}`;
 
@@ -537,7 +567,7 @@
       table = table || []; 
       
       let html = table.map((slot, index) => {
-        if (slot.item === null) {
+        if (!slot.item || slot.item.type === 'none') {
           return `
             <div class="slot depleted">
                <div class="warn-text">
@@ -553,7 +583,11 @@
                </div>
             </div>`;
         } else {
-          return `<div class="slot loaded"><span class="slot-num">[${index + 1}]</span> ${escapeHtml(slot.item.name)}</div>`;
+          return `
+            <div class="slot loaded flex-between">
+              <div style="overflow:hidden; text-overflow:ellipsis;"><span class="slot-num">[${index + 1}]</span> ${escapeHtml(slot.item.name)}</div>
+              <button class="btn-forge" style="border-color:#444; color:#888; padding: 2px 6px;" title="Clear Slot" onclick="clearSlot(${index})">✕</button>
+            </div>`;
         }
       }).join('');
       
@@ -600,20 +634,20 @@
               const tRef = state.loot_tables[cat][tName];
               
               const maxSlots = cat === 'tiers' ? 100 : 10;
-              while(tRef.length < maxSlots) tRef.push({ roll: tRef.length + 1, item: null });
+              while(tRef.length < maxSlots) tRef.push({ roll: tRef.length + 1, item: { name: "Empty Slot", type: "none", quantity: 0 } });
 
               d.loot_tables[cat][tName].forEach((entry, idx) => {
                 // Handle Data Forge targetSlots
                 if (entry.targetSlots) {
                   entry.targetSlots.forEach(sIdx => {
-                    if (sIdx >= 0 && sIdx < maxSlots && (!tRef[sIdx].item)) {
+                    if (sIdx >= 0 && sIdx < maxSlots && (!tRef[sIdx].item || tRef[sIdx].item.type === 'none')) {
                       tRef[sIdx].item = entry.item;
                       count++;
                     }
                   });
                 } 
                 // Fallback for legacy 1-to-1 array imports
-                else if (entry.item !== null && !tRef[idx].item) {
+                else if (entry.item !== null && entry.item.type !== 'none' && (!tRef[idx].item || tRef[idx].item.type === 'none')) {
                   tRef[idx].item = entry.item;
                   count++;
                 }
