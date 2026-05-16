@@ -2,7 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Showrunner // Data Forge V2.1</title>
+  <title>Showrunner // Data Forge V2.2</title>
+
+  <script>
+    const SECURE_PIN = "goddammit_doughnut"; 
+    let savedPin = localStorage.getItem('showrunner_pin');
+    
+    if (savedPin !== SECURE_PIN) {
+      document.documentElement.style.display = 'none'; 
+      let input = prompt("ACCESS RESTRICTED: Enter Showrunner PIN.");
+      
+      if (input === SECURE_PIN) {
+        localStorage.setItem('showrunner_pin', input);
+        document.documentElement.style.display = ''; 
+      } else {
+        window.location.href = "https://kzick001.github.io/dashboard/dm-screen/players/players.html"; 
+      }
+    }
+  </script>
+
   <style>
     :root {
       --bg: #0a0a0c;
@@ -142,7 +160,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-      SHOWRUNNER // DATA FORGE V2.1
+      SHOWRUNNER // DATA FORGE V2.2
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">Dashboard</a>
@@ -336,7 +354,6 @@
              }
              const nextIsProperty = nextLine.match(propertyRegex);
              
-             // If next line is a property AND current line isn't a massive paragraph (like intro fluff)
              if (nextIsProperty && line.split(' ').length < 15) {
                  inItemBlock = true;
                  taggedText += `\n#SLOT ${slotCounter++}\nNAME: ${line}\nTYPE: Unknown\nDESC: `;
@@ -361,12 +378,50 @@
         }
       } 
       else if (currentMode === 'roster') {
-        taggedText = rawText
-          .replace(/^(.*?) \(Played by: (.*?)\)/gm, '#PLAYER $1')
-          .replace(/^Build: (.*)/gm, '#LORE Build: $1')
-          .replace(/Vitals:.*?Max HP: (\d+).*?AC: (\d+).*?Passive Perception: (\d+)/gm, '#VITALS HP:$1 AC:$2 PP:$3')
-          .replace(/^Economy: (\d+).*/gm, '#GOLD $1')
-          .replace(/^Inventory & Curses:/gm, '#INVENTORY');
+        const lines = rawText.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+          let line = lines[i].trim();
+          if (!line) continue;
+
+          let isPlayerHeader = false;
+          const explicitMatch = line.match(/^(.*?) \(Played by:.*?\)/i);
+
+          if (explicitMatch) {
+            taggedText += `\n#PLAYER ${explicitMatch[1].trim()}\n`;
+            continue;
+          }
+
+          // Fuzzy Player Header Matching (Look-Ahead for Character Keywords)
+          if (line.split(' ').length <= 4 && !line.includes(':')) {
+              const nextLines = lines.slice(i + 1, i + 3).join(' ');
+              if (nextLines.match(/build|vital|class|level/i)) isPlayerHeader = true;
+          }
+
+          if (isPlayerHeader) {
+            taggedText += `\n#PLAYER ${line}\n`;
+            continue;
+          }
+
+          if (line.match(/^Build:/i)) {
+            taggedText += `#LORE ${line}\n`; continue;
+          }
+          if (line.match(/Vitals:/i)) {
+            const vMatch = line.match(/HP:\s*(\d+).*?AC:\s*(\d+).*?Passive Perception:\s*(\d+)/i);
+            if (vMatch) taggedText += `#VITALS HP:${vMatch[1]} AC:${vMatch[2]} PP:${vMatch[3]}\n`;
+            else taggedText += `${line}\n`;
+            continue;
+          }
+          if (line.match(/^Economy:\s*(\d+)/i)) {
+            const gMatch = line.match(/^Economy:\s*(\d+)/i);
+            if (gMatch) taggedText += `#GOLD ${gMatch[1]}\n`;
+            else taggedText += `${line}\n`;
+            continue;
+          }
+          if (line.match(/^Inventory & Curses:/i)) {
+            taggedText += `#INVENTORY\n`; continue;
+          }
+          taggedText += `${line}\n`;
+        }
       }
       else if (currentMode === 'sessions') {
         taggedText = rawText
@@ -476,26 +531,36 @@
                  inInventory = true;
              }
              else if(inInventory && l.trim() !== '') {
-                 let iName = l.trim();
-                 let iType = "Item";
-                 let iDesc = "";
+                 // Look-Ahead Inventory Fix: Group multi-line items safely
+                 const isNewItem = l.match(/^(\*|-|\[NEW\])/i) || (l.split(':').length > 1 && l.split(' ').length < 10);
                  
-                 if (iName.startsWith('*')) iName = iName.substring(1).trim();
-                 if (iName.startsWith('[NEW]')) iName = iName.substring(5).trim();
+                 if (isNewItem) {
+                     let iName = l.trim();
+                     let iType = "Item";
+                     let iDesc = "";
+                     
+                     if (iName.startsWith('*') || iName.startsWith('-')) iName = iName.substring(1).trim();
+                     if (iName.startsWith('[NEW]')) iName = iName.substring(5).trim();
 
-                 const parts = iName.split(':');
-                 if (parts.length > 1) {
-                     iName = parts[0].trim();
-                     iDesc = parts.slice(1).join(':').trim();
+                     const parts = iName.split(':');
+                     if (parts.length > 1) {
+                         iName = parts[0].trim();
+                         iDesc = parts.slice(1).join(':').trim();
+                     }
+
+                     const typeMatch = iName.match(/(.*?)\s*\((.*?)\)$/);
+                     if(typeMatch) {
+                         iName = typeMatch[1].trim();
+                         iType = typeMatch[2].trim();
+                     }
+
+                     pObj.new_inventory.push({ name: iName, flavor_text: iType, mechanics: iDesc, quantity: 1, is_deleted: false });
+                 } else {
+                     // Append non-title lines to the previously created item
+                     if (pObj.new_inventory.length > 0) {
+                         pObj.new_inventory[pObj.new_inventory.length - 1].mechanics += "\n" + l.trim();
+                     }
                  }
-
-                 const typeMatch = iName.match(/(.*?)\s*\((.*?)\)$/);
-                 if(typeMatch) {
-                     iName = typeMatch[1].trim();
-                     iType = typeMatch[2].trim();
-                 }
-
-                 pObj.new_inventory.push({ name: iName, flavor_text: iType, mechanics: iDesc, quantity: 1, is_deleted: false });
              }
           });
           compiledData.push(pObj);
@@ -504,7 +569,6 @@
       else if (currentMode === 'sessions') {
         compiledData = { session_log: null, achievements: [] };
         
-        // Extract Session Log safely
         const sessionParts = text.split('#SESSION ');
         if (sessionParts.length > 1) {
            const narrativeChunk = sessionParts[1].split('#ACHIEVEMENT')[0];
@@ -518,7 +582,6 @@
            };
         }
 
-        // Extract Floating Achievements into Global Queue
         const achBlocks = text.split('#ACHIEVEMENT ').slice(1);
         achBlocks.forEach(ach => {
            const parts = ach.split(/Reward:/i);
@@ -631,13 +694,11 @@
           });
         }
         else if (currentMode === 'sessions') {
-          // Push Narrative Recap
           if (compiledData.session_log) {
             if (!latestState.campaign_notes) latestState.campaign_notes = { rooms: [], sessions: [] };
             if (!latestState.campaign_notes.sessions) latestState.campaign_notes.sessions = [];
             latestState.campaign_notes.sessions.push(compiledData.session_log);
           }
-          // Push Floating Achievements to Global Queue
           if (compiledData.achievements.length > 0) {
             if (!latestState.achievement_queue) latestState.achievement_queue = [];
             compiledData.achievements.forEach(ach => latestState.achievement_queue.push(ach));
