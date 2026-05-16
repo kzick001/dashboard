@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Showrunner | Dashboard V2.2.1</title>
+  <title>Showrunner | Dashboard V2.2.2</title>
   
   <script>
     const SECURE_PIN = "goddammit_doughnut"; 
@@ -61,7 +61,7 @@
     }
 
     /* --- Left Column: Party Overview --- */
-    .section-title { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.15em; border-bottom: 1px solid #333; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+    .section-title { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.15em; border-bottom: 1px solid #333; padding-bottom: 0.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
     
     .roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; align-items: start; }
     .roster-card { background: var(--card); padding: 1.5rem; border-radius: 8px; border: 1px solid #333; border-left: 4px solid var(--player-color, var(--accent)); display: flex; flex-direction: column; gap: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
@@ -107,10 +107,15 @@
     .btn-icon { background: transparent; border: none; padding: 4px 8px; color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: 0.2s; font-size: 0.9rem; border: 1px solid transparent; }
     .btn-icon:hover { color: #fff; border-color: #555; background: rgba(255,255,255,0.1); }
 
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 999; display: flex; align-items: center; justify-content: center; }
-    .modal-content { background: var(--card); padding: 2rem; border-radius: 8px; border: 1px solid #444; width: 90%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-    #memo-input { width: 100%; background: #111; color: #fff; border: 1px solid #444; padding: 0.75rem; border-radius: 4px; font-family: monospace; box-sizing: border-box; resize: vertical; margin: 1rem 0; outline: none; }
+    .hidden { display: none !important; }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 999; display: flex; align-items: center; justify-content: center; }
+    .modal-content { background: var(--card); padding: 2rem; border-radius: 8px; border: 1px solid #444; width: 90%; max-width: 500px; box-shadow: 0 10px 40px rgba(0,0,0,0.9); }
+    
+    #memo-input { width: 100%; background: #111; color: #fff; border: 1px solid #444; padding: 0.75rem; border-radius: 4px; font-family: monospace; box-sizing: border-box; resize: vertical; margin-bottom: 1.5rem; outline: none; }
     #memo-input:focus { border-color: var(--danger); }
+    #memo-target-select { width: 100%; background: #111; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 4px; font-weight: bold; margin-bottom: 1rem; outline: none; }
+    #memo-target-select:focus { border-color: var(--danger); }
 
     #toast-container { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
     .toast { background: rgba(10, 10, 12, 0.95); color: #fff; padding: 0.75rem 1.5rem; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 0.95rem; border: 1px solid var(--accent); animation: fadein 0.3s, fadeout 0.3s 2.7s forwards; }
@@ -136,15 +141,23 @@
 
   <div id="toast-container"></div>
 
-  <div id="memo-modal" class="modal-overlay hidden">
+  <div id="memo-modal" class="modal-overlay hidden" onclick="if(event.target===this) closeMemoModal()">
     <div class="modal-content" style="border-top: 4px solid var(--danger);">
-      <h2 style="color: var(--danger); margin-top: 0;">[ PRIORITY TRANSMISSION ]</h2>
-      <p style="color: #aaa; font-size: 0.9rem;">Override player HUD with a direct message.</p>
-      <input type="hidden" id="memo-target-player">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 0.5rem;">
+        <h2 style="color: var(--danger); margin: 0;">[ PRIORITY TRANSMISSION ]</h2>
+        <button class="btn-icon" style="padding: 2px 6px;" onclick="closeMemoModal()">✕</button>
+      </div>
+      <p style="color: #aaa; font-size: 0.9rem; margin-top: 0; margin-bottom: 1.5rem;">Override HUDs with an un-closable directive.</p>
+      
+      <label style="color:#fff; font-size:0.85rem; font-weight:bold; text-transform:uppercase;">Select Target:</label>
+      <select id="memo-target-select"></select>
+
+      <label style="color:#fff; font-size:0.85rem; font-weight:bold; text-transform:uppercase;">Transmission Payload:</label>
       <textarea id="memo-input" rows="4" placeholder="You hear a scratching inside your skull..."></textarea>
-      <div style="display:flex; justify-content:space-between; margin-top: 1rem;">
-        <button class="btn-danger" onclick="sendMemo()">TRANSMIT</button>
-        <button onclick="document.getElementById('memo-modal').classList.add('hidden')">Cancel</button>
+      
+      <div style="display:flex; justify-content:space-between;">
+        <button class="btn-danger" style="padding: 10px 20px;" onclick="sendMemo()">TRANSMIT SIGNAL</button>
+        <button onclick="closeMemoModal()">Cancel</button>
       </div>
     </div>
   </div>
@@ -152,14 +165,17 @@
   <div class="dashboard-layout">
     
     <div>
-      <div class="section-title">Active Roster</div>
+      <div class="section-title">
+        Active Roster
+        <button class="btn-icon" style="border: 1px solid #444; color: var(--danger);" onclick="openMemoModal()" title="Global Transmission">✉️ TX ALL</button>
+      </div>
       <div class="roster-grid" id="roster-container">
         <div style="color: #666; font-style: italic;">Loading roster...</div>
       </div>
     </div>
 
     <div>
-      <div class="section-title" style="color: var(--warning); display: flex; justify-content: space-between; align-items: center;">
+      <div class="section-title" style="color: var(--warning);">
         Global Trophy Queue
         <div style="display:flex; gap:8px;">
           <button onclick="manuallyForgeTrophy()" style="background:transparent; color:var(--success); border:1px solid var(--success); padding:2px 6px; font-size:0.7rem; cursor:pointer;">+ FORGE TROPHY</button>
@@ -190,14 +206,11 @@
         if (!fetchRes.ok) throw new Error("Fetch failed");
         let latestState = await fetchRes.json();
 
-        // 1. Ensure Schema Exists
         if (!latestState.achievement_queue) latestState.achievement_queue = [];
         if (!latestState.players) latestState.players = [];
 
-        // 2. Apply Mutations
         mutationCallback(latestState);
 
-        // 3. Versioning
         latestState.version = (latestState.version || 0) + 1;
         latestState.last_modified = Date.now();
 
@@ -270,14 +283,14 @@
         
         // Prepare Conditions
         const activeConditions = (p.status?.conditions || []).map((c, cIdx) => 
-          `<span class="badge condition-badge" onclick="removeCondition('${escapeJS(p.name)}', ${cIdx})" title="Click to remove">${escapeHtml(c)} &times;</span>`
+          `<span class="badge condition-badge" onclick="removeCondition('${escapeJS(p.name)}', ${cIdx})" title="Click to clear tag">${escapeHtml(c)} &times;</span>`
         ).join('');
 
-        // Prepare Inventory
+        // Prepare Inventory Loadout
         const activeInventory = (p.inventory || []).filter(i => !i.is_deleted);
         const inventoryHtml = activeInventory.map(i => 
           `<li><span>${escapeHtml(i.name)}</span> <span style="color:#888">x${i.quantity || 1}</span></li>`
-        ).join('') || "<li style='color:#666'>No items equipped.</li>";
+        ).join('') || "<li style='color:#666; border:none;'>No items equipped.</li>";
 
         html += `
           <div class="roster-card" style="--player-color: ${color}">
@@ -357,28 +370,50 @@
     }
 
     // --- Core Dispatch & Comm Actions ---
-    function openMemoModal(playerName) {
-      document.getElementById('memo-target-player').value = playerName;
+    function openMemoModal(preselectedPlayerName = null) {
+      const selectEl = document.getElementById('memo-target-select');
+      
+      // Rebuild options dynamically
+      let optionsHtml = `<option value="ALL">ALL PLAYERS (BROADCAST)</option>`;
+      appState.players.forEach(p => {
+         if (!p.is_deleted) optionsHtml += `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`;
+      });
+      selectEl.innerHTML = optionsHtml;
+
+      if (preselectedPlayerName) {
+         selectEl.value = preselectedPlayerName;
+      } else {
+         selectEl.value = "ALL";
+      }
+
       document.getElementById('memo-input').value = "";
       document.getElementById('memo-modal').classList.remove('hidden');
       document.getElementById('memo-input').focus();
     }
 
+    function closeMemoModal() {
+      document.getElementById('memo-modal').classList.add('hidden');
+    }
+
     function sendMemo() {
-      const playerName = document.getElementById('memo-target-player').value;
+      const target = document.getElementById('memo-target-select').value;
       let text = document.getElementById('memo-input').value.trim();
       if (!text) return showToast("Message cannot be empty.");
       
       text = text.substring(0, 500).replace(/[<>]/g, ''); // Sanitize
 
       mutateAndPush((state) => {
-        const p = state.players.find(x => x.name === playerName);
-        if (p) {
-          p.override = { is_active: true, message: text };
+        if (target === "ALL") {
+           state.players.forEach(p => {
+             if (!p.is_deleted) p.override = { is_active: true, message: text };
+           });
+        } else {
+           const p = state.players.find(x => x.name === target);
+           if (p) p.override = { is_active: true, message: text };
         }
-      }, `Transmission sent to ${playerName}.`);
+      }, target === "ALL" ? "Global transmission sent." : `Transmission sent to ${target}.`);
       
-      document.getElementById('memo-modal').classList.add('hidden');
+      closeMemoModal();
     }
 
     function addCondition(playerName, selectIdx) {
@@ -397,6 +432,8 @@
           p.status.conditions.push(condition);
         }
       }, `Condition applied.`);
+      
+      selectEl.value = ""; // Reset dropdown
     }
 
     function removeCondition(playerName, conditionIndex) {
