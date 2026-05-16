@@ -3,6 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <title>Showrunner | Campaign Notes</title>
+
+  <script>
+    const SECURE_PIN = "goddammit_doughnut"; 
+    let savedPin = localStorage.getItem('showrunner_pin');
+    
+    if (savedPin !== SECURE_PIN) {
+      document.documentElement.style.display = 'none'; 
+      let input = prompt("ACCESS RESTRICTED: Enter Showrunner PIN.");
+      
+      if (input === SECURE_PIN) {
+        localStorage.setItem('showrunner_pin', input);
+        document.documentElement.style.display = ''; 
+      } else {
+        window.location.href = "https://kzick001.github.io/dashboard/dm-screen/players/players.html"; 
+      }
+    }
+  </script>
+
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='none' stroke='white' stroke-width='4' stroke-linejoin='round' d='M50 5 L90 30 L90 70 L50 95 L10 70 L10 30 Z M50 5 L50 45 M10 30 L50 45 L90 30 M10 70 L50 45 L90 70 M50 95 L50 45'/></svg>">
   
   <style>
@@ -57,7 +75,7 @@
 
     /* Columns */
     .nav-sidebar { background: var(--nav-bg); border-right: 1px solid #333; display: flex; flex-direction: column; overflow: hidden; }
-    .nav-list { overflow-y: auto; flex-grow: 1; padding: 1rem 0; }
+    .nav-list { overflow-y: auto; flex-grow: 1; padding: 1rem 0; display: flex; flex-direction: column; }
     .nav-category { padding: 0.5rem 1.5rem; font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 0.1em; }
     .nav-item { padding: 0.75rem 1.5rem; cursor: pointer; border-left: 3px solid transparent; color: #aaa; transition: 0.1s; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
@@ -77,17 +95,20 @@
     .read-aloud-block { background: #1a1e24; border-left: 4px solid var(--info); padding: 1.25rem 1.5rem; font-family: 'Georgia', serif; font-style: italic; font-size: 1.15rem; color: #d1d5db; border-radius: 0 4px 4px 0; margin: 1.5rem 0; line-height: 1.6; }
     .mechanics-block { background: rgba(255,255,255,0.03); border: 1px solid #333; padding: 1.5rem; border-radius: 4px; margin: 1.5rem 0; white-space: pre-wrap; font-size: 1.05rem; line-height: 1.6;}
     
-    .ai-terminal { background: #050505; border: 1px solid #333; color: #55efc4; font-family: monospace; padding: 1rem 1.5rem; border-radius: 4px; margin: 1.5rem 0; font-size: 0.95rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); white-space: pre-wrap;}
+    .ai-terminal { position: relative; background: #050505; border: 1px solid #333; color: #55efc4; font-family: monospace; padding: 1rem 1.5rem; border-radius: 4px; margin: 1.5rem 0; font-size: 0.95rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); white-space: pre-wrap;}
     .ai-terminal::before { content: ">_ SYSTEM: "; color: var(--accent); font-weight: bold;}
     
-    .npc-card { background: #1f1f1f; border-top: 3px solid var(--danger); padding: 1.5rem; border-radius: 6px; margin: 1.5rem 0; white-space: pre-wrap;}
-    .loot-card { display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 1rem 1.5rem; border-radius: 4px; margin-bottom: 0.5rem; border-left: 3px solid #f1c40f; }
+    .npc-card { position: relative; background: #1f1f1f; border-top: 3px solid var(--danger); padding: 1.5rem; border-radius: 6px; margin: 1.5rem 0; white-space: pre-wrap;}
+    .loot-card { position: relative; display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; padding: 1rem 1.5rem; border-radius: 4px; margin-bottom: 0.5rem; border-left: 3px solid #f1c40f; }
     .math-highlight { color: #ffeaa7; font-weight: bold; background: rgba(255, 234, 167, 0.1); padding: 0 4px; border-radius: 2px; }
+    
+    .btn-trash-block { position: absolute; top: 8px; right: 8px; background: transparent; border: none; color: #555; cursor: pointer; padding: 4px; border-radius: 4px; transition: 0.2s; z-index: 10;}
+    .btn-trash-block:hover { color: var(--danger); background: rgba(255,255,255,0.1); }
 
     /* Inline Editing */
     .edit-wrapper { position: relative; display: inline-block; width: 100%; align-items: center; }
     .edit-val { width: 100%; white-space: pre-wrap; overflow-wrap: break-word; word-break: break-word; }
-    .edit-trigger { opacity: 0; position: absolute; right: 0; top: 0; background: rgba(0,0,0,0.8); border: 1px solid #555; border-radius: 4px; padding: 4px; color: var(--info); cursor: pointer; transition: 0.2s; }
+    .edit-trigger { opacity: 0; position: absolute; right: 0; top: 0; background: rgba(0,0,0,0.8); border: 1px solid #555; border-radius: 4px; padding: 4px; color: var(--info); cursor: pointer; transition: 0.2s; z-index: 11; }
     .edit-wrapper:hover .edit-trigger { opacity: 1; }
     .inline-input { background: #111; color: #fff; border: 1px dashed var(--info); padding: 4px; border-radius: 3px; font-family: inherit; font-size: inherit; font-style: inherit; outline: none; width: 100%; box-sizing: border-box; resize: vertical; min-height: 2em; }
 
@@ -99,6 +120,7 @@
     
     .btn { background: var(--card); color: var(--text); border: 1px solid #555; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
     .btn:hover { background: #333; border-color: #888; }
+    .btn-sm { padding: 4px 8px; font-size: 0.85rem; }
     .btn-send { background: rgba(187, 134, 252, 0.1); border-color: var(--accent); color: var(--accent); }
     .btn-send:hover { background: var(--accent); color: #000; }
     .btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
@@ -176,7 +198,7 @@
     let historyStack = [];
     let redoStack = [];
     
-    let currentView = { type: 'room', index: 0 }; 
+    let currentView = { type: 'overview', index: null }; 
     let currentSessionId = null; // Independent tracker for the right-hand Scratchpad
     let isPushing = false;
 
@@ -248,12 +270,14 @@
         appState.campaign_notes.sessions.push({ id: Date.now(), title: "Session 1", content: "", is_deleted: false });
       }
       
-      // Default views
+      // Default views safely
       currentSessionId = appState.campaign_notes.sessions[0].id;
-      if (appState.campaign_notes.rooms && appState.campaign_notes.rooms.length > 0) {
-          currentView = { type: 'room', index: 0 };
+      const safeRoomIdx = (appState.campaign_notes.rooms || []).findIndex(r => !r.is_deleted);
+      if (safeRoomIdx !== -1) {
+          currentView = { type: 'room', index: safeRoomIdx };
       } else {
-          currentView = { type: 'session', index: 0 };
+          const safeSessIdx = (appState.campaign_notes.sessions || []).findIndex(s => !s.is_deleted);
+          currentView = safeSessIdx !== -1 ? { type: 'session', index: safeSessIdx } : { type: 'overview', index: null };
       }
 
       renderAll();
@@ -297,13 +321,59 @@
     function toggleLeft() { document.getElementById('main-layout').classList.toggle('hide-left'); document.getElementById('btn-left').classList.toggle('active');}
     function toggleRight() { document.getElementById('main-layout').classList.toggle('hide-right'); document.getElementById('btn-right').classList.toggle('active');}
 
+    // --- Macro Data Controls ---
+    function createBlankRoom() {
+      pushState();
+      mutateAndPush((state) => {
+        if (!state.campaign_notes.rooms) state.campaign_notes.rooms = [];
+        const newIdx = state.campaign_notes.rooms.length;
+        state.campaign_notes.rooms.push({
+          room_id: `Room ${newIdx + 1}`, readaloud: "", mechanics: "",
+          npcs: [], tooltips: [], loot: [], achievements: [], is_deleted: false
+        });
+        currentView = { type: 'room', index: newIdx }; 
+      }, "Blank room created.");
+    }
+
+    function trashActiveView() {
+      if(!confirm(`Delete this ${currentView.type}?`)) return;
+      pushState();
+      mutateAndPush((state) => {
+        const arr = currentView.type === 'room' ? state.campaign_notes.rooms : state.campaign_notes.sessions;
+        arr[currentView.index].is_deleted = true;
+        
+        // SAFE FALLBACK: Find first non-deleted index, or default to an overview state
+        const safeIdx = arr.findIndex((item, i) => !item.is_deleted && i !== currentView.index);
+        currentView = safeIdx !== -1 
+          ? { type: currentView.type, index: safeIdx } 
+          : { type: 'overview', index: null };
+      }, "Item trashed.");
+    }
+
+    function addBlock(type) {
+      pushState();
+      mutateAndPush((state) => {
+        const room = state.campaign_notes.rooms[currentView.index];
+        if (!room[type]) room[type] = [];
+        room[type].push({ raw_text: "New Entry...", is_deleted: false });
+      });
+    }
+
+    function trashBlock(type, bIdx) {
+      if(!confirm("Delete this block?")) return;
+      pushState();
+      mutateAndPush((state) => {
+        state.campaign_notes.rooms[currentView.index][type][bIdx].is_deleted = true;
+      });
+    }
+
     // --- Rendering Navigation ---
     function renderSidebar() {
       const list = document.getElementById('nav-list');
       let html = '';
 
       // 1. Rooms Index
-      html += `<div class="nav-category">Active Rooms</div>`;
+      html += `<div class="flex-between nav-category"><span>Active Rooms</span> <button class="btn-icon" title="New Room" onclick="createBlankRoom()" style="color:var(--success)">+</button></div>`;
       if (appState.campaign_notes && appState.campaign_notes.rooms && appState.campaign_notes.rooms.length > 0) {
         appState.campaign_notes.rooms.forEach((room, idx) => {
           if (!room.is_deleted) {
@@ -340,41 +410,54 @@
     function renderStage() {
       const stage = document.getElementById('stage-content');
       
+      if (currentView.type === 'overview' || currentView.index === null) {
+          stage.innerHTML = `<h2 style="color:#555; text-align:center; margin-top:4rem;">Select or Create an item from the index.</h2>`;
+          return;
+      }
+
       // VIEW A: ROOM PREP
       if (currentView.type === 'room') {
         const room = appState.campaign_notes.rooms[currentView.index];
-        if (!room) {
-          stage.innerHTML = `<h2 style="color:#555; text-align:center; margin-top:4rem;">Select an item from the index.</h2>`;
-          return;
-        }
+        if (!room || room.is_deleted) return;
 
         const rPath = ['campaign_notes', 'rooms', currentView.index];
         const title = room.room_id || room.title || "Untitled Room";
 
-        let html = `<h1 style="color:var(--accent); font-size:2rem; border-bottom:1px solid #333; padding-bottom:10px;">${makeEditable(escapeHtml(title), rPath, 'room_id')}</h1>`;
+        let html = `
+          <div class="flex-between" style="border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:10px;">
+            <h1 style="color:var(--accent); font-size:2rem; margin:0;">${makeEditable(escapeHtml(title), rPath, 'room_id')}</h1>
+            <button class="btn btn-sm btn-danger" onclick="trashActiveView()">Trash Room</button>
+          </div>
+        `;
         
         const readAloud = room.readaloud || room.read_aloud || "";
-        if (readAloud) html += `<div class="read-aloud-block">${makeEditable(escapeHtml(readAloud), rPath, 'readaloud', true)}</div>`;
+        html += `<div class="read-aloud-block">${makeEditable(escapeHtml(readAloud || "Read-aloud text..."), rPath, 'readaloud', true)}</div>`;
         
         const mechanics = room.mechanics || "";
-        if (mechanics) {
-           const mechString = Array.isArray(mechanics) ? mechanics.join('\n') : mechanics;
-           html += `<div class="mechanics-block">${makeEditable(parseMath(escapeHtml(mechString)), rPath, 'mechanics', true)}</div>`;
-        }
+        const mechString = Array.isArray(mechanics) ? mechanics.join('\n') : mechanics;
+        html += `<div class="mechanics-block">${makeEditable(parseMath(escapeHtml(mechString || "DM Notes & Mechanics...")), rPath, 'mechanics', true)}</div>`;
 
         if (room.npcs && room.npcs.length > 0) {
-          room.npcs.forEach((npc, nIdx) => { html += `<div class="npc-card">${makeEditable(escapeHtml(npc.raw_text), [...rPath, 'npcs', nIdx], 'raw_text', true)}</div>`; });
+          room.npcs.forEach((npc, nIdx) => { 
+             if(!npc.is_deleted) html += `<div class="npc-card"><button class="btn-trash-block" onclick="trashBlock('npcs', ${nIdx})">✕</button>${makeEditable(escapeHtml(npc.raw_text), [...rPath, 'npcs', nIdx], 'raw_text', true)}</div>`; 
+          });
         }
 
         if (room.tooltips && room.tooltips.length > 0) {
-          room.tooltips.forEach((tt, tIdx) => { html += `<div class="ai-terminal">${makeEditable(escapeHtml(tt.raw_text), [...rPath, 'tooltips', tIdx], 'raw_text', true)}</div>`; });
+          room.tooltips.forEach((tt, tIdx) => { 
+             if(!tt.is_deleted) html += `<div class="ai-terminal"><button class="btn-trash-block" onclick="trashBlock('tooltips', ${tIdx})">✕</button>${makeEditable(escapeHtml(tt.raw_text), [...rPath, 'tooltips', tIdx], 'raw_text', true)}</div>`; 
+          });
         }
 
-        // Backward compatibility for pre-existing room loot
+        // Backward compatibility for legacy arrays mapped to generic 'loot' field
         const combinedLoot = [...(room.loot || []), ...(room.achievements || [])];
         if (combinedLoot.length > 0) {
-          html += `<h3 style="margin-top:2rem; border-bottom:1px solid #333; padding-bottom:0.5rem; color:#f1c40f;">Achievements & Loot</h3>`;
+          let hasVisibleLoot = false;
+          let lootHtml = `<h3 style="margin-top:2rem; border-bottom:1px solid #333; padding-bottom:0.5rem; color:#f1c40f;">Achievements & Loot</h3>`;
+          
           combinedLoot.forEach((l, lIdx) => {
+             if (l.is_deleted) return;
+             hasVisibleLoot = true;
              const isLegacy = (l.achievement_name !== undefined);
              const rawText = isLegacy ? `${l.achievement_name} Reward: ${l.item_name}. ${l.item_desc}` : l.raw_text.replace('#ACHIEVEMENT', '').replace('#LOOT', '').trim();
              const parts = rawText.split(/Reward:/i);
@@ -384,36 +467,52 @@
              const editPath = isLegacy ? [...rPath, 'loot', lIdx] : (room.achievements && room.achievements.includes(l) ? [...rPath, 'achievements', room.achievements.indexOf(l)] : [...rPath, 'loot', room.loot.indexOf(l)]);
              const editField = isLegacy ? 'achievement_name' : 'raw_text';
 
-             html += `
+             const deleteType = isLegacy ? 'loot' : (room.achievements && room.achievements.includes(l) ? 'achievements' : 'loot');
+             const deleteIdx = isLegacy ? lIdx : (room.achievements && room.achievements.includes(l) ? room.achievements.indexOf(l) : room.loot.indexOf(l));
+
+             lootHtml += `
                <div class="loot-card">
-                  <div>
+                  <button class="btn-trash-block" onclick="trashBlock('${deleteType}', ${deleteIdx})">✕</button>
+                  <div style="padding-right: 20px;">
                     <strong style="color:#f1c40f">${makeEditable(escapeHtml(achTitle), editPath, editField, true)}</strong><br>
                     <span style="font-size:0.9rem; color:#bbb">${escapeHtml(itemDesc)}</span>
                   </div>
                   <div class="award-wrapper">
-                    <button class="btn btn-send" onclick="toggleAwardMenu(${currentView.index}, ${lIdx})">${SVG_AWARD} Award</button>
+                    <button class="btn btn-sm btn-send" onclick="toggleAwardMenu(${currentView.index}, ${lIdx})">${SVG_AWARD} Award</button>
                     <div id="award-menu-${currentView.index}-${lIdx}" class="award-popover hidden">
                        <div class="popover-title">Select Character:</div>
-                       ${(appState.players && appState.players.length > 0) ? appState.players.map(p => `<div class="popover-item" onclick="confirmAward(${currentView.index}, '${escapeJS(rawText)}', '${escapeJS(p.name)}')">${escapeHtml(p.name)}</div>`).join('') : '<div style="padding:10px; color:#888;">No players found</div>'}
+                       ${(appState.players && appState.players.length > 0) ? appState.players.filter(p => !p.is_deleted).map(p => `<div class="popover-item" onclick="confirmAward(${currentView.index}, '${escapeJS(rawText)}', '${escapeJS(p.name)}')">${escapeHtml(p.name)}</div>`).join('') : '<div style="padding:10px; color:#888;">No players found</div>'}
                        <div class="popover-item" style="color:var(--danger); border-top:1px solid #333;" onclick="toggleAwardMenu(${currentView.index}, ${lIdx})">Cancel</div>
                     </div>
                   </div>
                </div>`;
           });
+          if (hasVisibleLoot) html += lootHtml;
         }
+
+        // Macro Action Bar
+        html += `
+          <div class="flex-gap" style="margin-top: 2rem; border-top: 1px dashed #333; padding-top: 1rem; justify-content: center;">
+            <button class="btn btn-sm" onclick="addBlock('npcs')">+ Add NPC</button>
+            <button class="btn btn-sm" onclick="addBlock('tooltips')">+ Add Tooltip</button>
+            <button class="btn btn-sm" onclick="addBlock('loot')">+ Add Loot</button>
+          </div>
+        `;
+
         stage.innerHTML = html;
       } 
       // VIEW B: SESSION ARCHIVE
       else if (currentView.type === 'session') {
         const session = appState.campaign_notes.sessions[currentView.index];
-        if (!session) return;
+        if (!session || session.is_deleted) return;
         
         const sPath = ['campaign_notes', 'sessions', currentView.index];
 
         stage.innerHTML = `
-          <h1 style="color:var(--accent); font-size:2rem; border-bottom:1px solid #333; padding-bottom:10px;">
-            ${makeEditable(escapeHtml(session.title || "Untitled Session"), sPath, 'title')}
-          </h1>
+          <div class="flex-between" style="border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:10px;">
+            <h1 style="color:var(--accent); font-size:2rem; margin:0;">${makeEditable(escapeHtml(session.title || "Untitled Session"), sPath, 'title')}</h1>
+            <button class="btn btn-sm btn-danger" onclick="trashActiveView()">Trash Session</button>
+          </div>
           <div class="mechanics-block" style="font-family: Georgia, serif; font-size: 1.15rem; line-height: 1.8;">
             ${makeEditable(escapeHtml(session.content || "No content recorded."), sPath, 'content', true)}
           </div>
