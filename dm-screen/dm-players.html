@@ -3,6 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <title>Showrunner | DM Players</title>
+  
+  <script>
+    const SECURE_PIN = "goddammit_doughnut"; 
+    let savedPin = localStorage.getItem('showrunner_pin');
+    
+    if (savedPin !== SECURE_PIN) {
+      document.documentElement.style.display = 'none'; 
+      let input = prompt("ACCESS RESTRICTED: Enter Showrunner PIN.");
+      
+      if (input === SECURE_PIN) {
+        localStorage.setItem('showrunner_pin', input);
+        document.documentElement.style.display = ''; 
+      } else {
+        window.location.href = "https://kzick001.github.io/dashboard/dm-screen/players/players.html"; 
+      }
+    }
+  </script>
+
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='none' stroke='white' stroke-width='4' stroke-linejoin='round' d='M50 5 L90 30 L90 70 L50 95 L10 70 L10 30 Z M50 5 L50 45 M10 30 L50 45 L90 30 M10 70 L50 45 L90 70 M50 95 L50 45'/></svg>">
   
   <style>
@@ -149,6 +167,7 @@
   </nav>
 
   <div class="global-controls">
+    <button class="btn-icon" onclick="addNewCrawler()" title="Add Crawler" style="font-weight: bold; font-size: 0.85rem; letter-spacing: 0.05em; color: var(--success); border: 1px solid var(--success); padding: 4px 8px; margin-right: auto;">+ NEW CRAWLER</button>
     <div style="display: flex; gap: 10px;">
       <button class="btn-icon" onclick="undo()" title="Undo">⟲ UNDO</button>
       <button class="btn-icon" onclick="redo()" title="Redo">⟳ REDO</button>
@@ -170,11 +189,12 @@
   <div class="container hidden" id="detail-screen">
     <div class="detail-header-sticky">
       <div class="flex-between">
-        <h1 id="detail-name" style="margin: 0; text-transform: uppercase; letter-spacing: 0.1em;"></h1>
+        <h1 id="detail-name" style="margin: 0; text-transform: uppercase; letter-spacing: 0.1em; color: var(--player-color, #fff);"></h1>
         <div class="controls flex-gap">
           <button onclick="showOverview()">← Roster Overview</button>
           <button onclick="toggleAccordions(true)">Expand All</button>
           <button onclick="toggleAccordions(false)">Collapse All</button>
+          <button onclick="trashCrawler()" class="btn-danger">Trash Character</button>
         </div>
       </div>
       <div class="sticky-vitals" id="detail-vitals"></div>
@@ -223,11 +243,16 @@
           data: latestState 
         };
         
+        const postController = new AbortController();
+        const postTimeoutId = setTimeout(() => postController.abort(), 8000);
+        
         const postRes = await fetch(WORKER_URL, { 
           method: 'POST', 
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload) 
+          body: JSON.stringify(payload),
+          signal: postController.signal
         });
+        clearTimeout(postTimeoutId);
         
         if (!postRes.ok) throw new Error("Version collision");
 
@@ -289,6 +314,55 @@
     function parseMath(text) { return text ? text.replace(/\b(\d+d\d+(?:\s*[+-]\s*\d+)?|DC\s*\d+)\b/gi, '<span class="math-highlight">$&</span>') : ''; }
     function renderAll(preserveDetails = false) { currentDetailPlayer ? renderDetailScreen(preserveDetails) : renderOverview(); }
 
+    // --- Macro Controls (Add/Trash) ---
+    function addNewCrawler() {
+      let name = prompt("Enter character name:");
+      if (!name) return;
+      name = name.substring(0, 50).replace(/[<>]/g, ''); // Truncate and strip basic tags
+
+      pushState();
+      mutateAndPush((state) => {
+        if (!state.players) state.players = [];
+        state.players.push({
+          name: name,
+          stats: { hp_max: 10, hp_current: 10, ac: 10, passive_perception: 10 },
+          gold: 0, inventory: [], achievements: { pending: [], claimed: [] },
+          status: { conditions: [] }, is_deleted: false
+        });
+      }, `${name} added to roster.`);
+    }
+
+    function trashCrawler() {
+      if (!confirm("Soft-delete this character? They will be hidden from all menus.")) return;
+      
+      const pIndex = appState.players.findIndex(p => p.name === currentDetailPlayer);
+      if (pIndex === -1) return;
+
+      pushState();
+      mutateAndPush((state) => {
+        state.players[pIndex].is_deleted = true;
+      }, "Character trashed.");
+      showOverview(); 
+    }
+
+    function addCustomItem(pIdx) {
+      let name = prompt("Item Name:");
+      if (!name) return;
+      name = name.substring(0, 50).replace(/[<>]/g, '');
+      
+      let type = prompt("Item Type (e.g., Weapon, Trinket):", "Item") || "Item";
+      type = type.substring(0, 30).replace(/[<>]/g, '');
+
+      pushState();
+      mutateAndPush((state) => {
+        if (!state.players[pIdx].inventory) state.players[pIdx].inventory = [];
+        state.players[pIdx].inventory.push({
+          name: name, flavor_text: type, mechanics: "Custom item.",
+          quantity: 1, is_deleted: false
+        });
+      }, "Custom item forged.");
+    }
+
     // --- Inline Edit Engine ---
     function startInlineEdit(el, objectPathJSON, fieldName, isNumber = false, isTextarea = false) {
       const parent = el.closest('.edit-wrapper');
@@ -304,6 +378,12 @@
         pushState();
         let newVal = input.value.trim();
         const pathParts = JSON.parse(objectPathJSON);
+
+        // Safeguard for Character Name updates
+        if (fieldName === 'name' && pathParts[0] === 'players') {
+           newVal = newVal.substring(0, 50).replace(/[<>]/g, '');
+           currentDetailPlayer = newVal; // Update view tracker instantly
+        }
         
         mutateAndPush((state) => {
           let target = state;
@@ -387,16 +467,15 @@
 
     function renderDetailScreen(preserve = false) {
       const playerIndex = appState.players.findIndex(p => p.name === currentDetailPlayer);
-      if (playerIndex < 0) return showOverview();
+      if (playerIndex < 0 || appState.players[playerIndex].is_deleted) return showOverview();
       const player = appState.players[playerIndex];
+      const pPath = ['players', playerIndex];
       
       let openStates = [];
       if(preserve) openStates = Array.from(document.querySelectorAll('#detail-content details')).map(d => d.open);
 
-      document.getElementById('detail-name').innerText = player.name;
-      document.getElementById('detail-name').style.color = 'var(--player-color)';
+      document.getElementById('detail-name').innerHTML = makeEditable(player.name, pPath, 'name');
       
-      const pPath = ['players', playerIndex];
       document.getElementById('detail-vitals').innerHTML = `
         <div><span class="vital-label">HP:</span> ${makeEditable(player.stats?.hp_max||0, [...pPath, 'stats'], 'hp_max', true)}</div>
         <div><span class="vital-label">AC:</span> ${makeEditable(player.stats?.ac||0, [...pPath, 'stats'], 'ac', true)}</div>
@@ -489,7 +568,12 @@
         <details><summary>Base Lore & Notes</summary>
           <div class="item-block flavor-text">${makeEditable(player.lore || 'No lore recorded.', pPath, 'lore', false, true)}</div>
         </details>
-        <details class="${!invHtml ? 'ghost-accordion' : ''}"><summary>Inventory</summary>${invHtml || '<p style="color:#666; padding-left: 1rem; font-style:italic;">Inventory empty.</p>'}</details>
+        <details class="${!invHtml ? 'ghost-accordion' : ''}"><summary>Inventory</summary>
+          ${invHtml || '<p style="color:#666; padding-left: 1rem; font-style:italic;">Inventory empty.</p>'}
+          <div style="padding-top: 1rem; border-top: 1px solid #333; margin-top: 1rem; text-align: center;">
+            <button class="btn" style="color:var(--success); border-color:var(--success);" onclick="addCustomItem(${playerIndex})">+ Add Custom Item</button>
+          </div>
+        </details>
         <details class="${!achHtml ? 'ghost-accordion' : ''}"><summary class="${achHtml ? 'notification-glow' : ''}">Pending Achievements</summary>${achHtml || '<p style="color:#666; padding-left: 1rem; font-style:italic;">Inbox clear.</p>'}</details>
       `;
 
