@@ -514,8 +514,11 @@
       let html = ''; let hasUnread = false;
       pending.forEach(item => {
         if (!item.is_acknowledged) hasUnread = true;
-        const actualItem = (item.rewards && item.rewards.items) ? item.rewards.items[0] : item;
-        const rarity = (actualItem.rarity || 'standard').toLowerCase();
+        
+        // SAFE FALLBACK: If items array is empty, default to the base item structure to prevent crashes
+        const actualItem = (item.rewards && item.rewards.items && item.rewards.items.length > 0) ? item.rewards.items[0] : item;
+        const rarity = (actualItem?.rarity || 'standard').toLowerCase();
+        
         let chestColor = '#b87333';
         if (rarity === 'rare') chestColor = '#f1c40f';
         else if (rarity === 'contraband') chestColor = '#bb86fc';
