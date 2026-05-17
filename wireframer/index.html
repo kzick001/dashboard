@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign Wireframer</title>
+    <!-- Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+    <style>
+        /* Theme Variables */
+        :root {
+            --bg-base: #1e1e1e;
+            --bg-panel: #252526;
+            --bg-canvas: #1a1a1a;
+            --bg-header: #2d2d30;
+            --border-color: #333;
+            --accent: #00aaff;
+            --text-main: #eee;
+        }
+
+        /* Base Shell */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: system-ui, sans-serif; 
+            display: grid; 
+            grid-template-columns: 250px 1fr 350px; 
+            height: 100vh; 
+            overflow: hidden; 
+            background: var(--bg-base); 
+            color: var(--text-main); 
+        }
+
+        @media (max-width: 900px) {
+            body { 
+                grid-template-columns: 1fr; 
+                grid-template-rows: auto 1fr auto; 
+                overflow-y: auto; 
+            }
+            #canvas-wrapper { min-height: 60vh; }
+        }
+        
+        /* Panels */
+        .panel { display: flex; flex-direction: column; background: var(--bg-panel); }
+        #sidebar { border-right: 1px solid var(--border-color); z-index: 10; }
+        #code-engine { border-left: 1px solid var(--border-color); z-index: 10; }
+        header { padding: 10px; background: var(--bg-header); border-bottom: 1px solid var(--border-color); font-weight: bold; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #aaa;}
+        
+        /* Canvas */
+        #canvas-wrapper { display: flex; flex-direction: column; background: var(--bg-canvas); position: relative; }
+        #canvas-toolbar { padding: 10px; background: var(--bg-header); border-bottom: 1px solid var(--border-color); display: flex; gap: 8px; z-index: 5; }
+        #canvas-toolbar button { background: #3c3c3c; color: #ccc; border: 1px solid #555; border-radius: 3px; padding: 12px 16px; font-size: 0.85rem; cursor: pointer; transition: 0.1s; min-height: 44px; min-width: 44px; }
+        #canvas-toolbar button:hover { background: #555; }
+        #canvas-toolbar button:active { background: #222; }
+        
+        #canvas-container { flex: 1; overflow-y: auto; display: flex; justify-content: center; padding: 40px; }
+        #canvas { width: 100%; transition: max-width 0.3s ease; display: flex; flex-direction: column; align-items: stretch; gap: 10px; min-height: 100%; }
+        
+        /* Toolbar Primitives */
+        #toolbar { padding: 10px 0; border-bottom: 1px solid var(--border-color); }
+        .primitive { padding: 8px 12px; background: #3c3c3c; border: 1px solid #555; border-radius: 4px; cursor: grab; margin: 5px 10px; font-size: 0.85rem; user-select: none; }
+        
+        /* Code Engine */
+        #code-editor-container { position: relative; flex: 1; overflow: hidden; background: var(--bg-base); transition: border-color 0.2s; }
+        #yaml-input, #yaml-highlight { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 15px; font-family: monospace; font-size: 13px; line-height: 1.5; border: none; margin: 0; }
+        #yaml-input { color: transparent; background: transparent; caret-color: #fff; z-index: 2; resize: none; outline: none; white-space: pre; }
+        #yaml-highlight { z-index: 1; overflow-y: auto; pointer-events: none; }
+        
+        /* Interactive States */
+        .drop-target { border-color: #4CAF50 !important; background-color: rgba(76, 175, 80, 0.1) !important; box-shadow: inset 0 0 10px rgba(76, 175, 80, 0.2); }
+        .dragging { opacity: 0.5; }
+        .active-node { box-shadow: 0 0 0 2px var(--accent) !important; z-index: 2; }
+        .x-ray [data-type="container"] { border: 2px dashed #ff00ff !important; background: rgba(255, 0, 255, 0.05) !important; }
+    </style>
+</head>
+<body>
+    <div class="panel" id="sidebar">
+        <header>Primitives</header>
+        <div id="toolbar">
+            <div class="primitive" draggable="true" data-type="container">Container</div>
+            <div class="primitive" draggable="true" data-type="button">Button</div>
+            <div class="primitive" draggable="true" data-type="textfield">Text Field</div>
+            <div class="primitive" draggable="true" data-type="pill">Data Pill</div>
+        </div>
+        <header>Inspector</header>
+        <div id="inspector" style="padding: 15px; font-size: 0.85rem; color: #888;">Select a node on the canvas.</div>
+    </div>
+
+    <div id="canvas-wrapper">
+        <div id="canvas-toolbar">
+            <button id="btn-mobile">Mobile</button>
+            <button id="btn-desktop">Desktop</button>
+            <button id="btn-xray">X-Ray Toggle</button>
+            <div style="flex:1"></div>
+            <button id="btn-undo">Undo</button>
+            <button id="btn-redo">Redo</button>
+            <button id="btn-export">Export YAML</button>
+            <button id="btn-md">Copy Spec</button>
+        </div>
+        <div id="canvas-container">
+            <div id="canvas"></div>
+        </div>
+    </div>
+
+    <div class="panel" id="code-engine">
+        <header>State Engine (YAML)</header>
+        <div id="code-editor-container">
+            <textarea id="yaml-input" spellcheck="false"></textarea>
+            <pre id="yaml-highlight"><code class="language-yaml" id="yaml-code"></code></pre>
+        </div>
+    </div>
+
+    <script>
+        const generateUUID = () => crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
+
+        // Core Engine
+        class StateStore {
+            constructor() {
+                this.tree = [];
+                this.history = [];
+                this.currentIndex = -1;
+                this.activeNodeId = null;
+            }
+
+            init(initialTree) {
+                this.tree = initialTree || [];
+                this.saveSnapshot();
+                this.render();
+                this.wireEvents();
+            }
+
+            saveSnapshot() {
+                try {
+                    const snapshot = JSON.stringify(this.tree);
+                    if (this.currentIndex > -1 && this.history[this.currentIndex] === snapshot) return;
+                    
+                    if (this.currentIndex < this.history.length - 1) {
+                        this.history = this.history.slice(0, this.currentIndex + 1);
+                    }
+                    this.history.push(snapshot);
+                    this.currentIndex++;
+                } catch (error) {
+                    console.error("State stringification failed.", error);
+                }
+            }
+
+            update(newTree, triggerRender = true) {
+                this.tree = newTree;
+                this.saveSnapshot();
+                if (triggerRender) this.render();
+            }
+
+            undo() {
+                if (this.currentIndex > 0) {
+                    this.currentIndex--;
+                    this.tree = JSON.parse(this.history[this.currentIndex]);
+                    this.render();
+                }
+            }
+
+            redo() {
+                if (this.currentIndex < this.history.length - 1) {
+                    this.currentIndex++;
+                    this.tree = JSON.parse(this.history[this.currentIndex]);
+                    this.render();
+                }
+            }
+
+            // Tree Utilities
+            findNodeInfo(id, currentNodes = this.tree, parent = null, index = -1) {
+                for (let i = 0; i < currentNodes.length; i++) {
+                    if (currentNodes[i].id === id) {
+                        return { node: currentNodes[i], parentArray: currentNodes, index: i };
+                    }
+                    if (currentNodes[i].children) {
+                        const found = this.findNodeInfo(id, currentNodes[i].children, currentNodes[i], i);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            }
+
+            isDescendant(parentId, childId, tree) {
+                if (parentId === childId) return true;
+                const parentInfo = this.findNodeInfo(parentId, tree);
+                if (!parentInfo || !parentInfo.node.children) return false;
+                
+                const checkChildren = (children) => {
+                    if (!children) return false;
+                    for (let child of children) {
+                        if (child.id === childId) return true;
+                        if (checkChildren(child.children)) return true;
+                    }
+                    return false;
+                };
+                return checkChildren(parentInfo.node.children);
+            }
+
+            // Drag and Drop
+            handleDrop(e, targetId) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                document.querySelectorAll('.drop-target').forEach(tgt => tgt.classList.remove('drop-target'));
+                const dataStr = e.dataTransfer.getData('text/plain');
+                if (!dataStr) return;
+                
+                let data;
+                try { data = JSON.parse(dataStr); } catch (err) { return; }
+
+                let newTree = structuredClone(this.tree); 
+                let targetArray = newTree;
+
+                if (targetId !== 'root') {
+                    const targetInfo = this.findNodeInfo(targetId, newTree);
+                    if (!targetInfo || targetInfo.node.type !== 'container') return;
+                    targetArray = targetInfo.node.children;
+                }
+
+                if (data.action === 'create') {
+                    const newNode = {
+                        id: generateUUID(),
+                        type: data.type,
+                        props: { notes: '', spacing: 'md' },
+                        children: data.type === 'container' ? [] : undefined
+                    };
+                    targetArray.push(newNode);
+                    this.activeNodeId = newNode.id;
+                } else if (data.action === 'move') {
+                    const sourceId = data.id;
+                    if (targetId !== 'root' && this.isDescendant(sourceId, targetId, newTree)) {
+                        console.warn("Circular dependency blocked.");
+                        return;
+                    }
+                    const sourceInfo = this.findNodeInfo(sourceId, newTree);
+                    if (!sourceInfo) return;
+                    sourceInfo.parentArray.splice(sourceInfo.index, 1);
+                    targetArray.push(sourceInfo.node);
+                }
+
+                this.update(newTree);
+                this.buildInspector();
+            }
+
+            // Rendering
+            render() {
+                const canvas = document.getElementById('canvas');
+                canvas.innerHTML = '';
+                
+                if (this.tree.length === 0) {
+                    canvas.innerHTML = '<div style="color:#555; padding: 20px; pointer-events: none; text-align:center;">Drag elements here.</div>';
+                } else {
+                    this.tree.forEach(node => canvas.appendChild(this.buildDOMNode(node)));
+                }
+                this.syncYAML();
+            }
+
+            buildDOMNode(node) {
+                const el = document.createElement('div');
+                el.dataset.id = node.id;
+                el.dataset.type = node.type;
+                el.draggable = true;
+                
+                if (this.activeNodeId === node.id) el.classList.add('active-node');
+                
+                el.style.border = node.type === 'container' ? '1px dashed #555' : '1px solid #444';
+                el.style.padding = node.props.spacing === 'sm' ? '8px' : node.props.spacing === 'lg' ? '24px' : '15px';
+                el.style.margin = '5px 0';
+                el.style.minHeight = node.type === 'container' ? '60px' : 'auto';
+                el.style.backgroundColor = node.type === 'container' ? 'transparent' : '#2a2a2a';
+                el.style.position = 'relative';
+                el.style.borderRadius = '4px';
+
+                const label = document.createElement('div');
+                label.textContent = node.type.toUpperCase();
+                label.style.fontSize = '0.65rem';
+                label.style.fontWeight = 'bold';
+                label.style.color = '#777';
+                label.style.pointerEvents = 'none';
+                label.style.marginBottom = node.type === 'container' ? '10px' : '0';
+                el.appendChild(label);
+
+                if (node.children && node.children.length > 0) {
+                    node.children.forEach(child => el.appendChild(this.buildDOMNode(child)));
+                }
+
+                el.addEventListener('dragstart', (e) => {
+                    e.stopPropagation();
+                    e.dataTransfer.setData('text/plain', JSON.stringify({ action: 'move', id: node.id }));
+                    setTimeout(() => el.classList.add('dragging'), 0);
+                });
+
+                el.addEventListener('dragend', (e) => {
+                    e.stopPropagation();
+                    el.classList.remove('dragging');
+                    document.querySelectorAll('.drop-target').forEach(tgt => tgt.classList.remove('drop-target'));
+                });
+
+                if (node.type === 'container') {
+                    el.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); el.classList.add('drop-target'); });
+                    el.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); el.classList.remove('drop-target'); });
+                    el.addEventListener('drop', (e) => this.handleDrop(e, node.id));
+                }
+
+                return el;
+            }
+
+            buildInspector() {
+                const panel = document.getElementById('inspector');
+                if (!this.activeNodeId) {
+                    panel.innerHTML = '<div style="color:#888;">Select a node.</div>';
+                    return;
+                }
+
+                const info = this.findNodeInfo(this.activeNodeId);
+                if (!info) return;
+
+                // Safely build DOM without injecting user text into HTML
+                panel.innerHTML = `
+                    <div style="margin-bottom: 15px; color: #fff;">Type: <strong>${info.node.type.toUpperCase()}</strong><br><span style="font-size:0.7rem; color:#666;">ID: ${info.node.id.substring(0,8)}</span></div>
+                    
+                    <label style="display:block; margin-bottom: 5px; color:#aaa;">Documentation Notes</label>
+                    <textarea id="prop-notes" spellcheck="false" style="width:100%; height:100px; background:var(--bg-panel, #1a1a1a); color:#eee; border:1px solid #444; padding:12px; margin-bottom:15px; font-family:inherit; resize:vertical;"></textarea>
+                    
+                    <label style="display:block; margin-bottom: 5px; color:#aaa;">T-Shirt Spacing</label>
+                    <select id="prop-spacing" style="width:100%; background:var(--bg-panel, #1a1a1a); color:#eee; border:1px solid #444; padding:12px; margin-bottom:20px; outline:none;">
+                        <option value="sm">Small</option>
+                        <option value="md">Medium</option>
+                        <option value="lg">Large</option>
+                    </select>
+                    
+                    <button id="btn-delete" style="width:100%; background:#6b2a2a; color:#fff; border:none; padding:14px; cursor:pointer; border-radius:3px;">Destroy Node</button>
+                `;
+
+                // Safe Value Injection
+                document.getElementById('prop-notes').value = info.node.props.notes || '';
+                document.getElementById('prop-spacing').value = info.node.props.spacing || 'md';
+
+                // Immutable Event Listeners
+                document.getElementById('prop-notes').addEventListener('input', (e) => {
+                    const newTree = structuredClone(this.tree);
+                    const nodeInfo = this.findNodeInfo(this.activeNodeId, newTree);
+                    if (nodeInfo) {
+                        nodeInfo.node.props.notes = e.target.value;
+                        this.update(newTree, false); 
+                        this.syncYAML();
+                    }
+                });
+
+                document.getElementById('prop-spacing').addEventListener('change', (e) => {
+                    const newTree = structuredClone(this.tree);
+                    const nodeInfo = this.findNodeInfo(this.activeNodeId, newTree);
+                    if (nodeInfo) {
+                        nodeInfo.node.props.spacing = e.target.value;
+                        this.update(newTree);
+                    }
+                });
+
+                document.getElementById('btn-delete').addEventListener('click', () => {
+                    const newTree = structuredClone(this.tree);
+                    const nodeInfo = this.findNodeInfo(this.activeNodeId, newTree);
+                    if (nodeInfo) {
+                        nodeInfo.parentArray.splice(nodeInfo.index, 1);
+                        this.activeNodeId = null;
+                        this.update(newTree);
+                        this.buildInspector();
+                    }
+                });
+            }
+
+            syncYAML() {
+                try {
+                    const yamlString = jsyaml.dump(this.tree, { indent: 2 });
+                    const input = document.getElementById('yaml-input');
+                    const codeBlock = document.getElementById('yaml-code');
+                    
+                    if (document.activeElement !== input) {
+                        input.value = yamlString;
+                        codeBlock.textContent = yamlString;
+                    } else {
+                        codeBlock.textContent = input.value;
+                    }
+                    Prism.highlightElement(codeBlock);
+                } catch (error) { console.error("YAML parser failed."); }
+            }
+
+            // Centralized Event Wiring
+            wireEvents() {
+                const canvas = document.getElementById('canvas');
+                
+                canvas.addEventListener('dragover', (e) => { e.preventDefault(); if (e.target === canvas || e.target.id === 'canvas-container') canvas.classList.add('drop-target'); });
+                canvas.addEventListener('dragleave', (e) => { if (e.target === canvas || e.target.id === 'canvas-container') canvas.classList.remove('drop-target'); });
+                canvas.addEventListener('drop', (e) => { if (e.target === canvas || e.target.id === 'canvas-container') this.handleDrop(e, 'root'); });
+
+                document.querySelectorAll('.primitive').forEach(prim => {
+                    prim.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', JSON.stringify({ action: 'create', type: e.target.dataset.type })));
+                });
+
+                // Selection Engine
+                canvas.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const el = e.target.closest('[data-id]');
+                    this.activeNodeId = el ? el.dataset.id : null;
+                    this.render();
+                    this.buildInspector();
+                });
+
+                // Hotkeys
+                document.addEventListener('keydown', (e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                        e.preventDefault();
+                        e.shiftKey ? this.redo() : this.undo();
+                        this.buildInspector();
+                    }
+                });
+
+                // Toolbar Actions
+                document.getElementById('btn-undo').addEventListener('click', () => { this.undo(); this.buildInspector(); });
+                document.getElementById('btn-redo').addEventListener('click', () => { this.redo(); this.buildInspector(); });
+                document.getElementById('btn-xray').addEventListener('click', () => document.getElementById('canvas-container').classList.toggle('x-ray'));
+                document.getElementById('btn-mobile').addEventListener('click', () => document.getElementById('canvas').style.maxWidth = '375px');
+                document.getElementById('btn-desktop').addEventListener('click', () => document.getElementById('canvas').style.maxWidth = '100%');
+                
+                document.getElementById('btn-export').addEventListener('click', () => {
+                    const blob = new Blob([jsyaml.dump(this.tree)], { type: 'text/yaml' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'sovereign-layout.yaml';
+                    a.click();
+                });
+
+                document.getElementById('btn-md').addEventListener('click', () => {
+                    let md = '# Logic Specification\n\n';
+                    const extract = (nodes, depth) => {
+                        nodes.forEach(n => {
+                            const indent = '  '.repeat(depth);
+                            md += `${indent}- **${n.type.toUpperCase()}**: ${n.props.notes || 'No documentation.'}\n`;
+                            if (n.children) extract(n.children, depth + 1);
+                        });
+                    };
+                    extract(this.tree, 0);
+                    navigator.clipboard.writeText(md).then(() => alert('Markdown specification copied to clipboard.'));
+                });
+            }
+        }
+
+        // Boot
+        const appState = new StateStore();
+        appState.init([
+            { id: generateUUID(), type: 'container', props: { notes: 'Main application wrapper', spacing: 'lg' }, children: [] }
+        ]);
+
+        // Code Editor Mechanics
+        const debounce = (func, wait) => { let timeout; return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => func(...args), wait); }; };
+        const yamlInput = document.getElementById('yaml-input');
+        const yamlHighlight = document.getElementById('yaml-highlight');
+        const yamlCodeBlock = document.getElementById('yaml-code');
+        
+        yamlInput.addEventListener('scroll', () => { yamlHighlight.scrollTop = yamlInput.scrollTop; yamlHighlight.scrollLeft = yamlInput.scrollLeft; });
+        yamlInput.addEventListener('input', debounce((e) => {
+            const rawYAML = e.target.value;
+            const container = document.getElementById('code-editor-container');
+            yamlCodeBlock.textContent = rawYAML;
+            Prism.highlightElement(yamlCodeBlock);
+
+            try {
+                if (rawYAML.trim() === '') return appState.update([]);
+                const parsedTree = jsyaml.load(rawYAML);
+                if (!Array.isArray(parsedTree)) throw new Error("Root must be array.");
+                container.style.borderLeft = 'none';
+                appState.update(parsedTree);
+            } catch (err) {
+                container.style.borderLeft = '4px solid #ff4444'; 
+            }
+        }, 500));
+    </script>
+</body>
+</html>
