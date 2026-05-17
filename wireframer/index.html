@@ -97,7 +97,7 @@
 </head>
 <body>
     <div id="global-header">
-        <div class="branding">WIREFRAMER // V1.0.1</div>
+        <div class="branding">WIREFRAMER // V1.0.2</div>
         <div style="flex:1;"></div>
         <button id="btn-undo">Undo</button>
         <button id="btn-redo">Redo</button>
@@ -209,7 +209,23 @@
             resetCanvas() {
                 if (confirm("Are you sure you want to nuke the canvas? This cannot be undone.")) {
                     this.activeNodeId = null;
-                    this.update([{ id: generateUUID(), type: 'container', props: { alias: 'Root', notes: '', spacing: 'lg', direction: 'column' }, children: [] }]);
+                    this.update([{ 
+                        id: generateUUID(), 
+                        type: 'container', 
+                        props: { 
+                            alias: 'Root Frame', 
+                            notes: '', 
+                            spacing: 'lg', 
+                            sizing: 'hug',
+                            direction: 'column', 
+                            justify: 'flex-start', 
+                            align: 'stretch', 
+                            wrap: 'nowrap', 
+                            gap: 'md',
+                            overflow: 'visible'
+                        }, 
+                        children: [] 
+                    }]);
                     this.buildInspector();
                 }
             }
@@ -269,7 +285,15 @@
                     const newNode = {
                         id: generateUUID(),
                         type: data.type,
-                        props: { alias: '', notes: '', spacing: 'md' },
+                        props: { 
+                            alias: '', 
+                            notes: '', 
+                            spacing: 'md',
+                            sizing: 'hug',
+                            ...(data.type === 'container' 
+                                ? { direction: 'column', justify: 'flex-start', align: 'stretch', wrap: 'nowrap', gap: 'md', overflow: 'visible' } 
+                                : { label: '', weight: 'primary' }) 
+                        },
                         children: data.type === 'container' ? [] : undefined
                     };
                     targetArray.push(newNode);
@@ -311,30 +335,55 @@
                 
                 if (this.activeNodeId === node.id) el.classList.add('active-node');
                 
-                // Flexbox Engine Translation
+                // V1.0.2: Universal Child Autonomy (Sizing)
+                el.style.flexGrow = node.props.sizing === 'fill' ? '1' : '0';
+                el.style.flexShrink = node.props.sizing === 'fill' ? '1' : '0';
+                el.style.flexBasis = node.props.sizing === 'fill' ? '0%' : 'auto';
+
+                // Base Structural Styles
+                el.style.padding = node.props.spacing === 'sm' ? '8px' : node.props.spacing === 'lg' ? '24px' : '15px';
+                el.style.margin = node.type === 'container' ? '0' : '5px 0'; // Let gap handle container spacing
+                el.style.position = 'relative';
+                el.style.borderRadius = '4px';
+
                 if (node.type === 'container') {
+                    // Container Flexbox & Overflow Engine
                     el.style.display = 'flex';
                     el.style.flexDirection = node.props.direction || 'column';
                     el.style.justifyContent = node.props.justify || 'flex-start';
                     el.style.alignItems = node.props.align || 'stretch';
                     el.style.flexWrap = node.props.wrap || 'nowrap';
-                    el.style.gap = node.props.gap === 'sm' ? '8px' : node.props.gap === 'lg' ? '24px' : '15px';
+                    el.style.gap = node.props.gap === 'sm' ? '8px' : (node.props.gap === 'lg' ? '24px' : '15px');
+                    el.style.overflow = node.props.overflow || 'visible';
+                    el.style.minHeight = '60px';
+                    el.style.border = '1px dashed #555';
+                    el.style.backgroundColor = 'transparent';
+                } else {
+                    // V1.0.2: Primitive Visual Weights
+                    const weight = node.props.weight || 'primary';
+                    if (weight === 'secondary') {
+                        el.style.backgroundColor = 'transparent';
+                        el.style.border = '2px solid #555';
+                        el.style.opacity = '1';
+                    } else if (weight === 'disabled') {
+                        el.style.backgroundColor = '#1a1a1a';
+                        el.style.border = '1px dashed #444';
+                        el.style.opacity = '0.4';
+                    } else {
+                        el.style.backgroundColor = '#2a2a2a';
+                        el.style.border = '1px solid #444';
+                        el.style.opacity = '1';
+                    }
                 }
 
-                el.style.border = node.type === 'container' ? '1px dashed #555' : '1px solid #444';
-                el.style.padding = node.props.spacing === 'sm' ? '8px' : node.props.spacing === 'lg' ? '24px' : '15px';
-                el.style.margin = node.type === 'container' ? '0' : '5px 0'; // Let gap handle container spacing
-                el.style.minHeight = node.type === 'container' ? '60px' : 'auto';
-                el.style.backgroundColor = node.type === 'container' ? 'transparent' : '#2a2a2a';
-                el.style.position = 'relative';
-                el.style.borderRadius = '4px';
-
-                // Semantic Alias Rendering
+                // V1.0.2: Semantic Alias & Text Overrides
                 const label = document.createElement('div');
-                label.textContent = node.props.alias ? `${node.props.alias} (${node.type})` : node.type.toUpperCase();
-                label.style.fontSize = '0.65rem';
+                const displayString = node.props.label ? node.props.label : (node.props.alias ? `${node.props.alias} (${node.type})` : node.type.toUpperCase());
+                
+                label.textContent = displayString;
+                label.style.fontSize = node.props.label ? '0.85rem' : '0.65rem';
                 label.style.fontWeight = 'bold';
-                label.style.color = '#777';
+                label.style.color = node.props.label ? '#eee' : '#777';
                 label.style.pointerEvents = 'none';
                 label.style.marginBottom = node.type === 'container' ? '10px' : '0';
                 el.appendChild(label);
@@ -343,18 +392,17 @@
                     node.children.forEach(child => el.appendChild(this.buildDOMNode(child)));
                 }
 
+                // DnD Listeners
                 el.addEventListener('dragstart', (e) => {
                     e.stopPropagation();
                     e.dataTransfer.setData('text/plain', JSON.stringify({ action: 'move', id: node.id }));
                     setTimeout(() => el.classList.add('dragging'), 0);
                 });
-
                 el.addEventListener('dragend', (e) => {
                     e.stopPropagation();
                     el.classList.remove('dragging');
                     document.querySelectorAll('.drop-target').forEach(tgt => tgt.classList.remove('drop-target'));
                 });
-
                 if (node.type === 'container') {
                     el.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); el.classList.add('drop-target'); });
                     el.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); el.classList.remove('drop-target'); });
@@ -376,13 +424,30 @@
 
                 const isContainer = info.node.type === 'container';
 
-                // Base UI + Semantic Naming + Structural Actions
+                // Base UI + Semantic Naming
                 let html = `
                     <div style="margin-bottom: 15px; color: #fff;">Type: <strong>${info.node.type.toUpperCase()}</strong><br><span style="font-size:0.7rem; color:#666;">ID: ${info.node.id.substring(0,8)}</span></div>
                     
-                    <label style="display:block; margin-bottom: 5px; color:#aaa; font-size: 0.75rem;">Semantic Name</label>
+                    <label style="display:block; margin-bottom: 5px; color:#aaa; font-size: 0.75rem;">Semantic Name (Alias)</label>
                     <input type="text" id="prop-alias" spellcheck="false" placeholder="e.g. login-btn" style="width:100%; background:var(--bg-panel); color:var(--accent); border:1px solid #444; padding:8px; margin-bottom:15px; font-family:monospace; outline:none;">
+                `;
 
+                // V1.0.2: Primitive-Specific Controls
+                if (!isContainer) {
+                    html += `
+                        <label style="display:block; margin-bottom: 5px; color:#aaa; font-size: 0.75rem;">Canvas Display Label</label>
+                        <input type="text" id="prop-label" spellcheck="false" placeholder="e.g. Submit" style="width:100%; background:var(--bg-panel); color:#eee; border:1px solid #444; padding:8px; margin-bottom:15px; outline:none;">
+                        
+                        <label style="display:block; margin-bottom: 5px; color:#aaa; font-size: 0.75rem;">Visual Weight</label>
+                        <select id="prop-weight" class="insp-select">
+                            <option value="primary">Primary (Filled)</option>
+                            <option value="secondary">Secondary (Outline)</option>
+                            <option value="disabled">Disabled (Faded)</option>
+                        </select>
+                    `;
+                }
+
+                html += `
                     <label style="display:block; margin-bottom: 5px; color:#aaa; font-size: 0.75rem;">Documentation Notes</label>
                     <textarea id="prop-notes" spellcheck="false" style="width:100%; height:80px; background:var(--bg-panel); color:#eee; border:1px solid #444; padding:8px; margin-bottom:15px; font-family:inherit; resize:vertical; outline:none;"></textarea>
                     
@@ -390,6 +455,23 @@
                         <button id="btn-up" style="flex:1; padding: 6px; background: #333; color:#fff; border:none; border-radius: 3px; cursor:pointer;">↑ Up</button>
                         <button id="btn-down" style="flex:1; padding: 6px; background: #333; color:#fff; border:none; border-radius: 3px; cursor:pointer;">↓ Down</button>
                         <button id="btn-duplicate" style="flex:1; padding: 6px; background: #2b4a6f; color:#fff; border:none; border-radius: 3px; cursor:pointer;">Copy</button>
+                    </div>
+
+                    <div style="border-top: 1px solid #444; padding-top: 15px; margin-bottom: 15px;">
+                        <strong style="color: #fff; font-size: 0.8rem; display:block; margin-bottom:10px;">Item Properties</strong>
+                        
+                        <label style="font-size:0.7rem; color:#aaa;">Sizing Behavior</label>
+                        <select id="prop-sizing" class="insp-select">
+                            <option value="hug">Hug Content (Auto)</option>
+                            <option value="fill">Fill Available Space (Grow)</option>
+                        </select>
+
+                        <label style="font-size:0.7rem; color:#aaa;">Internal Padding</label>
+                        <select id="prop-spacing" class="insp-select">
+                            <option value="sm">Small</option>
+                            <option value="md">Medium</option>
+                            <option value="lg">Large</option>
+                        </select>
                     </div>
                 `;
 
@@ -431,19 +513,16 @@
                                     <option value="lg">Gap: Lg</option>
                                 </select>
                             </div>
+
+                            <label style="font-size:0.7rem; color:#aaa;">Overflow Content</label>
+                            <select id="prop-overflow" class="insp-select">
+                                <option value="visible">Visible (Spill Out)</option>
+                                <option value="hidden">Hidden (Clip)</option>
+                                <option value="auto">Scroll (Auto)</option>
+                            </select>
                         </div>
                     `;
                 }
-
-                // Global padding/spacing applies to everything
-                html += `
-                    <label style="display:block; margin-bottom: 5px; color:#aaa; font-size: 0.75rem;">Internal Padding (T-Shirt)</label>
-                    <select id="prop-spacing" class="insp-select" style="margin-bottom:20px;">
-                        <option value="sm">Small</option>
-                        <option value="md">Medium</option>
-                        <option value="lg">Large</option>
-                    </select>
-                `;
 
                 html += `<button id="btn-delete" style="width:100%; background:#6b2a2a; color:#fff; border:none; padding:12px; cursor:pointer; border-radius:3px; margin-top: 10px;">Destroy Node</button>`;
                 
@@ -453,6 +532,7 @@
                 document.getElementById('prop-alias').value = info.node.props.alias || '';
                 document.getElementById('prop-notes').value = info.node.props.notes || '';
                 document.getElementById('prop-spacing').value = info.node.props.spacing || 'md';
+                document.getElementById('prop-sizing').value = info.node.props.sizing || 'hug';
                 
                 if (isContainer) {
                     document.getElementById('prop-direction').value = info.node.props.direction || 'column';
@@ -460,6 +540,10 @@
                     document.getElementById('prop-align').value = info.node.props.align || 'stretch';
                     document.getElementById('prop-wrap').value = info.node.props.wrap || 'nowrap';
                     document.getElementById('prop-gap').value = info.node.props.gap || 'md';
+                    document.getElementById('prop-overflow').value = info.node.props.overflow || 'visible';
+                } else {
+                    document.getElementById('prop-label').value = info.node.props.label || '';
+                    document.getElementById('prop-weight').value = info.node.props.weight || 'primary';
                 }
 
                 // --- EVENT LISTENERS ---
@@ -478,11 +562,15 @@
                 };
 
                 bindProp('prop-alias', 'alias');
-                bindProp('prop-notes', 'notes', false); // False avoids dropping text focus
+                bindProp('prop-notes', 'notes', false); 
                 bindProp('prop-spacing', 'spacing');
+                bindProp('prop-sizing', 'sizing');
                 
                 if (isContainer) {
-                    ['direction', 'justify', 'align', 'wrap', 'gap'].forEach(p => bindProp(`prop-${p}`, p));
+                    ['direction', 'justify', 'align', 'wrap', 'gap', 'overflow'].forEach(p => bindProp(`prop-${p}`, p));
+                } else {
+                    bindProp('prop-label', 'label');
+                    bindProp('prop-weight', 'weight');
                 }
 
                 // Structural Nudging Events
@@ -511,7 +599,7 @@
                     const nodeInfo = this.findNodeInfo(this.activeNodeId, newTree);
                     const clonedNode = this.deepCloneWithNewIds(nodeInfo.node);
                     nodeInfo.parentArray.splice(nodeInfo.index + 1, 0, clonedNode);
-                    this.activeNodeId = clonedNode.id; // Focus the clone
+                    this.activeNodeId = clonedNode.id; 
                     this.update(newTree);
                     this.buildInspector();
                 });
@@ -618,7 +706,23 @@
         // Boot
         const appState = new StateStore();
         appState.init([
-            { id: generateUUID(), type: 'container', props: { alias: 'Root Frame', notes: 'Main application wrapper', spacing: 'lg', direction: 'column' }, children: [] }
+            { 
+                id: generateUUID(), 
+                type: 'container', 
+                props: { 
+                    alias: 'Root Frame', 
+                    notes: 'Main application wrapper', 
+                    spacing: 'lg', 
+                    sizing: 'hug',
+                    direction: 'column',
+                    justify: 'flex-start',
+                    align: 'stretch',
+                    wrap: 'nowrap',
+                    gap: 'md',
+                    overflow: 'visible'
+                }, 
+                children: [] 
+            }
         ]);
 
         // Code Editor Mechanics
