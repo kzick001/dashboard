@@ -2,18 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Showrunner | Dashboard V2.2.2</title>
+  <title>Showrunner | Dashboard V2.3.1</title>
   
   <script>
     const SECURE_PIN = "goddammit_doughnut"; 
-    let savedPin = localStorage.getItem('showrunner_pin');
+    let savedPin = null;
+    try {
+      savedPin = localStorage.getItem('showrunner_pin');
+    } catch(e) {
+      console.warn("Storage unreachable. Dropping back to temporary session context layers.");
+    }
     
     if (savedPin !== SECURE_PIN) {
       document.documentElement.style.display = 'none'; 
       let input = prompt("ACCESS RESTRICTED: Enter Showrunner PIN.");
       
       if (input === SECURE_PIN) {
-        localStorage.setItem('showrunner_pin', input);
+        try {
+          localStorage.setItem('showrunner_pin', input);
+        } catch(e) {}
         document.documentElement.style.display = ''; 
       } else {
         window.location.href = "https://kzick001.github.io/dashboard/dm-screen/players/players.html"; 
@@ -41,10 +48,10 @@
     .navbar {
       height: 60px; display: flex; align-items: center; justify-content: space-between;
       padding: 0 2rem; background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-      border-bottom: 1px solid var(--glass-border); z-index: 200; flex-shrink: 0;
+      border-bottom: 1px solid var(--glass-border); z-index: 600; flex-shrink: 0;
     }
     .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; letter-spacing: 0.15em; font-size: 1.2rem; color: #fff; text-shadow: 0 0 10px rgba(187,134,252,0.5); }
-    .nav-links { display: flex; gap: 1rem; }
+    .nav-links { display: flex; gap: 1rem; align-items: center; }
     .nav-link {
       color: var(--text); text-decoration: none; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;
       letter-spacing: 0.1em; padding: 6px 12px; border-radius: 20px; border: 1px solid transparent; transition: 0.3s;
@@ -52,78 +59,142 @@
     .nav-link:hover { background: rgba(255,255,255,0.05); border-color: var(--glass-border); color: #fff; }
     .nav-link.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(187,134,252,0.2); }
 
-    /* --- Dashboard Layout --- */
-    .dashboard-layout {
-      display: grid; grid-template-columns: 1fr 380px; gap: 2rem; padding: 2rem; flex-grow: 1; overflow-y: auto;
-    }
-    @media (max-width: 900px) {
-      .dashboard-layout { grid-template-columns: 1fr; }
-    }
+    /* Action Buttons in Navbar */
+    .btn-global-action { background: #222; border: 1px solid #444; color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
+    .btn-global-action:hover { background: #333; border-color: #666; }
+    .btn-global-action.toggle-active { background: rgba(187, 134, 252, 0.15); border-color: var(--accent); color: var(--accent); }
 
-    /* --- Left Column: Party Overview --- */
-    .section-title { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.15em; border-bottom: 1px solid #333; padding-bottom: 0.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
+    /* --- Workspace Architectures --- */
+    .workspace { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
     
-    .roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; align-items: start; }
-    .roster-card { background: var(--card); padding: 1.5rem; border-radius: 8px; border: 1px solid #333; border-left: 4px solid var(--player-color, var(--accent)); display: flex; flex-direction: column; gap: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-    .roster-card h3 { margin: 0; color: #fff; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.05em; }
-    .vitals-row { display: flex; justify-content: space-between; background: #111; padding: 0.5rem 1rem; border-radius: 4px; border: 1px solid #222; }
-    .vital-stat { display: flex; flex-direction: column; align-items: center; font-size: 0.8rem; color: var(--text-muted); }
-    .vital-stat span { font-size: 1.1rem; color: #fff; font-weight: bold; }
+    /* Tactical Mode */
+    .layout-tactical { padding: 2rem; overflow-y: auto; }
+    .layout-tactical .roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+    .layout-tactical .theater-stage { display: none; }
+    
+    /* Theater Mode */
+    .layout-theater { display: flex; flex-direction: column; height: 100%; }
+    .layout-theater .roster-wrapper { padding: 1rem 1rem 0.5rem 1rem; background: #0a0a0c; border-bottom: 1px solid #333; flex-shrink: 0; }
+    .layout-theater .roster-grid { display: flex; overflow-x: auto; gap: 1rem; padding-bottom: 0.5rem; }
+    .layout-theater .roster-card { width: 280px; flex-shrink: 0; }
+    .layout-theater .roster-card .loadout-drawer, .layout-theater .roster-card .tag-row { display: none; } /* Hide clutter in theater mode */
+    .layout-theater .theater-stage { flex-grow: 1; overflow-y: auto; background: var(--bg); padding: 2rem 4rem; }
+    .theater-content { max-width: 850px; margin: 0 auto; padding-bottom: 6rem; }
 
-    /* --- Advanced Roster Features (Tags & Loadouts) --- */
-    .tag-row { margin: 0.5rem 0; padding-top: 0.5rem; border-top: 1px dashed #333; }
-    .active-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 0.5rem; min-height: 20px; }
-    .condition-badge { background: rgba(255, 71, 87, 0.15); border: 1px solid var(--danger); color: var(--danger); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; transition: 0.2s; text-transform: uppercase; font-weight: bold; }
-    .condition-badge:hover { background: var(--danger); color: #fff; }
+    /* --- Roster Cards (The Live Widgets) --- */
+    .roster-card { background: var(--card); padding: 1.25rem; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; gap: 0.75rem; box-shadow: 0 4px 10px rgba(0,0,0,0.4); transition: 0.3s; position: relative; overflow: hidden; }
+    
+    /* Dynamic Rings & Glows */
+    .ring-healthy { border-top: 4px solid var(--player-color, var(--info)); }
+    .ring-critical { border-top: 4px solid var(--danger); box-shadow: inset 0 0 15px rgba(255, 71, 87, 0.15), 0 4px 10px rgba(0,0,0,0.4); animation: pulse-crit 2s infinite; }
+    .ring-bleeding { border-top: 4px solid var(--danger); box-shadow: inset 0 0 15px rgba(255, 71, 87, 0.1); }
+    .ring-poisoned { border-top: 4px solid var(--success); box-shadow: inset 0 0 15px rgba(3, 218, 198, 0.1); }
+    @keyframes pulse-crit { 0% { border-color: var(--danger); } 50% { border-color: #800; } 100% { border-color: var(--danger); } }
+
+    .card-header { display: flex; align-items: center; gap: 1rem; }
+    .avatar-thumb { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #000; background: #222; flex-shrink: 0; }
+    .header-info { flex-grow: 1; display: flex; justify-content: space-between; align-items: flex-start; }
+    .header-info h3 { margin: 0; color: #fff; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.05em; line-height: 1; }
+    .header-actions { display: flex; gap: 4px; }
+
+    /* Vitals Pills */
+    .vitals-pill-row { display: flex; justify-content: space-between; gap: 0.5rem; }
+    .vital-pill { background: #111; border: 1px solid #333; padding: 4px 8px; border-radius: 6px; display: flex; align-items: center; gap: 6px; font-size: 1rem; font-weight: bold; color: #fff; flex: 1; justify-content: center; }
+    .vital-pill svg { color: var(--text-muted); }
+
+    /* Inline Edit & Math */
+    .edit-wrapper { position: relative; display: inline-flex; align-items: center; cursor: pointer; min-height: 44px; }
+    .edit-val { min-width: 24px; text-align: center; display: inline-block; }
+    .edit-trigger { opacity: 1; position: absolute; right: -28px; background: rgba(0,0,0,0.8); border: 1px solid #555; border-radius: 4px; padding: 6px; color: var(--info); cursor: pointer; transition: 0.2s; min-width: 32px; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; }
+    .edit-wrapper:hover .edit-trigger { opacity: 1; }
+    .math-input { background: #000; color: var(--info); border: 1px dashed var(--info); border-radius: 3px; font-family: monospace; font-size: 1rem; font-weight: bold; outline: none; width: 55px; text-align: center; padding: 6px 2px; min-height: 38px; }
+
+    /* Tags & Conditions */
+    .tag-row { padding-top: 0.5rem; border-top: 1px dashed #333; display: flex; flex-direction: column; gap: 0.5rem; }
+    .active-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .condition-badge { background: rgba(255, 255, 255, 0.05); border: 1px solid #555; color: #ccc; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; transition: 0.2s; text-transform: uppercase; font-weight: bold; display: flex; align-items: center; gap: 4px; }
+    .condition-badge:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+    .condition-badge svg { width: 12px; height: 12px; }
+    
     .mini-select { background: #111; color: #fff; border: 1px solid #444; padding: 4px; border-radius: 4px; outline: none; font-size: 0.8rem; flex-grow: 1; }
-    .mini-select:focus { border-color: var(--accent); }
-    
-    .loadout-drawer { background: #1a1a24; padding: 0.5rem; border-radius: 4px; border: 1px solid #333; margin-top: 0.5rem; }
-    .loadout-drawer summary { font-size: 0.85rem; font-weight: bold; cursor: pointer; color: #aaa; text-transform: uppercase; letter-spacing: 0.05em; outline: none; display: flex; align-items: center; }
+
+    /* Loadout Drawer */
+    .loadout-drawer { background: #151515; padding: 0.5rem; border-radius: 4px; border: 1px solid #222; }
+    .loadout-drawer summary { font-size: 0.85rem; font-weight: bold; cursor: pointer; color: #888; text-transform: uppercase; letter-spacing: 0.05em; outline: none; display: flex; align-items: center; justify-content: space-between; }
     .loadout-drawer summary::-webkit-details-marker { display: none; }
     .loadout-drawer summary:hover { color: #fff; }
-    .loadout-list { list-style-type: none; padding: 0; margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #ccc; max-height: 150px; overflow-y: auto; border-top: 1px solid #333; padding-top: 0.5rem; }
-    .loadout-list li { padding: 4px 0; border-bottom: 1px dashed #222; display: flex; justify-content: space-between; }
-    .loadout-list li:last-child { border-bottom: none; }
+    .loadout-list { list-style-type: none; padding: 0; margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #ccc; max-height: 140px; overflow-y: auto; border-top: 1px solid #333; padding-top: 0.5rem; display: flex; flex-direction: column; gap: 4px; }
+    .loadout-item { display: flex; justify-content: space-between; align-items: center; background: #0a0a0a; padding: 4px 8px; border-radius: 4px; border: 1px solid #222; }
+    .loadout-controls { display: flex; align-items: center; gap: 8px; }
+    .qty-btn { background: #222; border: 1px solid #444; color: #fff; border-radius: 2px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; }
+    .qty-btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
+    .btn-trash-item { background: transparent; border: none; color: #666; cursor: pointer; padding: 0 4px; }
+    .btn-trash-item:hover { color: var(--danger); }
 
-    /* --- Right Column: Trophy Room --- */
-    .trophy-panel { display: flex; flex-direction: column; gap: 1rem; }
-    .trophy-card { background: #1a1e24; border-top: 4px solid var(--warning); padding: 1.5rem; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 0.75rem; animation: fadein 0.3s ease-out; }
-    .trophy-title { font-size: 1.1rem; color: #fff; font-weight: bold; }
-    .trophy-desc { font-size: 0.9rem; color: #ccc; line-height: 1.5; white-space: pre-wrap; }
+    /* Death Saves UI */
+    .death-saves-ui { background: #1a0f0f; border: 1px dashed var(--danger); border-radius: 4px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; text-align: center; }
+    .death-saves-title { color: var(--danger); font-weight: bold; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.1em; margin: 0; }
+    .save-row { display: flex; justify-content: center; gap: 1rem; align-items: center; font-size: 0.8rem; font-weight: bold; }
+    .save-boxes { display: flex; gap: 4px; }
+    .save-boxes input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+
+    /* --- Slide-Out Trophy Drawer --- */
+    .trophy-drawer { position: fixed; top: 60px; right: 0; width: 400px; height: calc(100vh - 60px); background: rgba(15,15,18,0.95); backdrop-filter: blur(10px); border-left: 1px solid #333; z-index: 500; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; }
+    .trophy-drawer.open { transform: translateX(0); }
+    .drawer-header { padding: 1.5rem; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+    .drawer-header h2 { margin: 0; color: var(--warning); font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.1em; display: flex; align-items: center; gap: 8px; }
+    .drawer-content { padding: 1.5rem; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 1rem; }
     
-    .dispatch-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; border-top: 1px solid #333; padding-top: 1rem; }
-    .trophy-select { flex-grow: 1; background: #111; color: #fff; border: 1px solid #444; padding: 6px; border-radius: 4px; outline: none; font-size: 0.9rem; }
-    .trophy-select:focus { border-color: var(--warning); }
-    
-    /* Buttons & Modals */
-    button { background: var(--card); color: var(--text); cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 0.9rem; border: 1px solid #555; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; }
-    button:hover { background: #333; border-color: #888; }
-    .btn-sm { padding: 4px 8px; font-size: 0.8rem; }
-    .btn-send { background: rgba(3, 218, 198, 0.1); border-color: var(--success); color: var(--success); }
-    .btn-send:hover { background: var(--success); color: #000; }
-    .btn-danger { background: rgba(207, 102, 121, 0.1); border-color: var(--danger); color: var(--danger); padding: 6px 10px; }
+    .trophy-card { background: #111; border-left: 4px solid var(--warning); padding: 1rem; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
+    .trophy-title { font-size: 1.1rem; color: #fff; font-weight: bold; margin-bottom: 0.5rem; }
+    .dispatch-row { display: flex; gap: 0.5rem; margin-top: 1rem; }
+
+    /* --- Quick Roller Tray --- */
+    .dice-tray { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); background: rgba(10,10,12,0.9); border: 1px solid #333; border-bottom: none; border-radius: 8px 8px 0 0; padding: 6px 12px; display: flex; gap: 8px; z-index: 400; box-shadow: 0 -4px 15px rgba(0,0,0,0.5); }
+    .btn-die { background: #222; border: 1px solid #444; color: var(--info); padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; font-family: monospace; display: flex; align-items: center; gap: 6px; }
+    .btn-die:hover { background: var(--info); color: #000; }
+
+    /* --- Theater Stage Typography --- */
+    .read-aloud-block { background: #1a1e24; border-left: 4px solid var(--info); padding: 1.25rem 1.5rem; font-family: 'Georgia', serif; font-style: italic; font-size: 1.15rem; color: #d1d5db; border-radius: 0 4px 4px 0; margin: 1.5rem 0; line-height: 1.6; }
+    .mechanics-block { background: rgba(255,255,255,0.03); border: 1px solid #333; padding: 1.5rem; border-radius: 4px; margin: 1.5rem 0; white-space: pre-wrap; font-size: 1.05rem; line-height: 1.6; }
+    .npc-card { background: #1f1f1f; border-top: 3px solid var(--danger); padding: 1.5rem; border-radius: 6px; margin: 1.5rem 0; white-space: pre-wrap; }
+
+    /* --- Utilities & Modals --- */
+    button.action { background: var(--card); color: var(--text); cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 0.9rem; border: 1px solid #555; padding: 6px 12px; transition: 0.2s; }
+    button.action:hover { background: #333; border-color: #888; }
+    .btn-icon { background: transparent; border: none; padding: 4px; color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+    .btn-icon:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    .btn-danger { background: rgba(207, 102, 121, 0.1); border: 1px solid var(--danger); color: var(--danger); }
     .btn-danger:hover { background: var(--danger); color: #fff; }
-    .btn-icon { background: transparent; border: none; padding: 4px 8px; color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: 0.2s; font-size: 0.9rem; border: 1px solid transparent; }
-    .btn-icon:hover { color: #fff; border-color: #555; background: rgba(255,255,255,0.1); }
 
-    .hidden { display: none !important; }
-
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 999; display: flex; align-items: center; justify-content: center; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 999; display: flex; align-items: center; justify-content: center; }
     .modal-content { background: var(--card); padding: 2rem; border-radius: 8px; border: 1px solid #444; width: 90%; max-width: 500px; box-shadow: 0 10px 40px rgba(0,0,0,0.9); }
-    
     #memo-input { width: 100%; background: #111; color: #fff; border: 1px solid #444; padding: 0.75rem; border-radius: 4px; font-family: monospace; box-sizing: border-box; resize: vertical; margin-bottom: 1.5rem; outline: none; }
-    #memo-input:focus { border-color: var(--danger); }
-    #memo-target-select { width: 100%; background: #111; color: #fff; border: 1px solid #444; padding: 10px; border-radius: 4px; font-weight: bold; margin-bottom: 1rem; outline: none; }
-    #memo-target-select:focus { border-color: var(--danger); }
-
-    #toast-container { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+    
+    #toast-container { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
     .toast { background: rgba(10, 10, 12, 0.95); color: #fff; padding: 0.75rem 1.5rem; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 0.95rem; border: 1px solid var(--accent); animation: fadein 0.3s, fadeout 0.3s 2.7s forwards; }
     @keyframes fadein { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
+
+  <script>
+    const ICONS = {
+      heart: `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`,
+      shield: `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>`,
+      eye: `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>`,
+      coin: `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 6v12M9 9h6M9 15h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+      transmit: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`,
+      ping: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>`,
+      close: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
+      edit: `<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`,
+      trophy: `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>`,
+      dice: `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><circle cx="15.5" cy="15.5" r="1.5"></circle><circle cx="15.5" cy="8.5" r="1.5"></circle><circle cx="8.5" cy="15.5" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle></svg>`,
+      tag: `<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>`
+    };
+  </script>
 
   <nav class="navbar">
     <div class="brand">
@@ -131,11 +202,26 @@
       SHOWRUNNER // DASHBOARD
     </div>
     <div class="nav-links">
+      <div style="display:flex; gap: 8px; margin-right: 1.5rem; border-right: 1px solid #333; padding-right: 1.5rem;">
+        <button class="btn-global-action toggle-active" id="btn-tactical" onclick="setMode('tactical')">TACTICAL</button>
+        <button class="btn-global-action" id="btn-theater" onclick="setMode('theater')">THEATER</button>
+      </div>
       <a href="index.html" class="nav-link active">Dashboard</a>
       <a href="dm-players.html" class="nav-link">DM Players</a>
       <a href="notes.html" class="nav-link">Notes</a>
       <a href="loot.html" class="nav-link">Loot</a>
       <a href="data-forge.html" class="nav-link">Data Forge</a>
+      
+      <div style="display:flex; gap: 8px; margin-left: 1.5rem; border-left: 1px solid #333; padding-left: 1.5rem;">
+        <select id="global-rest" class="mini-select" style="width: auto; cursor:pointer;" onchange="applyRest(this.value); this.value='';">
+          <option value="" disabled selected>Camp...</option>
+          <option value="Short">Short Rest</option>
+          <option value="Long">Long Rest</option>
+        </select>
+        <button class="btn-global-action" onclick="toggleDrawer()" style="color:var(--warning); border-color:var(--warning); background:transparent;">
+          <script>document.write(ICONS.trophy)</script> QUEUE (<span id="queue-count">0</span>)
+        </button>
+      </div>
     </div>
   </nav>
 
@@ -144,58 +230,67 @@
   <div id="memo-modal" class="modal-overlay hidden" onclick="if(event.target===this) closeMemoModal()">
     <div class="modal-content" style="border-top: 4px solid var(--danger);">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 0.5rem;">
-        <h2 style="color: var(--danger); margin: 0;">[ PRIORITY TRANSMISSION ]</h2>
-        <button class="btn-icon" style="padding: 2px 6px;" onclick="closeMemoModal()">✕</button>
+        <h2 style="color: var(--danger); margin: 0; display:flex; align-items:center; gap:8px;"><script>document.write(ICONS.transmit)</script> PRIORITY TRANSMISSION</h2>
+        <button class="btn-icon" style="border: 1px solid #444;" onclick="closeMemoModal()"><script>document.write(ICONS.close)</script></button>
       </div>
       <p style="color: #aaa; font-size: 0.9rem; margin-top: 0; margin-bottom: 1.5rem;">Override HUDs with an un-closable directive.</p>
       
-      <label style="color:#fff; font-size:0.85rem; font-weight:bold; text-transform:uppercase;">Select Target:</label>
-      <select id="memo-target-select"></select>
-
-      <label style="color:#fff; font-size:0.85rem; font-weight:bold; text-transform:uppercase;">Transmission Payload:</label>
+      <select id="memo-target-select" class="mini-select" style="width: 100%; margin-bottom: 1rem; padding: 8px;"></select>
       <textarea id="memo-input" rows="4" placeholder="You hear a scratching inside your skull..."></textarea>
       
       <div style="display:flex; justify-content:space-between;">
-        <button class="btn-danger" style="padding: 10px 20px;" onclick="sendMemo()">TRANSMIT SIGNAL</button>
-        <button onclick="closeMemoModal()">Cancel</button>
+        <button class="action btn-danger" style="padding: 8px 16px;" onclick="sendMemo()">TRANSMIT SIGNAL</button>
+        <button class="action" onclick="closeMemoModal()">Cancel</button>
       </div>
     </div>
   </div>
 
-  <div class="dashboard-layout">
+  <div id="trophy-drawer" class="trophy-drawer">
+    <div class="drawer-header">
+      <h2><script>document.write(ICONS.trophy)</script> Global Trophy Queue</h2>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-icon" style="border: 1px solid var(--success); color: var(--success);" onclick="manuallyForgeTrophy()" title="Forge Custom Trophy">+</button>
+        <button class="btn-icon" style="border: 1px solid #444;" onclick="toggleDrawer()"><script>document.write(ICONS.close)</script></button>
+      </div>
+    </div>
+    <div class="drawer-content" id="trophy-queue-container">
+      <div style="color: #666; font-style: italic;">Loading queue...</div>
+    </div>
+  </div>
+
+  <div id="dashboard-wrapper" class="workspace layout-tactical">
     
-    <div>
-      <div class="section-title">
-        Active Roster
-        <button class="btn-icon" style="border: 1px solid #444; color: var(--danger);" onclick="openMemoModal()" title="Global Transmission">✉️ TX ALL</button>
-      </div>
+    <div class="roster-wrapper">
       <div class="roster-grid" id="roster-container">
-        <div style="color: #666; font-style: italic;">Loading roster...</div>
+        <div style="color: #666; font-style: italic; padding: 2rem;">Loading live feed...</div>
       </div>
     </div>
 
-    <div>
-      <div class="section-title" style="color: var(--warning);">
-        Global Trophy Queue
-        <div style="display:flex; gap:8px;">
-          <button onclick="manuallyForgeTrophy()" style="background:transparent; color:var(--success); border:1px solid var(--success); padding:2px 6px; font-size:0.7rem; cursor:pointer;">+ FORGE TROPHY</button>
-          <button onclick="init()" style="background:transparent; color:#888; border:1px solid #444; padding:2px 6px; font-size:0.7rem; cursor:pointer;">⟳ SYNC</button>
-        </div>
-      </div>
-      <div class="trophy-panel" id="trophy-queue-container">
-        <div style="color: #666; font-style: italic;">Loading queue...</div>
+    <div class="theater-stage" id="theater-stage">
+      <div class="theater-content" id="theater-content">
+        <h2 style="color:#555; text-align:center; margin-top:4rem;">No Active Room Prepped.</h2>
       </div>
     </div>
 
+  </div>
+
+  <div class="dice-tray">
+    <button class="btn-die" onclick="rollDice(4)"><script>document.write(ICONS.dice)</script> d4</button>
+    <button class="btn-die" onclick="rollDice(6)"><script>document.write(ICONS.dice)</script> d6</button>
+    <button class="btn-die" onclick="rollDice(8)"><script>document.write(ICONS.dice)</script> d8</button>
+    <button class="btn-die" onclick="rollDice(10)"><script>document.write(ICONS.dice)</script> d10</button>
+    <button class="btn-die" onclick="rollDice(12)"><script>document.write(ICONS.dice)</script> d12</button>
+    <button class="btn-die" onclick="rollDice(20)"><script>document.write(ICONS.dice)</script> d20</button>
   </div>
 
   <script>
     const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
-    let appState = { players: [], achievement_queue: [] };
+    let appState = { players: [], achievement_queue: [], campaign_notes: { rooms: [] } };
     let isPushing = false;
+    let isTheaterMode = false;
     const colorPalette = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe'];
 
-    // --- The Optimistic Locking Push Engine ---
+    // --- State Engine ---
     async function mutateAndPush(mutationCallback, successMessage) {
       if (isPushing) return showToast("Busy syncing...");
       isPushing = true;
@@ -220,16 +315,11 @@
           data: latestState 
         };
         
-        const postController = new AbortController();
-        const postTimeoutId = setTimeout(() => postController.abort(), 8000);
-        
         const postRes = await fetch(WORKER_URL, { 
           method: 'POST', 
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          signal: postController.signal
+          body: JSON.stringify(payload)
         });
-        clearTimeout(postTimeoutId);
         
         if (!postRes.ok) throw new Error("Version collision");
 
@@ -238,8 +328,7 @@
         if (successMessage) showToast(successMessage);
 
       } catch (e) {
-        console.error(e);
-        showToast("Sync collision. Refreshing to latest live state...");
+        showToast("Sync collision. Refreshing live state...");
         await init(); 
       } finally {
         isPushing = false;
@@ -252,21 +341,85 @@
         const response = await fetch(WORKER_URL);
         if (response.ok) {
           const data = await response.json();
-          if (data) {
-              appState.players = data.players || [];
-              appState.achievement_queue = data.achievement_queue || [];
-          }
+          if (data) appState = data;
         }
-      } catch (e) {
-        console.warn("Fetch failed.");
-      }
+      } catch (e) { console.warn("Fetch failed."); }
       renderAll();
     }
 
-    // --- UI Rendering ---
+    // --- Core UI & Modes ---
+    function setMode(mode) {
+      isTheaterMode = (mode === 'theater');
+      document.getElementById('btn-tactical').classList.toggle('toggle-active', !isTheaterMode);
+      document.getElementById('btn-theater').classList.toggle('toggle-active', isTheaterMode);
+      document.getElementById('dashboard-wrapper').className = isTheaterMode ? 'workspace layout-theater' : 'workspace layout-tactical';
+      renderAll();
+    }
+
+    function toggleDrawer() { document.getElementById('trophy-drawer').classList.toggle('open'); }
+
+    function rollDice(sides) {
+      const result = Math.floor(Math.random() * sides) + 1;
+      showToast(`Rolled D${sides}: [ ${result} ]`);
+    }
+
+    function applyRest(type) {
+      if(!confirm(`Apply ${type} rest to all active players?`)) return;
+      mutateAndPush((state) => {
+        state.players.forEach(p => {
+          if(p.is_deleted) return;
+          if(type === 'Long') {
+             if(p.stats) p.stats.hp_current = p.stats.hp_max || 0;
+             if(p.status && p.status.conditions) {
+                p.status.conditions = p.status.conditions.filter(c => !['poisoned','blinded','bleeding','critical trauma'].includes(c.toLowerCase()));
+             }
+          }
+        });
+      }, `Global ${type} Rest Applied.`);
+    }
+
+    // --- Dynamic Renderers ---
     function renderAll() {
       renderRoster();
       renderTrophyQueue();
+      if(isTheaterMode) renderStage();
+    }
+
+    function makeMathEditable(val, pIdx, fieldName) {
+      return `<span class="edit-wrapper">
+                <span class="edit-val">${val}</span>
+                <button class="edit-trigger" onclick="event.stopPropagation(); startMathEdit(this, ${pIdx}, '${fieldName}')">${ICONS.edit}</button>
+              </span>`;
+    }
+
+    function startMathEdit(el, pIdx, fieldName) {
+      const parent = el.closest('.edit-wrapper');
+      const textSpan = parent.querySelector('.edit-val');
+      const currentVal = textSpan.innerText;
+      
+      const input = document.createElement('input');
+      input.className = 'math-input';
+      input.value = currentVal;
+      
+      input.onblur = () => {
+         let text = input.value.trim();
+         let delta = 0; let isDelta = false;
+         if(text.startsWith('+')) { delta = parseInt(text.substring(1)); isDelta = true; }
+         else if(text.startsWith('-')) { delta = -parseInt(text.substring(1)); isDelta = true; }
+
+         mutateAndPush((state) => {
+            if(!state.players[pIdx].stats) state.players[pIdx].stats = {};
+            let baseVal = parseInt(state.players[pIdx].stats[fieldName]) || 0;
+            state.players[pIdx].stats[fieldName] = isDelta ? (baseVal + delta) : (parseInt(text) || 0);
+         }, null);
+      };
+      
+      input.onkeydown = (e) => { if(e.key === 'Enter') input.blur(); };
+      input.onclick = (e) => e.stopPropagation();
+      
+      parent.innerHTML = '';
+      parent.appendChild(input);
+      input.focus();
     }
 
     function renderRoster() {
@@ -277,142 +430,205 @@
       }
 
       let html = '';
-      appState.players.forEach((p, idx) => {
+      appState.players.forEach((p, pIdx) => {
         if (p.is_deleted) return;
-        const color = colorPalette[idx % colorPalette.length];
+        const color = colorPalette[pIdx % colorPalette.length];
         
-        // Prepare Conditions
-        const activeConditions = (p.status?.conditions || []).map((c, cIdx) => 
-          `<span class="badge condition-badge" onclick="removeCondition('${escapeJS(p.name)}', ${cIdx})" title="Click to clear tag">${escapeHtml(c)} &times;</span>`
+        // Conditions & Ring VFX
+        let ringClass = 'ring-healthy';
+        const conditions = p.status?.conditions || [];
+        const cLower = conditions.map(c => c.toLowerCase());
+        
+        if (cLower.some(c => c.includes('critical'))) ringClass = 'ring-critical';
+        else if (cLower.some(c => c.includes('bleeding'))) ringClass = 'ring-bleeding';
+        else if (cLower.some(c => c.includes('poison'))) ringClass = 'ring-poisoned';
+
+        const activeConditionsHtml = conditions.map((c, cIdx) => 
+          `<span class="condition-badge" onclick="removeCondition('${escapeJS(p.name)}', ${cIdx})" title="Click to clear">${ICONS.tag} ${escapeHtml(c)}</span>`
         ).join('');
 
-        // Prepare Inventory Loadout
+        // Inventory
         const activeInventory = (p.inventory || []).filter(i => !i.is_deleted);
-        const inventoryHtml = activeInventory.map(i => 
-          `<li><span>${escapeHtml(i.name)}</span> <span style="color:#888">x${i.quantity || 1}</span></li>`
-        ).join('') || "<li style='color:#666; border:none;'>No items equipped.</li>";
+        const inventoryHtml = activeInventory.map((i, iIdx) => `
+          <li class="loadout-item">
+            <span>${escapeHtml(i.name)}</span> 
+            <div class="loadout-controls">
+              <button class="qty-btn" onclick="adjQty(${pIdx}, ${iIdx}, -1)">-</button>
+              <span style="display:inline-block; width:20px; text-align:center;">${i.quantity || 1}</span>
+              <button class="qty-btn" onclick="adjQty(${pIdx}, ${iIdx}, 1)">+</button>
+              <button class="btn-trash-item" title="Consume/Delete" onclick="trashInvItem(${pIdx}, ${iIdx})">${ICONS.close}</button>
+            </div>
+          </li>
+        `).join('') || "<li style='color:#666; border:none; text-align:center;'>Empty.</li>";
+
+        // Lower Panel Logic (Death Saves vs Loadout)
+        const isDying = (p.stats?.hp_current !== undefined) && (p.stats.hp_current <= 0);
+        let lowerPanel = '';
+
+        if (isDying) {
+           lowerPanel = `
+             <div class="death-saves-ui">
+               <h4 class="death-saves-title">DEATH SAVES</h4>
+               <div class="save-row">
+                 <span style="color:var(--success)">PASS</span>
+                 <div class="save-boxes"><input type="checkbox"><input type="checkbox"><input type="checkbox"></div>
+               </div>
+               <div class="save-row">
+                 <span style="color:var(--danger)">FAIL</span>
+                 <div class="save-boxes"><input type="checkbox"><input type="checkbox"><input type="checkbox"></div>
+               </div>
+             </div>
+           `;
+        } else {
+           lowerPanel = `
+             <details class="loadout-drawer">
+               <summary><span>▶ View Loadout (${activeInventory.length})</span> <button class="btn-icon" style="padding:0; color:var(--success);" onclick="event.preventDefault(); forgeCustomItem(${pIdx})" title="Quick Add">+</button></summary>
+               <ul class="loadout-list">${inventoryHtml}</ul>
+             </details>
+           `;
+        }
 
         html += `
-          <div class="roster-card" style="--player-color: ${color}">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <h3>${escapeHtml(p.name)}</h3>
-              <button class="btn-icon" onclick="openMemoModal('${escapeJS(p.name)}')" title="Transmit Override Message">✉️ TX</button>
+          <div class="roster-card ${ringClass}" style="--player-color: ${color}">
+            <div class="card-header">
+              <img src="${p.name.toLowerCase().split(' ')[0]}.png" class="avatar-thumb" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\\'http://www.w3.org/2000/svg\\\' fill=\\\'%23555\\\' viewBox=\\\'0 0 24 24\\\'><path d=\\\'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\\\'/></svg>'">
+              <div class="header-info">
+                <h3>${escapeHtml(p.name)}</h3>
+                <div class="header-actions">
+                  <button class="btn-icon" onclick="sendPing('${escapeJS(p.name)}')" title="Ping Player HUD">${ICONS.ping}</button>
+                  <button class="btn-icon" onclick="openMemoModal('${escapeJS(p.name)}')" title="Transmit Priority Directive">${ICONS.transmit}</button>
+                </div>
+              </div>
             </div>
             
-            <div class="vitals-row" style="margin-top:0.5rem;">
-              <div class="vital-stat">HP <span>${p.stats?.hp_max || 0}</span></div>
-              <div class="vital-stat">AC <span>${p.stats?.ac || 0}</span></div>
-              <div class="vital-stat">PP <span>${p.stats?.passive_perception || 0}</span></div>
-              <div class="vital-stat">Gold <span style="color:var(--warning);">${p.gold || 0}</span></div>
+            <div class="vitals-pill-row">
+              <div class="vital-pill">${ICONS.heart} <span>${makeMathEditable(p.stats?.hp_current || 0, pIdx, 'hp_current')} / ${makeMathEditable(p.stats?.hp_max || 0, pIdx, 'hp_max')}</span></div>
+              <div class="vital-pill">${ICONS.shield} <span>${makeMathEditable(p.stats?.ac || 0, pIdx, 'ac')}</span></div>
+              <div class="vital-pill">${ICONS.eye} <span>${makeMathEditable(p.stats?.passive_perception || 0, pIdx, 'passive_perception')}</span></div>
+            </div>
+            
+            <div style="text-align:center; font-size:0.8rem; color:#aaa; margin-top: -4px;">
+               Gold: <span style="color:var(--warning); font-weight:bold;">${makeMathEditable(p.gold || 0, pIdx, 'gold')}</span>
             </div>
 
             <div class="tag-row">
-              <div class="active-tags">${activeConditions}</div>
-              <div style="display:flex; gap:0.5rem; margin-top: 5px;">
-                <select id="condition-select-${idx}" class="mini-select">
-                  <option value="" disabled selected>+ Tag Condition...</option>
+              <div class="active-tags">${activeConditionsHtml}</div>
+              <div style="display:flex; gap:0.5rem; margin-top: 2px;">
+                <select id="condition-select-${pIdx}" class="mini-select">
+                  <option value="" disabled selected>+ Add Tag...</option>
                   <option value="Poisoned">Poisoned</option>
                   <option value="Bleeding">Bleeding</option>
                   <option value="Blinded">Blinded</option>
+                  <option value="Charmed">Charmed</option>
+                  <option value="Paralyzed">Paralyzed</option>
                   <option value="Critical Trauma">Critical Trauma</option>
                 </select>
-                <button class="btn-sm" style="background:#222; border:1px solid #444;" onclick="addCondition('${escapeJS(p.name)}', ${idx})">Add</button>
+                <button class="action btn-sm" onclick="addCondition('${escapeJS(p.name)}', ${pIdx})">Apply</button>
               </div>
             </div>
 
-            <details class="loadout-drawer">
-              <summary>▶ View Loadout (${activeInventory.length} Items)</summary>
-              <ul class="loadout-list">${inventoryHtml}</ul>
-            </details>
+            ${lowerPanel}
           </div>
         `;
       });
-      container.innerHTML = html || `<div style="color: #666; font-style: italic;">All players deleted.</div>`;
+      container.innerHTML = html;
     }
 
-    function renderTrophyQueue() {
-      const container = document.getElementById('trophy-queue-container');
-      if (!appState.achievement_queue || appState.achievement_queue.length === 0) {
-        container.innerHTML = `<div style="padding:1.5rem; background:#111; border:1px dashed #333; border-radius:6px; color:#666; text-align:center;">Trophy Queue is empty.</div>`;
+    function renderStage() {
+      const container = document.getElementById('theater-content');
+      const room = appState.campaign_notes?.rooms?.find(r => !r.is_deleted);
+      
+      if (!room) {
+        container.innerHTML = `<h2 style="color:#555; text-align:center; margin-top:4rem;">No Active Room Found.</h2><p style="text-align:center; color:#444;">Prep a room in the Notes tab to project it here.</p>`;
         return;
       }
 
+      let html = `<h1 style="color:var(--accent); font-size:2.5rem; border-bottom:1px solid #333; padding-bottom:10px;">${escapeHtml(room.room_id || room.title)}</h1>`;
+      if (room.readaloud) html += `<div class="read-aloud-block">${escapeHtml(room.readaloud)}</div>`;
+      
+      const mechanics = room.mechanics || "";
+      const mechString = Array.isArray(mechanics) ? mechanics.join('\n') : mechanics;
+      if (mechString) html += `<div class="mechanics-block">${parseMath(escapeHtml(mechString))}</div>`;
+
+      if (room.npcs && room.npcs.length > 0) {
+        room.npcs.forEach(npc => { if(!npc.is_deleted) html += `<div class="npc-card">${escapeHtml(npc.raw_text)}</div>`; });
+      }
+
+      container.innerHTML = html;
+    }
+
+    function parseMath(text) { return text ? text.replace(/\b(\d+d\d+(?:\s*[+-]\s*\d+)?|DC\s*\d+)\b/gi, '<span style="color:#ffeaa7; font-weight:bold;">$&</span>') : ''; }
+
+    function renderTrophyQueue() {
+      const container = document.getElementById('trophy-queue-container');
+      const q = appState.achievement_queue || [];
+      const activeQ = q.filter(t => !t.is_deleted);
+      
+      document.getElementById('queue-count').innerText = activeQ.length;
+
+      if (activeQ.length === 0) {
+        container.innerHTML = `<div style="padding:1.5rem; background:#111; border:1px dashed #333; border-radius:6px; color:#666; text-align:center;">Queue is empty.</div>`;
+        return;
+      }
+
+      const playerOptions = appState.players.filter(p => !p.is_deleted).map(p => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`).join('');
+
       let html = '';
-      let hasVisible = false;
-
-      // Build active player dropdown options
-      const playerOptions = appState.players
-        .filter(p => !p.is_deleted)
-        .map(p => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`)
-        .join('');
-
-      appState.achievement_queue.forEach((trophy, idx) => {
+      q.forEach((trophy, idx) => {
         if (trophy.is_deleted) return;
-        hasVisible = true;
-        
         html += `
           <div class="trophy-card">
             <div class="trophy-title">${escapeHtml(trophy.name)}</div>
-            <div class="trophy-desc">${escapeHtml(trophy.description)}</div>
+            <div style="font-size:0.85rem; color:#aaa; margin-bottom:10px;">${escapeHtml(trophy.description)}</div>
             <div class="dispatch-row">
-              <select id="trophy-target-${idx}" class="trophy-select">
+              <select id="trophy-target-${idx}" class="mini-select" style="padding: 6px;">
                 <option value="" disabled selected>Assign to...</option>
                 ${playerOptions}
               </select>
-              <button class="btn-send" onclick="dispatchTrophy(${idx})">Send</button>
-              <button class="btn-danger" onclick="discardTrophy(${idx})" title="Discard">X</button>
+              <button class="action btn-send btn-sm" onclick="dispatchTrophy(${idx})">Send</button>
+              <button class="action btn-danger btn-sm" onclick="discardTrophy(${idx})">${ICONS.close}</button>
             </div>
           </div>
         `;
       });
-
-      container.innerHTML = hasVisible ? html : `<div style="padding:1.5rem; background:#111; border:1px dashed #333; border-radius:6px; color:#666; text-align:center;">Trophy Queue is empty.</div>`;
+      container.innerHTML = html;
     }
 
-    // --- Core Dispatch & Comm Actions ---
-    function openMemoModal(preselectedPlayerName = null) {
+    // --- Action Controllers ---
+    function sendPing(playerName) {
+      mutateAndPush((state) => {
+        const p = state.players.find(x => x.name === playerName);
+        if (p) p.override = { is_active: true, type: "ping" };
+      }, `Pinged ${playerName}.`);
+    }
+
+    function openMemoModal(preselectedName = null) {
       const selectEl = document.getElementById('memo-target-select');
-      
-      // Rebuild options dynamically
       let optionsHtml = `<option value="ALL">ALL PLAYERS (BROADCAST)</option>`;
-      appState.players.forEach(p => {
-         if (!p.is_deleted) optionsHtml += `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`;
-      });
+      appState.players.forEach(p => { if (!p.is_deleted) optionsHtml += `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`; });
       selectEl.innerHTML = optionsHtml;
-
-      if (preselectedPlayerName) {
-         selectEl.value = preselectedPlayerName;
-      } else {
-         selectEl.value = "ALL";
-      }
-
+      selectEl.value = preselectedName || "ALL";
       document.getElementById('memo-input').value = "";
       document.getElementById('memo-modal').classList.remove('hidden');
       document.getElementById('memo-input').focus();
     }
 
-    function closeMemoModal() {
-      document.getElementById('memo-modal').classList.add('hidden');
-    }
+    function closeMemoModal() { document.getElementById('memo-modal').classList.add('hidden'); }
 
     function sendMemo() {
       const target = document.getElementById('memo-target-select').value;
       let text = document.getElementById('memo-input').value.trim();
       if (!text) return showToast("Message cannot be empty.");
-      
-      text = text.substring(0, 500).replace(/[<>]/g, ''); // Sanitize
+      text = text.substring(0, 500).replace(/[<>]/g, '');
 
       mutateAndPush((state) => {
         if (target === "ALL") {
-           state.players.forEach(p => {
-             if (!p.is_deleted) p.override = { is_active: true, message: text };
-           });
+           state.players.forEach(p => { if (!p.is_deleted) p.override = { is_active: true, message: text }; });
         } else {
            const p = state.players.find(x => x.name === target);
            if (p) p.override = { is_active: true, message: text };
         }
       }, target === "ALL" ? "Global transmission sent." : `Transmission sent to ${target}.`);
-      
       closeMemoModal();
     }
 
@@ -424,44 +640,57 @@
       mutateAndPush((state) => {
         const p = state.players.find(x => x.name === playerName);
         if (!p) return;
-        
         if (!p.status) p.status = { conditions: [] };
         if (!p.status.conditions) p.status.conditions = [];
-        
-        if (!p.status.conditions.includes(condition)) {
-          p.status.conditions.push(condition);
-        }
-      }, `Condition applied.`);
-      
-      selectEl.value = ""; // Reset dropdown
+        if (!p.status.conditions.includes(condition)) p.status.conditions.push(condition);
+      }, null);
+      selectEl.value = "";
     }
 
     function removeCondition(playerName, conditionIndex) {
       mutateAndPush((state) => {
         const p = state.players.find(x => x.name === playerName);
-        if (p && p.status && p.status.conditions) {
-          p.status.conditions.splice(conditionIndex, 1);
-        }
-      }, `Condition removed.`);
+        if (p && p.status && p.status.conditions) p.status.conditions.splice(conditionIndex, 1);
+      }, null);
+    }
+
+    function adjQty(pIdx, iIdx, delta) {
+      mutateAndPush((state) => {
+        const item = state.players[pIdx].inventory[iIdx];
+        item.quantity = Math.max(1, (item.quantity || 1) + delta);
+      }, null);
+    }
+
+    function trashInvItem(pIdx, iIdx) {
+      if(!confirm("Permanently consume/trash this item?")) return;
+      mutateAndPush((state) => {
+        state.players[pIdx].inventory[iIdx].is_deleted = true;
+      }, null);
+    }
+
+    function forgeCustomItem(pIdx) {
+      let name = prompt("Quick Item Name:");
+      if(!name) return;
+      mutateAndPush((state) => {
+         if(!state.players[pIdx].inventory) state.players[pIdx].inventory = [];
+         state.players[pIdx].inventory.push({ name: name.substring(0,50).replace(/[<>]/g,''), flavor_text: "Item", mechanics: "Forged on the fly.", quantity: 1, is_deleted: false });
+      }, null);
     }
 
     function manuallyForgeTrophy() {
       let name = prompt("Trophy Name:");
       if (!name) return;
-      name = name.substring(0, 60).replace(/[<>]/g, ''); // Sanitize
-
-      let desc = prompt("Reward/Description:");
-      desc = desc ? desc.substring(0, 200).replace(/[<>]/g, '') : "A heroic deed.";
+      let desc = prompt("Reward/Description:") || "A heroic deed.";
       
       mutateAndPush((state) => {
         if (!state.achievement_queue) state.achievement_queue = [];
         state.achievement_queue.push({
-          name: name,
-          description: desc,
+          name: name.substring(0, 60).replace(/[<>]/g, ''),
+          description: desc.substring(0, 200).replace(/[<>]/g, ''),
           is_acknowledged: false, is_deleted: false,
           rewards: { gold: 0, items: [] }
         });
-      }, "Trophy forged and added to queue.");
+      }, "Trophy queued.");
     }
 
     function dispatchTrophy(queueIndex) {
@@ -470,43 +699,31 @@
       if (!targetPlayerName) return showToast("Select a player first.");
 
       mutateAndPush((state) => {
-        const trophy = state.achievement_queue[queueIndex];
-        trophy.is_deleted = true;
-        
+        state.achievement_queue[queueIndex].is_deleted = true;
         const p = state.players.find(x => x.name === targetPlayerName);
-        if (!p) throw new Error("Player not found in sync state.");
+        if (!p) throw new Error("Player not found.");
 
         if (!p.achievements) p.achievements = { pending: [], claimed: [] };
         if (!p.achievements.pending) p.achievements.pending = [];
         
-        const { is_deleted, ...cleanTrophy } = trophy;
+        const { is_deleted, ...cleanTrophy } = state.achievement_queue[queueIndex];
         p.achievements.pending.push(cleanTrophy);
-
-      }, `Trophy sent to ${targetPlayerName}!`);
+      }, `Trophy sent to ${targetPlayerName}.`);
     }
 
     function discardTrophy(queueIndex) {
-      if(!confirm("Are you sure you want to discard this achievement?")) return;
-      
-      mutateAndPush((state) => {
-        state.achievement_queue[queueIndex].is_deleted = true;
-      }, "Trophy discarded.");
+      mutateAndPush((state) => { state.achievement_queue[queueIndex].is_deleted = true; }, null);
     }
 
-    // --- Utilities ---
     function showToast(msg) {
       const c = document.getElementById('toast-container');
-      const t = document.createElement('div');
-      t.className = 'toast'; t.innerText = msg;
+      const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
       c.appendChild(t); setTimeout(() => t.remove(), 3000);
     }
     function escapeHtml(str) { return str ? str.toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
     function escapeJS(str) { return str ? str.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;') : ''; }
 
-    // Boot
     init();
-    
-    // Auto-poll every 30s to keep Dashboard fresh
     setInterval(init, 30000);
   </script>
 </body>
