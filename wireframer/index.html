@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sovereign Wireframer</title>
-    <!-- Dependencies -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300aaff' stroke-width='1.5' stroke-linejoin='round'%3E%3C!-- Cube --%3E%3Cpolygon points='12 12 20 8 12 4 4 8 12 12'/%3E%3Cpolyline points='4 8 4 18 12 22 20 18 20 8'/%3E%3Cline x1='12' y1='12' x2='12' y2='22'/%3E%3C!-- Crown --%3E%3Cpolyline points='8 4 6 0 12 2 18 0 16 4'/%3E%3C/svg%3E">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
@@ -21,11 +21,12 @@
             --text-main: #eee;
         }
 
-        /* Base Shell */
+        /* Base Shell & Grid Layout */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
             font-family: system-ui, sans-serif; 
             display: grid; 
+            grid-template-rows: 50px 1fr;
             grid-template-columns: 250px 1fr 350px; 
             height: 100vh; 
             overflow: hidden; 
@@ -33,10 +34,26 @@
             color: var(--text-main); 
         }
 
+        #global-header {
+            grid-column: 1 / -1; 
+            background: var(--bg-header);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 10px;
+            z-index: 20;
+        }
+
+        #global-header .branding { font-weight: 900; letter-spacing: 2px; color: var(--accent); margin-right: 20px; font-size: 0.9rem;}
+        #global-header button { background: #3c3c3c; color: #ccc; border: 1px solid #555; border-radius: 3px; padding: 6px 12px; font-size: 0.8rem; cursor: pointer; transition: 0.1s; }
+        #global-header button:hover { background: #555; }
+        #global-header button:active { background: #222; }
+
         @media (max-width: 900px) {
             body { 
                 grid-template-columns: 1fr; 
-                grid-template-rows: auto 1fr auto; 
+                grid-template-rows: 50px auto 1fr auto; 
                 overflow-y: auto; 
             }
             #canvas-wrapper { min-height: 60vh; }
@@ -50,7 +67,7 @@
         
         /* Canvas */
         #canvas-wrapper { display: flex; flex-direction: column; background: var(--bg-canvas); position: relative; }
-        #canvas-toolbar { padding: 10px; background: var(--bg-header); border-bottom: 1px solid var(--border-color); display: flex; gap: 8px; z-index: 5; }
+        #canvas-toolbar { padding: 10px; background: var(--bg-header); border-bottom: 1px solid var(--border-color); display: flex; justify-content: center; gap: 8px; z-index: 5; }
         #canvas-toolbar button { background: #3c3c3c; color: #ccc; border: 1px solid #555; border-radius: 3px; padding: 12px 16px; font-size: 0.85rem; cursor: pointer; transition: 0.1s; min-height: 44px; min-width: 44px; }
         #canvas-toolbar button:hover { background: #555; }
         #canvas-toolbar button:active { background: #222; }
@@ -73,9 +90,23 @@
         .dragging { opacity: 0.5; }
         .active-node { box-shadow: 0 0 0 2px var(--accent) !important; z-index: 2; }
         .x-ray [data-type="container"] { border: 2px dashed #ff00ff !important; background: rgba(255, 0, 255, 0.05) !important; }
+        
+        /* Inspector Elements */
+        .insp-select { width: 100%; background: var(--bg-panel); color: #eee; border: 1px solid #444; padding: 6px; margin-bottom: 10px; outline: none; }
     </style>
 </head>
 <body>
+    <div id="global-header">
+        <div class="branding">WIREFRAMER // V1.0.1</div>
+        <div style="flex:1;"></div>
+        <button id="btn-undo">Undo</button>
+        <button id="btn-redo">Redo</button>
+        <div style="width: 1px; height: 20px; background: #555; margin: 0 10px;"></div>
+        <button id="btn-export">Export YAML</button>
+        <button id="btn-md">Copy Spec</button>
+        <button id="btn-nuke" style="background: rgba(255, 68, 68, 0.1); border-color: #ff4444; color: #ff4444; margin-left: 10px;">Reset Canvas</button>
+    </div>
+
     <div class="panel" id="sidebar">
         <header>Primitives</header>
         <div id="toolbar">
@@ -85,19 +116,14 @@
             <div class="primitive" draggable="true" data-type="pill">Data Pill</div>
         </div>
         <header>Inspector</header>
-        <div id="inspector" style="padding: 15px; font-size: 0.85rem; color: #888;">Select a node on the canvas.</div>
+        <div id="inspector" style="padding: 15px; font-size: 0.85rem; color: #888; overflow-y: auto;">Select a node on the canvas.</div>
     </div>
 
     <div id="canvas-wrapper">
         <div id="canvas-toolbar">
-            <button id="btn-mobile">Mobile</button>
-            <button id="btn-desktop">Desktop</button>
+            <button id="btn-mobile">Mobile View</button>
+            <button id="btn-desktop">Desktop View</button>
             <button id="btn-xray">X-Ray Toggle</button>
-            <div style="flex:1"></div>
-            <button id="btn-undo">Undo</button>
-            <button id="btn-redo">Redo</button>
-            <button id="btn-export">Export YAML</button>
-            <button id="btn-md">Copy Spec</button>
         </div>
         <div id="canvas-container">
             <div id="canvas"></div>
@@ -168,6 +194,26 @@
                 }
             }
 
+            // Recursive Deep Clone for Duplicate Action
+            deepCloneWithNewIds(node) {
+                const clone = structuredClone(node);
+                const refreshIds = (n) => {
+                    n.id = generateUUID();
+                    if (n.children) n.children.forEach(refreshIds);
+                };
+                refreshIds(clone);
+                return clone;
+            }
+
+            // Global Canvas Reset
+            resetCanvas() {
+                if (confirm("Are you sure you want to nuke the canvas? This cannot be undone.")) {
+                    this.activeNodeId = null;
+                    this.update([{ id: generateUUID(), type: 'container', props: { alias: 'Root', notes: '', spacing: 'lg', direction: 'column' }, children: [] }]);
+                    this.buildInspector();
+                }
+            }
+
             // Tree Utilities
             findNodeInfo(id, currentNodes = this.tree, parent = null, index = -1) {
                 for (let i = 0; i < currentNodes.length; i++) {
@@ -223,7 +269,7 @@
                     const newNode = {
                         id: generateUUID(),
                         type: data.type,
-                        props: { notes: '', spacing: 'md' },
+                        props: { alias: '', notes: '', spacing: 'md' },
                         children: data.type === 'container' ? [] : undefined
                     };
                     targetArray.push(newNode);
@@ -265,16 +311,27 @@
                 
                 if (this.activeNodeId === node.id) el.classList.add('active-node');
                 
+                // Flexbox Engine Translation
+                if (node.type === 'container') {
+                    el.style.display = 'flex';
+                    el.style.flexDirection = node.props.direction || 'column';
+                    el.style.justifyContent = node.props.justify || 'flex-start';
+                    el.style.alignItems = node.props.align || 'stretch';
+                    el.style.flexWrap = node.props.wrap || 'nowrap';
+                    el.style.gap = node.props.gap === 'sm' ? '8px' : node.props.gap === 'lg' ? '24px' : '15px';
+                }
+
                 el.style.border = node.type === 'container' ? '1px dashed #555' : '1px solid #444';
                 el.style.padding = node.props.spacing === 'sm' ? '8px' : node.props.spacing === 'lg' ? '24px' : '15px';
-                el.style.margin = '5px 0';
+                el.style.margin = node.type === 'container' ? '0' : '5px 0'; // Let gap handle container spacing
                 el.style.minHeight = node.type === 'container' ? '60px' : 'auto';
                 el.style.backgroundColor = node.type === 'container' ? 'transparent' : '#2a2a2a';
                 el.style.position = 'relative';
                 el.style.borderRadius = '4px';
 
+                // Semantic Alias Rendering
                 const label = document.createElement('div');
-                label.textContent = node.type.toUpperCase();
+                label.textContent = node.props.alias ? `${node.props.alias} (${node.type})` : node.type.toUpperCase();
                 label.style.fontSize = '0.65rem';
                 label.style.fontWeight = 'bold';
                 label.style.color = '#777';
@@ -317,45 +374,146 @@
                 const info = this.findNodeInfo(this.activeNodeId);
                 if (!info) return;
 
-                // Safely build DOM without injecting user text into HTML
-                panel.innerHTML = `
+                const isContainer = info.node.type === 'container';
+
+                // Base UI + Semantic Naming + Structural Actions
+                let html = `
                     <div style="margin-bottom: 15px; color: #fff;">Type: <strong>${info.node.type.toUpperCase()}</strong><br><span style="font-size:0.7rem; color:#666;">ID: ${info.node.id.substring(0,8)}</span></div>
                     
-                    <label style="display:block; margin-bottom: 5px; color:#aaa;">Documentation Notes</label>
-                    <textarea id="prop-notes" spellcheck="false" style="width:100%; height:100px; background:var(--bg-panel, #1a1a1a); color:#eee; border:1px solid #444; padding:12px; margin-bottom:15px; font-family:inherit; resize:vertical;"></textarea>
+                    <label style="display:block; margin-bottom: 5px; color:#aaa; font-size: 0.75rem;">Semantic Name</label>
+                    <input type="text" id="prop-alias" spellcheck="false" placeholder="e.g. login-btn" style="width:100%; background:var(--bg-panel); color:var(--accent); border:1px solid #444; padding:8px; margin-bottom:15px; font-family:monospace; outline:none;">
+
+                    <label style="display:block; margin-bottom: 5px; color:#aaa; font-size: 0.75rem;">Documentation Notes</label>
+                    <textarea id="prop-notes" spellcheck="false" style="width:100%; height:80px; background:var(--bg-panel); color:#eee; border:1px solid #444; padding:8px; margin-bottom:15px; font-family:inherit; resize:vertical; outline:none;"></textarea>
                     
-                    <label style="display:block; margin-bottom: 5px; color:#aaa;">T-Shirt Spacing</label>
-                    <select id="prop-spacing" style="width:100%; background:var(--bg-panel, #1a1a1a); color:#eee; border:1px solid #444; padding:12px; margin-bottom:20px; outline:none;">
+                    <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+                        <button id="btn-up" style="flex:1; padding: 6px; background: #333; color:#fff; border:none; border-radius: 3px; cursor:pointer;">↑ Up</button>
+                        <button id="btn-down" style="flex:1; padding: 6px; background: #333; color:#fff; border:none; border-radius: 3px; cursor:pointer;">↓ Down</button>
+                        <button id="btn-duplicate" style="flex:1; padding: 6px; background: #2b4a6f; color:#fff; border:none; border-radius: 3px; cursor:pointer;">Copy</button>
+                    </div>
+                `;
+
+                // Conditional Layout Controls (Only for Containers)
+                if (isContainer) {
+                    html += `
+                        <div style="border-top: 1px solid #444; padding-top: 15px; margin-bottom: 15px;">
+                            <strong style="color: #fff; font-size: 0.8rem; display:block; margin-bottom:10px;">Flex Layout Engine</strong>
+                            
+                            <label style="font-size:0.7rem; color:#aaa;">Direction</label>
+                            <select id="prop-direction" class="insp-select">
+                                <option value="column">Column (Stack)</option>
+                                <option value="row">Row (Horizontal)</option>
+                            </select>
+
+                            <label style="font-size:0.7rem; color:#aaa;">Justify (Main Axis)</label>
+                            <select id="prop-justify" class="insp-select">
+                                <option value="flex-start">Start</option>
+                                <option value="center">Center</option>
+                                <option value="space-between">Space Between</option>
+                            </select>
+
+                            <label style="font-size:0.7rem; color:#aaa;">Align (Cross Axis)</label>
+                            <select id="prop-align" class="insp-select">
+                                <option value="stretch">Stretch</option>
+                                <option value="flex-start">Start</option>
+                                <option value="center">Center</option>
+                            </select>
+
+                            <label style="font-size:0.7rem; color:#aaa;">Wrap & Gap</label>
+                            <div style="display:flex; gap:5px;">
+                                <select id="prop-wrap" class="insp-select" style="flex:1;">
+                                    <option value="nowrap">No Wrap</option>
+                                    <option value="wrap">Wrap</option>
+                                </select>
+                                <select id="prop-gap" class="insp-select" style="flex:1;">
+                                    <option value="sm">Gap: Sm</option>
+                                    <option value="md">Gap: Md</option>
+                                    <option value="lg">Gap: Lg</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Global padding/spacing applies to everything
+                html += `
+                    <label style="display:block; margin-bottom: 5px; color:#aaa; font-size: 0.75rem;">Internal Padding (T-Shirt)</label>
+                    <select id="prop-spacing" class="insp-select" style="margin-bottom:20px;">
                         <option value="sm">Small</option>
                         <option value="md">Medium</option>
                         <option value="lg">Large</option>
                     </select>
-                    
-                    <button id="btn-delete" style="width:100%; background:#6b2a2a; color:#fff; border:none; padding:14px; cursor:pointer; border-radius:3px;">Destroy Node</button>
                 `;
 
-                // Safe Value Injection
+                html += `<button id="btn-delete" style="width:100%; background:#6b2a2a; color:#fff; border:none; padding:12px; cursor:pointer; border-radius:3px; margin-top: 10px;">Destroy Node</button>`;
+                
+                panel.innerHTML = html;
+
+                // --- DATA BINDING ---
+                document.getElementById('prop-alias').value = info.node.props.alias || '';
                 document.getElementById('prop-notes').value = info.node.props.notes || '';
                 document.getElementById('prop-spacing').value = info.node.props.spacing || 'md';
+                
+                if (isContainer) {
+                    document.getElementById('prop-direction').value = info.node.props.direction || 'column';
+                    document.getElementById('prop-justify').value = info.node.props.justify || 'flex-start';
+                    document.getElementById('prop-align').value = info.node.props.align || 'stretch';
+                    document.getElementById('prop-wrap').value = info.node.props.wrap || 'nowrap';
+                    document.getElementById('prop-gap').value = info.node.props.gap || 'md';
+                }
 
-                // Immutable Event Listeners
-                document.getElementById('prop-notes').addEventListener('input', (e) => {
-                    const newTree = structuredClone(this.tree);
-                    const nodeInfo = this.findNodeInfo(this.activeNodeId, newTree);
-                    if (nodeInfo) {
-                        nodeInfo.node.props.notes = e.target.value;
-                        this.update(newTree, false); 
-                        this.syncYAML();
+                // --- EVENT LISTENERS ---
+                const bindProp = (id, propName, requiresRender = true) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    el.addEventListener('input', (e) => {
+                        const newTree = structuredClone(this.tree);
+                        const nodeInfo = this.findNodeInfo(this.activeNodeId, newTree);
+                        if (nodeInfo) {
+                            nodeInfo.node.props[propName] = e.target.value;
+                            this.update(newTree, requiresRender);
+                            if (!requiresRender) this.syncYAML();
+                        }
+                    });
+                };
+
+                bindProp('prop-alias', 'alias');
+                bindProp('prop-notes', 'notes', false); // False avoids dropping text focus
+                bindProp('prop-spacing', 'spacing');
+                
+                if (isContainer) {
+                    ['direction', 'justify', 'align', 'wrap', 'gap'].forEach(p => bindProp(`prop-${p}`, p));
+                }
+
+                // Structural Nudging Events
+                document.getElementById('btn-up').addEventListener('click', () => {
+                    if (info.index > 0) {
+                        const newTree = structuredClone(this.tree);
+                        const nodeInfo = this.findNodeInfo(this.activeNodeId, newTree);
+                        [nodeInfo.parentArray[nodeInfo.index - 1], nodeInfo.parentArray[nodeInfo.index]] = [nodeInfo.parentArray[nodeInfo.index], nodeInfo.parentArray[nodeInfo.index - 1]];
+                        this.update(newTree);
+                        this.buildInspector();
                     }
                 });
 
-                document.getElementById('prop-spacing').addEventListener('change', (e) => {
+                document.getElementById('btn-down').addEventListener('click', () => {
+                    if (info.index < info.parentArray.length - 1) {
+                        const newTree = structuredClone(this.tree);
+                        const nodeInfo = this.findNodeInfo(this.activeNodeId, newTree);
+                        [nodeInfo.parentArray[nodeInfo.index], nodeInfo.parentArray[nodeInfo.index + 1]] = [nodeInfo.parentArray[nodeInfo.index + 1], nodeInfo.parentArray[nodeInfo.index]];
+                        this.update(newTree);
+                        this.buildInspector();
+                    }
+                });
+
+                document.getElementById('btn-duplicate').addEventListener('click', () => {
                     const newTree = structuredClone(this.tree);
                     const nodeInfo = this.findNodeInfo(this.activeNodeId, newTree);
-                    if (nodeInfo) {
-                        nodeInfo.node.props.spacing = e.target.value;
-                        this.update(newTree);
-                    }
+                    const clonedNode = this.deepCloneWithNewIds(nodeInfo.node);
+                    nodeInfo.parentArray.splice(nodeInfo.index + 1, 0, clonedNode);
+                    this.activeNodeId = clonedNode.id; // Focus the clone
+                    this.update(newTree);
+                    this.buildInspector();
                 });
 
                 document.getElementById('btn-delete').addEventListener('click', () => {
@@ -409,6 +567,12 @@
 
                 // Hotkeys
                 document.addEventListener('keydown', (e) => {
+                    // Quick Copy
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'd' && this.activeNodeId) {
+                        e.preventDefault();
+                        document.getElementById('btn-duplicate')?.click();
+                    }
+                    // Undo/Redo
                     if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
                         e.preventDefault();
                         e.shiftKey ? this.redo() : this.undo();
@@ -416,13 +580,17 @@
                     }
                 });
 
-                // Toolbar Actions
+                // Global Actions
                 document.getElementById('btn-undo').addEventListener('click', () => { this.undo(); this.buildInspector(); });
                 document.getElementById('btn-redo').addEventListener('click', () => { this.redo(); this.buildInspector(); });
+                document.getElementById('btn-nuke').addEventListener('click', () => this.resetCanvas());
+                
+                // Canvas Toggles
                 document.getElementById('btn-xray').addEventListener('click', () => document.getElementById('canvas-container').classList.toggle('x-ray'));
                 document.getElementById('btn-mobile').addEventListener('click', () => document.getElementById('canvas').style.maxWidth = '375px');
                 document.getElementById('btn-desktop').addEventListener('click', () => document.getElementById('canvas').style.maxWidth = '100%');
                 
+                // Data IO
                 document.getElementById('btn-export').addEventListener('click', () => {
                     const blob = new Blob([jsyaml.dump(this.tree)], { type: 'text/yaml' });
                     const a = document.createElement('a');
@@ -436,7 +604,8 @@
                     const extract = (nodes, depth) => {
                         nodes.forEach(n => {
                             const indent = '  '.repeat(depth);
-                            md += `${indent}- **${n.type.toUpperCase()}**: ${n.props.notes || 'No documentation.'}\n`;
+                            const name = n.props.alias ? `${n.props.alias} (${n.type})` : n.type.toUpperCase();
+                            md += `${indent}- **${name}**: ${n.props.notes || 'No documentation.'}\n`;
                             if (n.children) extract(n.children, depth + 1);
                         });
                     };
@@ -449,7 +618,7 @@
         // Boot
         const appState = new StateStore();
         appState.init([
-            { id: generateUUID(), type: 'container', props: { notes: 'Main application wrapper', spacing: 'lg' }, children: [] }
+            { id: generateUUID(), type: 'container', props: { alias: 'Root Frame', notes: 'Main application wrapper', spacing: 'lg', direction: 'column' }, children: [] }
         ]);
 
         // Code Editor Mechanics
