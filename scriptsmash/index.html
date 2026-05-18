@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Script Smash v1.2.0</title>
+    <title>Script Smash v1.2.1</title>
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g transform='rotate(45 50 50)'><rect x='20' y='30' width='60' height='40' rx='20' fill='%23ffffff' stroke='%230984e3' stroke-width='4'/><path d='M20 50 a 20 20 0 0 0 20 20 h 10 l -5 -20 l 10 -5 l -15 -15 h -10 a 20 20 0 0 0 -20 20 z' fill='%230984e3'/></g></svg>">
     
@@ -272,7 +272,7 @@
 
 <script>
 /**
- * config.js - Script Smash v1.2.0
+ * config.js - Script Smash v1.2.1
  */
 
 const CONFIG = {
@@ -340,7 +340,7 @@ function resetState() {
 resetState();
 
 /**
- * game.js - Script Smash v1.2.0
+ * game.js - Script Smash v1.2.1
  */
 let savedSettings = { mute: true };
 try { 
@@ -351,15 +351,30 @@ try {
 let globalIsMuted = savedSettings.mute;
 window.addEventListener('muteToggled', (e) => { globalIsMuted = e.detail; });
 
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+// DEFERRED AUDIO INITIALIZATION (Fixes autoplay lockouts)
+let audioCtx = null;
+function initAudio() {
+    if (!audioCtx) {
+        try { 
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) audioCtx = new AudioContext(); 
+        } catch(e) { console.warn("Web Audio API blocked."); }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+        try { audioCtx.resume(); } catch(e) {}
+    }
+}
+
 function playTone(freq, type, duration, vol = 0.1) {
-    if (globalIsMuted) return;
-    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-    osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.start(); osc.stop(audioCtx.currentTime + duration);
+    if (globalIsMuted || !audioCtx) return;
+    try {
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
+    } catch(e) {}
 }
 
 class MainScene extends Phaser.Scene {
@@ -444,7 +459,11 @@ class MainScene extends Phaser.Scene {
 
         this.hasBouncedThisLevel = false;
 
-        document.getElementById('hud-best').innerText = (parseInt(localStorage.getItem('scriptsmash_best')) || 0).toString();
+        // V1.2.1 Safe localStorage retrieval
+        try {
+            document.getElementById('hud-best').innerText = (parseInt(localStorage.getItem('scriptsmash_best')) || 0).toString();
+        } catch(e) {}
+        
         this.handleSerialization();
     }
 
@@ -466,7 +485,8 @@ class MainScene extends Phaser.Scene {
             } catch(e) { resetState(); }
         } else resetState();
         
-        if(gameState.lives > 0) this.prepareLevelData(gameState.level);
+        // V1.2.1 Force explicit routing to Main Menu on startup so user can unlock Audio Context
+        switchOverlay('menu-start');
     }
 
     saveState(inProgressFlag) {
@@ -525,14 +545,12 @@ class MainScene extends Phaser.Scene {
         let freqMap = {1: 'once', 2: 'twice', 3: 'three times', 4: 'four times'};
         let titleStr = `Take ${dosage}, ${freqMap[freq] || freq + ' times'} daily for ${days} days.`;
 
-        // V1.2 Corporate Tagline Injection
         if (typeof CORPORATE_TAGLINES !== 'undefined') {
             document.getElementById('corporate-tagline').innerText = Phaser.Math.RND.pick(CORPORATE_TAGLINES);
         } else {
             document.getElementById('corporate-tagline').innerText = "YOUR METRICS DETERMINE YOUR WORTH.";
         }
 
-        // Update Briefing UI
         document.getElementById('briefing-patient').innerText = `Pt: ${pName}`;
         document.getElementById('briefing-rx-num').innerText = `#${Phaser.Math.Between(10000, 99999)}`;
         document.getElementById('briefing-title').innerText = titleStr;
@@ -988,7 +1006,7 @@ class MainScene extends Phaser.Scene {
             this.isLevelTransitioning = true; this.scene.pause(); gameState.lives--; 
             gameState.currentConsumable = null; this.saveState(false);
             if (gameState.lives <= 0) this.triggerGameOver();
-            else { this.prepareLevelData(gameState.level); document.getElementById('btn-play').click(); }
+            else { this.prepareLevelData(gameState.level); }
         } else {
             const remainingRx = Object.values(gameState.rxQuota).reduce((a, b) => a + Math.max(0, b), 0);
             if (remainingRx === 0) {
@@ -1011,11 +1029,13 @@ class MainScene extends Phaser.Scene {
                 
                 gameState.score += (tolBonus + accuracyBonus + perfectBonus);
                 
-                let bestShift = parseInt(localStorage.getItem('scriptsmash_best')) || 0;
-                if (gameState.level > bestShift) {
-                    bestShift = gameState.level; localStorage.setItem('scriptsmash_best', bestShift);
-                    document.getElementById('hud-best').innerText = bestShift.toString();
-                }
+                try {
+                    let bestShift = parseInt(localStorage.getItem('scriptsmash_best')) || 0;
+                    if (gameState.level > bestShift) {
+                        bestShift = gameState.level; localStorage.setItem('scriptsmash_best', bestShift);
+                        document.getElementById('hud-best').innerText = bestShift.toString();
+                    }
+                } catch(e) {}
 
                 this.saveState(false); this.updateUI();
                 playTone(400, 'sine', 0.2); setTimeout(() => playTone(600, 'sine', 0.4), 200);
@@ -1089,27 +1109,34 @@ function switchOverlay(id) {
     if (id) document.getElementById(id).classList.remove('hidden');
 }
 
+// Fixed UI Flow & Safe Initialization Triggers
 document.getElementById('btn-play').addEventListener('click', () => { 
-    if (audioCtx.state === 'suspended') audioCtx.resume(); switchOverlay('menu-level-briefing'); 
+    initAudio(); 
+    let scene = game.scene.getScene('MainScene');
+    if (scene) scene.prepareLevelData(gameState.level);
 });
 document.getElementById('btn-start-level').addEventListener('click', () => {
+    initAudio();
     switchOverlay(null); let scene = game.scene.getScene('MainScene');
     scene.scene.resume(); scene.physics.resume(); scene.renderLevelBoard();
 });
-document.getElementById('btn-skip-break').addEventListener('click', () => { switchOverlay('menu-level-briefing'); });
+document.getElementById('btn-skip-break').addEventListener('click', () => { initAudio(); switchOverlay('menu-level-briefing'); });
 document.getElementById('btn-retry').addEventListener('click', () => {
+    initAudio();
     resetState(); let scene = game.scene.getScene('MainScene');
     scene.handleSerialization(); document.getElementById('btn-play').click();
 });
 document.getElementById('btn-next').addEventListener('click', () => {
+    initAudio();
     let scene = game.scene.getScene('MainScene');
     scene.scene.resume(); scene.prepareLevelData(gameState.level + 1);
 });
-document.getElementById('btn-pause-toggle').addEventListener('click', () => { game.scene.pause('MainScene'); switchOverlay('menu-pause'); });
-document.getElementById('btn-resume').addEventListener('click', () => { switchOverlay(null); game.scene.resume('MainScene'); });
+document.getElementById('btn-pause-toggle').addEventListener('click', () => { initAudio(); game.scene.pause('MainScene'); switchOverlay('menu-pause'); });
+document.getElementById('btn-resume').addEventListener('click', () => { initAudio(); switchOverlay(null); game.scene.resume('MainScene'); });
 document.getElementById('btn-restart-run').addEventListener('click', () => {
+    initAudio();
     game.scene.resume('MainScene'); resetState();
-    let scene = game.scene.getScene('MainScene'); scene.handleSerialization(); switchOverlay('menu-start');
+    let scene = game.scene.getScene('MainScene'); scene.handleSerialization();
 });
 
 document.addEventListener('DOMContentLoaded', () => {
