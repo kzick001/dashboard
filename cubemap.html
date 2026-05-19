@@ -52,9 +52,7 @@
             z-index: 50; flex-shrink: 0; transition: background-color 0.3s, border-color 0.3s;
         }
 
-        .nav-content {
-            width: 100%; max-width: 1200px; display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
-        }
+        .nav-content { width: 100%; max-width: 1200px; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
 
         .header-titles { display: flex; flex-direction: column; align-items: center; }
         .header-titles h1 { margin: 0; font-size: 1.6rem; color: var(--text-main); letter-spacing: -0.5px; }
@@ -65,14 +63,13 @@
         /* Metrics */
         .metrics-board {
             display: flex; gap: 1.5rem; background: var(--shading-bg); padding: 8px 24px; 
-            border-radius: 999px; border: 1px solid var(--desk-border); box-shadow: var(--pill-shadow);
-            justify-self: start;
+            border-radius: 999px; border: 1px solid var(--desk-border); box-shadow: var(--pill-shadow); justify-self: start;
         }
         .metric { display: flex; flex-direction: column; align-items: center; }
         .metric-val { font-weight: 700; color: var(--text-main); font-size: 1.1rem; line-height: 1; }
         .metric-label { font-size: 0.65rem; color: var(--header-text); text-transform: uppercase; font-weight: 700; margin-top: 2px;}
 
-        /* Center Stack */
+        /* Center Stack & Legend */
         .center-stack { display: flex; flex-direction: column; align-items: center; gap: 12px; justify-self: center; }
 
         .role-legend {
@@ -81,6 +78,16 @@
             border: 1px solid var(--desk-border); box-shadow: var(--pill-shadow);
         }
         
+        /* Eye Toggle SVGs */
+        .role-toggle-btn { 
+            background: none; border: none; cursor: pointer; color: var(--header-text); 
+            display: flex; align-items: center; justify-content: center; padding: 0 8px 0 0; 
+            border-right: 1px solid var(--desk-border); margin-right: 4px; transition: color 0.2s;
+        }
+        .role-toggle-btn:hover { color: var(--text-main); }
+        body.hide-roles .eye-open { display: none; }
+        body:not(.hide-roles) .eye-closed { display: none; }
+
         .role-inputs { display: flex; gap: 4px; overflow: hidden; transition: max-width 0.3s, opacity 0.3s; max-width: 250px; opacity: 1; align-items: center;}
         .role-inputs.hidden { max-width: 0; opacity: 0; pointer-events: none; }
         .role-input-group { display: flex; gap: 4px; align-items: center; }
@@ -104,11 +111,11 @@
 
         /* Right Actions */
         .action-column { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; justify-self: end; }
-        .action-buttons { display: flex; gap: 8px; }
+        .action-buttons { display: flex; gap: 8px; align-items: center; }
         .icon-btn {
             background: var(--desk-bg); border: 1px solid var(--desk-border); color: var(--text-main); 
             border-radius: 6px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s; font-size: 1rem;
+            transition: all 0.2s; font-size: 1rem; height: 34px;
         }
         .icon-btn:hover { background-color: var(--shading-bg); }
         .theme-switch-wrapper { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 600; color: var(--header-text); margin-left: 8px;}
@@ -127,8 +134,12 @@
 
         /* Grid Canvas */
         .canvas-scroll { flex-grow: 1; width: 100%; overflow: auto; display: flex; justify-content: center; padding: 2rem; }
-        .grid-container { display: grid; gap: 8px; width: 100%; max-width: 1200px; margin: 0 auto; transition: max-width 0.3s; position: relative; height: max-content; }
-        .grid-container.hub-mode { max-width: 500px; }
+        .grid-container { 
+            display: grid; gap: 8px; width: 100%; max-width: 1200px; 
+            min-width: 1000px; /* Forces horizontal scroll on small screens */
+            margin: 0 auto; transition: max-width 0.3s; position: relative; height: max-content; 
+        }
+        .grid-container.hub-mode { max-width: 500px; min-width: auto; }
 
         /* Cells & Axes */
         .cell { display: flex; align-items: center; justify-content: center; border-radius: 6px; }
@@ -148,7 +159,7 @@
         .walkway {
             background-color: var(--shading-bg);
             background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.03) 10px, rgba(0,0,0,0.03) 20px);
-            color: var(--header-text); font-weight: 900; letter-spacing: 12px; text-transform: uppercase; font-size: 1.2rem; border-radius: 0;
+            color: var(--header-text); font-weight: 900; letter-spacing: 12px; text-transform: uppercase; font-size: 1.2rem; border-radius: 8px;
         }
 
         /* Desks */
@@ -173,19 +184,19 @@
             display: flex; flex-direction: row; align-items: stretch; text-align: center;
             width: calc(100% - 8px); user-select: none; position: relative; gap: 0;
             box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid var(--desk-border);
-            overflow: hidden; padding: 0;
+            overflow: visible; /* Changed to visible for floating delete button */ padding: 0;
         }
         .badge.dragging { opacity: 0.4; border: 1px dashed var(--sterling-green); }
 
         .drag-handle {
             width: 24px; min-height: 44px; display: flex; align-items: center; justify-content: center;
             background-color: var(--role-color, var(--desk-border)); color: rgba(255,255,255,0.7);
-            font-size: 14px; border-right: 1px solid var(--desk-border); flex-shrink: 0;
+            font-size: 14px; border-right: 1px solid var(--desk-border); flex-shrink: 0; border-top-left-radius: 9px; border-bottom-left-radius: 9px;
         }
         .badge.unlocked .drag-handle { cursor: grab; }
         .badge.unlocked .drag-handle:active { cursor: grabbing; }
 
-        .badge-content { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px; gap: 4px; min-width: 0;}
+        .badge-content { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px; gap: 4px; min-width: 0; overflow: hidden; border-top-right-radius: 9px; border-bottom-right-radius: 9px;}
         .badge-text { width: 100%; outline: none; font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); text-align: center; cursor: text; }
         .badge-text[contenteditable="true"]:focus { background-color: var(--desk-bg); border-bottom: 2px solid var(--sterling-green); white-space: normal; overflow: visible; }
 
@@ -196,8 +207,9 @@
         .role-tag { width: auto; letter-spacing: 0.5px; }
         .role-select { 
             cursor: pointer; appearance: none; -moz-appearance: none; -webkit-appearance: none;
+            padding-right: 20px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
             background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-            background-repeat: no-repeat; background-position: right .5rem top 50%; background-size: .65rem auto; padding-right: 1.5rem;
+            background-repeat: no-repeat; background-position: right 6px center; background-size: 8px auto; 
         }
         .role-select option { background: var(--panel-bg); color: var(--text-main); }
         .role-tag[data-role="None"] { display: none; }
@@ -205,11 +217,15 @@
         /* Global Role Toggle */
         body.hide-roles .role-tag, body.hide-roles .role-select { display: none !important; }
 
+        /* Floating Delete Button */
         .delete-btn {
-            position: absolute; top: -6px; right: -6px; background: #ef4444; color: white; border: none;
-            border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: none;
-            align-items: center; justify-content: center; font-weight: bold; z-index: 10;
+            position: absolute; top: -8px; right: -8px; 
+            background: var(--panel-bg); color: #ef4444; border: 1px solid var(--desk-border);
+            border-radius: 50%; width: 22px; height: 22px; cursor: pointer; display: none;
+            align-items: center; justify-content: center; z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;
         }
+        .delete-btn:hover { background: #ef4444; color: white; border-color: #ef4444; }
         .badge.unlocked:hover .delete-btn { display: flex; }
 
         .empty-desk-ui { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
@@ -248,12 +264,12 @@
             body { background-color: white !important; overflow: visible !important; height: auto !important; }
             .nav-bar, .footer, .toast, .add-btn, .delete-btn, .empty-desk-ui, .modal-backdrop { display: none !important; }
             .canvas-scroll { padding: 0 !important; overflow: visible !important; }
-            .grid-container { max-width: 100% !important; page-break-inside: avoid; }
+            .grid-container { max-width: 100% !important; min-width: 100% !important; page-break-inside: avoid; }
             .desk, .header-cell, .badge, .shading-block { background-color: white !important; border-color: #cbd5e1 !important; color: black !important; }
             .badge-text { color: black !important; }
             .drag-handle { display: none !important; }
             .role-tag, .role-select { print-color-adjust: exact; -webkit-print-color-adjust: exact; border: 1px solid #cbd5e1;}
-            .walkway { background: transparent !important; }
+            .walkway { background: transparent !important; break-after: page; page-break-after: always; }
         }
     </style>
 </head>
@@ -284,9 +300,6 @@
 
             <div class="action-column">
                 <div class="action-buttons">
-                    <button class="icon-btn" onclick="document.body.classList.toggle('hide-roles')" title="Show/Hide Roles">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                    </button>
                     <button class="icon-btn" onclick="window.print()" title="Print Floor Plan">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
                     </button>
@@ -403,6 +416,18 @@
 
     function renderLegend() {
         const legend = document.getElementById('role-legend'); legend.innerHTML = '';
+        
+        // Inject Eye Toggle
+        const eyeBtn = document.createElement('button');
+        eyeBtn.className = 'role-toggle-btn';
+        eyeBtn.title = 'Toggle Roles';
+        eyeBtn.onclick = () => document.body.classList.toggle('hide-roles');
+        eyeBtn.innerHTML = `
+            <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <svg class="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+        `;
+        legend.appendChild(eyeBtn);
+
         Object.entries(mapData.roles).forEach(([role, color]) => {
             const tag = document.createElement('div'); tag.className = 'role-tag';
             tag.style.backgroundColor = color; tag.textContent = role;
@@ -451,7 +476,7 @@
             ? { cols: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], rows: [9, 8, 7, 6, 5, 4, 3, 2, 1], capacity: 64 }
             : { cols: ['I', 'J', 'K'], rows: [4, 3, 2, 1], capacity: 12 };
 
-        grid.style.gridTemplateColumns = `40px repeat(${config.cols.length}, minmax(0, 1fr))`;
+        grid.style.gridTemplateColumns = `40px repeat(${config.cols.length}, minmax(120px, 1fr))`;
 
         const corner = createDiv('header-cell corner-cell', '');
         corner.style.gridColumn = '1'; corner.style.gridRow = '1'; grid.appendChild(corner);
@@ -482,17 +507,24 @@
             const rowHdr = createDiv(`header-cell row-header ${rowClass}`, rowNum);
             rowHdr.style.gridColumn = '1'; rowHdr.style.gridRow = currentRowGridIndex.toString(); grid.appendChild(rowHdr);
 
+            // Contiguous Walkway Row Intercept
+            if (currentView === 'CallCenter' && rowNum === 5) {
+                const walkway = document.createElement('div');
+                walkway.className = `walkway ${rowClass}`;
+                walkway.textContent = 'W A L K W A Y';
+                walkway.style.gridColumn = `2 / ${config.cols.length + 2}`;
+                walkway.style.gridRow = currentRowGridIndex.toString();
+                walkway.style.display = 'flex'; walkway.style.alignItems = 'center'; walkway.style.justifyContent = 'center';
+                walkway.style.zIndex = '1';
+                grid.appendChild(walkway);
+                currentRowGridIndex++;
+                return; 
+            }
+
             let currentColGridIndex = 2;
 
             config.cols.forEach(col => {
                 const coord = `${col}${rowNum}`;
-                if (currentView === 'CallCenter' && rowNum === 5) {
-                    const walkway = createDiv(`cell walkway col-${col} ${rowClass}`, '');
-                    if (col === 'D') walkway.textContent = 'WALKWAY';
-                    walkway.style.gridColumn = currentColGridIndex.toString(); walkway.style.gridRow = currentRowGridIndex.toString(); walkway.style.zIndex = '1';
-                    grid.appendChild(walkway); currentColGridIndex++; return;
-                }
-
                 const desk = createDiv(`cell desk col-${col} ${isUnlocked ? 'unlocked' : ''}`, '');
                 desk.dataset.coord = coord; desk.style.gridColumn = currentColGridIndex.toString(); desk.style.gridRow = currentRowGridIndex.toString();
                 
@@ -540,7 +572,8 @@
         badge.dataset.coord = coord; badge.dataset.index = index;
         
         const handle = document.createElement('div');
-        handle.className = 'drag-handle'; handle.innerHTML = '⋮⋮';
+        handle.className = 'drag-handle'; 
+        handle.innerHTML = isUnlocked ? '⋮⋮' : '';
         handle.style.setProperty('--role-color', roleColor !== 'transparent' ? roleColor : 'var(--desk-border)');
 
         const content = document.createElement('div'); content.className = 'badge-content';
@@ -576,7 +609,9 @@
 
         badge.append(handle, content);
 
-        const delBtn = document.createElement('button'); delBtn.className = 'delete-btn'; delBtn.innerHTML = 'X'; delBtn.onclick = () => deleteBadge(coord, index);
+        const delBtn = document.createElement('button'); delBtn.className = 'delete-btn'; 
+        delBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'; 
+        delBtn.onclick = () => deleteBadge(coord, index);
         if (isUnlocked) badge.appendChild(delBtn);
         return badge;
     }
