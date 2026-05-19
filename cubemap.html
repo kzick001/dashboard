@@ -60,9 +60,7 @@
         .header-titles h1 { margin: 0; font-size: 1.6rem; color: var(--text-main); letter-spacing: -0.5px; }
         .header-titles .subtitle { margin: 0; font-size: 0.8rem; color: var(--sterling-green); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        .controls-toolbar {
-            display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; width: 100%; gap: 24px;
-        }
+        .controls-toolbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; width: 100%; gap: 24px; }
 
         /* Metrics */
         .metrics-board {
@@ -74,7 +72,7 @@
         .metric-val { font-weight: 700; color: var(--text-main); font-size: 1.1rem; line-height: 1; }
         .metric-label { font-size: 0.65rem; color: var(--header-text); text-transform: uppercase; font-weight: 700; margin-top: 2px;}
 
-        /* Center Stack (Legend + Toggle) */
+        /* Center Stack */
         .center-stack { display: flex; flex-direction: column; align-items: center; gap: 12px; justify-self: center; }
 
         .role-legend {
@@ -89,6 +87,7 @@
         .role-input-group input[type="text"] { font-size: 0.7rem; padding: 4px 8px; border: 1px solid var(--desk-border); border-radius: 4px; width: 80px; background: var(--bg-color); color: var(--text-main); outline: none;}
         .role-input-group input[type="color"] { border: none; width: 24px; height: 24px; padding: 0; background: none; cursor: pointer; }
         .role-expand-btn { background: var(--sterling-green); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-weight: bold; font-size: 1rem; display: flex; align-items: center; justify-content: center; line-height: 1;}
+        .role-action-btn { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 4px; border: none; cursor: pointer; color: white; }
 
         .toggle-container {
             display: flex; background: var(--shading-bg); border-radius: 999px; padding: 4px; position: relative; border: 1px solid var(--desk-border);
@@ -111,8 +110,14 @@
             border-radius: 6px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
             transition: all 0.2s; font-size: 1rem;
         }
-        .icon-btn.theme-btn { background-color: var(--sterling-green); color: white; border-color: var(--sterling-green); }
-        .icon-btn.theme-btn:hover { filter: brightness(1.1); }
+        .icon-btn:hover { background-color: var(--shading-bg); }
+        .theme-switch-wrapper { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 600; color: var(--header-text); margin-left: 8px;}
+        .theme-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .theme-switch input { opacity: 0; width: 0; height: 0; }
+        .theme-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--desk-border); transition: .3s; border-radius: 24px; }
+        .theme-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
+        input:checked + .theme-slider { background-color: var(--sterling-green); }
+        input:checked + .theme-slider:before { transform: translateX(20px); }
 
         .search-wrapper {
             display: flex; align-items: center; background: var(--desk-bg); border-radius: 999px; 
@@ -141,7 +146,8 @@
 
         /* Walkway Graphics */
         .walkway {
-            background: repeating-linear-gradient(45deg, transparent, transparent 10px, var(--shading-bg) 10px, var(--shading-bg) 20px);
+            background-color: var(--shading-bg);
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.03) 10px, rgba(0,0,0,0.03) 20px);
             color: var(--header-text); font-weight: 900; letter-spacing: 12px; text-transform: uppercase; font-size: 1.2rem; border-radius: 0;
         }
 
@@ -161,28 +167,43 @@
         .desk[data-coord="C6"], .desk[data-coord="E6"] { border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0; margin-right: -4px; z-index: 2; }
         .desk[data-coord="D6"], .desk[data-coord="F6"] { border-left: none; border-top-left-radius: 0; border-bottom-left-radius: 0; margin-left: -4px; z-index: 2; }
 
-        /* Badges */
+        /* Cupertino Badges */
         .badge {
-            background-color: var(--bg-color); border-left: 4px solid var(--role-color, var(--role-none)); border-radius: 4px;
-            padding: 6px; display: flex; flex-direction: column; align-items: center; text-align: center;
-            width: calc(100% - 16px); user-select: none; position: relative; gap: 4px;
-            border-top: 1px solid var(--desk-border); border-right: 1px solid var(--desk-border); border-bottom: 1px solid var(--desk-border);
+            background-color: var(--bg-color); border-radius: 10px;
+            display: flex; flex-direction: row; align-items: stretch; text-align: center;
+            width: calc(100% - 8px); user-select: none; position: relative; gap: 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid var(--desk-border);
+            overflow: hidden; padding: 0;
         }
-        .badge.unlocked { cursor: grab; }
-        .badge.unlocked:active { cursor: grabbing; }
         .badge.dragging { opacity: 0.4; border: 1px dashed var(--sterling-green); }
 
-        .badge-text { width: 100%; outline: none; font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); text-align: center; }
+        .drag-handle {
+            width: 24px; min-height: 44px; display: flex; align-items: center; justify-content: center;
+            background-color: var(--role-color, var(--desk-border)); color: rgba(255,255,255,0.7);
+            font-size: 14px; border-right: 1px solid var(--desk-border); flex-shrink: 0;
+        }
+        .badge.unlocked .drag-handle { cursor: grab; }
+        .badge.unlocked .drag-handle:active { cursor: grabbing; }
+
+        .badge-content { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px; gap: 4px; min-width: 0;}
+        .badge-text { width: 100%; outline: none; font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); text-align: center; cursor: text; }
         .badge-text[contenteditable="true"]:focus { background-color: var(--desk-bg); border-bottom: 2px solid var(--sterling-green); white-space: normal; overflow: visible; }
 
         .role-tag, .role-select {
             font-size: 0.65rem; font-weight: 700; text-transform: uppercase; padding: 4px 8px; border-radius: 4px;
-            color: white; border: none; outline: none; cursor: pointer; width: 100%; text-align: center; font-family: inherit;
+            color: white; border: none; outline: none; width: 100%; text-align: center; font-family: inherit;
         }
         .role-tag { width: auto; letter-spacing: 0.5px; }
-        .role-select { appearance: none; -moz-appearance: none; -webkit-appearance: none; }
+        .role-select { 
+            cursor: pointer; appearance: none; -moz-appearance: none; -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat; background-position: right .5rem top 50%; background-size: .65rem auto; padding-right: 1.5rem;
+        }
         .role-select option { background: var(--panel-bg); color: var(--text-main); }
         .role-tag[data-role="None"] { display: none; }
+
+        /* Global Role Toggle */
+        body.hide-roles .role-tag, body.hide-roles .role-select { display: none !important; }
 
         .delete-btn {
             position: absolute; top: -6px; right: -6px; background: #ef4444; color: white; border: none;
@@ -230,6 +251,7 @@
             .grid-container { max-width: 100% !important; page-break-inside: avoid; }
             .desk, .header-cell, .badge, .shading-block { background-color: white !important; border-color: #cbd5e1 !important; color: black !important; }
             .badge-text { color: black !important; }
+            .drag-handle { display: none !important; }
             .role-tag, .role-select { print-color-adjust: exact; -webkit-print-color-adjust: exact; border: 1px solid #cbd5e1;}
             .walkway { background: transparent !important; }
         }
@@ -262,10 +284,19 @@
 
             <div class="action-column">
                 <div class="action-buttons">
-                    <button class="icon-btn theme-btn" onclick="toggleTheme()" id="theme-toggle" title="Toggle Dark Mode">🌙</button>
-                    <button class="icon-btn theme-btn" onclick="window.print()" title="Print Floor Plan">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    <button class="icon-btn" onclick="document.body.classList.toggle('hide-roles')" title="Show/Hide Roles">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                     </button>
+                    <button class="icon-btn" onclick="window.print()" title="Print Floor Plan">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    </button>
+                    <div class="theme-switch-wrapper">
+                        <span>Dark</span>
+                        <label class="theme-switch">
+                            <input type="checkbox" id="theme-checkbox" onchange="toggleTheme()">
+                            <span class="theme-slider"></span>
+                        </label>
+                    </div>
                 </div>
                 <div class="search-wrapper">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--sterling-green); margin-right: 4px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -315,7 +346,7 @@
         const wantsDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         if (savedTheme === 'dark' || (!savedTheme && wantsDark)) {
             document.documentElement.setAttribute('data-theme', 'dark');
-            document.getElementById('theme-toggle').textContent = '☀️';
+            document.getElementById('theme-checkbox').checked = true;
         }
     }
 
@@ -323,10 +354,10 @@
         const root = document.documentElement;
         if (root.getAttribute('data-theme') === 'dark') {
             root.removeAttribute('data-theme'); localStorage.setItem('cubeMapTheme', 'light');
-            document.getElementById('theme-toggle').textContent = '🌙';
+            document.getElementById('theme-checkbox').checked = false;
         } else {
             root.setAttribute('data-theme', 'dark'); localStorage.setItem('cubeMapTheme', 'dark');
-            document.getElementById('theme-toggle').textContent = '☀️';
+            document.getElementById('theme-checkbox').checked = true;
         }
     }
 
@@ -387,15 +418,21 @@
             const input = document.createElement('input'); input.type = 'text'; input.placeholder = 'New Role';
             const color = document.createElement('input'); color.type = 'color'; color.value = '#599b42';
             
-            expandBtn.onclick = () => {
-                if (inputWrapper.classList.contains('hidden')) {
-                    inputWrapper.classList.remove('hidden'); expandBtn.textContent = '–';
-                } else {
-                    if (input.value) addRole(input.value, color.value);
-                    inputWrapper.classList.add('hidden'); expandBtn.textContent = '+'; input.value = '';
-                }
+            const saveBtn = document.createElement('button'); saveBtn.className = 'role-action-btn'; saveBtn.style.backgroundColor = 'var(--sterling-green)'; saveBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>'; 
+            saveBtn.disabled = true; saveBtn.style.opacity = '0.5';
+            
+            const cancelBtn = document.createElement('button'); cancelBtn.className = 'role-action-btn'; cancelBtn.style.backgroundColor = '#64748b'; cancelBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'; 
+            
+            input.oninput = () => {
+                saveBtn.disabled = !input.value.trim();
+                saveBtn.style.opacity = input.value.trim() ? '1' : '0.5';
             };
-            inputWrapper.append(input, color); addContainer.append(expandBtn, inputWrapper); legend.appendChild(addContainer);
+
+            expandBtn.onclick = () => { inputWrapper.classList.remove('hidden'); expandBtn.style.display = 'none'; };
+            cancelBtn.onclick = () => { inputWrapper.classList.add('hidden'); expandBtn.style.display = 'flex'; input.value = ''; input.oninput(); };
+            saveBtn.onclick = () => { addRole(input.value, color.value); cancelBtn.onclick(); };
+
+            inputWrapper.append(input, color, saveBtn, cancelBtn); addContainer.append(expandBtn, inputWrapper); legend.appendChild(addContainer);
         }
     }
 
@@ -434,7 +471,7 @@
             });
         } else if (currentView === 'HUB') {
             const shade = document.createElement('div'); shade.className = 'shading-block';
-            shade.style.gridColumn = '2 / 4'; shade.style.gridRow = `2 / ${totalRows + 1}`; 
+            shade.style.gridColumn = '2 / 5'; shade.style.gridRow = `2 / ${totalRows + 1}`; 
             shade.style.backgroundColor = 'var(--shading-bg)'; shade.style.borderRadius = '8px'; shade.style.zIndex = '0'; grid.appendChild(shade);
         }
 
@@ -499,35 +536,45 @@
     function createBadge(name, role, coord, index) {
         role = role || 'None'; const roleColor = mapData.roles[role] || 'transparent';
         const badge = document.createElement('div');
-        badge.className = `badge ${isUnlocked ? 'unlocked' : ''}`; badge.style.setProperty('--role-color', roleColor);
+        badge.className = `badge ${isUnlocked ? 'unlocked' : ''}`;
         badge.dataset.coord = coord; badge.dataset.index = index;
         
+        const handle = document.createElement('div');
+        handle.className = 'drag-handle'; handle.innerHTML = '⋮⋮';
+        handle.style.setProperty('--role-color', roleColor !== 'transparent' ? roleColor : 'var(--desk-border)');
+
+        const content = document.createElement('div'); content.className = 'badge-content';
+
         if (isUnlocked) {
-            badge.draggable = true;
-            badge.addEventListener('dragstart', dragStart); badge.addEventListener('dragend', dragEnd);
-            badge.addEventListener('touchstart', touchStart, { passive: false });
-            badge.addEventListener('touchmove', touchMove, { passive: false });
-            badge.addEventListener('touchend', touchEnd);
+            handle.draggable = true;
+            handle.addEventListener('dragstart', dragStart); handle.addEventListener('dragend', dragEnd);
+            handle.addEventListener('touchstart', touchStart, { passive: false });
+            handle.addEventListener('touchmove', touchMove, { passive: false });
+            handle.addEventListener('touchend', touchEnd);
         }
 
         const text = document.createElement('span'); text.className = 'badge-text'; text.contentEditable = isUnlocked;
         text.spellcheck = false; text.textContent = name;
         
         if (isUnlocked) {
-            text.addEventListener('focus', () => badge.draggable = false);
-            text.addEventListener('blur', (e) => { badge.draggable = true; updateName(coord, index, e.target.textContent); });
+            text.addEventListener('focus', () => handle.draggable = false);
+            text.addEventListener('blur', (e) => { handle.draggable = true; updateName(coord, index, e.target.textContent); });
+            
+            const roleSelect = document.createElement('select'); roleSelect.className = 'role-select'; roleSelect.style.backgroundColor = roleColor;
+            const rolesList = ['ROLE', ...Object.keys(mapData.roles)];
+            rolesList.forEach(r => { 
+                const opt = document.createElement('option'); opt.value = r === 'ROLE' ? 'None' : r; opt.textContent = r; 
+                if (r === role || (r === 'ROLE' && role === 'None')) opt.selected = true; 
+                roleSelect.appendChild(opt); 
+            });
+            roleSelect.onchange = (e) => { mapData[currentView][coord][index].role = e.target.value; syncState(); renderGrid(); };
+            content.append(text, roleSelect);
+        } else {
+            const roleTag = document.createElement('span'); roleTag.className = 'role-tag'; roleTag.textContent = role; roleTag.style.backgroundColor = roleColor;
+            content.appendChild(text); if (role !== 'None') content.appendChild(roleTag);
         }
 
-        if (isUnlocked) {
-            const roleSelect = document.createElement('select'); roleSelect.className = 'role-select'; roleSelect.style.backgroundColor = roleColor;
-            const rolesList = ['None', ...Object.keys(mapData.roles)];
-            rolesList.forEach(r => { const opt = document.createElement('option'); opt.value = r; opt.textContent = r; if (r === role) opt.selected = true; roleSelect.appendChild(opt); });
-            roleSelect.onchange = (e) => { mapData[currentView][coord][index].role = e.target.value; syncState(); renderGrid(); };
-            badge.appendChild(text); badge.appendChild(roleSelect);
-        } else {
-            const roleTag = document.createElement('span'); roleTag.className = 'role-tag'; roleTag.textContent = role; roleTag.dataset.role = role; roleTag.style.backgroundColor = roleColor;
-            badge.appendChild(text); if (role !== 'None') badge.appendChild(roleTag);
-        }
+        badge.append(handle, content);
 
         const delBtn = document.createElement('button'); delBtn.className = 'delete-btn'; delBtn.innerHTML = 'X'; delBtn.onclick = () => deleteBadge(coord, index);
         if (isUnlocked) badge.appendChild(delBtn);
@@ -563,10 +610,10 @@
 
     function dragStart(e) {
         if (!isUnlocked) return e.preventDefault();
-        const badge = e.currentTarget; draggedItem = { coord: badge.dataset.coord, index: parseInt(badge.dataset.index) };
+        const badge = e.currentTarget.closest('.badge'); draggedItem = { coord: badge.dataset.coord, index: parseInt(badge.dataset.index) };
         setTimeout(() => badge.classList.add('dragging'), 0);
     }
-    function dragEnd(e) { e.target.classList.remove('dragging'); document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); draggedItem = null; }
+    function dragEnd(e) { e.target.closest('.badge').classList.remove('dragging'); document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); draggedItem = null; }
     function dragOver(e) { e.preventDefault(); }
     function dragEnter(e) { if (e.currentTarget.classList.contains('desk')) e.currentTarget.classList.add('drag-over'); }
     function dragLeave(e) { if (e.currentTarget.classList.contains('desk')) e.currentTarget.classList.remove('drag-over'); }
@@ -578,7 +625,7 @@
 
     function touchStart(e) {
         if (!isUnlocked || e.target.tagName === 'SELECT') return;
-        e.preventDefault(); const badge = e.currentTarget; draggedItem = { coord: badge.dataset.coord, index: parseInt(badge.dataset.index) };
+        e.preventDefault(); const badge = e.currentTarget.closest('.badge'); draggedItem = { coord: badge.dataset.coord, index: parseInt(badge.dataset.index) };
         const touch = e.touches[0]; touchGhost = badge.cloneNode(true);
         touchGhost.style.position = 'fixed'; touchGhost.style.opacity = '0.8'; touchGhost.style.pointerEvents = 'none'; touchGhost.style.zIndex = '9999';
         touchGhost.style.width = `${badge.offsetWidth}px`; touchGhost.style.left = `${touch.clientX - (badge.offsetWidth / 2)}px`; touchGhost.style.top = `${touch.clientY - (badge.offsetHeight / 2)}px`;
