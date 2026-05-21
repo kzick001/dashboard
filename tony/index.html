@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tony Kiosk V0.4.3</title>
+    <title>Tony Kiosk V0.5.0</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 10 C20 10, 15 20, 15 20 C15 20, 25 25, 32 18 C39 25, 49 20, 49 20 C49 20, 44 10, 32 10 Z' fill='%2322c55e'/><circle cx='22' cy='30' r='10' fill='%23e30b5d'/><circle cx='42' cy='30' r='10' fill='%23e30b5d'/><circle cx='26' cy='45' r='10' fill='%23e30b5d'/><circle cx='38' cy='45' r='10' fill='%23e30b5d'/><circle cx='32' cy='52' r='10' fill='%23e30b5d'/><circle cx='32' cy='35' r='14' fill='%23e30b5d'/><text x='32' y='48' font-family='sans-serif' font-size='36' font-weight='bold' fill='%23fde047' text-anchor='middle'>T</text></svg>">
     
@@ -21,8 +21,14 @@
                     gridColumn: { 'span-16': 'span 16 / span 16' },
                     fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
                     colors: { slate: { 850: '#151e2e', 900: '#0f172a', 950: '#020617' } },
-                    animation: { 'blink': 'blink 1s step-start infinite' },
-                    keyframes: { blink: { '50%': { opacity: '0' } } }
+                    animation: {
+                        'blink': 'blink 1s step-start infinite',
+                        'live-pulse': 'livePulse 2s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        blink: { '50%': { opacity: '0' } },
+                        livePulse: { '0%,100%': { boxShadow: '0 0 0 0 rgba(239,68,68,0)' }, '50%': { boxShadow: '0 0 0 4px rgba(239,68,68,0.2)' } }
+                    }
                 }
             }
         }
@@ -39,6 +45,13 @@
             background: radial-gradient(circle at 20% 30%, rgba(15, 23, 42, 0.8), transparent 70%),
                         radial-gradient(circle at 80% 70%, rgba(2, 6, 23, 0.9), transparent 70%);
         }
+        .card-live {
+            border-color: rgba(239, 68, 68, 0.5);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.08), inset 0 0 20px rgba(239, 68, 68, 0.03);
+            animation: livePulse 2s ease-in-out infinite;
+        }
+        .result-w { color: #4ade80; }
+        .result-l { color: #f87171; }
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
@@ -48,17 +61,21 @@
         <div class="absolute inset-0 bg-mesh"></div>
     </div>
 
+    <!-- Header -->
     <div class="z-10 flex justify-between items-center mb-8 border-b border-slate-800/60 pb-4 flex-none">
-        <div class="text-[10px] font-mono tracking-[0.3em] text-slate-500 uppercase">Raspberry Tony // V0.4.3 Stable</div>
+        <div class="text-[10px] font-mono tracking-[0.3em] text-slate-500 uppercase">Raspberry Tony // V0.5.0 Stable</div>
         <div class="flex items-center gap-2">
             <span id="sys-status-dot" class="text-green-500 animate-blink">●</span> 
             <span id="sys-status-text" class="text-[10px] font-mono text-slate-400 uppercase tracking-widest">System Online</span>
         </div>
     </div>
 
+    <!-- Main Grid -->
     <div class="grid grid-cols-16 gap-8 z-10 flex-1 h-full w-full min-h-0">
         
+        <!-- Left Column: Clock + Weather -->
         <div class="col-span-4 flex flex-col gap-6 h-full">
+            <!-- Clock -->
             <div class="flex flex-col items-center">
                 <div class="text-[8rem] font-light tracking-tighter text-white leading-none flex items-baseline justify-center">
                     <span id="comp-hour">--</span>
@@ -69,6 +86,7 @@
                 <div id="comp-date" class="text-xl font-mono text-cyan-500/80 tracking-widest uppercase mt-2">Awaiting Sync</div>
             </div>
 
+            <!-- Current Temp -->
             <div class="bg-slate-900/40 border border-slate-700/30 rounded-[2rem] p-8 flex flex-col shadow-xl">
                 <div class="text-xs font-mono text-slate-500 tracking-widest uppercase mb-4 text-center">Current Conditions</div>
                 <div class="flex items-center justify-between w-full px-4">
@@ -81,6 +99,7 @@
                 </div>
             </div>
 
+            <!-- Wind / Dew / AQI / Sun -->
             <div class="bg-slate-900/40 border border-slate-700/30 rounded-[2rem] p-8 flex flex-col gap-6">
                 <div class="flex justify-between items-center">
                     <div class="flex flex-col gap-1">
@@ -121,34 +140,37 @@
                 </div>
             </div>
 
+            <!-- Logo -->
             <div class="mt-auto bg-slate-900/40 border border-slate-700/30 rounded-[2rem] p-4 flex justify-center items-center h-24">
                 <img src="rt-logo.png" class="h-12 w-auto grayscale brightness-150 opacity-80" alt="RT Logo" onerror="this.style.display='none'">
             </div>
         </div>
 
-        <div class="col-span-8 flex flex-col gap-6 h-full min-w-0">
+        <!-- Center Column: Forecast + Sports -->
+        <div class="col-span-8 flex flex-col gap-5 h-full min-w-0">
             
+            <!-- Forecast -->
             <div class="flex-none bg-slate-900/40 border border-slate-700/30 rounded-[2rem] p-6 flex flex-col">
                 <div id="alerts-container" class="hidden w-full bg-red-900/50 border border-red-500/50 rounded-xl p-4 mb-4 flex items-center gap-3 text-red-200">
                     <svg class="w-6 h-6 flex-shrink-0 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     <span id="alerts-text" class="font-bold text-sm tracking-wide"></span>
                 </div>
-                
                 <div class="text-xs font-mono text-slate-500 tracking-widest uppercase mb-4 border-b border-slate-800 pb-3">5 Day Forecast</div>
-                <div id="forecast-container" class="flex justify-between items-stretch w-full gap-4">
-                    </div>
+                <div id="forecast-container" class="flex justify-between items-stretch w-full gap-4"></div>
             </div>
 
+            <!-- Sports: Active Teams -->
             <div class="flex-1 bg-slate-900/40 border border-slate-700/30 rounded-[2rem] p-6 flex flex-col min-h-0">
-                <div class="text-xs font-mono text-slate-500 tracking-widest uppercase mb-4 border-b border-slate-800 pb-3 flex justify-between items-center">
-                    <span>Sports Feed</span>
-                </div>
-                <div id="sports-feed-container" class="grid grid-cols-3 gap-4 overflow-y-auto flex-1 content-start">
-                    </div>
+                <div class="text-xs font-mono text-slate-500 tracking-widest uppercase mb-4 border-b border-slate-800 pb-3">Sports Feed</div>
+                <!-- Active tiles: LIVE / UPCOMING / FINAL -->
+                <div id="sports-feed-container" class="grid grid-cols-3 gap-4 overflow-y-auto flex-1 content-start items-start"></div>
+                <!-- Offseason pill row -->
+                <div id="sports-offseason-container" class="flex flex-wrap gap-2 mt-4 pt-3 border-t border-slate-800/50"></div>
             </div>
 
         </div>
 
+        <!-- Right Column: Hardware image -->
         <div class="col-span-4 flex flex-col gap-6 h-full">
             <div class="bg-slate-900/40 border border-slate-700/30 rounded-[2rem] flex-1 overflow-hidden flex items-center justify-center relative p-4">
                 <img src="tony-column.png" class="w-full h-full object-contain rounded-[1.5rem]" alt="Hardware Display" onerror="this.style.display='none'">
