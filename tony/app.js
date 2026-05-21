@@ -317,7 +317,7 @@ function buildLiveTile(team, key) {
                 ${ls.home_abbrev} <span class="text-slate-200">${safeScore(ls.home_score)}</span>
             </div>
             <div class="text-[11px] font-mono text-cyan-400 mt-1 tracking-wide">
-                ${ls.period ? `PD ${ls.period}` : ''} ${ls.clock ? `• ${ls.clock}` : ''}
+                ${ls.period ? `PERIOD ${ls.period}` : 'LIVE'}
             </div>
         </div>
     `;
