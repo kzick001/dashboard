@@ -282,48 +282,6 @@ function sportBadge(sport, key) {
 
 // ── Sports tile builders ──────────────────────────────
 
-// LIVE tile
-function buildLiveTile(team, key) {
-    const ls        = team.current_game.live_state;
-    const shortName = SHORT_NAMES[key] || team.team_name.split(' ').pop();
-    const hasCur    = !!team.current_game?.opponent;
-    const networkBadge = hasCur && team.current_game.network
-        ? `<span class="px-2 py-px bg-slate-700/50 border border-slate-600 rounded text-[9px] font-mono text-slate-300 tracking-wider">${team.current_game.network}</span>`
-        : '';
-
-    const div = document.createElement('div');
-    div.className = 'bg-slate-900/60 border border-red-500/40 rounded-2xl p-4 flex flex-col gap-2 card-live';
-    div.innerHTML = `
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <img src="${team.logo_url}" class="w-8 h-8 object-contain" onerror="this.style.display='none'">
-                <div>
-                    <div class="text-sm font-bold text-white tracking-wide leading-tight">${shortName}</div>
-                    <div class="text-[10px] font-mono text-slate-400">${team.team_record}</div>
-                </div>
-            </div>
-            <div class="flex flex-col items-end gap-1">
-                <div class="flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse inline-block"></span>
-                    <span class="text-[10px] font-mono text-red-400 font-bold tracking-widest">LIVE</span>
-                </div>
-                ${networkBadge}
-            </div>
-        </div>
-        <div class="border-t border-slate-700/50 pt-2 mt-1">
-            <div class="text-2xl font-mono font-bold text-white tracking-tighter leading-none">
-                ${ls.away_abbrev} <span class="text-slate-200">${safeScore(ls.away_score)}</span>
-                <span class="text-slate-500 mx-1 font-light">–</span>
-                ${ls.home_abbrev} <span class="text-slate-200">${safeScore(ls.home_score)}</span>
-            </div>
-            <div class="text-[11px] font-mono text-cyan-400 mt-1 tracking-wide">
-                ${ls.period ? `PERIOD ${ls.period}` : 'LIVE'}
-            </div>
-        </div>
-    `;
-    return div;
-}
-
 // FINAL / BASK tile
 function buildFinalTile(team, key) {
     const shortName = SHORT_NAMES[key] || team.team_name.split(' ').pop();
@@ -420,38 +378,31 @@ function buildOffseasonPill(team, key) {
     return pill;
 }
 
-// ── Status classification ─────────────────────────────
+// ── Status classification (no LIVE state) ─────────────
 function classifyTeam(team, key, now) {
     // Explicitly offseason: dead-zone date range AND no imminent game
     if (isOffseason(team.sport) && (!team._meta.next_game_time_ms || team._meta.next_game_time_ms === 0)) {
         return 'OFFSEASON';
     }
 
-    // Explicit live status from worker
-    if (team.status === 'LIVE' || team.status === 'IN PROGRESS') return 'LIVE';
-
-    // FINAL: decide between BASK (show result) and OFFSEASON (stale)
-    if (team.status === 'FINAL') {
-        const isRecent   = (now - team._meta.last_fetched) < CONFIG.BASK_DURATION_MS;
-        const nextMs     = team._meta.next_game_time_ms;
-        const notImminent = nextMs === 0 || (nextMs - now) > CONFIG.BASK_CUTOFF_MS;
-        if (isRecent && notImminent) return 'BASK';
-        if (nextMs !== 0 && (nextMs - now) <= CONFIG.BASK_CUTOFF_MS) return 'UPCOMING';
-        return 'OFFSEASON';
+    // UPCOMING: if there's a scheduled next game coming soon
+    const nextMs = team._meta.next_game_time_ms;
+    if (nextMs && nextMs > 0) {
+        const timeUntil = nextMs - now;
+        if (timeUntil > 0) return 'UPCOMING';
     }
 
-    // PRE-GAME: only UPCOMING if there's actually a scheduled game
-    if (team.status === 'PRE-GAME' || team.status === 'SCHEDULED') {
-        const nextMs = team._meta.next_game_time_ms;
-        if (nextMs && nextMs > 0) return 'UPCOMING';
-        return 'OFFSEASON';
+    // BASK: recent final game (show result)
+    if (team.status === 'FINAL' || team.status === 'LIVE') {
+        const isRecent = (now - team._meta.last_fetched) < CONFIG.BASK_DURATION_MS;
+        if (isRecent && team.previous_game) return 'BASK';
     }
 
     return 'OFFSEASON';
 }
 
-// Sort weight for active tiles
-const STATE_WEIGHT = { 'LIVE': 1, 'BASK': 2, 'UPCOMING': 3 };
+// Sort weight for active tiles (no LIVE)
+const STATE_WEIGHT = { 'BASK': 1, 'UPCOMING': 2 };
 
 // ── Main sports render ────────────────────────────────
 async function updateSports() {
@@ -476,9 +427,8 @@ async function updateSports() {
     const activeFrag = document.createDocumentFragment();
     active.forEach(({ key, team, state }) => {
         let tile;
-        if (state === 'LIVE')     tile = buildLiveTile(team, key);
-        else if (state === 'BASK') tile = buildFinalTile(team, key);
-        else                       tile = buildUpcomingTile(team, key);
+        if (state === 'BASK')     tile = buildFinalTile(team, key);
+        else if (state === 'UPCOMING') tile = buildUpcomingTile(team, key);
         activeFrag.appendChild(tile);
     });
 
