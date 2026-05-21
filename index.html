@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Launchpad V2.3.1</title>
+    <title>Launchpad V2.4</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -40,10 +40,15 @@
             --brand-400: #22d3ee; 
             --brand-500: #06b6d4; 
             --brand-800: #155e75; 
-            --brand-900: #164e63; 
+            --brand-900: #164e63;
+            --accent-secondary: #f97316;
             --glow-color: 6, 182, 212; 
             --glass-bg: rgba(30, 41, 59, 0.45);
             --glass-border: rgba(255, 255, 255, 0.08);
+            --depth-1: 0 4px 6px -1px rgba(0,0,0,0.2);
+            --depth-2: 0 10px 15px -3px rgba(0,0,0,0.3);
+            --depth-3: 0 20px 25px -5px rgba(0,0,0,0.4);
+            --depth-4: 0 25px 50px -12px rgba(0,0,0,0.5);
         }
 
         body { 
@@ -75,6 +80,7 @@
             position: relative;
             transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1), border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
             cursor: pointer;
+            box-shadow: var(--depth-2);
         }
 
         /* Dynamic Mouse Shine */
@@ -85,11 +91,16 @@
         }
 
         .app-tile:hover {
-            transform: translateY(-4px) scale(1.02);
+            transform: translateY(-6px) scale(1.03);
             border-color: rgba(var(--glow-color), 0.3);
             background: rgba(30, 41, 59, 0.6);
-            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.8), 0 0 40px rgba(var(--glow-color), 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            box-shadow: var(--depth-4), 0 0 40px rgba(var(--glow-color), 0.3);
             z-index: 20;
+        }
+
+        .app-tile:active {
+            transform: scale(0.96);
+            transition: transform 0.08s ease-out;
         }
         
         .app-tile:hover::before { opacity: 1; }
@@ -123,9 +134,39 @@
         .toggle-checkbox:checked + .toggle-label { background-color: #00ff00; box-shadow: 0 0 12px rgba(0, 255, 0, 0.5); }
 
         /* WEATHER DRAWER ACCELERATION */
-        #weather-drawer-inner { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1); }
-        #weather-drawer-inner.expanded { grid-template-rows: 1fr; }
+        #weather-drawer-inner { 
+            display: grid; 
+            grid-template-rows: 0fr; 
+            transition: grid-template-rows 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1), opacity 0.3s ease; 
+            opacity: 0.8;
+        }
+        #weather-drawer-inner.expanded { 
+            grid-template-rows: 1fr;
+            opacity: 1;
+        }
         .drawer-content { min-height: 0; overflow: hidden; }
+
+        /* Skeleton Loading Animation */
+        .weather-skeleton {
+            animation: pulse-skeleton 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-skeleton {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 0.3; }
+        }
+
+        .skeleton-card {
+            height: 120px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
 
         /* Haptic Interaction Cues */
         .haptic-trigger:active { transform: scale(0.95); transition: transform 0.1s; }
@@ -217,7 +258,7 @@
                 </div>
 
                 <div data-id="gems" data-folder="multiplexer" draggable="true" class="app-tile glass-panel group flex flex-col items-center justify-center p-6 rounded-[2rem] overflow-hidden aspect-square haptic-trigger">
-                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full pointer-events-none">
+                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
                         <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                             <path d="M6 2L2 8l10 14L22 8l-4-6H6z"/>
                             <path d="M2 8h20M12 22V8M6 2l6 6M18 2l-6 6"/>
@@ -253,7 +294,12 @@
                 </div>
                 
                 <div id="weatherContainer" class="w-full relative z-10 flex items-center justify-between font-mono text-sm text-slate-400">
-                    <div class="animate-pulse tracking-widest">SYNCING DATA...</div>
+                    <div class="flex gap-4 sm:gap-8 w-full justify-between items-center px-2">
+                        <div class="flex flex-col items-center flex-1"><div class="skeleton-card w-16 h-16 rounded-lg mb-3"></div><div class="skeleton-card h-6 w-20"></div></div>
+                        <div class="flex flex-col items-center flex-1"><div class="skeleton-card w-16 h-16 rounded-lg mb-3"></div><div class="skeleton-card h-6 w-20"></div></div>
+                        <div class="flex flex-col items-center flex-1"><div class="skeleton-card w-16 h-16 rounded-lg mb-3"></div><div class="skeleton-card h-6 w-20"></div></div>
+                        <div class="flex flex-col items-center flex-1 hidden sm:flex"><div class="skeleton-card w-16 h-16 rounded-lg mb-3"></div><div class="skeleton-card h-6 w-20"></div></div>
+                    </div>
                 </div>
 
                 <div id="weather-drawer-inner" class="w-full">
@@ -295,8 +341,9 @@
                 <div id="localTime" class="text-4xl sm:text-5xl font-light tracking-tighter text-white drop-shadow-md">...</div>
                 <div id="localDate" class="text-xs font-mono text-cyan-400/80 tracking-widest uppercase mt-1">...</div>
             </div>
-            <div id="comp-temp" class="text-3xl sm:text-4xl font-light text-white/90 drop-shadow-md tracking-tighter min-w-[3rem] text-center">
-                --°
+            <div class="flex flex-col items-center">
+                <div id="comp-temp" class="text-3xl sm:text-4xl font-light text-white/90 drop-shadow-md tracking-tighter min-w-[3rem] text-center">--°</div>
+                <div id="comp-location" class="text-[8px] font-mono text-slate-500 uppercase tracking-widest mt-0.5">Minneapolis</div>
             </div>
         </div>
     </div>
@@ -564,7 +611,7 @@
                         <span class="block px-3 py-1 text-[10px] font-mono text-cyan-400/80 uppercase tracking-widest">${group.category}</span>
                         <div class="flex flex-col gap-1 mt-1">
                             ${group.links.map(link => `
-                                <a href="${link.url}" target="_blank" class="haptic-trigger px-3 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex justify-between items-center group/link">
+                                <a href="${link.url}" target="_blank" class="haptic-trigger px-3 py-2.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/15 hover:border-brand-500/30 rounded-lg transition-all flex justify-between items-center group/link border border-transparent duration-200 shadow-sm hover:shadow-md">
                                     ${link.text}
                                     <span class="text-slate-600 group-hover/link:text-cyan-400 transition-colors text-xs">↗</span>
                                 </a>
@@ -623,8 +670,11 @@
 
             const safeVal = (val) => val != null ? Math.round(val) : '--';
 
-            document.getElementById('weatherToggleBtn').addEventListener('click', () => {
+            document.getElementById('weatherToggleBtn').addEventListener('click', (e) => {
                 triggerHaptic('light');
+                const btn = e.target.closest('button');
+                btn.style.transform = 'scale(0.92)';
+                setTimeout(() => btn.style.transform = '', 150);
                 document.getElementById('weather-drawer-inner').classList.toggle('expanded');
             });
 
@@ -642,6 +692,9 @@
                     const currentTemp = safeVal(currentData?.temperature || dailyData[0]?.values?.temperatureMax);
                     const compTempEl = document.getElementById('comp-temp');
                     if (compTempEl) compTempEl.innerHTML = `${currentTemp}°`;
+                    
+                    const compLocationEl = document.getElementById('comp-location');
+                    if (compLocationEl) compLocationEl.textContent = 'MINNEAPOLIS';
 
                     // UI Expansion - 6 Days Panoramic
                     let html = '<div class="flex gap-4 sm:gap-8 w-full justify-between items-center px-2">';
