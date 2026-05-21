@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GitSync - Undead Barrage v17-clean Restructurer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- PIN AUTHENTICATION MODAL (shown on load) -->
+    <div id="pinModal" class="modal modal-visible">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔐 GitSync PIN Authentication</h2>
+                <p>Enter PIN to access file restructuring</p>
+            </div>
+            
+            <form id="pinForm">
+                <div class="form-group">
+                    <label for="pinInput">PIN Code</label>
+                    <input 
+                        type="password" 
+                        id="pinInput" 
+                        placeholder="Enter PIN (from Fragment setup)"
+                        autocomplete="off"
+                        inputmode="numeric"
+                    >
+                    <small>PIN verified via Cloudflare Worker. Never stored locally.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="workerUrl">Cloudflare Worker URL</label>
+                    <input 
+                        type="text" 
+                        id="workerUrl" 
+                        placeholder="https://gitsync.askozicki.workers.dev"
+                        value="https://gitsync.askozicki.workers.dev"
+                    >
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
+                    🔓 Unlock GitSync
+                </button>
+            </form>
+
+            <div id="pinStatus"></div>
+        </div>
+    </div>
+
+    <!-- MAIN APP (hidden until PIN verified) -->
+    <div id="mainApp" class="main-app" style="display: none;">
+        <div class="header">
+            <div class="header-content">
+                <h1>⚙️ GitSync</h1>
+                <p>Undead Barrage v17-clean — Automated File Restructuring</p>
+            </div>
+            <button id="logoutBtn" class="btn-logout">🚪 Logout</button>
+        </div>
+
+        <div class="container">
+            <!-- STEP 1: SOURCE CONFIGURATION -->
+            <div class="section">
+                <div class="section-title">1. Source Configuration</div>
+
+                <div class="form-group">
+                    <label>Repository</label>
+                    <input type="text" id="repoUrl" value="kzick001/undead-barrage" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Target Branch</label>
+                    <input type="text" id="branch" placeholder="v17-restructure" value="v17-restructure">
+                </div>
+
+                <div class="form-group">
+                    <label>Target Folder (GitHub)</label>
+                    <input type="text" id="targetFolder" placeholder="UB 17+" value="UB 17+" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Source Selection</label>
+                    <select id="sourceType">
+                        <option value="github">Fetch from GitHub</option>
+                        <option value="upload">Upload Local Files (ZIP)</option>
+                        <option value="manual">Manual File Input</option>
+                    </select>
+                </div>
+
+                <div id="sourceInput" style="margin-top: 15px;"></div>
+
+                <button id="aggregateBtn" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
+                    📂 Aggregate v16.7 Files
+                </button>
+            </div>
+
+            <!-- STEP 2: STATUS & PROGRESS -->
+            <div class="section">
+                <div class="section-title">2. Processing Status</div>
+                <div id="statusArea"></div>
+                <div id="progressArea" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p style="text-align: center; color: #a1a1aa; font-size: 0.85em;">
+                        <span id="progressText">0/0 files processed</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: ANALYSIS & PREVIEW -->
+        <div class="section" id="analysisSection" style="display: none;">
+            <div class="section-title">3. Dependency Analysis & Suggestions</div>
+
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #71717a; margin-bottom: 10px;">Aggregated Files</h3>
+                <div class="file-tree" id="fileTree"></div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #71717a; margin-bottom: 10px;">Module Suggestions</h3>
+                <div class="analysis-report" id="analysisReport"></div>
+            </div>
+
+            <div class="button-group">
+                <button id="analyzeBtn" class="btn btn-primary">🔍 Analyze Dependencies</button>
+                <button id="backToAggregateBtn" class="btn">← Back</button>
+            </div>
+        </div>
+
+        <!-- STEP 4: RESTRUCTURE -->
+        <div class="section" id="restructureSection" style="display: none;">
+            <div class="section-title">4. Restructure into v17-clean</div>
+
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #71717a; margin-bottom: 10px;">Generated File Structure</h3>
+                <div class="file-tree" id="generatedFileTree"></div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #71717a; margin-bottom: 10px;">Validation Report</h3>
+                <div class="validation-report" id="validationReport"></div>
+            </div>
+
+            <div class="button-group">
+                <button id="restructureBtn" class="btn btn-primary">🔨 Restructure</button>
+                <button id="backToAnalysisBtn" class="btn">← Back</button>
+            </div>
+        </div>
+
+        <!-- STEP 5: PREVIEW -->
+        <div class="section" id="previewSection" style="display: none;">
+            <div class="section-title">5. Preview Files & Validate</div>
+
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #71717a; margin-bottom: 10px;">Ready to Commit</h3>
+                <p style="color: #a1a1aa; font-size: 0.9em; line-height: 1.6;">
+                    <span id="fileCountSummary">0 files ready</span> | 
+                    <span id="validationSummary">Validating...</span>
+                </p>
+            </div>
+
+            <div class="button-group">
+                <button id="previewFilesBtn" class="btn">👁️ Preview Sample Files</button>
+                <button id="validateBtn" class="btn btn-primary">✓ Validate All</button>
+            </div>
+        </div>
+
+        <!-- STEP 6: COMMIT CONFIRMATION -->
+        <div class="section" id="commitSection" style="display: none;">
+            <div class="section-title">6. Commit to GitHub</div>
+
+            <div class="form-group">
+                <label>PR Title</label>
+                <input type="text" id="prTitle" 
+                       value="v17-clean: Complete restructure into modular architecture">
+            </div>
+
+            <div class="form-group">
+                <label>PR Description</label>
+                <textarea id="prDescription" rows="10" style="resize: vertical; font-size: 0.9em;">## Changes
+
+- ✅ Aggregated all v16.7 files from original fragmented structure
+- ✅ Analyzed dependencies and module placement
+- ✅ Restructured into 20 clean modular files
+- ✅ Auto-generated and validated all imports
+- ✅ Added proper headers and documentation
+
+## New Structure
+
+```
+v17-clean/
+├── config/           (game balance, settings)
+├── data/             (state management, persistence)
+├── managers/         (orchestration, UI, audio)
+├── systems/          (barricades, deployables, weapons, combo, combat)
+├── entities/         (player, enemies, projectiles, pickups)
+├── ui/               (screens, overlays, HUD)
+└── index.html        (main entry point)
+```
+
+## Next Steps
+
+1. Review changes in this PR
+2. Merge to main branch
+3. Begin P0.1 implementation (Barricade System)
+4. Follow P0 implementation roadmap
+
+---
+Generated via GitSync automation | v17-clean restructuring</textarea>
+            </div>
+
+            <div class="button-group">
+                <button id="dryRunBtn" class="btn">🧪 Dry Run (Preview Only)</button>
+                <button id="commitBtn" class="btn btn-primary" style="flex: 2;">
+                    🚀 Commit & Create PR
+                </button>
+                <button id="cancelBtn" class="btn">Cancel</button>
+            </div>
+        </div>
+
+        <!-- SUCCESS SCREEN -->
+        <div class="section" id="successSection" style="display: none;">
+            <div class="section-title">✨ Success!</div>
+
+            <div style="text-align: center; padding: 20px;">
+                <h2 style="color: #22c55e; font-size: 2em; margin-bottom: 20px;">Restructuring Complete</h2>
+                
+                <p style="color: #a1a1aa; margin-bottom: 15px;">
+                    <span id="successFileCount">20 files</span> committed to GitHub
+                </p>
+
+                <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                    <p style="color: #86efac; margin-bottom: 10px;">Pull Request Created:</p>
+                    <a id="prLink" href="#" target="_blank" style="color: #0ea5e9; word-break: break-all;">
+                        https://github.com/kzick001/undead-barrage/pull/XXX
+                    </a>
+                </div>
+
+                <p style="color: #a1a1aa; font-size: 0.9em; line-height: 1.6;">
+                    Next steps:<br>
+                    1. Review PR on GitHub<br>
+                    2. Merge to main branch<br>
+                    3. Begin P0.1 implementation (Barricade System)
+                </p>
+
+                <button id="restartBtn" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
+                    🔄 Start New Restructure
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILE PREVIEW MODAL -->
+    <div id="filePreviewModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 800px; max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 id="previewFileName" style="color: #0ea5e9;">File Preview</h3>
+                <button id="closePreviewBtn" class="btn" style="padding: 5px 10px;">✕</button>
+            </div>
+            <pre id="filePreviewContent" style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 4px; overflow-x: auto; font-size: 0.85em; color: #7dd3fc;"></pre>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="pin-manager.js"></script>
+    <script src="github-api.js"></script>
+    <script src="aggregator.js"></script>
+    <script src="analyzer.js"></script>
+    <script src="parser.js"></script>
+    <script src="importfixer.js"></script>
+    <script src="generator.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
