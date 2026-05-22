@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Showrunner // Data Forge V2.2</title>
+  <title>Showrunner // Data Forge V3.0</title>
 
   <script>
     const SECURE_PIN = "goddammit_doughnut"; 
@@ -31,8 +31,6 @@
       --success: #03dac6;
       --text: #e0e0e0;
       --text-muted: #666;
-      --code-bg: #050505;
-      --code-text: #a6e22e;
     }
 
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
@@ -40,119 +38,122 @@
     body, html {
       margin: 0; padding: 0; height: 100vh; width: 100vw;
       background-color: var(--bg); color: var(--text); overflow: hidden; display: flex; flex-direction: column;
-      background-image: 
-        radial-gradient(circle at top left, rgba(187,134,252,0.05) 0%, transparent 40%),
-        radial-gradient(circle at bottom right, rgba(3,218,198,0.05) 0%, transparent 40%);
     }
 
-    /* --- Navbar (Cupertino 2050) --- */
     .navbar {
       height: 60px; display: flex; align-items: center; justify-content: space-between;
       padding: 0 2rem; background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
       border-bottom: 1px solid var(--glass-border); z-index: 100; flex-shrink: 0;
     }
+
     .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; letter-spacing: 0.15em; font-size: 1.2rem; color: #fff; text-shadow: 0 0 10px rgba(187,134,252,0.5); }
+
     .nav-links { display: flex; gap: 1rem; }
+
     .nav-link {
       color: var(--text); text-decoration: none; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;
       letter-spacing: 0.1em; padding: 6px 12px; border-radius: 20px; border: 1px solid transparent; transition: 0.3s;
     }
+
     .nav-link:hover { background: rgba(255,255,255,0.05); border-color: var(--glass-border); color: #fff; }
     .nav-link.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(187,134,252,0.2); }
 
-    /* --- Mode Selector --- */
-    .mode-selector-container {
+    /* Tab Navigation */
+    .tab-container {
       padding: 1rem 2rem 0 2rem; flex-shrink: 0;
     }
-    .mode-selector {
-      display: flex; flex-wrap: wrap; gap: 10px; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border);
+
+    .tabs {
+      display: flex; gap: 10px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border);
     }
-    .btn-mode {
+
+    .tab-btn {
       flex: 1; background: transparent; color: var(--text-muted); border: 1px solid transparent; padding: 10px;
       border-radius: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; transition: 0.3s;
     }
-    .btn-mode:hover { color: #fff; background: rgba(255,255,255,0.05); }
-    .btn-mode.active { background: rgba(187, 134, 252, 0.15); color: var(--accent); border-color: var(--accent); box-shadow: 0 0 15px rgba(187, 134, 252, 0.2); }
 
-    /* --- Workspace (3-Pane Grid) --- */
+    .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .tab-btn.active { background: rgba(187, 134, 252, 0.15); color: var(--accent); border-color: var(--accent); box-shadow: 0 0 15px rgba(187, 134, 252, 0.2); }
+
+    /* Main Content */
     .workspace {
-      display: flex; flex: 1; width: 100vw; padding: 1rem 2rem 2rem 2rem; gap: 1rem; min-height: 0;
-    }
-    
-    @media (max-width: 768px) {
-      .workspace { flex-direction: column; overflow-y: auto; }
-      .pane { min-height: 400px; flex: none; }
-      .pane.collapsed { min-height: 45px; flex: 0 0 45px; }
-      .pane-title-vertical { writing-mode: horizontal-tb; transform: none; padding: 0 1rem; line-height: 45px; text-align: left; }
+      display: flex; flex: 1; gap: 1rem; padding: 1rem 2rem 2rem 2rem; overflow: hidden;
     }
 
-    /* Individual Pane styling */
     .pane {
       background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px;
-      display: flex; flex-direction: column; flex: 1; transition: flex 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-      backdrop-filter: blur(10px); overflow: hidden; position: relative;
+      display: flex; flex-direction: column; backdrop-filter: blur(10px); overflow: hidden;
     }
-    .pane.wide { flex: 1.5; }
-    
-    /* Collapsed State */
-    .pane.collapsed { flex: 0 0 45px; cursor: pointer; background: rgba(10,10,12,0.9); }
-    .pane.collapsed:hover { background: rgba(30,30,35,0.9); }
-    .pane.collapsed .pane-content, .pane.collapsed .pane-footer, .pane.collapsed .pane-header-title { display: none; }
-    
-    .pane-title-vertical {
-      display: none; writing-mode: vertical-rl; transform: rotate(180deg);
-      text-align: center; width: 100%; padding-top: 1rem; color: var(--text-muted);
-      font-weight: bold; letter-spacing: 0.2em; text-transform: uppercase;
-    }
-    .pane.collapsed .pane-title-vertical { display: block; }
 
-    /* Pane Header */
+    .pane-edit { flex: 1; }
+    .pane-preview { flex: 0.8; min-width: 300px; }
+
     .pane-header {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 0.75rem 1rem; border-bottom: 1px solid var(--glass-border);
-      background: rgba(0,0,0,0.3);
+      padding: 0.75rem 1rem; border-bottom: 1px solid var(--glass-border); background: rgba(0,0,0,0.3);
     }
-    .pane-header-title { font-size: 0.85rem; font-weight: bold; color: #fff; letter-spacing: 0.1em; }
-    .btn-min {
-      background: transparent; border: 1px solid #444; color: #aaa; width: 26px; height: 26px;
-      border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;
-    }
-    .btn-min:hover { color: #fff; border-color: #fff; background: rgba(255,255,255,0.1); }
 
-    /* Pane Content & Inputs */
+    .pane-header-title { font-size: 0.85rem; font-weight: bold; color: #fff; letter-spacing: 0.1em; }
+
     .pane-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
     textarea, pre {
       flex: 1; width: 100%; resize: none; border: none; outline: none; padding: 1rem;
       background: transparent; color: var(--text); font-family: monospace; font-size: 0.9rem;
       line-height: 1.5; overflow-y: auto;
     }
-    #tagged-input { border-left: 2px solid var(--accent); background: rgba(187,134,252,0.02); }
-    pre { background: var(--code-bg); color: var(--code-text); margin: 0; white-space: pre-wrap; word-wrap: break-word; }
-    
-    /* Scrollbars */
+
+    pre { background: #050505; color: #a6e22e; margin: 0; white-space: pre-wrap; word-wrap: break-word; }
+
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
     ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-    /* Pane Footers (Actions) */
     .pane-footer { padding: 1rem; border-top: 1px solid var(--glass-border); background: rgba(0,0,0,0.3); }
+
     .btn-action {
       width: 100%; padding: 12px; border-radius: 4px; font-weight: bold; text-transform: uppercase;
       letter-spacing: 0.1em; cursor: pointer; transition: 0.2s; border: 1px solid transparent;
     }
+
     .btn-primary { background: rgba(187, 134, 252, 0.1); border-color: var(--accent); color: var(--accent); }
-    .btn-primary:hover { background: var(--accent); color: #000; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent); color: #000; }
+    .btn-primary:disabled { border-color: #444; color: #666; cursor: not-allowed; background: transparent; }
+
     .btn-danger { background: rgba(255, 71, 87, 0.1); border-color: var(--danger); color: var(--danger); }
     .btn-danger:hover:not(:disabled) { background: var(--danger); color: #000; }
-    .btn-danger:disabled { border-color: #444; color: #666; cursor: not-allowed; background: transparent; }
+    .btn-danger:disabled { border-color: #444; color: #666; cursor: not-allowed; }
+
+    /* Preview List */
+    .preview-list { list-style: none; padding: 0; margin: 0; }
+    .preview-item { padding: 0.75rem; border-bottom: 1px solid #333; cursor: pointer; transition: 0.2s; }
+    .preview-item:hover { background: rgba(187,134,252,0.1); }
+    .preview-item-title { font-weight: bold; color: var(--accent); font-size: 0.9rem; }
+    .preview-item-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+    .preview-item-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+    .btn-remove {
+      flex: 1; padding: 4px 8px; background: rgba(255,71,87,0.15); border: 1px solid var(--danger); color: var(--danger);
+      border-radius: 3px; font-size: 0.7rem; cursor: pointer; transition: 0.2s;
+    }
+    .btn-remove:hover { background: var(--danger); color: #000; }
 
     /* Toasts */
-    #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 4000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+    #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 4000; display: flex; flex-direction: column; gap: 0.5rem; }
     .toast { background: rgba(10,10,12,0.95); color: #fff; padding: 1rem 1.5rem; border-radius: 4px; border-left: 4px solid var(--accent); box-shadow: 0 4px 15px rgba(0,0,0,0.8); animation: fadein 0.3s, fadeout 0.3s 3.7s forwards; font-size: 0.9rem; font-weight: bold; }
     @keyframes fadein { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
     @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
 
+    /* Tab Content (Hidden by default) */
+    .tab-pane { display: none; }
+    .tab-pane.active { display: flex; }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .workspace { flex-direction: column; }
+      .pane-preview { flex: none; height: 300px; }
+    }
   </style>
 </head>
 <body>
@@ -160,77 +161,84 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-      SHOWRUNNER // DATA FORGE V2.2
+      SHOWRUNNER // DATA FORGE V3.0
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">Dashboard</a>
-      <a href="dm-players.html" class="nav-link">DM Players</a>
-      <a href="notes.html" class="nav-link">Notes</a>
       <a href="loot.html" class="nav-link">Loot</a>
       <a href="data-forge.html" class="nav-link active">Data Forge</a>
     </div>
   </nav>
 
-  <div class="mode-selector-container">
-    <div class="mode-selector">
-      <button id="mode-rooms" class="btn-mode active" onclick="switchMode('rooms')">1. Campaign Notes</button>
-      <button id="mode-loot" class="btn-mode" onclick="switchMode('loot')">2. Loot Tables</button>
-      <button id="mode-roster" class="btn-mode" onclick="switchMode('roster')">3. Roster Injection</button>
-      <button id="mode-sessions" class="btn-mode" onclick="switchMode('sessions')">4. Session Recaps</button>
+  <div class="tab-container">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('rooms')">📜 Rooms & Notes</button>
+      <button class="tab-btn" onclick="switchTab('loot')">💎 Loot Tables</button>
     </div>
   </div>
 
   <div class="workspace">
     
-    <div id="pane1" class="pane">
-      <div class="pane-title-vertical" onclick="expandPane('pane1')">1. RAW INGEST</div>
-      <div class="pane-header">
-        <span class="pane-header-title">1. RAW INGEST</span>
-        <div style="display:flex; gap:8px;">
-          <button class="btn-min" onclick="copyPane('raw-input')" title="Copy to Clipboard"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
-          <button class="btn-min" onclick="collapsePane('pane1')" title="Minimize">_</button>
+    <!-- ROOMS & NOTES TAB -->
+    <div id="tab-rooms" class="tab-pane active">
+      
+      <!-- Edit Pane -->
+      <div class="pane pane-edit">
+        <div class="pane-header">
+          <span class="pane-header-title">Paste Raw Content</span>
+        </div>
+        <div class="pane-content">
+          <textarea id="rooms-input" placeholder="Paste room descriptions and session notes here...&#10;&#10;Format:&#10;ROOM: Room Name&#10;Text content...&#10;&#10;Or:&#10;NOTE: Session X&#10;Text content..."></textarea>
+        </div>
+        <div class="pane-footer">
+          <button class="btn-action btn-primary" onclick="parseRoomsAndNotes()">Parse Content</button>
         </div>
       </div>
-      <div class="pane-content">
-        <textarea id="raw-input"></textarea>
+
+      <!-- Preview Pane -->
+      <div class="pane pane-preview">
+        <div class="pane-header">
+          <span class="pane-header-title">Preview</span>
+        </div>
+        <div class="pane-content">
+          <ul id="rooms-preview" class="preview-list"></ul>
+        </div>
+        <div class="pane-footer">
+          <button class="btn-action btn-danger" id="btn-sync-rooms" onclick="syncRoomsAndNotes()" disabled>Sync to KV</button>
+        </div>
       </div>
-      <div class="pane-footer">
-        <button class="btn-action btn-primary" onclick="executeAutoTag()">[ 1. EXECUTE AUTO-TAG ]</button>
-      </div>
+
     </div>
 
-    <div id="pane2" class="pane collapsed">
-      <div class="pane-title-vertical" onclick="expandPane('pane2')">2. TAGGED SYNTAX</div>
-      <div class="pane-header">
-        <span class="pane-header-title">2. TAGGED SYNTAX</span>
-        <div style="display:flex; gap:8px;">
-          <button class="btn-min" onclick="copyPane('tagged-input')" title="Copy to Clipboard"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
-          <button class="btn-min" onclick="collapsePane('pane2')" title="Minimize">_</button>
+    <!-- LOOT TABLES TAB -->
+    <div id="tab-loot" class="tab-pane">
+      
+      <!-- Edit Pane -->
+      <div class="pane pane-edit">
+        <div class="pane-header">
+          <span class="pane-header-title">Paste Raw Loot Tables</span>
+        </div>
+        <div class="pane-content">
+          <textarea id="loot-input" placeholder="Paste loot table data here...&#10;&#10;Format:&#10;TIER: Gold (slots: 100)&#10;Roll 1: Item Name | Type: Weapon | Description: ...&#10;Roll 2: Item Name | Type: Armor | Description: ..."></textarea>
+        </div>
+        <div class="pane-footer">
+          <button class="btn-action btn-primary" onclick="parseLootTables()">Parse Loot</button>
         </div>
       </div>
-      <div class="pane-content">
-        <textarea id="tagged-input" placeholder="Awaiting syntax transformation..."></textarea>
-      </div>
-      <div class="pane-footer">
-        <button class="btn-action btn-primary" onclick="compileToJson()">[ 2. COMPILE TO JSON ]</button>
-      </div>
-    </div>
 
-    <div id="pane3" class="pane wide collapsed">
-      <div class="pane-title-vertical" onclick="expandPane('pane3')">3. DATABASE PREVIEW</div>
-      <div class="pane-header">
-        <span class="pane-header-title">3. DATABASE PREVIEW (JSON)</span>
-        <div style="display:flex; gap:8px;">
-          <button class="btn-min" onclick="copyPane('json-preview')" title="Copy to Clipboard"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
-          <button class="btn-min" onclick="collapsePane('pane3')" title="Minimize">_</button>
+      <!-- Preview Pane -->
+      <div class="pane pane-preview">
+        <div class="pane-header">
+          <span class="pane-header-title">Preview</span>
+        </div>
+        <div class="pane-content">
+          <ul id="loot-preview" class="preview-list"></ul>
+        </div>
+        <div class="pane-footer">
+          <button class="btn-action btn-danger" id="btn-sync-loot" onclick="syncLootTables()" disabled>Sync to KV</button>
         </div>
       </div>
-      <div class="pane-content">
-        <pre><code id="json-preview">Awaiting compilation...</code></pre>
-      </div>
-      <div class="pane-footer">
-        <button id="btn-push" class="btn-action btn-danger" onclick="mergeAndPush()" disabled>[ 3. MERGE & PUSH TO SERVER ]</button>
-      </div>
+
     </div>
 
   </div>
@@ -240,499 +248,361 @@
   <script>
     const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
     
-    let currentMode = 'rooms';
-    let compiledData = null; 
+    let parsedRoomsAndNotes = null;
+    let parsedLootTables = null;
 
-    const placeholders = {
-      rooms: `Paste your raw MS Word or Obsidian notes here...\n\nExpected format:\nROOM 17a: THE WAITING AREA\nVISUALS & READ-ALOUD\nDM NOTES & MECHANICS\nNAME: Brenda\nAI TOOLTIP\nNEW ACHIEVEMENT!\nLOOT & REWARDS`,
-      loot: `Paste your Loot Tables here...\n\nExpected format for Tiers:\nTABLE: Silver\n[Roll 55-56] ITEM: The Whipping Antenna TYPE: Weapon (Rapier) DESCRIPTION: A flexible spike...\n\nExpected format for Personal:\nPERSONAL: Chuck\nThe Oversized Clown-Boots of Stealth\nType: Armor (Feet)\nDescription: Finally, shoes that fit...`,
-      roster: `Paste your Player Data blocks here...\n\nExpected format:\nChuck (Played by: Chuck)\nBuild: Battlemaster Fighter\nVitals: Max HP: 28 | AC: 16 | Passive Perception: 12\nEconomy: 133gp\nInventory & Curses:\n* [NEW] The 'Push, Don't Pull' Sign (Wondrous Item): Once per day...`,
-      sessions: `Paste your Session Recaps here...\n\nExpected format:\nSESSION: 04 - The Slop Pit Incident\nThe party bravely ran away from the slop monster, abandoning their dignity...\n\nACHIEVEMENT: "Slop Glutton"\nReward: The Severed Manticore Tail. Chuck ate 5 raw cubes of slop.`
-    };
-
-    document.getElementById('raw-input').placeholder = placeholders.rooms;
-
-    function switchMode(mode) {
-      currentMode = mode;
-      document.querySelectorAll('.btn-mode').forEach(btn => btn.classList.remove('active'));
-      document.getElementById(`mode-${mode}`).classList.add('active');
-      document.getElementById('raw-input').placeholder = placeholders[mode];
-      document.getElementById('raw-input').value = '';
-      document.getElementById('tagged-input').value = '';
-      document.getElementById('json-preview').innerText = 'Awaiting compilation...';
-      document.getElementById('btn-push').disabled = true;
-
-      expandPane('pane1'); collapsePane('pane2'); collapsePane('pane3');
-      showToast(`${mode.toUpperCase()} MODE ACTIVATED.`);
+    // --- Tab Switching ---
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+      event.target.classList.add('active');
+      
+      showToast(`${tabName.toUpperCase()} tab activated.`);
     }
 
-    function collapsePane(id) { document.getElementById(id).classList.add('collapsed'); }
-    function expandPane(id) { document.getElementById(id).classList.remove('collapsed'); }
+    // --- Utilities ---
     function showToast(msg) {
       const c = document.getElementById('toast-container');
-      const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
-      c.appendChild(t); setTimeout(() => t.remove(), 4000);
-    }
-    
-    function copyPane(id) {
-      const el = document.getElementById(id);
-      const text = el.tagName === 'TEXTAREA' ? el.value : el.innerText;
-      if (!text || text === 'Awaiting compilation...') return showToast("Nothing to copy!");
-      navigator.clipboard.writeText(text).then(() => showToast("Copied to clipboard!"));
+      const t = document.createElement('div'); 
+      t.className = 'toast'; 
+      t.innerText = msg;
+      c.appendChild(t); 
+      setTimeout(() => t.remove(), 4000);
     }
 
-    // --- Engine 1: Auto-Tagging Regex Pipeline ---
-    function executeAutoTag() {
-      const rawText = document.getElementById('raw-input').value;
-      if (!rawText.trim()) return showToast("Please paste raw notes first.");
-      
-      let taggedText = '';
-
-      if (currentMode === 'rooms') {
-        taggedText = rawText
-          .replace(/^ROOM (.*)/gm, '#ROOM $1')
-          .replace(/VISUALS & READ-ALOUD/g, '#READALOUD')
-          .replace(/DM NOTES & MECHANICS/g, '#MECHANICS')
-          .replace(/^NAME: (.*)/gm, '#NPC $1')
-          .replace(/AI TOOLTIP/g, '#TOOLTIP')
-          .replace(/NEW ACHIEVEMENT!/g, '#ACHIEVEMENT')
-          .replace(/LOOT & REWARDS/g, '#LOOT');
-      } 
-      else if (currentMode === 'loot') {
-        const lines = rawText.split('\n');
-        let inItemBlock = false;
-        let slotCounter = 1;
-
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (!line) continue;
-
-          // Headers
-          const tableMatch = line.match(/^(?:TABLE:\s*(.*)|(.*)\s+TIER.*)/i);
-          if (tableMatch && !line.includes('DESCRIPTION')) {
-            taggedText += `\n#TABLE ${tableMatch[1] || tableMatch[2]}\n`;
-            slotCounter = 1; continue;
-          }
-          const personalMatch = line.match(/^PERSONAL:\s*(.*)/i);
-          if (personalMatch) {
-            taggedText += `\n#PERSONAL_TABLE ${personalMatch[1]}\n`;
-            slotCounter = 1; continue;
-          }
-
-          // D100 Single-Line Formatted Item
-          if (line.match(/TYPE:/i) && line.match(/DESCRIPTION:|DESC:/i) && line.match(/Roll\s*([0-9]+(?:-[0-9]+)?)/i)) {
-            inItemBlock = false;
-            const rollMatch = line.match(/Roll\s*([0-9]+(?:-[0-9]+)?)/i);
-            const itemMatch = line.match(/ITEM:\s*(.*?)\s+TYPE:/i);
-            const typeMatch = line.match(/TYPE:\s*(.*?)\s+(?:DESCRIPTION|DESC):/i);
-            const descMatch = line.match(/(?:DESCRIPTION|DESC):\s*(.*)/i);
-            
-            const roll = rollMatch ? rollMatch[1] : '[ERROR]';
-            const name = itemMatch ? itemMatch[1].trim() : '[REQUIRES MANUAL ENTRY]';
-            const type = typeMatch ? typeMatch[1].trim() : 'Unknown';
-            const desc = descMatch ? descMatch[1].trim() : '';
-
-            taggedText += `\n#SLOT ${roll}\nNAME: ${name}\nTYPE: ${type}\nDESC: ${desc}\n`;
-            continue;
-          }
-
-          // Explicit ITEM: Tag
-          if (line.match(/^ITEM:\s*(.*)/i)) {
-            inItemBlock = true;
-            taggedText += `\n#SLOT ${slotCounter++}\nNAME: ${line.replace(/^ITEM:\s*/i, '').trim()}\nTYPE: Unknown\nDESC: `;
-            continue;
-          }
-
-          // IMPLICIT TITLE DETECTION (Look-Ahead Heuristic)
-          const propertyRegex = /^(?:Type:|Description:|Desc:|Mechanics:|Mechanic:|•|Weapon|Armor|Wondrous|Consumable)/i;
-          const isProperty = line.match(propertyRegex);
-          
-          if (!isProperty) {
-             let nextLine = "";
-             for (let j = i + 1; j < lines.length; j++) {
-                 if (lines[j].trim() !== "") { nextLine = lines[j].trim(); break; }
-             }
-             const nextIsProperty = nextLine.match(propertyRegex);
-             
-             if (nextIsProperty && line.split(' ').length < 15) {
-                 inItemBlock = true;
-                 taggedText += `\n#SLOT ${slotCounter++}\nNAME: ${line}\nTYPE: Unknown\nDESC: `;
-                 continue;
-             }
-          }
-
-          // Append to Description if inside an Item Block
-          if (inItemBlock) {
-            const typeMatch = line.match(/^(?:Type:|Type\s+-|Weapon|Armor|Wondrous|Consumable)/i);
-            if (typeMatch && taggedText.includes('TYPE: Unknown')) {
-               const typeStr = line.replace(/^Type:\s*/i, '').trim();
-               const lastIdx = taggedText.lastIndexOf('TYPE: Unknown');
-               if (lastIdx !== -1) {
-                  taggedText = taggedText.substring(0, lastIdx) + `TYPE: ${typeStr}` + taggedText.substring(lastIdx + 13);
-               }
-            } else {
-               let cleanLine = line.replace(/^(?:Description:|Desc:|Mechanics:|Mechanic:)\s*/i, '');
-               taggedText += `${cleanLine} `;
-            }
-          }
-        }
-      } 
-      else if (currentMode === 'roster') {
-        const lines = rawText.split('\n');
-        for (let i = 0; i < lines.length; i++) {
-          let line = lines[i].trim();
-          if (!line) continue;
-
-          let isPlayerHeader = false;
-          const explicitMatch = line.match(/^(.*?) \(Played by:.*?\)/i);
-
-          if (explicitMatch) {
-            taggedText += `\n#PLAYER ${explicitMatch[1].trim()}\n`;
-            continue;
-          }
-
-          // Fuzzy Player Header Matching (Look-Ahead for Character Keywords)
-          if (line.split(' ').length <= 4 && !line.includes(':')) {
-              const nextLines = lines.slice(i + 1, i + 3).join(' ');
-              if (nextLines.match(/build|vital|class|level/i)) isPlayerHeader = true;
-          }
-
-          if (isPlayerHeader) {
-            taggedText += `\n#PLAYER ${line}\n`;
-            continue;
-          }
-
-          if (line.match(/^Build:/i)) {
-            taggedText += `#LORE ${line}\n`; continue;
-          }
-          if (line.match(/Vitals:/i)) {
-            const vMatch = line.match(/HP:\s*(\d+).*?AC:\s*(\d+).*?Passive Perception:\s*(\d+)/i);
-            if (vMatch) taggedText += `#VITALS HP:${vMatch[1]} AC:${vMatch[2]} PP:${vMatch[3]}\n`;
-            else taggedText += `${line}\n`;
-            continue;
-          }
-          if (line.match(/^Economy:\s*(\d+)/i)) {
-            const gMatch = line.match(/^Economy:\s*(\d+)/i);
-            if (gMatch) taggedText += `#GOLD ${gMatch[1]}\n`;
-            else taggedText += `${line}\n`;
-            continue;
-          }
-          if (line.match(/^Inventory & Curses:/i)) {
-            taggedText += `#INVENTORY\n`; continue;
-          }
-          taggedText += `${line}\n`;
-        }
-      }
-      else if (currentMode === 'sessions') {
-        taggedText = rawText
-          .replace(/^SESSION:\s*(.*)/gm, '#SESSION $1')
-          .replace(/^ACHIEVEMENT:\s*(.*)/gm, '#ACHIEVEMENT $1');
-      }
-
-      document.getElementById('tagged-input').value = taggedText.trim();
-      collapsePane('pane1');
-      expandPane('pane2');
-      showToast("Auto-tagging complete. Please review.");
+    function debounce(fn, ms) {
+      let timer;
+      return function(...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), ms);
+      };
     }
 
-    // --- Engine 2: Block Parser (Text to JSON) ---
-    function compileToJson() {
-      const text = document.getElementById('tagged-input').value;
-      if (!text.trim()) return showToast("No tagged syntax found.");
-      
-      if (currentMode === 'rooms') {
-        compiledData = []; 
-        const blocks = text.split('#ROOM ').filter(b => b.trim() !== '');
-        blocks.forEach(block => {
-          let roomObj = { room_id: "", readaloud: "", mechanics: "", npcs: [], tooltips: [], achievements: [], loot: [] };
-          const sections = block.split(/(?=#READALOUD|#MECHANICS|#NPC|#TOOLTIP|#ACHIEVEMENT|#LOOT)/);
-          roomObj.room_id = sections[0].trim();
+    // --- PARSER 1: Rooms & Notes ---
+    function parseRoomsAndNotes() {
+      const rawText = document.getElementById('rooms-input').value.trim();
+      if (!rawText) return showToast("Please paste content first.");
 
-          for (let i = 1; i < sections.length; i++) {
-            let sec = sections[i].trim();
-            if (sec.startsWith('#READALOUD')) roomObj.readaloud = sec.replace('#READALOUD', '').trim();
-            else if (sec.startsWith('#MECHANICS')) roomObj.mechanics = sec.replace('#MECHANICS', '').trim();
-            else if (sec.startsWith('#NPC')) roomObj.npcs.push({ raw_text: sec.replace('#NPC', '').trim() });
-            else if (sec.startsWith('#TOOLTIP')) roomObj.tooltips.push({ raw_text: sec.replace('#TOOLTIP', '').trim() });
-            else if (sec.startsWith('#ACHIEVEMENT')) roomObj.achievements.push({ raw_text: sec.replace('#ACHIEVEMENT', '').trim() });
-            else if (sec.startsWith('#LOOT')) roomObj.loot.push({ raw_text: sec.replace('#LOOT', '').trim() });
-          }
-          compiledData.push(roomObj);
-        });
-      } 
-      else if (currentMode === 'loot') {
-        compiledData = { loot_tables: { tiers: {}, personal: {} } };
-        
-        const tables = text.split(/(?=#TABLE|#PERSONAL_TABLE)/).filter(b => b.trim());
-        
-        tables.forEach(tBlock => {
-          const isPersonal = tBlock.startsWith('#PERSONAL_TABLE');
-          const slots = tBlock.split('#SLOT ');
-          
-          let tName = "";
-          if (isPersonal) {
-             tName = slots[0].replace('#PERSONAL_TABLE', '').trim();
-          } else {
-             tName = slots[0].replace('#TABLE', '').trim().toLowerCase();
-          }
-          
-          if (!tName) return;
-          
-          const tRef = isPersonal ? compiledData.loot_tables.personal : compiledData.loot_tables.tiers;
-          tRef[tName] = []; 
-          
-          for(let i=1; i < slots.length; i++) {
-             const lines = slots[i].trim().split('\n');
-             const rollRange = lines[0].trim(); 
-             let name="", type="", desc="";
-             
-             lines.slice(1).forEach(l => {
-                if(l.startsWith('NAME:')) name = l.replace('NAME:','').trim();
-                else if(l.startsWith('TYPE:')) type = l.replace('TYPE:','').trim();
-                else if(l.startsWith('DESC:')) desc = l.replace('DESC:','').trim();
-                else if(name) desc += "\n" + l.trim(); 
-             });
-             
-             let targetSlots = [];
-             if(rollRange.includes('-')) {
-                const parts = rollRange.split('-');
-                for(let r=parseInt(parts[0]); r <= parseInt(parts[1] || parts[0]); r++) targetSlots.push(r - 1);
-             } else {
-                targetSlots.push(parseInt(rollRange) - 1);
-             }
-             
-             if (name && name !== '[REQUIRES MANUAL ENTRY]' && !isNaN(targetSlots[0])) {
-               tRef[tName].push({ targetSlots, item: { name, type, desc } });
-             }
-          }
-        });
-      } 
-      else if (currentMode === 'roster') {
-        compiledData = [];
-        const players = text.split('#PLAYER ').filter(b => b.trim());
-        
-        players.forEach(pBlock => {
-          const lines = pBlock.split('\n');
-          let pObj = { name: lines[0].trim(), stats: {}, gold: 0, new_inventory: [] };
-          let inInventory = false;
-          
-          lines.slice(1).forEach(l => {
-             if(l.startsWith('#VITALS')) {
-                 const vMatch = l.match(/HP:(\d+) AC:(\d+) PP:(\d+)/);
-                 if(vMatch) {
-                    pObj.stats = { hp_max: parseInt(vMatch[1]), hp_current: parseInt(vMatch[1]), ac: parseInt(vMatch[2]), passive_perception: parseInt(vMatch[3]) };
-                 }
-             }
-             else if(l.startsWith('#GOLD')) {
-                 const gMatch = l.match(/#GOLD (\d+)/);
-                 if(gMatch) pObj.gold = parseInt(gMatch[1]);
-             }
-             else if(l.startsWith('#INVENTORY')) {
-                 inInventory = true;
-             }
-             else if(inInventory && l.trim() !== '') {
-                 // Look-Ahead Inventory Fix: Group multi-line items safely
-                 const isNewItem = l.match(/^(\*|-|\[NEW\])/i) || (l.split(':').length > 1 && l.split(' ').length < 10);
-                 
-                 if (isNewItem) {
-                     let iName = l.trim();
-                     let iType = "Item";
-                     let iDesc = "";
-                     
-                     if (iName.startsWith('*') || iName.startsWith('-')) iName = iName.substring(1).trim();
-                     if (iName.startsWith('[NEW]')) iName = iName.substring(5).trim();
+      parsedRoomsAndNotes = { rooms: [], notes: [] };
 
-                     const parts = iName.split(':');
-                     if (parts.length > 1) {
-                         iName = parts[0].trim();
-                         iDesc = parts.slice(1).join(':').trim();
-                     }
+      // Split by "ROOM:" or "NOTE:" headers
+      const sections = rawText.split(/^(ROOM:|NOTE:)\s*/m);
 
-                     const typeMatch = iName.match(/(.*?)\s*\((.*?)\)$/);
-                     if(typeMatch) {
-                         iName = typeMatch[1].trim();
-                         iType = typeMatch[2].trim();
-                     }
+      for (let i = 1; i < sections.length; i += 2) {
+        const type = sections[i].trim().toLowerCase();
+        const content = sections[i + 1];
 
-                     pObj.new_inventory.push({ name: iName, flavor_text: iType, mechanics: iDesc, quantity: 1, is_deleted: false });
-                 } else {
-                     // Append non-title lines to the previously created item
-                     if (pObj.new_inventory.length > 0) {
-                         pObj.new_inventory[pObj.new_inventory.length - 1].mechanics += "\n" + l.trim();
-                     }
-                 }
-             }
+        if (!content) continue;
+
+        const lines = content.trim().split('\n');
+        const firstLine = lines[0].trim();
+        const restContent = lines.slice(1).join('\n').trim();
+
+        if (type === 'room:') {
+          parsedRoomsAndNotes.rooms.push({
+            room_id: firstLine || `room_${Date.now()}`,
+            readaloud: restContent,
+            mechanics: '',
+            npcs: [],
+            tooltips: [],
+            achievements: [],
+            loot: [],
+            is_deleted: false
           });
-          compiledData.push(pObj);
-        });
-      }
-      else if (currentMode === 'sessions') {
-        compiledData = { session_log: null, achievements: [] };
-        
-        const sessionParts = text.split('#SESSION ');
-        if (sessionParts.length > 1) {
-           const narrativeChunk = sessionParts[1].split('#ACHIEVEMENT')[0];
-           const lines = narrativeChunk.split('\n').filter(line => line.trim() !== '');
-           
-           compiledData.session_log = { 
-             id: Date.now(), 
-             title: lines[0] ? lines[0].trim() : "Untitled Session", 
-             content: lines.slice(1).join('\n').trim(),
-             is_deleted: false
-           };
+        } else if (type === 'note:') {
+          parsedRoomsAndNotes.notes.push({
+            note_id: `note_${Date.now()}_${Math.random()}`,
+            session: firstLine || 'Untitled',
+            content: restContent,
+            timestamp: new Date().toISOString(),
+            is_deleted: false
+          });
         }
-
-        const achBlocks = text.split('#ACHIEVEMENT ').slice(1);
-        achBlocks.forEach(ach => {
-           const parts = ach.split(/Reward:/i);
-           const title = parts[0].trim().replace(/"/g, '');
-           const itemDesc = parts[1] ? parts[1].trim() : "Unknown";
-           const itemName = parts[1] ? parts[1].split('.')[0].trim() : "Unknown";
-
-           compiledData.achievements.push({
-             name: title,
-             is_acknowledged: false,
-             is_deleted: false,
-             description: itemDesc,
-             rewards: { items: [{ name: itemName, flavor_text: itemDesc, mechanics: "", quantity: 1 }] }
-           });
-        });
       }
 
-      document.getElementById('json-preview').innerText = JSON.stringify(compiledData, null, 2);
-      document.getElementById('btn-push').disabled = false;
-      collapsePane('pane2');
-      expandPane('pane3');
-      showToast("JSON Compiled. Ready for upload.");
+      renderRoomsAndNotesPreview();
+      document.getElementById('btn-sync-rooms').disabled = false;
+      showToast(`Parsed ${parsedRoomsAndNotes.rooms.length} rooms, ${parsedRoomsAndNotes.notes.length} notes.`);
     }
 
-    // --- Engine 3: Smart Push Router ---
-    async function mergeAndPush() {
-      const pushBtn = document.getElementById('btn-push');
-      pushBtn.disabled = true; 
-      pushBtn.innerText = "[ TRANSMITTING... ]";
-      pushBtn.style.borderColor = '';
-      pushBtn.style.color = '';
+    function renderRoomsAndNotesPreview() {
+      const preview = document.getElementById('rooms-preview');
+      preview.innerHTML = '';
+
+      parsedRoomsAndNotes.rooms.forEach((room, idx) => {
+        const li = document.createElement('li');
+        li.className = 'preview-item';
+        li.innerHTML = `
+          <div class="preview-item-title">🏛 ${room.room_id}</div>
+          <div class="preview-item-meta">${room.readaloud.substring(0, 60)}...</div>
+          <div class="preview-item-actions">
+            <button class="btn-remove" onclick="removeRoomFromPreview(${idx})">Remove</button>
+          </div>
+        `;
+        preview.appendChild(li);
+      });
+
+      parsedRoomsAndNotes.notes.forEach((note, idx) => {
+        const li = document.createElement('li');
+        li.className = 'preview-item';
+        li.innerHTML = `
+          <div class="preview-item-title">📝 ${note.session}</div>
+          <div class="preview-item-meta">${note.content.substring(0, 60)}...</div>
+          <div class="preview-item-actions">
+            <button class="btn-remove" onclick="removeNoteFromPreview(${idx})">Remove</button>
+          </div>
+        `;
+        preview.appendChild(li);
+      });
+    }
+
+    function removeRoomFromPreview(idx) {
+      parsedRoomsAndNotes.rooms.splice(idx, 1);
+      renderRoomsAndNotesPreview();
+    }
+
+    function removeNoteFromPreview(idx) {
+      parsedRoomsAndNotes.notes.splice(idx, 1);
+      renderRoomsAndNotesPreview();
+    }
+
+    // --- PARSER 2: Loot Tables ---
+    function parseLootTables() {
+      const rawText = document.getElementById('loot-input').value.trim();
+      if (!rawText) return showToast("Please paste loot content first.");
+
+      parsedLootTables = { tiers: {} };
+
+      // Match "TIER: Name (slots: N)" headers
+      const tierBlocks = rawText.split(/^TIER:\s*/m).filter(b => b.trim());
+
+      tierBlocks.forEach(block => {
+        const lines = block.split('\n');
+        const firstLine = lines[0].trim();
+        
+        // Extract tier name and slot count
+        const tierMatch = firstLine.match(/^([^(]+)(?:\s*\(slots:\s*(\d+)\))?/i);
+        const tierName = tierMatch ? tierMatch[1].trim().toLowerCase() : 'unknown';
+        const slotCount = tierMatch && tierMatch[2] ? parseInt(tierMatch[2]) : 100;
+
+        // Initialize tier
+        parsedLootTables.tiers[tierName] = {
+          name: tierName,
+          slot_count: slotCount,
+          slots: []
+        };
+
+        // Parse roll entries
+        const rollLines = lines.slice(1).join('\n');
+        const rollMatches = rollLines.matchAll(/Roll\s+(\d+(?:-\d+)?)[:\s]+(.*)/gi);
+
+        for (const match of rollMatches) {
+          const rollNum = match[1];
+          const itemText = match[2];
+
+          // Parse: Name | Type: X | Description: Y
+          const nameMatch = itemText.match(/^([^|]+?)\s*\|/);
+          const typeMatch = itemText.match(/Type:\s*([^|]+?)(?:\||$)/i);
+          const descMatch = itemText.match(/Description:\s*(.+?)$/i);
+
+          const itemName = nameMatch ? nameMatch[1].trim() : 'Unnamed Item';
+          const itemType = typeMatch ? typeMatch[1].trim() : 'Wondrous Item';
+          const itemDesc = descMatch ? descMatch[1].trim() : '';
+
+          // Handle roll ranges (e.g., "1-5")
+          let rollNums = [];
+          if (rollNum.includes('-')) {
+            const [start, end] = rollNum.split('-').map(Number);
+            for (let r = start; r <= end; r++) rollNums.push(r);
+          } else {
+            rollNums.push(parseInt(rollNum));
+          }
+
+          rollNums.forEach(r => {
+            parsedLootTables.tiers[tierName].slots[r - 1] = {
+              roll: r,
+              item: {
+                name: itemName,
+                type: itemType,
+                desc: itemDesc
+              }
+            };
+          });
+        }
+
+        // Fill empty slots
+        for (let i = 0; i < slotCount; i++) {
+          if (!parsedLootTables.tiers[tierName].slots[i]) {
+            parsedLootTables.tiers[tierName].slots[i] = {
+              roll: i + 1,
+              item: null
+            };
+          }
+        }
+      });
+
+      renderLootPreview();
+      document.getElementById('btn-sync-loot').disabled = false;
+      showToast(`Parsed ${Object.keys(parsedLootTables.tiers).length} loot tiers.`);
+    }
+
+    function renderLootPreview() {
+      const preview = document.getElementById('loot-preview');
+      preview.innerHTML = '';
+
+      Object.entries(parsedLootTables.tiers).forEach(([tierName, tierData]) => {
+        const filled = tierData.slots.filter(s => s.item).length;
+        const li = document.createElement('li');
+        li.className = 'preview-item';
+        li.innerHTML = `
+          <div class="preview-item-title">💎 ${tierName.toUpperCase()}</div>
+          <div class="preview-item-meta">${filled}/${tierData.slot_count} slots filled</div>
+          <div class="preview-item-actions">
+            <button class="btn-remove" onclick="removeTierFromPreview('${tierName}')">Remove</button>
+          </div>
+        `;
+        preview.appendChild(li);
+      });
+    }
+
+    function removeTierFromPreview(tierName) {
+      delete parsedLootTables.tiers[tierName];
+      renderLootPreview();
+    }
+
+    // --- SYNC FUNCTIONS ---
+    async function syncRoomsAndNotes() {
+      if (!parsedRoomsAndNotes) return showToast("No parsed data to sync.");
+
+      const syncBtn = document.getElementById('btn-sync-rooms');
+      syncBtn.disabled = true;
+      syncBtn.innerText = 'Syncing...';
 
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
-        
-        const fetchRes = await fetch(WORKER_URL, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        
-        if (!fetchRes.ok) throw new Error("Fetch failed");
-        let latestState = await fetchRes.json();
+        const response = await fetch(WORKER_URL);
+        if (!response.ok) throw new Error('Fetch failed');
+        let latestState = await response.json();
 
-        // ROUTER: Merge based on mode
-        if (currentMode === 'rooms') {
-          if (!latestState.campaign_notes) latestState.campaign_notes = { rooms: [], sessions: [] };
-          if (!latestState.campaign_notes.rooms) latestState.campaign_notes.rooms = [];
-          
-          compiledData.forEach(newRoom => {
-            const existingIdx = latestState.campaign_notes.rooms.findIndex(r => r.room_id === newRoom.room_id);
-            if (existingIdx >= 0) latestState.campaign_notes.rooms[existingIdx] = { ...latestState.campaign_notes.rooms[existingIdx], ...newRoom, is_deleted: false };
-            else latestState.campaign_notes.rooms.push({ ...newRoom, is_deleted: false });
-          });
-        } 
-        else if (currentMode === 'loot') {
-          if (!latestState.loot_tables) latestState.loot_tables = { tiers: {}, personal: {} };
-          const newTables = compiledData.loot_tables;
-          
-          ['tiers', 'personal'].forEach(cat => {
-            if(newTables[cat]) {
-               Object.keys(newTables[cat]).forEach(tName => {
-                  if(!latestState.loot_tables[cat][tName]) latestState.loot_tables[cat][tName] = [];
-                  const tRef = latestState.loot_tables[cat][tName];
-                  
-                  const maxSlots = cat === 'tiers' ? 100 : 10;
-                  while(tRef.length < maxSlots) tRef.push({ roll: tRef.length + 1, item: null });
+        // Initialize campaign_notes if needed
+        if (!latestState.campaign_notes) {
+          latestState.campaign_notes = { rooms: [], notes: [] };
+        }
+        if (!latestState.campaign_notes.rooms) latestState.campaign_notes.rooms = [];
+        if (!latestState.campaign_notes.notes) latestState.campaign_notes.notes = [];
 
-                  newTables[cat][tName].forEach(entry => {
-                     entry.targetSlots.forEach(sIdx => {
-                         if(sIdx >= 0 && sIdx < maxSlots) {
-                             tRef[sIdx].item = entry.item;
-                         }
-                     });
-                  });
-               });
-            }
-          });
-        }
-        else if (currentMode === 'roster') {
-          if (!latestState.players) latestState.players = [];
-          
-          compiledData.forEach(newP => {
-             const p = latestState.players.find(x => x.name.toLowerCase() === newP.name.toLowerCase());
-             if(p) {
-                p.is_deleted = false; 
-                if(newP.stats.hp_max) {
-                   if(!p.stats) p.stats = {};
-                   p.stats.hp_max = newP.stats.hp_max;
-                   p.stats.hp_current = newP.stats.hp_max; 
-                   p.stats.ac = newP.stats.ac;
-                   p.stats.passive_perception = newP.stats.passive_perception;
-                }
-                if(newP.gold) p.gold = newP.gold;
-                
-                if(!p.inventory) p.inventory = [];
-                newP.new_inventory.forEach(ni => {
-                   const exists = p.inventory.some(item => item.name.toLowerCase() === ni.name.toLowerCase());
-                   if (!exists) p.inventory.push(ni);
-                });
-             } else {
-                latestState.players.push({
-                   name: newP.name, 
-                   stats: newP.stats, 
-                   gold: newP.gold, 
-                   inventory: newP.new_inventory, 
-                   is_deleted: false, 
-                   status: { conditions: [] }, 
-                   achievements: { pending: [] }
-                });
-             }
-          });
-        }
-        else if (currentMode === 'sessions') {
-          if (compiledData.session_log) {
-            if (!latestState.campaign_notes) latestState.campaign_notes = { rooms: [], sessions: [] };
-            if (!latestState.campaign_notes.sessions) latestState.campaign_notes.sessions = [];
-            latestState.campaign_notes.sessions.push(compiledData.session_log);
+        // Merge rooms (update if exists, insert if new)
+        parsedRoomsAndNotes.rooms.forEach(newRoom => {
+          const existingIdx = latestState.campaign_notes.rooms.findIndex(r => r.room_id === newRoom.room_id);
+          if (existingIdx >= 0) {
+            latestState.campaign_notes.rooms[existingIdx] = newRoom;
+          } else {
+            latestState.campaign_notes.rooms.push(newRoom);
           }
-          if (compiledData.achievements.length > 0) {
-            if (!latestState.achievement_queue) latestState.achievement_queue = [];
-            compiledData.achievements.forEach(ach => latestState.achievement_queue.push(ach));
-          }
-        }
+        });
 
+        // Merge notes (always append)
+        latestState.campaign_notes.notes.push(...parsedRoomsAndNotes.notes);
+
+        // Increment version and timestamp
         latestState.version = (latestState.version || 0) + 1;
         latestState.last_modified = Date.now();
 
-        const payload = { base_version: latestState.version - 1, last_modified: latestState.last_modified, data: latestState };
-        
-        const postController = new AbortController();
-        const postTimeoutId = setTimeout(() => postController.abort(), 8000);
-        
-        const postRes = await fetch(WORKER_URL, { 
-          method: 'POST', 
+        // Push to KV
+        const postRes = await fetch(WORKER_URL, {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          signal: postController.signal
+          body: JSON.stringify({
+            base_version: latestState.version - 1,
+            data: latestState
+          })
         });
-        clearTimeout(postTimeoutId);
-        
-        if (!postRes.ok) throw new Error("Version collision");
 
-        pushBtn.style.borderColor = 'var(--success)';
-        pushBtn.style.color = 'var(--success)';
-        pushBtn.innerText = "[ UPLOAD COMPLETE ]";
-        showToast("Database successfully updated.");
+        if (!postRes.ok) throw new Error('Sync failed');
 
-      } catch (e) {
-        console.error(e);
-        pushBtn.disabled = false;
-        pushBtn.innerText = "[ MERGE & PUSH FAILED - RETRY ]";
-        showToast("Network collision. Try again.");
+        syncBtn.style.borderColor = 'var(--success)';
+        syncBtn.style.color = 'var(--success)';
+        syncBtn.innerText = 'Synced ✓';
+        showToast('Rooms & notes successfully synced.');
+
+        // Reset
+        setTimeout(() => {
+          document.getElementById('rooms-input').value = '';
+          parsedRoomsAndNotes = null;
+          document.getElementById('rooms-preview').innerHTML = '';
+          syncBtn.disabled = true;
+          syncBtn.innerText = 'Sync to KV';
+          syncBtn.style.borderColor = '';
+          syncBtn.style.color = '';
+        }, 2000);
+
+      } catch (err) {
+        console.error(err);
+        syncBtn.disabled = false;
+        syncBtn.innerText = 'Sync Failed - Retry';
+        showToast('Sync error. Check console.');
+      }
+    }
+
+    async function syncLootTables() {
+      if (!parsedLootTables) return showToast("No parsed data to sync.");
+
+      const syncBtn = document.getElementById('btn-sync-loot');
+      syncBtn.disabled = true;
+      syncBtn.innerText = 'Syncing...';
+
+      try {
+        const response = await fetch(WORKER_URL);
+        if (!response.ok) throw new Error('Fetch failed');
+        let latestState = await response.json();
+
+        // Initialize loot_tables if needed
+        if (!latestState.loot_tables) {
+          latestState.loot_tables = { tiers: {}, personal: {} };
+        }
+        if (!latestState.loot_tables.tiers) latestState.loot_tables.tiers = {};
+
+        // Merge loot tiers (overwrites existing)
+        Object.assign(latestState.loot_tables.tiers, parsedLootTables.tiers);
+
+        // Increment version and timestamp
+        latestState.version = (latestState.version || 0) + 1;
+        latestState.last_modified = Date.now();
+
+        // Push to KV
+        const postRes = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            base_version: latestState.version - 1,
+            data: latestState
+          })
+        });
+
+        if (!postRes.ok) throw new Error('Sync failed');
+
+        syncBtn.style.borderColor = 'var(--success)';
+        syncBtn.style.color = 'var(--success)';
+        syncBtn.innerText = 'Synced ✓';
+        showToast('Loot tables successfully synced.');
+
+        // Reset
+        setTimeout(() => {
+          document.getElementById('loot-input').value = '';
+          parsedLootTables = null;
+          document.getElementById('loot-preview').innerHTML = '';
+          syncBtn.disabled = true;
+          syncBtn.innerText = 'Sync to KV';
+          syncBtn.style.borderColor = '';
+          syncBtn.style.color = '';
+        }, 2000);
+
+      } catch (err) {
+        console.error(err);
+        syncBtn.disabled = false;
+        syncBtn.innerText = 'Sync Failed - Retry';
+        showToast('Sync error. Check console.');
       }
     }
   </script>
