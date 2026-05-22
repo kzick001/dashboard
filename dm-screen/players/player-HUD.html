@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Showrunner | Player HUD V2.0</title>
+  <style>
+    :root {
+      --bg: rgba(10, 10, 12, 0.90);
+      --glass: rgba(15, 15, 18, 0.85);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --accent: #bb86fc;
+      --danger: #ff4757;
+      --success: #03dac6;
+      --warning: #f1c40f;
+      --text: #e0e0e0;
+      --text-muted: #888;
+      --ai-terminal: #ffeb3b;
+    }
+
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      width: 100vw;
+      color: var(--text);
+      background-color: #050505;
+      background-image: 
+        linear-gradient(rgba(187, 134, 252, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(187, 134, 252, 0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+      overflow: hidden;
+    }
+
+    .hidden { display: none !important; }
+
+    /* ========== LAYER 0: VFX OVERLAYS ========== */
+    .vfx-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 100;
+      transition: all 1s ease;
+    }
+
+    .vfx-critical {
+      box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.8), inset 0 0 200px rgba(255, 71, 87, 0.6);
+      background: radial-gradient(circle at center, transparent 40%, rgba(255, 71, 87, 0.2) 100%);
+      animation: vfx-critical-pulse 0.8s infinite;
+    }
+
+    .vfx-bleeding {
+      box-shadow: inset 0 0 120px rgba(255, 71, 87, 0.6);
+      animation: vfx-bleed-pulse 2.5s infinite;
+    }
+
+    .vfx-poison {
+      box-shadow: inset 0 0 150px rgba(46, 204, 113, 0.4);
+      background: radial-gradient(circle, transparent 60%, rgba(46, 204, 113, 0.1) 100%);
+    }
+
+    .vfx-blinded {
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(6px);
+    }
+
+    @keyframes vfx-critical-pulse {
+      0% { box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.6), inset 0 0 200px rgba(255, 71, 87, 0.4); }
+      50% { box-shadow: inset 0 0 200px rgba(255, 0, 0, 0.8), inset 0 0 250px rgba(255, 71, 87, 0.6); }
+      100% { box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.6), inset 0 0 200px rgba(255, 71, 87, 0.4); }
+    }
+
+    @keyframes vfx-bleed-pulse {
+      0% { box-shadow: inset 0 0 120px rgba(255, 71, 87, 0.4); }
+      50% { box-shadow: inset 0 0 200px rgba(255, 71, 87, 0.7); }
+      100% { box-shadow: inset 0 0 120px rgba(255, 71, 87, 0.4); }
+    }
+
+    /* ========== LAYER 1: MARQUEE ========== */
+    .ticker-marquee {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      border-bottom: 1px solid var(--ai-terminal);
+      padding: 8px 0;
+      overflow: hidden;
+      z-index: 200;
+      transition: all 0.3s ease;
+      height: 28px;
+    }
+
+    .ticker-marquee.hidden {
+      height: 0;
+      padding: 0;
+      border: none;
+    }
+
+    .marquee-track {
+      display: flex;
+      width: max-content;
+      animation: scroll-left 40s linear infinite;
+    }
+
+    .marquee-text {
+      font-family: monospace;
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: var(--ai-terminal);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding-right: 100px;
+      white-space: nowrap;
+    }
+
+    @keyframes scroll-left {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* ========== LAYER 2: PLAYER HUD WIDGET ========== */
+    .player-hud {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      max-width: 480px;
+      width: auto;
+      border-radius: 8px;
+      background: var(--glass);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid var(--glass-border);
+      padding: 1rem;
+      z-index: 1000;
+      font-size: 0.9rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      transition: all 0.3s ease;
+    }
+
+    @media (max-width: 768px) {
+      .player-hud {
+        max-width: 90vw;
+        width: 90vw;
+        bottom: 10px;
+        right: 10px;
+        padding: 0.75rem;
+        font-size: 0.85rem;
+      }
+    }
+
+    .hud-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .ticker-toggle {
+      background: transparent;
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      transition: 0.2s;
+    }
+
+    .ticker-toggle:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .notif-badge {
+      background: var(--danger);
+      color: #fff;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .notif-badge:hover {
+      background: #ff6b7a;
+      transform: scale(1.1);
+    }
+
+    .notif-badge.empty {
+      background: var(--text-muted);
+      cursor: default;
+    }
+
+    .notif-badge.empty:hover {
+      background: var(--text-muted);
+      transform: scale(1);
+    }
+
+    /* ========== NOTIFICATION QUEUE ========== */
+    .notification-queue {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-bottom: 0.75rem;
+    }
+
+    .notification-queue::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .notification-queue::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .notification-queue::-webkit-scrollbar-thumb {
+      background: var(--accent);
+      border-radius: 3px;
+    }
+
+    .notification {
+      background: rgba(187, 134, 252, 0.15);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 0.75rem;
+      cursor: pointer;
+      transition: 0.2s;
+      animation: notif-slide-in 0.3s ease;
+    }
+
+    @keyframes notif-slide-in {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .notification:hover {
+      background: rgba(187, 134, 252, 0.25);
+      border-color: #fff;
+      transform: translateX(-4px);
+    }
+
+    .notification.loot {
+      border-color: var(--success);
+      background: rgba(3, 218, 198, 0.15);
+    }
+
+    .notification.loot:hover {
+      background: rgba(3, 218, 198, 0.25);
+    }
+
+    .notification.achievement {
+      border-color: var(--warning);
+      background: rgba(241, 196, 15, 0.15);
+    }
+
+    .notification.achievement:hover {
+      background: rgba(241, 196, 15, 0.25);
+    }
+
+    .notif-content {
+      margin: 0;
+    }
+
+    .notif-content h4 {
+      margin: 0 0 0.25rem 0;
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .notif-content p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .notif-rarity {
+      font-weight: bold;
+      margin-top: 0.25rem;
+    }
+
+    .rarity-common { color: #999; }
+    .rarity-uncommon { color: #4ae54a; }
+    .rarity-rare { color: var(--accent); }
+    .rarity-epic { color: #ff6b6b; }
+    .rarity-legendary { color: var(--warning); }
+    .rarity-contraband { color: #ff00ff; }
+
+    /* ========== NOTIFICATION STACK MODAL ========== */
+    .notification-stack {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-top: 4px solid var(--accent);
+      border-radius: 8px;
+      padding: 1.5rem;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 2000;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      visibility: hidden;
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    .notification-stack.visible {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .stack-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 0.75rem;
+    }
+
+    .stack-header h3 {
+      margin: 0;
+      color: var(--accent);
+      text-transform: uppercase;
+      font-size: 1.1rem;
+      letter-spacing: 0.1em;
+    }
+
+    .stack-close {
+      background: transparent;
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s;
+    }
+
+    .stack-close:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .stack-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .stack-item {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--glass-border);
+      border-left: 4px solid var(--accent);
+      border-radius: 4px;
+      padding: 0.75rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .stack-item:hover {
+      background: rgba(0, 0, 0, 0.5);
+      border-left-color: #fff;
+    }
+
+    .stack-item.loot {
+      border-left-color: var(--success);
+    }
+
+    .stack-item.loot:hover {
+      border-left-color: #fff;
+    }
+
+    .stack-item.achievement {
+      border-left-color: var(--warning);
+    }
+
+    .stack-item.achievement:hover {
+      border-left-color: #fff;
+    }
+
+    .stack-item h4 {
+      margin: 0 0 0.25rem 0;
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .stack-item p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .btn-view-history {
+      width: 100%;
+      background: rgba(187, 134, 252, 0.1);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: 0.2s;
+    }
+
+    .btn-view-history:hover {
+      background: var(--accent);
+      color: #000;
+    }
+
+    /* ========== TOAST NOTIFICATIONS ========== */
+    #toast-container {
+      position: fixed;
+      bottom: 110px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 900;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(0, 0, 0, 0.95);
+      color: #fff;
+      padding: 1rem 1.5rem;
+      border-radius: 4px;
+      border: 1px solid var(--glass-border);
+      font-size: 0.9rem;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+      animation: toast-in 0.3s ease, toast-out 0.3s ease 2.7s forwards;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.8);
+    }
+
+    @keyframes toast-in {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes toast-out {
+      from {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+    }
+
+    /* ========== MODAL OVERLAY ========== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1999;
+      display: none;
+    }
+
+    .modal-overlay.visible {
+      display: block;
+    }
+
+    /* ========== HISTORY MODAL ========== */
+    .history-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-top: 4px solid var(--accent);
+      border-radius: 8px;
+      padding: 1.5rem;
+      max-width: 550px;
+      max-height: 80vh;
+      overflow: hidden;
+      z-index: 2000;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      visibility: hidden;
+      opacity: 0;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .history-modal.visible {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 1rem;
+    }
+
+    .history-header h3 {
+      margin: 0;
+      color: var(--accent);
+      text-transform: uppercase;
+      font-size: 1.1rem;
+      letter-spacing: 0.1em;
+    }
+
+    .history-close {
+      background: transparent;
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s;
+    }
+
+    .history-close:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .history-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 0.75rem;
+    }
+
+    .history-tab {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: 0.2s;
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+
+    .history-tab:hover {
+      color: var(--text);
+      border-color: var(--glass-border);
+    }
+
+    .history-tab.active {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .history-content {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .history-content::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .history-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .history-content::-webkit-scrollbar-thumb {
+      background: var(--accent);
+      border-radius: 3px;
+    }
+
+    .history-item {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--glass-border);
+      border-left: 4px solid var(--accent);
+      border-radius: 4px;
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+      transition: 0.2s;
+    }
+
+    .history-item:hover {
+      background: rgba(0, 0, 0, 0.5);
+      border-left-color: #fff;
+    }
+
+    .history-item.archived {
+      border-left-color: var(--text-muted);
+      opacity: 0.7;
+    }
+
+    .history-item.loot {
+      border-left-color: var(--success);
+    }
+
+    .history-item h4 {
+      margin: 0 0 0.25rem 0;
+      font-size: 0.95rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .history-item p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .history-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: bold;
+      padding: 0.2rem 0.5rem;
+      border-radius: 3px;
+      margin-top: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-active {
+      background: rgba(3, 218, 198, 0.2);
+      color: var(--success);
+      border: 1px solid var(--success);
+    }
+
+    .badge-archived {
+      background: rgba(136, 136, 136, 0.2);
+      color: var(--text-muted);
+      border: 1px solid var(--text-muted);
+    }
+
+    .history-empty {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 2rem 1rem;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- VFX Layer -->
+  <div id="vfx-layer" class="vfx-overlay"></div>
+
+  <!-- Ticker Marquee -->
+  <div class="ticker-marquee" id="ticker">
+    <div class="marquee-track">
+      <span class="marquee-text" id="marquee-text-1"></span>
+      <span class="marquee-text" id="marquee-text-2" aria-hidden="true"></span>
+    </div>
+  </div>
+
+  <!-- Player HUD Widget (Bottom Right) -->
+  <div class="player-hud">
+    <div class="hud-header">
+      <button class="ticker-toggle" id="ticker-toggle" title="Toggle ticker" aria-label="Toggle ticker visibility">👁</button>
+      <div class="notif-badge empty" id="notif-badge" title="View all notifications" aria-label="Notification count">0</div>
+    </div>
+
+    <div class="notification-queue" id="notif-queue"></div>
+
+    <div style="border-top: 1px solid var(--glass-border); padding-top: 0.75rem; margin-top: 0.75rem;">
+      <button class="btn-view-history" id="btn-view-history" title="View achievement and loot history" aria-label="View my items">📋 My Items</button>
+    </div>
+  </div>
+
+  <!-- Notification Stack Modal -->
+  <div class="modal-overlay" id="stack-overlay" onclick="closeStack()"></div>
+  <div class="notification-stack" id="notif-stack">
+    <div class="stack-header">
+      <h3>Notifications</h3>
+      <button class="stack-close" id="stack-close-btn" onclick="closeStack()" aria-label="Close notifications">×</button>
+    </div>
+    <div class="stack-list" id="stack-list"></div>
+  </div>
+
+  <!-- History Modal (Achievements + Loot) -->
+  <div class="modal-overlay" id="history-overlay" onclick="closeHistory()"></div>
+  <div class="history-modal" id="history-modal">
+    <div class="history-header">
+      <h3>My Items & Achievements</h3>
+      <button class="history-close" onclick="closeHistory()" aria-label="Close history">×</button>
+    </div>
+    
+    <div class="history-tabs">
+      <button class="history-tab active" data-tab="achievements" onclick="switchHistoryTab('achievements')">🏆 Achievements</button>
+      <button class="history-tab" data-tab="loot" onclick="switchHistoryTab('loot')">⭐ Loot Awards</button>
+    </div>
+
+    <div class="history-content" id="history-content"></div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <script>
+    // ========== CONFIGURATION ==========
+    const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
+    const TICKER_STORAGE_KEY = 'showrunner_ticker_visible';
+
+    // ========== STATE ==========
+    let localState = {
+      version: 0,
+      players: [
+        { name: "Chuck", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } },
+        { name: "Tilly", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } },
+        { name: "Hendrick", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } },
+        { name: "Aelar", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } },
+        { name: "Jimothy", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] } }
+      ]
+    };
+
+    let activePlayerIndex = null;
+    let notificationCache = [];
+
+    // ========== INITIALIZATION ==========
+    window.addEventListener('DOMContentLoaded', () => {
+      initTickerToggle();
+      initNotificationBadge();
+      initHistoryButton();
+      generateAiMessage();
+      setInterval(generateAiMessage, 180000);
+      pollDatabase(false);
+      setInterval(() => pollDatabase(false), 60000);
+
+      // Restore ticker visibility
+      const tickerVisible = localStorage.getItem(TICKER_STORAGE_KEY) !== 'false';
+      if (!tickerVisible) {
+        document.getElementById('ticker').classList.add('hidden');
+        document.getElementById('ticker-toggle').textContent = '🔒';
+      }
+
+      // Auto-login check
+      const savedIdx = localStorage.getItem('showrunner_active_player');
+      if (savedIdx !== null && localState.players[savedIdx] && !localState.players[savedIdx].is_deleted) {
+        activePlayerIndex = parseInt(savedIdx);
+        syncAndRender();
+      }
+    });
+
+    // ========== TICKER MARQUEE ==========
+    async function generateAiMessage() {
+      let fullMessage = "";
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch('ticker.json', { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!res.ok) throw new Error("Ticker file not found");
+        const data = await res.json();
+
+        const sub = data.subjects[Math.floor(Math.random() * data.subjects.length)];
+        const act = data.actions[Math.floor(Math.random() * data.actions.length)];
+        const reslt = data.results[Math.floor(Math.random() * data.results.length)];
+        const sign = data.signoffs[Math.floor(Math.random() * data.signoffs.length)];
+
+        fullMessage = `[SYS_BROADCAST] ${sub} ${act} ${reslt} ${sign}`;
+      } catch (e) {
+        fullMessage = "[SYS_BROADCAST] MANAGEMENT IS CURRENTLY UNAVAILABLE. PLEASE CONTINUE TO KILL PRODUCTIVELY.";
+      }
+
+      const track = document.querySelector('.marquee-track');
+      if (track) {
+        track.style.animation = 'none';
+        track.offsetHeight;
+        track.style.animation = '';
+      }
+      document.querySelectorAll('.marquee-text').forEach(el => { el.innerText = fullMessage; });
+    }
+
+    function initTickerToggle() {
+      const toggle = document.getElementById('ticker-toggle');
+      toggle.addEventListener('click', () => {
+        const ticker = document.getElementById('ticker');
+        const isHidden = ticker.classList.toggle('hidden');
+        toggle.textContent = isHidden ? '🔒' : '👁';
+        localStorage.setItem(TICKER_STORAGE_KEY, !isHidden);
+      });
+    }
+
+    // ========== POLLING & SYNC ==========
+    async function pollDatabase(isManual = false) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const res = await fetch(WORKER_URL, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const remote = await res.json();
+          if (remote.players && remote.players.length > 0) {
+            localState = remote;
+          } else {
+            localState.version = remote.version || localState.version;
+          }
+          if (activePlayerIndex !== null) syncAndRender();
+          if (isManual) showToast("Synchronized.");
+        }
+      } catch (e) {
+        if (isManual) showToast("Sync failed. Offline mode.");
+      }
+    }
+
+    function syncAndRender() {
+      if (activePlayerIndex === null || !localState.players[activePlayerIndex] || localState.players[activePlayerIndex].is_deleted) {
+        activePlayerIndex = null;
+        return;
+      }
+
+      const player = localState.players[activePlayerIndex];
+      updateConditions(player.status?.conditions || []);
+      evaluateNotifications(player);
+    }
+
+    // ========== VFX SYSTEM ==========
+    function updateConditions(conditions) {
+      const vfx = document.getElementById('vfx-layer');
+      vfx.className = 'vfx-overlay';
+
+      if (!conditions || conditions.length === 0) return;
+
+      const condList = conditions.map(c => c.toLowerCase());
+
+      if (condList.includes('critical trauma') || condList.includes('critical')) {
+        vfx.classList.add('vfx-critical');
+      } else if (condList.includes('bleeding')) {
+        vfx.classList.add('vfx-bleeding');
+      } else if (condList.includes('poisoned') || condList.includes('poison')) {
+        vfx.classList.add('vfx-poison');
+      } else if (condList.includes('blinded') || condList.includes('blind')) {
+        vfx.classList.add('vfx-blinded');
+      }
+    }
+
+    // ========== NOTIFICATION SYSTEM ==========
+    function evaluateNotifications(player) {
+      const pending = player.achievements?.pending || [];
+      notificationCache = pending;
+      renderNotificationQueue();
+      updateNotificationBadge();
+    }
+
+    function renderNotificationQueue() {
+      const queue = document.getElementById('notif-queue');
+      queue.innerHTML = '';
+
+      notificationCache.forEach((item, idx) => {
+        const notif = document.createElement('div');
+        const isLoot = item.rewards && item.rewards.items && item.rewards.items.length > 0;
+        const type = isLoot ? 'loot' : 'achievement';
+
+        notif.className = `notification ${type}`;
+        notif.tabIndex = 0;
+        notif.setAttribute('role', 'button');
+        notif.setAttribute('aria-label', `${isLoot ? 'Loot' : 'Achievement'}: ${item.name}`);
+
+        const actualItem = isLoot ? item.rewards.items[0] : item;
+        const rarity = actualItem?.rarity || 'standard';
+
+        let rarityClass = 'rarity-common';
+        if (rarity.toLowerCase() === 'uncommon') rarityClass = 'rarity-uncommon';
+        else if (rarity.toLowerCase() === 'rare') rarityClass = 'rarity-rare';
+        else if (rarity.toLowerCase() === 'epic') rarityClass = 'rarity-epic';
+        else if (rarity.toLowerCase() === 'legendary') rarityClass = 'rarity-legendary';
+        else if (rarity.toLowerCase() === 'contraband') rarityClass = 'rarity-contraband';
+
+        const icon = isLoot ? '⭐' : '🏆';
+
+        notif.innerHTML = `
+          <div class="notif-content">
+            <h4>${icon} ${escapeHtml(item.name || actualItem.name)}</h4>
+            <p>${escapeHtml(actualItem.description || '')}</p>
+            ${isLoot ? `<p class="notif-rarity ${rarityClass}">${rarity.toUpperCase()}</p>` : ''}
+          </div>
+        `;
+
+        notif.addEventListener('click', () => {
+          notif.remove();
+          notificationCache.splice(idx, 1);
+          updateNotificationBadge();
+          acknowledgeNotification(idx);
+        });
+
+        notif.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            notif.click();
+          }
+        });
+
+        queue.appendChild(notif);
+      });
+    }
+
+    function updateNotificationBadge() {
+      const badge = document.getElementById('notif-badge');
+      const count = notificationCache.length;
+
+      badge.textContent = count;
+      badge.setAttribute('aria-label', `${count} notification${count !== 1 ? 's' : ''}`);
+
+      if (count === 0) {
+        badge.classList.add('empty');
+      } else {
+        badge.classList.remove('empty');
+      }
+    }
+
+    function initNotificationBadge() {
+      const badge = document.getElementById('notif-badge');
+      badge.addEventListener('click', openStack);
+      badge.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') openStack();
+      });
+    }
+
+    function openStack() {
+      const stack = document.getElementById('notif-stack');
+      const overlay = document.getElementById('stack-overlay');
+      const list = document.getElementById('stack-list');
+
+      list.innerHTML = '';
+      notificationCache.forEach((item, idx) => {
+        const isLoot = item.rewards && item.rewards.items && item.rewards.items.length > 0;
+        const type = isLoot ? 'loot' : 'achievement';
+
+        const stackItem = document.createElement('div');
+        stackItem.className = `stack-item ${type}`;
+        stackItem.tabIndex = 0;
+        stackItem.setAttribute('role', 'option');
+
+        const actualItem = isLoot ? item.rewards.items[0] : item;
+        const rarity = actualItem?.rarity || 'standard';
+        const icon = isLoot ? '⭐' : '🏆';
+
+        stackItem.innerHTML = `
+          <h4>${icon} ${escapeHtml(item.name || actualItem.name)}</h4>
+          <p>${escapeHtml(actualItem.description || '')}</p>
+          ${isLoot ? `<p style="margin-top: 0.25rem; font-weight: bold; color: var(--text);">Rarity: ${rarity.toUpperCase()}</p>` : ''}
+        `;
+
+        stackItem.addEventListener('click', () => {
+          notificationCache.splice(idx, 1);
+          renderNotificationQueue();
+          updateNotificationBadge();
+          renderStackList();
+          acknowledgeNotification(idx);
+        });
+
+        stackItem.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') stackItem.click();
+        });
+
+        list.appendChild(stackItem);
+      });
+
+      stack.classList.add('visible');
+      overlay.classList.add('visible');
+    }
+
+    function renderStackList() {
+      const list = document.getElementById('stack-list');
+      list.innerHTML = '';
+      notificationCache.forEach((item, idx) => {
+        const isLoot = item.rewards && item.rewards.items && item.rewards.items.length > 0;
+        const type = isLoot ? 'loot' : 'achievement';
+
+        const stackItem = document.createElement('div');
+        stackItem.className = `stack-item ${type}`;
+        stackItem.tabIndex = 0;
+        stackItem.setAttribute('role', 'option');
+
+        const actualItem = isLoot ? item.rewards.items[0] : item;
+        const rarity = actualItem?.rarity || 'standard';
+        const icon = isLoot ? '⭐' : '🏆';
+
+        stackItem.innerHTML = `
+          <h4>${icon} ${escapeHtml(item.name || actualItem.name)}</h4>
+          <p>${escapeHtml(actualItem.description || '')}</p>
+          ${isLoot ? `<p style="margin-top: 0.25rem; font-weight: bold; color: var(--text);">Rarity: ${rarity.toUpperCase()}</p>` : ''}
+        `;
+
+        stackItem.addEventListener('click', () => {
+          notificationCache.splice(idx, 1);
+          renderNotificationQueue();
+          updateNotificationBadge();
+          renderStackList();
+          acknowledgeNotification(idx);
+        });
+
+        stackItem.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') stackItem.click();
+        });
+
+        list.appendChild(stackItem);
+      });
+    }
+
+    function closeStack() {
+      const stack = document.getElementById('notif-stack');
+      const overlay = document.getElementById('stack-overlay');
+      stack.classList.remove('visible');
+      overlay.classList.remove('visible');
+    }
+
+    async function acknowledgeNotification(idx) {
+      if (activePlayerIndex === null) return;
+
+      try {
+        const latestRes = await fetch(WORKER_URL);
+        if (!latestRes.ok) throw new Error("Fetch failed");
+        const remoteState = await latestRes.json();
+        const remotePlayer = remoteState.players ? remoteState.players[activePlayerIndex] : null;
+
+        if (!remotePlayer || remotePlayer.is_deleted) throw new Error("Player invalid");
+
+        if (remotePlayer.achievements && remotePlayer.achievements.pending && remotePlayer.achievements.pending[idx]) {
+          remotePlayer.achievements.pending[idx].is_acknowledged = true;
+        }
+
+        remoteState.version = (remoteState.version || 0) + 1;
+        remoteState.last_modified = Date.now();
+        const payload = { base_version: remoteState.version - 1, last_modified: remoteState.last_modified, data: remoteState };
+
+        const postRes = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!postRes.ok) throw new Error("Push failed");
+
+        localState = remoteState;
+      } catch (e) {
+        showToast("Sync error. Local only.");
+      }
+    }
+
+    // ========== UTILITIES ==========
+    function showToast(msg) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = msg;
+      toast.setAttribute('role', 'status');
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.toString()
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    // Keyboard support for badge
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeStack();
+        closeHistory();
+      }
+    });
+
+    // ========== HISTORY MODAL (PHASE 5) ==========
+    let historyDataCache = { achievements: [], loot: [] };
+    let currentHistoryTab = 'achievements';
+
+    function initHistoryButton() {
+      const btn = document.getElementById('btn-view-history');
+      btn.addEventListener('click', openHistory);
+    }
+
+    async function openHistory() {
+      if (activePlayerIndex === null) return;
+
+      const playerName = localState.players[activePlayerIndex].name;
+
+      try {
+        // Fetch full state from Worker
+        const res = await fetch(WORKER_URL);
+        if (!res.ok) throw new Error("Fetch failed");
+        const data = await res.json();
+
+        // Filter achievements by player
+        const allAchievements = [];
+        if (data.players && data.players[activePlayerIndex] && data.players[activePlayerIndex].achievements) {
+          const playerAchievements = data.players[activePlayerIndex].achievements;
+          if (playerAchievements.pending) {
+            allAchievements.push(...playerAchievements.pending.map(a => ({ ...a, status: 'active' })));
+          }
+          if (playerAchievements.archived) {
+            allAchievements.push(...playerAchievements.archived.map(a => ({ ...a, status: 'archived' })));
+          }
+        }
+
+        // Filter loot from campaign_notes
+        const allLoot = [];
+        if (data.campaign_notes && data.campaign_notes.loot) {
+          data.campaign_notes.loot.forEach(loot => {
+            if (!loot.is_deleted) {
+              allLoot.push({ ...loot, status: 'active' });
+            }
+          });
+        }
+
+        historyDataCache = {
+          achievements: allAchievements,
+          loot: allLoot
+        };
+
+        renderHistoryTab('achievements');
+        document.getElementById('history-modal').classList.add('visible');
+        document.getElementById('history-overlay').classList.add('visible');
+      } catch (e) {
+        showToast("Failed to load history.");
+      }
+    }
+
+    function switchHistoryTab(tab) {
+      currentHistoryTab = tab;
+
+      // Update tab buttons
+      document.querySelectorAll('.history-tab').forEach(t => {
+        t.classList.remove('active');
+      });
+      document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+
+      renderHistoryTab(tab);
+    }
+
+    function renderHistoryTab(tab) {
+      const content = document.getElementById('history-content');
+      const items = tab === 'achievements' ? historyDataCache.achievements : historyDataCache.loot;
+
+      if (items.length === 0) {
+        content.innerHTML = '<div class="history-empty">No ' + tab + ' yet.</div>';
+        return;
+      }
+
+      let html = '';
+      items.forEach(item => {
+        const isArchived = item.status === 'archived';
+        const isLoot = tab === 'loot';
+
+        if (isLoot) {
+          // Loot from campaign_notes (parsed from raw_text)
+          const name = item.raw_text ? item.raw_text.split('\n')[0] : 'Unknown Item';
+          html += `
+            <div class="history-item loot ${isArchived ? 'archived' : ''}">
+              <h4>⭐ ${escapeHtml(name)}</h4>
+              <span class="history-badge ${isArchived ? 'badge-archived' : 'badge-active'}">
+                ${isArchived ? 'Archived' : 'Active'}
+              </span>
+            </div>
+          `;
+        } else {
+          // Achievement from player data
+          const name = item.name || 'Unknown Achievement';
+          html += `
+            <div class="history-item ${isArchived ? 'archived' : ''}">
+              <h4>🏆 ${escapeHtml(name)}</h4>
+              <span class="history-badge ${isArchived ? 'badge-archived' : 'badge-active'}">
+                ${isArchived ? 'Archived' : 'Active'}
+              </span>
+            </div>
+          `;
+        }
+      });
+
+      content.innerHTML = html;
+    }
+
+    function closeHistory() {
+      const modal = document.getElementById('history-modal');
+      const overlay = document.getElementById('history-overlay');
+      modal.classList.remove('visible');
+      overlay.classList.remove('visible');
+    }
+  </script>
+</body>
+</html>
