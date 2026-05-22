@@ -3,141 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Player HUD V4.1</title>
+  <title>Showrunner | Player HUD V4.2</title>
   
-  <!-- SVG Icon Library (SP1: Foundations) -->
+  <!-- SVG Icon Library -->
   <svg style="display: none; width: 0; height: 0;">
     <defs>
-      <!-- Drop / Droplet (Poisoned, Bleeding) -->
       <svg id="icon-droplet" viewBox="0 0 24 24">
         <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.32 0z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
-
-      <!-- Skull (Death Saves) -->
       <svg id="icon-skull" viewBox="0 0 24 24">
         <circle cx="12" cy="10" r="4" stroke="currentColor" stroke-width="2" fill="none"/>
         <path d="M8 16c0 1-1 2-1 2s0 2 4 2 4-2 4-2-1-1-1-2" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
         <circle cx="10" cy="9" r="1" fill="currentColor"/>
         <circle cx="14" cy="9" r="1" fill="currentColor"/>
       </svg>
-
-      <!-- Eye (Ticker Pill, Blinded) -->
       <svg id="icon-eye" viewBox="0 0 24 24">
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
         <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/>
       </svg>
-
-      <!-- Eye Off (Blinded, Invisible) -->
       <svg id="icon-eye-off" viewBox="0 0 24 24">
         <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-
-      <!-- Heart (Charmed) -->
       <svg id="icon-heart" viewBox="0 0 24 24">
         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
       </svg>
-
-      <!-- Lock (Restrained, Grappled) -->
       <svg id="icon-lock" viewBox="0 0 24 24">
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="currentColor" stroke-width="2" fill="none"/>
         <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
       </svg>
-
-      <!-- Zap (Stunned) -->
       <svg id="icon-zap" viewBox="0 0 24 24">
         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
-
-      <!-- Flame (Burning) -->
       <svg id="icon-flame" viewBox="0 0 24 24">
         <path d="M13.75 1.69a1 1 0 0 0-3.5 0c-5.47 3.43-9 6.77-9 10.82 0 5.93 4.18 10.74 9.35 10.74 5.17 0 9.35-4.81 9.35-10.74 0-4.05-3.53-7.39-9-10.82z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
         <path d="M12 8.5c-1.66 1-3 2.5-3 4.5 0 1.66 1.34 3 3 3s3-1.34 3-3c0-2-1.34-3.5-3-4.5z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
       </svg>
-
-      <!-- X Circle (Unconscious) -->
       <svg id="icon-x-circle" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
         <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
-
-      <!-- Alert Triangle (Frightened) -->
       <svg id="icon-alert-triangle" viewBox="0 0 24 24">
         <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
         <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
-
-      <!-- Target (Concentrating) -->
       <svg id="icon-target" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="1" fill="currentColor"/>
         <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" fill="none"/>
         <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" fill="none"/>
       </svg>
-
-      <!-- Pause Circle (Incapacitated) -->
       <svg id="icon-pause-circle" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
         <line x1="10" y1="8" x2="10" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <line x1="14" y1="8" x2="14" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
-
-      <!-- Layers (Petrified) -->
       <svg id="icon-layers" viewBox="0 0 24 24">
         <polygon points="12 2 2 7 2 12 12 17 22 12 22 7 12 2" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
         <polyline points="2 12 12 17 22 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
         <polyline points="2 17 12 22 22 17" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
       </svg>
-
-      <!-- Link (Grappled) -->
       <svg id="icon-link" viewBox="0 0 24 24">
         <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-
-      <!-- Arrow Down (Pushed, Pulled) -->
       <svg id="icon-arrow-down" viewBox="0 0 24 24">
         <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         <polyline points="19 12 12 19 5 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-
-      <!-- Battery (Exhaustion) -->
       <svg id="icon-battery" viewBox="0 0 24 24">
         <rect x="1" y="6" width="16" height="12" rx="2" ry="2" stroke="currentColor" stroke-width="2" fill="none"/>
         <line x1="17" y1="8" x2="17" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <rect x="2" y="7" width="4" height="10" fill="currentColor"/>
       </svg>
-
-      <!-- Star (Inspiration) -->
       <svg id="icon-star" viewBox="0 0 24 24">
         <polygon points="12 2 15.09 10.26 23.77 11.36 17.88 17.15 19.54 25.88 12 21.77 4.46 25.88 6.12 17.15 0.23 11.36 8.91 10.26 12 2" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
       </svg>
-
-      <!-- Shield (Protected) -->
       <svg id="icon-shield" viewBox="0 0 24 24">
         <path d="M12 1L3 5v7c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
       </svg>
-
-      <!-- Gear (Cursed) -->
       <svg id="icon-gear" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/>
         <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6m-16.78 7.78l4.24-4.24m5.08-5.08l4.24-4.24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
       </svg>
-
-      <!-- Plus (Add) -->
       <svg id="icon-plus" viewBox="0 0 24 24">
         <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
-
-      <!-- Light Bulb (Idea / Custom) -->
       <svg id="icon-light" viewBox="0 0 24 24">
         <path d="M21 17v2H3v-2s0-4 9-4 9 4 9 4z" fill="currentColor"/>
         <path d="M3.21 7a7 7 0 0 1 13.58 0M7 17v2m10 0v2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-
-      <!-- User -->
       <svg id="icon-user" viewBox="0 0 24 24">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
@@ -170,58 +127,66 @@
       overflow: hidden;
     }
 
-    /* VFX Overlay */
+    /* ── VFX Overlay ── */
     .vfx-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
       pointer-events: none;
       z-index: 100;
       transition: all 1s ease;
     }
-
     .vfx-critical {
-      box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.8), inset 0 0 200px rgba(255, 71, 87, 0.6);
-      background: radial-gradient(circle at center, transparent 40%, rgba(255, 71, 87, 0.2) 100%);
+      box-shadow: inset 0 0 150px rgba(255,0,0,0.8), inset 0 0 200px rgba(255,71,87,0.6);
+      background: radial-gradient(circle at center, transparent 40%, rgba(255,71,87,0.2) 100%);
       animation: vfx-critical-pulse 0.8s infinite;
     }
-
     .vfx-bleeding {
-      box-shadow: inset 0 0 120px rgba(255, 71, 87, 0.6);
+      box-shadow: inset 0 0 120px rgba(255,71,87,0.6);
       animation: vfx-bleed-pulse 2.5s infinite;
     }
-
     .vfx-poison {
-      box-shadow: inset 0 0 150px rgba(46, 204, 113, 0.4);
-      background: radial-gradient(circle, transparent 60%, rgba(46, 204, 113, 0.1) 100%);
+      box-shadow: inset 0 0 150px rgba(46,204,113,0.4);
+      background: radial-gradient(circle, transparent 60%, rgba(46,204,113,0.1) 100%);
     }
-
     .vfx-blinded {
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(0,0,0,0.85);
       backdrop-filter: blur(6px);
     }
-
+    .vfx-stunned {
+      box-shadow: inset 0 0 120px rgba(255,235,59,0.35);
+      animation: vfx-stun-pulse 1.5s infinite;
+    }
+    .vfx-burning {
+      box-shadow: inset 0 0 140px rgba(255,120,0,0.5);
+      animation: vfx-burn-pulse 1s infinite;
+    }
     @keyframes vfx-critical-pulse {
-      0% { box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.6), inset 0 0 200px rgba(255, 71, 87, 0.4); }
-      50% { box-shadow: inset 0 0 200px rgba(255, 0, 0, 0.8), inset 0 0 250px rgba(255, 71, 87, 0.6); }
-      100% { box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.6), inset 0 0 200px rgba(255, 71, 87, 0.4); }
+      0%   { box-shadow: inset 0 0 150px rgba(255,0,0,0.6), inset 0 0 200px rgba(255,71,87,0.4); }
+      50%  { box-shadow: inset 0 0 200px rgba(255,0,0,0.8), inset 0 0 250px rgba(255,71,87,0.6); }
+      100% { box-shadow: inset 0 0 150px rgba(255,0,0,0.6), inset 0 0 200px rgba(255,71,87,0.4); }
     }
-
     @keyframes vfx-bleed-pulse {
-      0% { box-shadow: inset 0 0 120px rgba(255, 71, 87, 0.4); }
-      50% { box-shadow: inset 0 0 200px rgba(255, 71, 87, 0.7); }
-      100% { box-shadow: inset 0 0 120px rgba(255, 71, 87, 0.4); }
+      0%   { box-shadow: inset 0 0 120px rgba(255,71,87,0.4); }
+      50%  { box-shadow: inset 0 0 200px rgba(255,71,87,0.7); }
+      100% { box-shadow: inset 0 0 120px rgba(255,71,87,0.4); }
+    }
+    @keyframes vfx-stun-pulse {
+      0%   { box-shadow: inset 0 0 120px rgba(255,235,59,0.2); }
+      50%  { box-shadow: inset 0 0 180px rgba(255,235,59,0.5); }
+      100% { box-shadow: inset 0 0 120px rgba(255,235,59,0.2); }
+    }
+    @keyframes vfx-burn-pulse {
+      0%   { box-shadow: inset 0 0 140px rgba(255,120,0,0.35); }
+      50%  { box-shadow: inset 0 0 200px rgba(255,120,0,0.65); }
+      100% { box-shadow: inset 0 0 140px rgba(255,120,0,0.35); }
     }
 
-    /* Login Screen */
+    /* ── Login Screen ── */
     .login-layer {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
       background: var(--bg);
       display: flex;
       flex-direction: column;
@@ -232,10 +197,7 @@
       padding: 2rem;
       overflow-y: auto;
     }
-
-    .login-layer.hidden {
-      display: none;
-    }
+    .login-layer.hidden { display: none; }
 
     .login-hero {
       display: flex;
@@ -243,10 +205,8 @@
       align-items: center;
       gap: 1rem;
     }
-
     .hero-avatar-ring {
-      width: 200px;
-      height: 200px;
+      width: 200px; height: 200px;
       border-radius: 50%;
       padding: 4px;
       display: flex;
@@ -255,21 +215,16 @@
       background: var(--accent);
       box-shadow: 0 0 40px var(--accent);
     }
-
     .hero-avatar-ring img {
-      width: 192px;
-      height: 192px;
+      width: 192px; height: 192px;
       border-radius: 50%;
       object-fit: cover;
       border: 3px solid #000;
     }
-
     .hero-avatar-ring svg {
-      width: 192px;
-      height: 192px;
+      width: 192px; height: 192px;
       color: var(--accent);
     }
-
     .hero-player-name {
       font-size: 2.5rem;
       font-weight: bold;
@@ -277,14 +232,12 @@
       text-transform: uppercase;
       margin: 0;
     }
-
     .hero-subtitle {
       font-size: 1.1rem;
       color: var(--accent);
       text-transform: uppercase;
       margin: 0;
     }
-
     .roster-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -292,7 +245,6 @@
       width: 100%;
       max-width: 800px;
     }
-
     .roster-btn {
       background: var(--glass);
       border: 2px solid var(--accent);
@@ -302,17 +254,15 @@
       cursor: pointer;
       transition: all 0.3s ease;
     }
-
     .roster-btn:hover {
       box-shadow: 0 0 20px var(--accent);
       transform: scale(1.05);
     }
 
-    /* Player HUD */
+    /* ── Player HUD ── */
     .player-hud {
       position: fixed;
-      top: 50%;
-      left: 50%;
+      top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       width: 90%;
       max-width: 480px;
@@ -326,28 +276,15 @@
       flex-direction: column;
       gap: 1rem;
       overflow-y: auto;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
     }
-
-    .player-hud.hidden {
-      display: none;
-    }
+    .player-hud.hidden { display: none; }
 
     @media (max-width: 768px) {
-      .player-hud {
-        width: 95%;
-        max-width: 100%;
-        max-height: 85vh;
-        padding: 1rem;
-      }
+      .player-hud { width: 95%; max-width: 100%; max-height: 85vh; padding: 1rem; }
     }
-
     @media (max-width: 480px) {
-      .player-hud {
-        width: 98%;
-        max-height: 80vh;
-        padding: 0.75rem;
-      }
+      .player-hud { width: 98%; max-height: 80vh; padding: 0.75rem; }
     }
 
     .hud-header {
@@ -355,83 +292,140 @@
       gap: 1rem;
       align-items: center;
     }
-
     .hud-player-avatar {
-      width: 60px;
-      height: 60px;
+      width: 60px; height: 60px;
       border-radius: 50%;
       background: var(--accent);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      overflow: hidden;
     }
-
     .hud-player-avatar img {
-      width: 56px;
-      height: 56px;
+      width: 60px; height: 60px;
       border-radius: 50%;
       object-fit: cover;
     }
-
     .hud-player-avatar svg {
-      width: 40px;
-      height: 40px;
+      width: 40px; height: 40px;
       color: #000;
     }
-
+    .hud-player-info { flex: 1; min-width: 0; }
     .hud-player-info h2 {
       font-size: 1.2rem;
       margin: 0;
       color: var(--ai-terminal);
     }
-
     .hud-player-info p {
       font-size: 0.85rem;
       color: var(--text-dark);
       margin: 0;
     }
 
-    /* Vitals */
+    /* ── Vitals ── */
     .vitals-display {
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0,0,0,0.3);
       border-radius: 8px;
       padding: 1rem;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 0.75rem;
     }
-
     .vitals-stat {
       font-size: 0.9rem;
       text-align: center;
       padding: 0.5rem;
-      background: rgba(187, 134, 252, 0.1);
+      background: rgba(187,134,252,0.1);
       border-radius: 4px;
       color: var(--ai-terminal);
     }
+    .vitals-stat.hp-critical { color: var(--danger); animation: hp-pulse 1s infinite; }
+    .vitals-stat.hp-low { color: #fb923c; }
+    @keyframes hp-pulse {
+      0%,100% { background: rgba(248,113,113,0.15); }
+      50%      { background: rgba(248,113,113,0.35); }
+    }
 
-    /* Spell Slots (Phase 5) */
+    /* ── Conditions Panel ── */
+    .conditions-panel {
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+    }
+    .conditions-label {
+      font-size: 0.7rem;
+      color: var(--text-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+    .conditions-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .condition-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border: 1px solid currentColor;
+      position: relative;
+      cursor: default;
+    }
+    .condition-chip svg {
+      width: 12px; height: 12px;
+      flex-shrink: 0;
+    }
+    /* Condition colour themes */
+    .cond-poison     { color: #4ade80; background: rgba(74,222,128,0.12); }
+    .cond-bleeding   { color: #f87171; background: rgba(248,113,113,0.12); }
+    .cond-burning    { color: #fb923c; background: rgba(251,146,60,0.12); }
+    .cond-stunned    { color: #fbbf24; background: rgba(251,191,36,0.12); }
+    .cond-charmed    { color: #f472b6; background: rgba(244,114,182,0.12); }
+    .cond-frightened { color: #a78bfa; background: rgba(167,139,250,0.12); }
+    .cond-blinded    { color: #94a3b8; background: rgba(148,163,184,0.12); }
+    .cond-deafened   { color: #94a3b8; background: rgba(148,163,184,0.12); }
+    .cond-restrained { color: #60a5fa; background: rgba(96,165,250,0.12); }
+    .cond-grappled   { color: #60a5fa; background: rgba(96,165,250,0.12); }
+    .cond-incapacitated { color: #f87171; background: rgba(248,113,113,0.12); }
+    .cond-unconscious   { color: #475569; background: rgba(71,85,105,0.2); }
+    .cond-petrified     { color: #78716c; background: rgba(120,113,108,0.15); }
+    .cond-concentrating { color: #00e5ff; background: rgba(0,229,255,0.1); }
+    .cond-exhaustion    { color: #fb923c; background: rgba(251,146,60,0.12); }
+    .cond-inspired      { color: #fbbf24; background: rgba(251,191,36,0.15); }
+    .cond-default       { color: var(--text); background: rgba(255,255,255,0.08); }
+
+    .conditions-empty {
+      font-size: 0.8rem;
+      color: var(--text-dark);
+      font-style: italic;
+    }
+
+    /* ── Spell Slots ── */
     .spell-slots-section {
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0,0,0,0.3);
       border-radius: 8px;
       padding: 1rem;
     }
-
     .spell-slots-section h3 {
       margin: 0 0 0.75rem 0;
       font-size: 0.95rem;
       color: var(--ai-terminal);
       text-transform: uppercase;
     }
-
     .spell-slots-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 0.5rem;
       margin-bottom: 1rem;
     }
-
     .spell-level-btn {
       background: var(--accent);
       border: none;
@@ -442,37 +436,22 @@
       font-weight: bold;
       transition: all 0.2s ease;
       font-size: 0.75rem;
+      font-family: 'Courier New', monospace;
     }
-
-    .spell-level-btn:hover {
-      filter: brightness(1.1);
-    }
-
-    .spell-level-btn .level {
-      display: block;
-      font-size: 0.7rem;
-      margin-bottom: 0.25rem;
-    }
-
-    .spell-level-btn .count {
-      display: block;
-      font-size: 1rem;
-    }
-
+    .spell-level-btn:hover { filter: brightness(1.1); }
+    .spell-level-btn .level { display: block; font-size: 0.7rem; margin-bottom: 0.25rem; }
+    .spell-level-btn .count { display: block; font-size: 1rem; }
+    .spell-level-btn.depleted { background: rgba(187,134,252,0.25); color: var(--text-dark); }
     .slots-detail {
       display: none;
       flex-direction: column;
       gap: 0.5rem;
       padding: 0.75rem;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0,0,0,0.5);
       border-radius: 4px;
       margin-top: 0.5rem;
     }
-
-    .slots-detail.show {
-      display: flex;
-    }
-
+    .slots-detail.show { display: flex; }
     .slots-detail button {
       background: var(--ai-terminal);
       color: #000;
@@ -481,8 +460,8 @@
       border-radius: 4px;
       cursor: pointer;
       font-weight: bold;
+      font-family: 'Courier New', monospace;
     }
-
     .long-rest-btn {
       background: var(--success);
       color: #000;
@@ -493,13 +472,11 @@
       font-weight: bold;
       width: 100%;
       transition: all 0.2s ease;
+      font-family: 'Courier New', monospace;
     }
+    .long-rest-btn:hover { filter: brightness(1.1); }
 
-    .long-rest-btn:hover {
-      filter: brightness(1.1);
-    }
-
-    /* Notification Pill (Phase 5) */
+    /* ── Notification Pill ── */
     .notification-pill {
       display: flex;
       align-items: center;
@@ -512,16 +489,11 @@
       cursor: pointer;
       transition: all 0.2s ease;
     }
-
-    .notification-pill:hover {
-      filter: brightness(1.1);
-    }
-
+    .notification-pill:hover { filter: brightness(1.1); }
     .notification-pill .badge {
       background: var(--danger);
       color: #fff;
-      width: 24px;
-      height: 24px;
+      width: 24px; height: 24px;
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -529,17 +501,12 @@
       font-size: 0.8rem;
       font-weight: bold;
     }
+    .notification-pill svg { width: 20px; height: 20px; }
 
-    .notification-pill svg {
-      width: 20px;
-      height: 20px;
-    }
-
-    /* Ticker Pill */
+    /* ── Ticker Pill ── */
     .ticker-pill {
       position: fixed;
-      bottom: 30px;
-      right: 30px;
+      bottom: 30px; right: 30px;
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -550,16 +517,8 @@
       color: var(--ai-terminal);
       z-index: 999;
     }
-
-    .ticker-pill.hidden {
-      display: none;
-    }
-
-    .ticker-icon {
-      width: 18px;
-      height: 18px;
-    }
-
+    .ticker-pill.hidden { display: none; }
+    .ticker-icon { width: 18px; height: 18px; }
     .ticker-text {
       font-size: 0.85rem;
       max-width: 150px;
@@ -568,11 +527,10 @@
       white-space: nowrap;
     }
 
-    /* Toast */
+    /* ── Toast ── */
     .toast {
       position: fixed;
-      bottom: 1rem;
-      right: 1rem;
+      bottom: 1rem; right: 1rem;
       background: var(--glass);
       border: 1px solid var(--accent);
       color: var(--text);
@@ -581,51 +539,42 @@
       z-index: 2000;
       animation: slideIn 0.3s ease;
     }
-
     @keyframes slideIn {
       from { transform: translateX(400px); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
+      to   { transform: translateX(0); opacity: 1; }
     }
 
-    /* Modal */
+    /* ── Modal ── */
     .modal-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.7);
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
       z-index: 1500;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-
-    .modal-overlay.hidden {
-      display: none;
-    }
-
+    .modal-overlay.hidden { display: none; }
     .achievement-modal {
       background: var(--glass);
       border: 2px solid var(--accent);
       border-radius: 12px;
       padding: 2rem;
       max-width: 400px;
+      width: 90%;
       text-align: center;
     }
-
     .achievement-modal h2 {
       font-size: 1.5rem;
       margin-bottom: 1rem;
       color: var(--ai-terminal);
     }
-
     .achievement-modal p {
       font-size: 0.9rem;
       color: var(--text-dark);
       margin-bottom: 1.5rem;
     }
-
     .achievement-modal button {
       background: var(--accent);
       color: #000;
@@ -635,27 +584,59 @@
       cursor: pointer;
       font-weight: bold;
       width: 100%;
+      font-family: 'Courier New', monospace;
     }
 
+    /* ── Pulse animation (used by achievement pill) ── */
+    @keyframes pulse {
+      0%,100% { transform: scale(1); }
+      50%      { transform: scale(1.05); }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to   { opacity: 0; }
+    }
   </style>
 
   <script>
     // ========== CONFIGURATION ==========
-    const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
-    const AUTH_TOKEN_KEY = 'showrunner_auth_token';
+    const WORKER_URL        = 'https://dmscreen.askozicki.workers.dev';
+    const AUTH_TOKEN_KEY    = 'showrunner_auth_token';
     const TICKER_STORAGE_KEY = 'showrunner_ticker_visible';
     const PLAYER_ACTIVE_KEY = 'showrunner_active_player';
-    const POLLING_INTERVAL = 30000; // 30 seconds (Phase 4)
+    const POLLING_INTERVAL  = 30000; // 30 seconds
 
     // ========== STATE ==========
-    let campaignState = null; // Phase 4: KV-synced campaign state
-    let currentPlayer = null; // Phase 4: Current player from campaign state
-    let playerName = new URLSearchParams(window.location.search).get("player") || "Jimothy"; // Phase 4: Player name from URL or default
-    
-    let activePlayerIndex = null;
-    let notificationCache = [];
-    let pollingInterval = null; // Phase 4: Polling timer
-    let currentAchievementModal = null; // Phase 5: Achievement modal tracking
+    let campaignState         = null;
+    let currentPlayer         = null;
+    let playerName            = new URLSearchParams(window.location.search).get("player") || "Jimothy";
+    let activePlayerIndex     = null;
+    let pollingInterval       = null;
+    let currentAchievementModal = null;
+
+    // ========== CONDITION MAP ==========
+    // Maps condition key → { label, icon, cssClass, vfx }
+    // vfx: which class(es) to add to #vfx-layer (null = no VFX)
+    const CONDITION_MAP = {
+      poisoned:       { label: 'Poisoned',       icon: 'icon-droplet',       css: 'cond-poison',       vfx: 'vfx-poison'    },
+      bleeding:       { label: 'Bleeding',        icon: 'icon-droplet',       css: 'cond-bleeding',     vfx: 'vfx-bleeding'  },
+      burning:        { label: 'Burning',         icon: 'icon-flame',         css: 'cond-burning',      vfx: 'vfx-burning'   },
+      stunned:        { label: 'Stunned',         icon: 'icon-zap',           css: 'cond-stunned',      vfx: 'vfx-stunned'   },
+      charmed:        { label: 'Charmed',         icon: 'icon-heart',         css: 'cond-charmed',      vfx: null            },
+      frightened:     { label: 'Frightened',      icon: 'icon-alert-triangle',css: 'cond-frightened',   vfx: null            },
+      blinded:        { label: 'Blinded',         icon: 'icon-eye-off',       css: 'cond-blinded',      vfx: 'vfx-blinded'   },
+      deafened:       { label: 'Deafened',        icon: 'icon-eye-off',       css: 'cond-deafened',     vfx: null            },
+      restrained:     { label: 'Restrained',      icon: 'icon-lock',          css: 'cond-restrained',   vfx: null            },
+      grappled:       { label: 'Grappled',        icon: 'icon-link',          css: 'cond-grappled',     vfx: null            },
+      incapacitated:  { label: 'Incapacitated',   icon: 'icon-pause-circle',  css: 'cond-incapacitated',vfx: null            },
+      unconscious:    { label: 'Unconscious',     icon: 'icon-x-circle',      css: 'cond-unconscious',  vfx: 'vfx-critical'  },
+      petrified:      { label: 'Petrified',       icon: 'icon-layers',        css: 'cond-petrified',    vfx: null            },
+      concentrating:  { label: 'Concentrating',   icon: 'icon-target',        css: 'cond-concentrating',vfx: null            },
+      exhaustion:     { label: 'Exhaustion',      icon: 'icon-battery',       css: 'cond-exhaustion',   vfx: null            },
+      inspired:       { label: 'Inspired',        icon: 'icon-star',          css: 'cond-inspired',     vfx: null            },
+      protected:      { label: 'Protected',       icon: 'icon-shield',        css: 'cond-concentrating',vfx: null            },
+      cursed:         { label: 'Cursed',          icon: 'icon-gear',          css: 'cond-default',      vfx: null            },
+    };
 
     // ========== INITIALIZATION ==========
     window.addEventListener('DOMContentLoaded', () => {
@@ -665,38 +646,36 @@
       initLogoutButton();
       initItemsButton();
       initAchievementsButton();
-      
-      // Phase 4: Start KV polling for campaign state
       startKVPolling();
 
-      // Auto-login check
+      // Auto-login if session active
       const savedIdx = localStorage.getItem(PLAYER_ACTIVE_KEY);
       if (savedIdx !== null) {
         const idx = parseInt(savedIdx);
-        if (idx === 0) selectPlayer(playerName, idx, true);
+        if (!isNaN(idx)) selectPlayer(playerName, idx, true);
       }
     });
 
-    // ========== PHASE 1: LOGIN SCREEN ==========
+    // ========== LOGIN SCREEN ==========
     function initLoginScreen() {
       populateRoster();
     }
 
     function populateRoster() {
       const grid = document.getElementById('roster-grid');
+      if (!grid) return;
       grid.innerHTML = '';
 
       const players = ['Chuck', 'Tilly', 'Hendrick', 'Aelar', 'Jimothy'];
-      
       players.forEach((name, idx) => {
         const btn = document.createElement('button');
         btn.className = 'roster-btn';
         btn.innerHTML = `
-          <div style="text-align: center;">
-            <svg style="width: 40px; height: 40px; margin-bottom: 0.5rem;" viewBox="0 0 24 24">
+          <div style="text-align:center;">
+            <svg style="width:40px;height:40px;margin-bottom:0.5rem;" viewBox="0 0 24 24">
               <use xlink:href="#icon-user"></use>
             </svg>
-            <p style="margin: 0.5rem 0 0 0; font-weight: bold;">${name}</p>
+            <p style="margin:0.5rem 0 0 0;font-weight:bold;">${name}</p>
           </div>
         `;
         btn.addEventListener('click', () => selectPlayer(name, idx, false));
@@ -706,96 +685,58 @@
 
     function selectPlayer(name, idx, isAutoLogin) {
       activePlayerIndex = idx;
-      playerName = name; // Phase 4: Track player name for KV lookups
+      playerName = name;
       localStorage.setItem(PLAYER_ACTIVE_KEY, idx.toString());
 
       const loginLayer = document.getElementById('login-layer');
-      const hudLayer = document.getElementById('main-hud');
-      
+      const hudLayer   = document.getElementById('main-hud');
+
       document.getElementById('hero-player-name').textContent = name;
       document.getElementById('hero-avatar-ring').style.background = 'var(--accent)';
-      
-      // Phase 4: Try to get data from KV first
+
+      // Resolve player from already-loaded campaign state if available
       if (campaignState && campaignState.characters) {
-        currentPlayer = campaignState.characters.find(c => c.name === name);
+        currentPlayer = campaignState.characters.find(c => c.name === name) || null;
         if (currentPlayer) {
-          document.getElementById('hero-subtitle').textContent = `${currentPlayer.race} ${currentPlayer.class}`;
+          document.getElementById('hero-subtitle').textContent =
+            `${currentPlayer.race || ''} ${currentPlayer.class || ''}`.trim();
         }
       }
 
-      // Transition to HUD
       loginLayer.style.animation = 'fadeOut 0.5s ease forwards';
       setTimeout(() => {
         loginLayer.classList.add('hidden');
+        loginLayer.style.animation = '';
         hudLayer.classList.remove('hidden');
         renderPlayerHUD();
+        applyVFXFromConditions();
         updateAchievementNotifier();
       }, 500);
     }
 
-    // ========== KV POLLING (Phase 4) ==========
+    // ========== KV POLLING ==========
+    // V4.2 CHANGE: Player HUD is public-facing, no auth required. Worker accepts all GET requests.
     async function fetchCampaignStateFromKV() {
       try {
-        const token = localStorage.getItem(AUTH_TOKEN_KEY) || sessionStorage.getItem(AUTH_TOKEN_KEY);
-        if (!token) {
-          console.warn("No auth token for KV polling");
-          return;
-        }
-        
         const response = await fetch(WORKER_URL, {
-          method: "GET",
-          headers: { "Authorization": `Bearer ${token}` }
+          method: 'GET'
         });
-        
+
         if (response.ok) {
           campaignState = await response.json();
-          currentPlayer = campaignState.characters?.find(c => c.name === playerName);
+          // Always refresh currentPlayer reference from fresh state
+          if (playerName) {
+            currentPlayer = campaignState.characters?.find(c => c.name === playerName) || null;
+          }
           updatePlayerDisplayFromKV();
         }
       } catch (e) {
-        console.error("KV polling error:", e);
-      }
-    }
-
-    function updatePlayerDisplayFromKV() {
-      if (!currentPlayer) {
-        console.warn(`Player "${playerName}" not found in campaign state.`);
-        return;
-      }
-      
-      // Update profile image (Phase 4)
-      const profileImg = document.querySelector(".hud-player-avatar img");
-      if (profileImg) {
-        profileImg.src = currentPlayer.profileImage || `/players/${playerName}.png`;
-        profileImg.onerror = function() {
-          this.style.display = 'none';
-        };
-      }
-      
-      // Update vitals display
-      updateVitalsDisplay();
-      updateSpellSlotsDisplay();
-      updateAchievementNotifier();
-    }
-
-    function updateVitalsDisplay() {
-      if (!currentPlayer) return;
-      
-      const vitalsContainer = document.querySelector(".vitals-display");
-      if (vitalsContainer) {
-        vitalsContainer.innerHTML = `
-          <div class="vitals-stat">HP: ${currentPlayer.currentHP}/${currentPlayer.maxHP}</div>
-          <div class="vitals-stat">AC: ${currentPlayer.ac}</div>
-          <div class="vitals-stat">Passive: ${currentPlayer.passivePerception}</div>
-        `;
+        console.error('[HUD] KV polling error:', e);
       }
     }
 
     function startKVPolling() {
-      // Fetch immediately
       fetchCampaignStateFromKV();
-      
-      // Then set interval (Phase 4: 30 second polling)
       pollingInterval = setInterval(fetchCampaignStateFromKV, POLLING_INTERVAL);
     }
 
@@ -806,30 +747,164 @@
       }
     }
 
-    // ========== SPELL SLOTS (Phase 5) ==========
+    // ── Master display refresh triggered by every poll ──
+    function updatePlayerDisplayFromKV() {
+      if (!currentPlayer) {
+        console.warn(`[HUD] Player "${playerName}" not found in campaign state.`);
+        return;
+      }
+
+      // Only update HUD sections if HUD is visible
+      const hud = document.getElementById('main-hud');
+      if (hud && !hud.classList.contains('hidden')) {
+        updateAvatarDisplay();
+        updateVitalsDisplay();
+        updateConditionsDisplay();
+        updateSpellSlotsDisplay();
+        applyVFXFromConditions();
+      }
+
+      // Always update achievement notifier
+      updateAchievementNotifier();
+    }
+
+    // ========== AVATAR ==========
+    function updateAvatarDisplay() {
+      if (!currentPlayer) return;
+      const avatarEl = document.getElementById('hud-player-avatar');
+      if (!avatarEl) return;
+
+      const imgPath = currentPlayer.profileImage || `players/${currentPlayer.name.toLowerCase()}.png`;
+
+      // Only rebuild DOM if needed (avoid flicker on every poll)
+      const existing = avatarEl.querySelector('img');
+      if (existing && existing.src.endsWith(imgPath)) return;
+
+      const img = new Image();
+      img.onload = () => {
+        avatarEl.innerHTML = '';
+        img.style.cssText = 'width:60px;height:60px;border-radius:50%;object-fit:cover;';
+        avatarEl.appendChild(img);
+      };
+      img.onerror = () => {
+        avatarEl.innerHTML = '<svg viewBox="0 0 24 24"><use xlink:href="#icon-user"></use></svg>';
+      };
+      img.src = imgPath;
+    }
+
+    // ========== VITALS ==========
+    function updateVitalsDisplay() {
+      if (!currentPlayer) return;
+      const container = document.querySelector('.vitals-display');
+      if (!container) return;
+
+      const hp    = currentPlayer.currentHP ?? 0;
+      const maxHp = currentPlayer.maxHP ?? 0;
+      const hpPct = maxHp > 0 ? hp / maxHp : 1;
+
+      let hpClass = 'vitals-stat';
+      if (hpPct <= 0.25) hpClass += ' hp-critical';
+      else if (hpPct <= 0.5) hpClass += ' hp-low';
+
+      // Auto-trigger critical VFX when HP is ≤25%
+      const vfxLayer = document.getElementById('vfx-layer');
+      if (vfxLayer && hpPct <= 0.25 && hp > 0) {
+        vfxLayer.classList.add('vfx-critical');
+      }
+
+      container.innerHTML = `
+        <div class="${hpClass}">HP ${hp}/${maxHp}</div>
+        <div class="vitals-stat">AC ${currentPlayer.ac ?? '—'}</div>
+        <div class="vitals-stat">Pass. ${currentPlayer.passivePerception ?? '—'}</div>
+        <div class="vitals-stat">Speed ${currentPlayer.speed ?? '—'}</div>
+      `;
+    }
+
+    // ========== CONDITIONS DISPLAY (FIX #1) ==========
+    function updateConditionsDisplay() {
+      if (!currentPlayer) return;
+      const container = document.querySelector('.conditions-panel .conditions-grid');
+      if (!container) return;
+
+      const conditions = currentPlayer.conditions || [];
+      container.innerHTML = '';
+
+      if (conditions.length === 0) {
+        container.innerHTML = '<span class="conditions-empty">No active conditions</span>';
+        return;
+      }
+
+      conditions.forEach(raw => {
+        const key  = raw.toLowerCase().replace(/\s+/g, '_');
+        const def  = CONDITION_MAP[key] || { label: raw, icon: 'icon-alert-triangle', css: 'cond-default', vfx: null };
+        const chip = document.createElement('div');
+        chip.className = `condition-chip ${def.css}`;
+        chip.title = def.label;
+        chip.innerHTML = `
+          <svg viewBox="0 0 24 24"><use xlink:href="#${def.icon}"></use></svg>
+          <span>${def.label}</span>
+        `;
+        container.appendChild(chip);
+      });
+    }
+
+    // ========== VFX (FIX #2) ==========
+    function applyVFXFromConditions() {
+      const vfxLayer = document.getElementById('vfx-layer');
+      if (!vfxLayer) return;
+
+      // Clear all vfx classes
+      const allVfx = ['vfx-critical','vfx-bleeding','vfx-poison','vfx-blinded','vfx-stunned','vfx-burning'];
+      allVfx.forEach(c => vfxLayer.classList.remove(c));
+
+      if (!currentPlayer) return;
+
+      const conditions = currentPlayer.conditions || [];
+      const hp    = currentPlayer.currentHP ?? 1;
+      const maxHp = currentPlayer.maxHP ?? 1;
+
+      // Critical HP always wins
+      if (maxHp > 0 && hp / maxHp <= 0.25 && hp > 0) {
+        vfxLayer.classList.add('vfx-critical');
+        return; // dominant effect — don't stack
+      }
+
+      // Apply VFX for each active condition; first match wins for visual clarity
+      for (const raw of conditions) {
+        const key = raw.toLowerCase().replace(/\s+/g, '_');
+        const def = CONDITION_MAP[key];
+        if (def && def.vfx) {
+          vfxLayer.classList.add(def.vfx);
+          break; // one dominant VFX at a time
+        }
+      }
+    }
+
+    // ========== SPELL SLOTS ==========
     function updateSpellSlotsDisplay() {
       if (!currentPlayer || !currentPlayer.spellSlots) return;
-      
+
       for (let i = 1; i <= 3; i++) {
-        const key = `level${i}`;
-        const slot = currentPlayer.spellSlots[key];
-        const countEl = document.getElementById(`slots-l${i}`);
-        if (countEl) {
-          countEl.textContent = `${slot.current}/${slot.max}`;
+        const key      = `level${i}`;
+        const slot     = currentPlayer.spellSlots[key];
+        if (!slot) continue;
+
+        const countEl  = document.getElementById(`slots-l${i}`);
+        const btn      = countEl?.closest('.spell-level-btn');
+        if (countEl) countEl.textContent = `${slot.current}/${slot.max}`;
+        if (btn) {
+          btn.classList.toggle('depleted', slot.current === 0);
         }
       }
     }
 
     function toggleSpellSlots(level) {
       const detail = document.getElementById(`slots-l${level}-detail`);
-      if (detail) {
-        detail.classList.toggle('show');
-      }
+      if (detail) detail.classList.toggle('show');
     }
 
     function decrementSpellSlot(level) {
-      if (!currentPlayer || !currentPlayer.spellSlots) return;
-      
+      if (!currentPlayer?.spellSlots) return;
       const key = `level${level}`;
       if (currentPlayer.spellSlots[key].current > 0) {
         currentPlayer.spellSlots[key].current--;
@@ -839,8 +914,7 @@
     }
 
     function incrementSpellSlot(level) {
-      if (!currentPlayer || !currentPlayer.spellSlots) return;
-      
+      if (!currentPlayer?.spellSlots) return;
       const key = `level${level}`;
       const max = currentPlayer.spellSlots[key].max;
       if (currentPlayer.spellSlots[key].current < max) {
@@ -851,67 +925,169 @@
     }
 
     async function longRest() {
-      if (!currentPlayer || !currentPlayer.spellSlots) return;
-      if (!confirm("Reset all spell slots? This triggers a long rest.")) return;
-      
+      if (!currentPlayer?.spellSlots) return;
+      if (!confirm('Reset all spell slots? This triggers a long rest.')) return;
       for (let i = 1; i <= 3; i++) {
         const key = `level${i}`;
-        currentPlayer.spellSlots[key].current = currentPlayer.spellSlots[key].max;
+        if (currentPlayer.spellSlots[key]) {
+          currentPlayer.spellSlots[key].current = currentPlayer.spellSlots[key].max;
+        }
       }
       currentPlayer.spellSlots.lastLongRest = new Date().toISOString();
-      
       updateSpellSlotsDisplay();
       await syncPlayerToKV();
-      showToast("Long rest completed!");
+      showToast('Long rest completed!');
     }
 
-    // ========== ACHIEVEMENTS (Phase 5) ==========
+    // ========== RENDER PLAYER HUD (FIX #3: no duplicate elements) ==========
+    function renderPlayerHUD() {
+      if (!currentPlayer) return;
+      const hud = document.getElementById('main-hud');
+      if (!hud) return;
+
+      // ── Header ──
+      const hudInfo = hud.querySelector('.hud-player-info');
+      if (hudInfo) {
+        hudInfo.innerHTML = `
+          <h2>${escapeHtml(currentPlayer.name)}</h2>
+          <p>${escapeHtml((currentPlayer.race || '') + ' ' + (currentPlayer.class || ''))}</p>
+        `;
+      }
+
+      // ── Avatar (single clean load) ──
+      updateAvatarDisplay();
+
+      // ── Vitals: always wipe and re-render ──
+      const vitalsEl = hud.querySelector('.vitals-display');
+      if (vitalsEl) {
+        updateVitalsDisplay();
+      }
+
+      // ── Conditions Panel: always wipe and re-render ──
+      const condPanel = hud.querySelector('.conditions-panel');
+      if (condPanel) {
+        const grid = condPanel.querySelector('.conditions-grid');
+        if (grid) updateConditionsDisplay();
+      }
+
+      // ── Spell Slots: create once, update always ──
+      let spellSection = hud.querySelector('.spell-slots-section');
+      if (!spellSection && currentPlayer.spellSlots) {
+        spellSection = document.createElement('div');
+        spellSection.className = 'spell-slots-section';
+        spellSection.innerHTML = `
+          <h3>Spell Slots</h3>
+          <div class="spell-slots-grid">
+            <button class="spell-level-btn" onclick="toggleSpellSlots(1)">
+              <span class="level">L1</span><span class="count" id="slots-l1">—</span>
+            </button>
+            <button class="spell-level-btn" onclick="toggleSpellSlots(2)">
+              <span class="level">L2</span><span class="count" id="slots-l2">—</span>
+            </button>
+            <button class="spell-level-btn" onclick="toggleSpellSlots(3)">
+              <span class="level">L3</span><span class="count" id="slots-l3">—</span>
+            </button>
+          </div>
+          <div id="slots-l1-detail" class="slots-detail">
+            <button onclick="decrementSpellSlot(1)">−</button>
+            <span id="slots-l1-current">—</span>
+            <button onclick="incrementSpellSlot(1)">+</button>
+            <button onclick="toggleSpellSlots(1)">Close</button>
+          </div>
+          <div id="slots-l2-detail" class="slots-detail">
+            <button onclick="decrementSpellSlot(2)">−</button>
+            <span id="slots-l2-current">—</span>
+            <button onclick="incrementSpellSlot(2)">+</button>
+            <button onclick="toggleSpellSlots(2)">Close</button>
+          </div>
+          <div id="slots-l3-detail" class="slots-detail">
+            <button onclick="decrementSpellSlot(3)">−</button>
+            <span id="slots-l3-current">—</span>
+            <button onclick="incrementSpellSlot(3)">+</button>
+            <button onclick="toggleSpellSlots(3)">Close</button>
+          </div>
+          <button class="long-rest-btn" onclick="longRest()">Long Rest (Reset)</button>
+        `;
+        // Insert before action buttons (last child)
+        const actionRow = hud.querySelector('.hud-action-row');
+        if (actionRow) hud.insertBefore(spellSection, actionRow);
+        else hud.appendChild(spellSection);
+      }
+      if (spellSection) updateSpellSlotsDisplay();
+    }
+
+    // ========== SYNC TO KV ==========
+    // V4.2 CHANGE: Player HUD is public-facing. Worker accepts POST without auth header.
+    async function syncPlayerToKV() {
+      if (!currentPlayer || !campaignState) return;
+
+      try {
+        const response = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            base_version: campaignState.version || 0,
+            data: campaignState
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.new_version !== undefined) campaignState.version = result.new_version;
+          console.log('[HUD] Synced to KV. Version:', campaignState.version);
+        } else if (response.status === 409) {
+          console.warn('[HUD] Version collision — fetching latest state.');
+          await fetchCampaignStateFromKV();
+        }
+      } catch (e) {
+        console.error('[HUD] Sync error:', e);
+      }
+    }
+
+    // ========== ACHIEVEMENTS ==========
     function getUnacknowledgedAchievements() {
-      if (!campaignState || !campaignState.achievements) return [];
-      return campaignState.achievements.filter(a => 
-        !a.archived && 
-        !a.acknowledgedBy?.includes(playerName)
+      if (!campaignState?.achievements) return [];
+      return campaignState.achievements.filter(a =>
+        !a.archived && !a.acknowledgedBy?.includes(playerName)
       );
     }
 
     function updateAchievementNotifier() {
       const unack = getUnacknowledgedAchievements();
       const badge = document.getElementById('achievement-badge');
-      const pill = document.getElementById('achievement-pill');
-      
+      const pill  = document.getElementById('achievement-pill');
+      if (!pill) return;
+
       if (unack.length > 0) {
         if (badge) badge.textContent = unack.length;
-        if (pill) pill.style.display = 'flex';
-        
-        // Add glow if any are glowing
+        pill.style.display = 'flex';
         const glowing = unack.some(a => a.glow);
-        if (glowing && pill) {
-          pill.style.animation = 'pulse 1s infinite';
-        }
+        pill.style.animation = glowing ? 'pulse 1s infinite' : '';
       } else {
-        if (pill) pill.style.display = 'none';
+        pill.style.display = 'none';
+        pill.style.animation = '';
       }
     }
 
     function openAchievementModal() {
       const unack = getUnacknowledgedAchievements();
       if (unack.length === 0) return;
-      
       currentAchievementModal = unack[0];
+
       const overlay = document.getElementById('achievement-overlay');
-      const modal = document.getElementById('achievement-modal');
-      
+      const modal   = document.getElementById('achievement-modal');
       if (modal) {
         modal.innerHTML = `
-          <svg style="width: 60px; height: 60px; margin: 0 auto 1rem; color: var(--ai-terminal);" viewBox="0 0 24 24">
+          <svg style="width:60px;height:60px;margin:0 auto 1rem;color:var(--ai-terminal);display:block;" viewBox="0 0 24 24">
             <use xlink:href="#icon-star"></use>
           </svg>
-          <h2>${currentAchievementModal.name}</h2>
+          <h2>${escapeHtml(currentAchievementModal.name)}</h2>
           <p>Earned on ${new Date(currentAchievementModal.earned).toLocaleDateString()}</p>
           <button onclick="acknowledgeAchievement()">Acknowledge</button>
         `;
       }
-      
       if (overlay) overlay.classList.remove('hidden');
     }
 
@@ -923,165 +1099,18 @@
 
     async function acknowledgeAchievement() {
       if (!currentAchievementModal || !campaignState) return;
-      
       const ach = campaignState.achievements.find(a => a.id === currentAchievementModal.id);
       if (ach) {
         if (!ach.acknowledgedBy) ach.acknowledgedBy = [];
-        if (!ach.acknowledgedBy.includes(playerName)) {
-          ach.acknowledgedBy.push(playerName);
-        }
+        if (!ach.acknowledgedBy.includes(playerName)) ach.acknowledgedBy.push(playerName);
         ach.glow = false;
-        
         await syncPlayerToKV();
         updateAchievementNotifier();
         closeAchievementModal();
       }
     }
 
-    // ========== PLAYER HUD RENDERING ==========
-    function renderPlayerHUD() {
-      if (!currentPlayer) return;
-      
-      const hudHeader = document.querySelector('.hud-player-info');
-      if (hudHeader) {
-        hudHeader.innerHTML = `
-          <h2>${currentPlayer.name}</h2>
-          <p>${currentPlayer.race} ${currentPlayer.class}</p>
-        `;
-      }
-
-      // Load player avatar image from players/{name}.png
-      const avatarEl = document.getElementById('hud-player-avatar');
-      if (avatarEl) {
-        avatarEl.innerHTML = '';
-        const playerName = currentPlayer.name.toLowerCase();
-        const imgPath = `players/${playerName}.png`;
-        
-        const img = document.createElement('img');
-        img.src = imgPath;
-        img.alt = currentPlayer.name;
-        img.onerror = () => {
-          // Fallback to icon if image not found
-          avatarEl.innerHTML = '<svg viewBox="0 0 24 24"><use xlink:href="#icon-user"></use></svg>';
-        };
-        img.onload = () => {
-          avatarEl.innerHTML = '';
-          avatarEl.appendChild(img);
-        };
-        
-        // Attempt load
-        const testImg = new Image();
-        testImg.src = imgPath;
-        testImg.onload = () => {
-          avatarEl.appendChild(img);
-        };
-        testImg.onerror = () => {
-          // Fallback to icon
-          avatarEl.innerHTML = '<svg viewBox="0 0 24 24"><use xlink:href="#icon-user"></use></svg>';
-        };
-      }
-
-      const vitalsContainer = document.querySelector(".vitals-display");
-      if (!vitalsContainer) {
-        const hud = document.getElementById('main-hud');
-        if (hud) {
-          const vitals = document.createElement('div');
-          vitals.className = 'vitals-display';
-          vitals.innerHTML = `
-            <div class="vitals-stat">HP: ${currentPlayer.currentHP}/${currentPlayer.maxHP}</div>
-            <div class="vitals-stat">AC: ${currentPlayer.ac}</div>
-            <div class="vitals-stat">Passive: ${currentPlayer.passivePerception}</div>
-          `;
-          hud.appendChild(vitals);
-        }
-      } else {
-        updateVitalsDisplay();
-      }
-
-      // Create spell slots section if needed
-      const spellSection = document.querySelector('.spell-slots-section');
-      if (!spellSection && currentPlayer.spellSlots) {
-        const hud = document.getElementById('main-hud');
-        if (hud) {
-          const section = document.createElement('div');
-          section.className = 'spell-slots-section';
-          section.innerHTML = `
-            <h3>Spell Slots</h3>
-            <div class="spell-slots-grid">
-              <button class="spell-level-btn" onclick="toggleSpellSlots(1)">
-                <span class="level">L1</span>
-                <span class="count" id="slots-l1">2/2</span>
-              </button>
-              <button class="spell-level-btn" onclick="toggleSpellSlots(2)">
-                <span class="level">L2</span>
-                <span class="count" id="slots-l2">0/0</span>
-              </button>
-              <button class="spell-level-btn" onclick="toggleSpellSlots(3)">
-                <span class="level">L3</span>
-                <span class="count" id="slots-l3">0/0</span>
-              </button>
-            </div>
-            <div id="slots-l1-detail" class="slots-detail">
-              <button onclick="decrementSpellSlot(1)">−</button>
-              <span id="slots-l1-current">2</span>
-              <button onclick="incrementSpellSlot(1)">+</button>
-              <button onclick="toggleSpellSlots(1)">Close</button>
-            </div>
-            <div id="slots-l2-detail" class="slots-detail">
-              <button onclick="decrementSpellSlot(2)">−</button>
-              <span id="slots-l2-current">0</span>
-              <button onclick="incrementSpellSlot(2)">+</button>
-              <button onclick="toggleSpellSlots(2)">Close</button>
-            </div>
-            <div id="slots-l3-detail" class="slots-detail">
-              <button onclick="decrementSpellSlot(3)">−</button>
-              <span id="slots-l3-current">0</span>
-              <button onclick="incrementSpellSlot(3)">+</button>
-              <button onclick="toggleSpellSlots(3)">Close</button>
-            </div>
-            <button class="long-rest-btn" onclick="longRest()">Long Rest (Reset)</button>
-          `;
-          hud.appendChild(section);
-          updateSpellSlotsDisplay();
-        }
-      }
-    }
-
-    // ========== SYNC TO KV ==========
-    async function syncPlayerToKV() {
-      if (!currentPlayer || !campaignState) return;
-      
-      try {
-        const token = localStorage.getItem(AUTH_TOKEN_KEY) || sessionStorage.getItem(AUTH_TOKEN_KEY);
-        if (!token) {
-          console.error("No auth token for sync.");
-          return;
-        }
-        
-        const response = await fetch(WORKER_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            action: "update",
-            state: campaignState,
-            base_version: campaignState.base_version || 1
-          })
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          campaignState.base_version = data.base_version;
-          console.log("Player synced to KV");
-        }
-      } catch (e) {
-        console.error("Sync error:", e);
-      }
-    }
-
-    // ========== TICKER & NOTIFICATIONS ==========
+    // ========== TICKER & UI WIRING ==========
     function initTickerToggle() {
       const pill = document.getElementById('ticker-pill');
       if (pill) {
@@ -1094,46 +1123,52 @@
 
     function initNotificationBadge() {
       const pill = document.getElementById('achievement-pill');
-      if (pill) {
-        pill.addEventListener('click', openAchievementModal);
-      }
+      if (pill) pill.addEventListener('click', openAchievementModal);
     }
 
     function initLogoutButton() {
       const btn = document.getElementById('btn-logout');
-      if (btn) {
-        btn.addEventListener('click', logout);
-      }
+      if (btn) btn.addEventListener('click', logout);
     }
 
     function initItemsButton() {
       const btn = document.getElementById('btn-items');
-      if (btn) {
-        btn.addEventListener('click', () => {
-          showToast("Items list coming soon.");
-        });
-      }
+      if (btn) btn.addEventListener('click', () => showToast('Items list coming soon.'));
     }
 
     function initAchievementsButton() {
       const btn = document.getElementById('btn-achievements');
-      if (btn) {
-        btn.addEventListener('click', openAchievementModal);
-      }
+      if (btn) btn.addEventListener('click', openAchievementModal);
     }
 
     function logout() {
       activePlayerIndex = null;
+      currentPlayer     = null;
       localStorage.removeItem(PLAYER_ACTIVE_KEY);
       stopKVPolling();
-      
+
+      // Clear VFX
+      const vfxLayer = document.getElementById('vfx-layer');
+      if (vfxLayer) vfxLayer.className = 'vfx-overlay';
+
+      // Wipe dynamic HUD sections so they rebuild fresh on next login
+      const hud = document.getElementById('main-hud');
+      if (hud) {
+        const toRemove = hud.querySelectorAll('.spell-slots-section');
+        toRemove.forEach(el => el.remove());
+        const vitals = hud.querySelector('.vitals-display');
+        if (vitals) vitals.innerHTML = '';
+        const condGrid = hud.querySelector('.conditions-panel .conditions-grid');
+        if (condGrid) condGrid.innerHTML = '';
+      }
+
       const loginLayer = document.getElementById('login-layer');
-      const hudLayer = document.getElementById('main-hud');
-      
+      const hudLayer   = document.getElementById('main-hud');
       hudLayer.classList.add('hidden');
       loginLayer.classList.remove('hidden');
-      loginLayer.style.animation = '';
+
       populateRoster();
+      startKVPolling(); // resume polling for updated state on login screen
     }
 
     // ========== UTILITIES ==========
@@ -1155,11 +1190,8 @@
         .replace(/>/g, '&gt;');
     }
 
-    // Keyboard support
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        closeAchievementModal();
-      }
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeAchievementModal();
     });
   </script>
 
@@ -1168,71 +1200,74 @@
 <body>
   <div class="vfx-overlay" id="vfx-layer"></div>
 
-  <!-- PHASE 1: LOGIN SCREEN -->
+  <!-- LOGIN SCREEN -->
   <div class="login-layer" id="login-layer">
     <div class="login-hero">
       <div class="hero-avatar-ring" id="hero-avatar-ring">
-        <svg id="hero-avatar-svg" class="icon-xl" viewBox="0 0 24 24" style="width: 192px; height: 192px;">
+        <svg id="hero-avatar-svg" viewBox="0 0 24 24" style="width:192px;height:192px;">
           <use xlink:href="#icon-user"></use>
         </svg>
       </div>
       <h1 class="hero-player-name" id="hero-player-name">SELECT CHARACTER</h1>
       <p class="hero-subtitle" id="hero-subtitle">Choose your hero</p>
     </div>
-
     <div class="roster-grid" id="roster-grid"></div>
-
     <div class="login-loading hidden" id="loading-layer">
       <h2 id="auth-id">EXTRACTING...</h2>
       <p id="auth-tip">Stay calm and wait for extraction.</p>
     </div>
   </div>
 
-  <!-- Ticker Pill (Phase 5) -->
+  <!-- TICKER PILL -->
   <div class="ticker-pill hidden" id="ticker-pill">
-    <svg class="ticker-icon" viewBox="0 0 24 24">
-      <use xlink:href="#icon-eye"></use>
-    </svg>
+    <svg class="ticker-icon" viewBox="0 0 24 24"><use xlink:href="#icon-eye"></use></svg>
     <span class="ticker-text">TICKER</span>
   </div>
 
-  <!-- Player HUD Widget (Centered) -->
+  <!-- PLAYER HUD -->
   <div class="player-hud hidden" id="main-hud">
+
+    <!-- Header -->
     <div class="hud-header">
       <div class="hud-player-avatar" id="hud-player-avatar">
-        <svg viewBox="0 0 24 24">
-          <use xlink:href="#icon-user"></use>
-        </svg>
+        <svg viewBox="0 0 24 24"><use xlink:href="#icon-user"></use></svg>
       </div>
       <div class="hud-player-info"></div>
-      <button id="btn-logout" style="background: var(--danger); border: none; color: #fff; width: 32px; height: 32px; border-radius: 4px; cursor: pointer; flex-shrink: 0;">×</button>
+      <button id="btn-logout" style="background:var(--danger);border:none;color:#fff;width:32px;height:32px;border-radius:4px;cursor:pointer;flex-shrink:0;font-size:1.1rem;">×</button>
     </div>
 
+    <!-- Vitals -->
     <div class="vitals-display"></div>
 
-    <!-- Action Buttons -->
-    <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-      <button id="btn-items" class="hud-btn" style="flex: 1; background: rgba(187, 134, 252, 0.1); border: 1px solid var(--accent); color: var(--accent); padding: 0.75rem; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.85rem; text-transform: uppercase;">📋 Items</button>
-      <button id="btn-achievements" class="hud-btn" style="flex: 1; background: rgba(187, 134, 252, 0.1); border: 1px solid var(--accent); color: var(--accent); padding: 0.75rem; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.85rem; text-transform: uppercase;">🏆 Achievements</button>
+    <!-- Conditions Panel -->
+    <div class="conditions-panel">
+      <div class="conditions-label">Conditions</div>
+      <div class="conditions-grid">
+        <span class="conditions-empty">No active conditions</span>
+      </div>
     </div>
+
+    <!-- Spell slots injected here by renderPlayerHUD if spellSlots present -->
+
+    <!-- Action Buttons -->
+    <div class="hud-action-row" style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+      <button id="btn-items" class="hud-btn" style="flex:1;background:rgba(187,134,252,0.1);border:1px solid var(--accent);color:var(--accent);padding:0.75rem;border-radius:4px;font-weight:bold;cursor:pointer;font-size:0.85rem;text-transform:uppercase;font-family:'Courier New',monospace;">📋 Items</button>
+      <button id="btn-achievements" class="hud-btn" style="flex:1;background:rgba(187,134,252,0.1);border:1px solid var(--accent);color:var(--accent);padding:0.75rem;border-radius:4px;font-weight:bold;cursor:pointer;font-size:0.85rem;text-transform:uppercase;font-family:'Courier New',monospace;">🏆 Achievements</button>
+    </div>
+
   </div>
 
-  <!-- Achievement Notification Pill (Phase 5) -->
-  <div id="achievement-pill" class="notification-pill" style="position: fixed; bottom: 30px; right: 30px; display: none; z-index: 999;">
-    <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24">
-      <use xlink:href="#icon-star"></use>
-    </svg>
+  <!-- ACHIEVEMENT NOTIFICATION PILL -->
+  <div id="achievement-pill" class="notification-pill" style="position:fixed;bottom:30px;right:30px;display:none;z-index:999;">
+    <svg style="width:20px;height:20px;" viewBox="0 0 24 24"><use xlink:href="#icon-star"></use></svg>
     <span>Achievement</span>
     <span class="badge" id="achievement-badge">1</span>
   </div>
 
-  <!-- Achievement Modal (Phase 5) -->
+  <!-- ACHIEVEMENT MODAL -->
   <div class="modal-overlay hidden" id="achievement-overlay" onclick="closeAchievementModal()">
     <div class="achievement-modal" id="achievement-modal" onclick="event.stopPropagation()"></div>
   </div>
-
-  <!-- Toast Container -->
-  <div id="toast-container" style="position: fixed; bottom: 1rem; right: 1rem; z-index: 3000;"></div>
 
 </body>
 </html>
