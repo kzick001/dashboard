@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Showrunner | Dashboard V3.0</title>
+  <title>Showrunner | Dashboard V3.1</title>
   
   <script>
     const SECURE_PIN = "goddammit_doughnut"; 
@@ -224,6 +224,96 @@
     .trophy-title { font-size: 1.1rem; color: #fff; font-weight: bold; margin-bottom: 0.5rem; }
     .dispatch-row { display: flex; gap: 0.5rem; margin-top: 1rem; }
 
+    /* --- Archive Modal --- */
+    .archive-modal {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: var(--card); border: 1px solid #444; border-radius: 8px;
+      width: 90%; max-width: 700px; max-height: 80vh; overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.9); z-index: 1000;
+      display: flex; flex-direction: column;
+    }
+
+    .archive-modal.hidden { display: none; }
+
+    .archive-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.5rem; border-bottom: 1px solid #333; background: rgba(0,0,0,0.3);
+    }
+
+    .archive-header h2 {
+      margin: 0; color: var(--success); font-size: 1.3rem; letter-spacing: 0.05em;
+      display: flex; align-items: center; gap: 10px;
+    }
+
+    .archive-tabs {
+      display: flex; gap: 0; border-bottom: 1px solid #333; padding: 0;
+      background: rgba(0,0,0,0.2);
+    }
+
+    .archive-tab {
+      flex: 1; padding: 1rem; text-align: center; cursor: pointer;
+      border: none; background: transparent; color: var(--text-muted);
+      font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em;
+      font-size: 0.9rem; transition: 0.2s; border-bottom: 3px solid transparent;
+    }
+
+    .archive-tab:hover { color: #fff; }
+
+    .archive-tab.active {
+      color: var(--success); border-bottom-color: var(--success);
+    }
+
+    .archive-list {
+      flex: 1; overflow-y: auto; padding: 1rem;
+      display: flex; flex-direction: column; gap: 0.75rem;
+    }
+
+    .archive-item {
+      background: #111; border: 1px solid #333; border-left: 4px solid var(--accent);
+      padding: 1rem; border-radius: 4px; display: flex; align-items: flex-start; gap: 1rem;
+    }
+
+    .archive-item.loot { border-left-color: var(--success); }
+
+    .archive-item input[type="checkbox"] {
+      width: 20px; height: 20px; margin-top: 2px; accent-color: var(--accent);
+      cursor: pointer; flex-shrink: 0;
+    }
+
+    .archive-item-info { flex: 1; }
+
+    .archive-item h4 {
+      margin: 0 0 0.25rem 0; color: #fff; font-size: 1rem; font-weight: bold;
+    }
+
+    .archive-item p {
+      margin: 0; color: var(--text-muted); font-size: 0.85rem;
+    }
+
+    .archive-footer {
+      display: flex; gap: 0.5rem; padding: 1rem; border-top: 1px solid #333;
+      background: rgba(0,0,0,0.3); justify-content: flex-end;
+    }
+
+    .archive-footer button {
+      padding: 0.75rem 1rem; font-size: 0.85rem; font-weight: bold; border-radius: 4px;
+      cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    .btn-restore {
+      background: rgba(3, 218, 198, 0.1); border: 1px solid var(--success);
+      color: var(--success);
+    }
+
+    .btn-restore:hover { background: var(--success); color: #000; }
+
+    .btn-delete {
+      background: rgba(207, 102, 121, 0.1); border: 1px solid var(--danger);
+      color: var(--danger);
+    }
+
+    .btn-delete:hover { background: var(--danger); color: #fff; }
+
     /* --- Quick Edit Modal --- */
     .quick-edit-content {
       background: var(--card); border: 1px solid #444; border-radius: 8px; 
@@ -301,6 +391,7 @@
     .btn-danger:hover { background: var(--danger); color: #fff; }
 
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 999; display: flex; align-items: center; justify-content: center; }
+    .modal-overlay.hidden { display: none; }
     .modal-content { background: var(--card); padding: 2rem; border-radius: 8px; border: 1px solid #444; width: 90%; max-width: 500px; box-shadow: 0 10px 40px rgba(0,0,0,0.9); }
     #memo-input { width: 100%; background: #111; color: #fff; border: 1px solid #444; padding: 0.75rem; border-radius: 4px; font-family: monospace; box-sizing: border-box; resize: vertical; margin-bottom: 1.5rem; outline: none; }
     
@@ -353,6 +444,9 @@
         <button class="btn-global-action" onclick="toggleDrawer()" style="color:var(--warning); border-color:var(--warning); background:transparent;">
           <script>document.write(ICONS.trophy)</script> QUEUE (<span id="queue-count">0</span>)
         </button>
+        <button class="btn-global-action" onclick="openArchiveModal()" style="color:var(--success); border-color:var(--success); background:transparent;">
+          📦 ARCHIVES
+        </button>
       </div>
     </div>
   </nav>
@@ -373,6 +467,28 @@
       <div style="display:flex; justify-content:space-between;">
         <button class="action btn-danger" style="padding: 8px 16px;" onclick="sendMemo()">TRANSMIT SIGNAL</button>
         <button class="action" onclick="closeMemoModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Archive Modal (Phase 5) -->
+  <div class="modal-overlay hidden" id="archive-overlay" onclick="if(event.target===this) closeArchiveModal()">
+    <div class="archive-modal">
+      <div class="archive-header">
+        <h2>📦 Global Archives</h2>
+        <button class="btn-icon" style="border: 1px solid #444;" onclick="closeArchiveModal()"><script>document.write(ICONS.close)</script></button>
+      </div>
+
+      <div class="archive-tabs">
+        <button class="archive-tab active" onclick="switchArchiveTab('achievements')">🏆 Achievements</button>
+        <button class="archive-tab" onclick="switchArchiveTab('loot')">⭐ Loot Awards</button>
+      </div>
+
+      <div class="archive-list" id="archive-list"></div>
+
+      <div class="archive-footer">
+        <button class="archive-footer button btn-restore" onclick="restoreSelectedArchive()">Restore Selected</button>
+        <button class="archive-footer button btn-delete" onclick="deleteSelectedArchive()">Delete Selected</button>
       </div>
     </div>
   </div>
@@ -456,10 +572,16 @@
     const VALID_AVATARS = ['chuck', 'hendrick', 'jimothy', 'aelar', 'tilly'];
     const GENERIC_SVG_AVATAR = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%23555' viewBox='0 0 24 24'><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/></svg>`;
     
-    let appState = { players: [], achievement_queue: [], campaign_notes: { rooms: [] }, loot_tables: { tiers: {} } };
+    let appState = { players: [], achievement_queue: [], campaign_notes: { rooms: [] }, loot_tables: { tiers: {} }, loot_awarded: { active: [], archived: [] } };
     let isPushing = false;
     let isTheaterMode = false;
     const colorPalette = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe'];
+
+    // --- Archive Modal State ---
+    let archiveState = {
+      currentTab: 'achievements',
+      selectedItems: new Set()
+    };
 
     // --- Quick Edit State ---
     let quickEditState = { 
@@ -490,6 +612,7 @@
 
         if (!latestState.achievement_queue) latestState.achievement_queue = [];
         if (!latestState.players) latestState.players = [];
+        if (!latestState.loot_awarded) latestState.loot_awarded = { active: [], archived: [] };
 
         mutationCallback(latestState);
 
@@ -571,6 +694,150 @@
           }
         });
       }, `Global ${type} Rest Applied.`);
+    }
+
+    // --- ARCHIVE MODAL (Phase 5) ---
+    function openArchiveModal() {
+      archiveState.selectedItems.clear();
+      switchArchiveTab('achievements');
+      document.getElementById('archive-overlay').classList.remove('hidden');
+    }
+
+    function closeArchiveModal() {
+      document.getElementById('archive-overlay').classList.add('hidden');
+      archiveState.selectedItems.clear();
+    }
+
+    function switchArchiveTab(tab) {
+      archiveState.currentTab = tab;
+      document.querySelectorAll('.archive-tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      archiveState.selectedItems.clear();
+      renderArchiveList();
+    }
+
+    function renderArchiveList() {
+      const listEl = document.getElementById('archive-list');
+      let items = [];
+
+      if (archiveState.currentTab === 'achievements') {
+        appState.players.forEach(p => {
+          if (p.achievements && p.achievements.archived) {
+            p.achievements.archived.forEach(ach => {
+              items.push({ ...ach, type: 'achievement', player: p.name, id: `ach-${p.name}-${ach.id || ach.name}` });
+            });
+          }
+        });
+      } else {
+        if (appState.loot_awarded && appState.loot_awarded.archived) {
+          appState.loot_awarded.archived.forEach(loot => {
+            items.push({ ...loot, type: 'loot', id: loot.id || `loot-${loot.name}` });
+          });
+        }
+      }
+
+      if (items.length === 0) {
+        listEl.innerHTML = `<div style="padding: 2rem; text-align: center; color: #666;">No archived ${archiveState.currentTab}.</div>`;
+        return;
+      }
+
+      let html = '';
+      items.forEach(item => {
+        const isLoot = item.type === 'loot';
+        html += `
+          <div class="archive-item ${isLoot ? 'loot' : ''}">
+            <input type="checkbox" class="archive-checkbox" data-id="${escapeHtml(item.id)}" onchange="toggleArchiveSelect(this)">
+            <div class="archive-item-info">
+              <h4>${escapeHtml(item.name)}</h4>
+              <p>${isLoot ? 'Loot Award' : `Achievement - ${escapeHtml(item.player || 'Unknown')}`}</p>
+            </div>
+          </div>
+        `;
+      });
+
+      listEl.innerHTML = html;
+    }
+
+    function toggleArchiveSelect(checkbox) {
+      if (checkbox.checked) {
+        archiveState.selectedItems.add(checkbox.dataset.id);
+      } else {
+        archiveState.selectedItems.delete(checkbox.dataset.id);
+      }
+    }
+
+    function restoreSelectedArchive() {
+      if (archiveState.selectedItems.size === 0) {
+        showToast("Select items to restore.");
+        return;
+      }
+
+      if (!confirm(`Restore ${archiveState.selectedItems.size} ${archiveState.currentTab}?`)) return;
+
+      mutateAndPush((state) => {
+        if (archiveState.currentTab === 'achievements') {
+          state.players.forEach(p => {
+            if (p.achievements && p.achievements.archived) {
+              p.achievements.archived = p.achievements.archived.filter(ach => {
+                const itemId = `ach-${p.name}-${ach.id || ach.name}`;
+                if (archiveState.selectedItems.has(itemId)) {
+                  if (!p.achievements.pending) p.achievements.pending = [];
+                  p.achievements.pending.push(ach);
+                  return false;
+                }
+                return true;
+              });
+            }
+          });
+        } else {
+          if (state.loot_awarded && state.loot_awarded.archived) {
+            state.loot_awarded.archived = state.loot_awarded.archived.filter(loot => {
+              const itemId = loot.id || `loot-${loot.name}`;
+              if (archiveState.selectedItems.has(itemId)) {
+                if (!state.loot_awarded.active) state.loot_awarded.active = [];
+                state.loot_awarded.active.push(loot);
+                return false;
+              }
+              return true;
+            });
+          }
+        }
+      }, `Restored ${archiveState.selectedItems.size} ${archiveState.currentTab}.`);
+
+      archiveState.selectedItems.clear();
+      renderArchiveList();
+    }
+
+    function deleteSelectedArchive() {
+      if (archiveState.selectedItems.size === 0) {
+        showToast("Select items to delete.");
+        return;
+      }
+
+      if (!confirm(`Permanently delete ${archiveState.selectedItems.size} archived ${archiveState.currentTab}? This cannot be undone.`)) return;
+
+      mutateAndPush((state) => {
+        if (archiveState.currentTab === 'achievements') {
+          state.players.forEach(p => {
+            if (p.achievements && p.achievements.archived) {
+              p.achievements.archived = p.achievements.archived.filter(ach => {
+                const itemId = `ach-${p.name}-${ach.id || ach.name}`;
+                return !archiveState.selectedItems.has(itemId);
+              });
+            }
+          });
+        } else {
+          if (state.loot_awarded && state.loot_awarded.archived) {
+            state.loot_awarded.archived = state.loot_awarded.archived.filter(loot => {
+              const itemId = loot.id || `loot-${loot.name}`;
+              return !archiveState.selectedItems.has(itemId);
+            });
+          }
+        }
+      }, `Permanently deleted ${archiveState.selectedItems.size} items.`);
+
+      archiveState.selectedItems.clear();
+      renderArchiveList();
     }
 
     // --- Dynamic Renderers & Invisible Edit ---
@@ -1086,7 +1353,7 @@
         const p = state.players.find(x => x.name === targetPlayerName);
         if (!p) throw new Error("Player not found.");
 
-        if (!p.achievements) p.achievements = { pending: [], claimed: [] };
+        if (!p.achievements) p.achievements = { pending: [], archived: [] };
         if (!p.achievements.pending) p.achievements.pending = [];
         
         const { is_deleted, ...cleanTrophy } = state.achievement_queue[queueIndex];
