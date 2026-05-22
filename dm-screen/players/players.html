@@ -424,6 +424,26 @@
       color: var(--text-muted);
     }
 
+    .btn-view-history {
+      width: 100%;
+      background: rgba(187, 134, 252, 0.1);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: 0.2s;
+    }
+
+    .btn-view-history:hover {
+      background: var(--accent);
+      color: #000;
+    }
+
     /* ========== TOAST NOTIFICATIONS ========== */
     #toast-container {
       position: fixed;
@@ -486,6 +506,189 @@
     .modal-overlay.visible {
       display: block;
     }
+
+    /* ========== HISTORY MODAL ========== */
+    .history-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-top: 4px solid var(--accent);
+      border-radius: 8px;
+      padding: 1.5rem;
+      max-width: 550px;
+      max-height: 80vh;
+      overflow: hidden;
+      z-index: 2000;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      visibility: hidden;
+      opacity: 0;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .history-modal.visible {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 1rem;
+    }
+
+    .history-header h3 {
+      margin: 0;
+      color: var(--accent);
+      text-transform: uppercase;
+      font-size: 1.1rem;
+      letter-spacing: 0.1em;
+    }
+
+    .history-close {
+      background: transparent;
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s;
+    }
+
+    .history-close:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .history-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 0.75rem;
+    }
+
+    .history-tab {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: 0.2s;
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+
+    .history-tab:hover {
+      color: var(--text);
+      border-color: var(--glass-border);
+    }
+
+    .history-tab.active {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .history-content {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .history-content::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .history-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .history-content::-webkit-scrollbar-thumb {
+      background: var(--accent);
+      border-radius: 3px;
+    }
+
+    .history-item {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--glass-border);
+      border-left: 4px solid var(--accent);
+      border-radius: 4px;
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+      transition: 0.2s;
+    }
+
+    .history-item:hover {
+      background: rgba(0, 0, 0, 0.5);
+      border-left-color: #fff;
+    }
+
+    .history-item.archived {
+      border-left-color: var(--text-muted);
+      opacity: 0.7;
+    }
+
+    .history-item.loot {
+      border-left-color: var(--success);
+    }
+
+    .history-item h4 {
+      margin: 0 0 0.25rem 0;
+      font-size: 0.95rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .history-item p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .history-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: bold;
+      padding: 0.2rem 0.5rem;
+      border-radius: 3px;
+      margin-top: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-active {
+      background: rgba(3, 218, 198, 0.2);
+      color: var(--success);
+      border: 1px solid var(--success);
+    }
+
+    .badge-archived {
+      background: rgba(136, 136, 136, 0.2);
+      color: var(--text-muted);
+      border: 1px solid var(--text-muted);
+    }
+
+    .history-empty {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 2rem 1rem;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -509,6 +712,10 @@
     </div>
 
     <div class="notification-queue" id="notif-queue"></div>
+
+    <div style="border-top: 1px solid var(--glass-border); padding-top: 0.75rem; margin-top: 0.75rem;">
+      <button class="btn-view-history" id="btn-view-history" title="View achievement and loot history" aria-label="View my items">📋 My Items</button>
+    </div>
   </div>
 
   <!-- Notification Stack Modal -->
@@ -519,6 +726,22 @@
       <button class="stack-close" id="stack-close-btn" onclick="closeStack()" aria-label="Close notifications">×</button>
     </div>
     <div class="stack-list" id="stack-list"></div>
+  </div>
+
+  <!-- History Modal (Achievements + Loot) -->
+  <div class="modal-overlay" id="history-overlay" onclick="closeHistory()"></div>
+  <div class="history-modal" id="history-modal">
+    <div class="history-header">
+      <h3>My Items & Achievements</h3>
+      <button class="history-close" onclick="closeHistory()" aria-label="Close history">×</button>
+    </div>
+    
+    <div class="history-tabs">
+      <button class="history-tab active" data-tab="achievements" onclick="switchHistoryTab('achievements')">🏆 Achievements</button>
+      <button class="history-tab" data-tab="loot" onclick="switchHistoryTab('loot')">⭐ Loot Awards</button>
+    </div>
+
+    <div class="history-content" id="history-content"></div>
   </div>
 
   <!-- Toast Container -->
@@ -548,6 +771,7 @@
     window.addEventListener('DOMContentLoaded', () => {
       initTickerToggle();
       initNotificationBadge();
+      initHistoryButton();
       generateAiMessage();
       setInterval(generateAiMessage, 180000);
       pollDatabase(false);
@@ -884,8 +1108,127 @@
 
     // Keyboard support for badge
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeStack();
+      if (e.key === 'Escape') {
+        closeStack();
+        closeHistory();
+      }
     });
+
+    // ========== HISTORY MODAL (PHASE 5) ==========
+    let historyDataCache = { achievements: [], loot: [] };
+    let currentHistoryTab = 'achievements';
+
+    function initHistoryButton() {
+      const btn = document.getElementById('btn-view-history');
+      btn.addEventListener('click', openHistory);
+    }
+
+    async function openHistory() {
+      if (activePlayerIndex === null) return;
+
+      const playerName = localState.players[activePlayerIndex].name;
+
+      try {
+        // Fetch full state from Worker
+        const res = await fetch(WORKER_URL);
+        if (!res.ok) throw new Error("Fetch failed");
+        const data = await res.json();
+
+        // Filter achievements by player
+        const allAchievements = [];
+        if (data.players && data.players[activePlayerIndex] && data.players[activePlayerIndex].achievements) {
+          const playerAchievements = data.players[activePlayerIndex].achievements;
+          if (playerAchievements.pending) {
+            allAchievements.push(...playerAchievements.pending.map(a => ({ ...a, status: 'active' })));
+          }
+          if (playerAchievements.archived) {
+            allAchievements.push(...playerAchievements.archived.map(a => ({ ...a, status: 'archived' })));
+          }
+        }
+
+        // Filter loot from campaign_notes
+        const allLoot = [];
+        if (data.campaign_notes && data.campaign_notes.loot) {
+          data.campaign_notes.loot.forEach(loot => {
+            if (!loot.is_deleted) {
+              allLoot.push({ ...loot, status: 'active' });
+            }
+          });
+        }
+
+        historyDataCache = {
+          achievements: allAchievements,
+          loot: allLoot
+        };
+
+        renderHistoryTab('achievements');
+        document.getElementById('history-modal').classList.add('visible');
+        document.getElementById('history-overlay').classList.add('visible');
+      } catch (e) {
+        showToast("Failed to load history.");
+      }
+    }
+
+    function switchHistoryTab(tab) {
+      currentHistoryTab = tab;
+
+      // Update tab buttons
+      document.querySelectorAll('.history-tab').forEach(t => {
+        t.classList.remove('active');
+      });
+      document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+
+      renderHistoryTab(tab);
+    }
+
+    function renderHistoryTab(tab) {
+      const content = document.getElementById('history-content');
+      const items = tab === 'achievements' ? historyDataCache.achievements : historyDataCache.loot;
+
+      if (items.length === 0) {
+        content.innerHTML = '<div class="history-empty">No ' + tab + ' yet.</div>';
+        return;
+      }
+
+      let html = '';
+      items.forEach(item => {
+        const isArchived = item.status === 'archived';
+        const isLoot = tab === 'loot';
+
+        if (isLoot) {
+          // Loot from campaign_notes (parsed from raw_text)
+          const name = item.raw_text ? item.raw_text.split('\n')[0] : 'Unknown Item';
+          html += `
+            <div class="history-item loot ${isArchived ? 'archived' : ''}">
+              <h4>⭐ ${escapeHtml(name)}</h4>
+              <span class="history-badge ${isArchived ? 'badge-archived' : 'badge-active'}">
+                ${isArchived ? 'Archived' : 'Active'}
+              </span>
+            </div>
+          `;
+        } else {
+          // Achievement from player data
+          const name = item.name || 'Unknown Achievement';
+          html += `
+            <div class="history-item ${isArchived ? 'archived' : ''}">
+              <h4>🏆 ${escapeHtml(name)}</h4>
+              <span class="history-badge ${isArchived ? 'badge-archived' : 'badge-active'}">
+                ${isArchived ? 'Archived' : 'Active'}
+              </span>
+            </div>
+          `;
+        }
+      });
+
+      content.innerHTML = html;
+    }
+
+    function closeHistory() {
+      const modal = document.getElementById('history-modal');
+      const overlay = document.getElementById('history-overlay');
+      modal.classList.remove('visible');
+      overlay.classList.remove('visible');
+    }
   </script>
 </body>
 </html>
