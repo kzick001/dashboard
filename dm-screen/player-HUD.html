@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Player HUD V2.3</title>
+  <title>Showrunner | Player HUD V4.1</title>
   
   <!-- SVG Icon Library (SP1: Foundations) -->
   <svg style="display: none; width: 0; height: 0;">
@@ -133,70 +133,44 @@
 
       <!-- Light Bulb (Idea / Custom) -->
       <svg id="icon-light" viewBox="0 0 24 24">
-        <path d="M21 17v2H3v-2s0-4 9-4 9 4 9 4zM3.21 9a6 6 0 0 1 9.58-9 6 6 0 1 0 .02 12A6.97 6.97 0 0 1 3.21 9z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
+        <path d="M21 17v2H3v-2s0-4 9-4 9 4 9 4z" fill="currentColor"/>
+        <path d="M3.21 7a7 7 0 0 1 13.58 0M7 17v2m10 0v2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
 
-      <!-- User (Fallback Avatar) -->
+      <!-- User -->
       <svg id="icon-user" viewBox="0 0 24 24">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </defs>
   </svg>
-  
+
   <style>
     :root {
-      --bg: rgba(10, 10, 12, 0.90);
-      --glass: rgba(15, 15, 18, 0.85);
-      --glass-border: rgba(255, 255, 255, 0.1);
+      --bg: #0a0e27;
       --accent: #bb86fc;
-      --danger: #ff4757;
-      --success: #03dac6;
-      --warning: #f1c40f;
-      --text: #e0e0e0;
-      --text-muted: #888;
       --ai-terminal: #ffeb3b;
+      --primary: #00e5ff;
+      --danger: #f87171;
+      --success: #4ade80;
+      --text: #e0e0e0;
+      --text-dark: #888888;
+      --glass: rgba(30, 30, 40, 0.7);
     }
 
-    /* === ICON UTILITIES === */
-    .inline-icon {
-      display: inline-block;
-      width: 1em;
-      height: 1em;
-      vertical-align: -0.125em;
-      color: inherit;
-    }
-    .icon-sm { width: 16px; height: 16px; }
-    .icon-md { width: 24px; height: 24px; }
-    .icon-lg { width: 32px; height: 32px; }
-    .icon-xl { width: 48px; height: 48px; }
-
-    /* === PLAYER COLOR PALETTE (SP1: Foundations) === */
-    .color-chuck { --player-color: #ff6b6b; }     /* Red */
-    .color-tilly { --player-color: #4ecdc4; }     /* Teal */
-    .color-hendrick { --player-color: #ffd93d; }  /* Gold */
-    .color-aelar { --player-color: #a78bfa; }     /* Purple */
-    .color-jimothy { --player-color: #60a5fa; }   /* Blue */
-
-    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
     html, body {
-      margin: 0;
-      padding: 0;
-      height: 100vh;
-      width: 100vw;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
       color: var(--text);
-      background-color: #050505;
-      background-image: 
-        linear-gradient(rgba(187, 134, 252, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(187, 134, 252, 0.05) 1px, transparent 1px);
-      background-size: 40px 40px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
       overflow: hidden;
     }
 
-    .hidden { display: none !important; }
-
-    /* ========== LAYER 0: VFX OVERLAYS ========== */
+    /* VFX Overlay */
     .vfx-overlay {
       position: fixed;
       top: 0;
@@ -241,7 +215,7 @@
       100% { box-shadow: inset 0 0 120px rgba(255, 71, 87, 0.4); }
     }
 
-    /* ========== PHASE 1: LOGIN SCREEN ========== */
+    /* Login Screen */
     .login-layer {
       position: fixed;
       top: 0;
@@ -249,10 +223,6 @@
       width: 100vw;
       height: 100vh;
       background: var(--bg);
-      background-image: 
-        linear-gradient(rgba(187, 134, 252, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(187, 134, 252, 0.05) 1px, transparent 1px);
-      background-size: 40px 40px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -261,16 +231,10 @@
       gap: 2rem;
       padding: 2rem;
       overflow-y: auto;
-      animation: fade-in 0.5s ease;
     }
 
     .login-layer.hidden {
       display: none;
-    }
-
-    @keyframes fade-in {
-      from { opacity: 0; }
-      to { opacity: 1; }
     }
 
     .login-hero {
@@ -278,17 +242,9 @@
       flex-direction: column;
       align-items: center;
       gap: 1rem;
-      margin-bottom: 1rem;
-      animation: slide-down 0.6s ease;
-    }
-
-    @keyframes slide-down {
-      from { opacity: 0; transform: translateY(-40px); }
-      to { opacity: 1; transform: translateY(0); }
     }
 
     .hero-avatar-ring {
-      position: relative;
       width: 200px;
       height: 200px;
       border-radius: 50%;
@@ -296,15 +252,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--player-color, var(--accent));
-      flex-shrink: 0;
-      box-shadow: 0 0 40px var(--player-color, var(--accent)), inset 0 0 20px rgba(255, 255, 255, 0.1);
-      animation: pulse-avatar 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse-avatar {
-      0%, 100% { box-shadow: 0 0 40px var(--player-color, var(--accent)), inset 0 0 20px rgba(255, 255, 255, 0.1); }
-      50% { box-shadow: 0 0 60px var(--player-color, var(--accent)), inset 0 0 30px rgba(255, 255, 255, 0.15); }
+      background: var(--accent);
+      box-shadow: 0 0 40px var(--accent);
     }
 
     .hero-avatar-ring img {
@@ -313,1435 +262,396 @@
       border-radius: 50%;
       object-fit: cover;
       border: 3px solid #000;
-      background: #222;
     }
 
     .hero-avatar-ring svg {
       width: 192px;
       height: 192px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 3px solid #000;
-      background: #222;
       color: var(--accent);
     }
 
     .hero-player-name {
-      margin: 0;
-      font-size: clamp(1.5rem, 6vw, 3rem);
+      font-size: 2.5rem;
       font-weight: bold;
       color: #fff;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      text-align: center;
+      margin: 0;
     }
 
     .hero-subtitle {
-      margin: 0;
-      font-size: clamp(0.95rem, 3vw, 1.25rem);
+      font-size: 1.1rem;
       color: var(--accent);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      text-align: center;
+      margin: 0;
     }
 
     .roster-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
       width: 100%;
-      max-width: 1000px;
-      padding: 0 1rem;
-      animation: fade-in 0.8s ease 0.2s both;
-    }
-
-    @media (max-width: 1024px) {
-      .roster-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1rem;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .roster-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-      }
-      .hero-avatar-ring {
-        width: 160px;
-        height: 160px;
-      }
-      .hero-avatar-ring img,
-      .hero-avatar-ring svg {
-        width: 152px;
-        height: 152px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .roster-grid {
-        grid-template-columns: 1fr;
-        gap: 0.75rem;
-      }
-      .hero-avatar-ring {
-        width: 120px;
-        height: 120px;
-      }
-      .hero-avatar-ring img,
-      .hero-avatar-ring svg {
-        width: 112px;
-        height: 112px;
-        border-width: 2px;
-      }
-      .login-hero {
-        margin-bottom: 0.5rem;
-      }
+      max-width: 800px;
     }
 
     .roster-btn {
       background: var(--glass);
-      border: 1px solid var(--glass-border);
-      border-radius: 8px;
-      padding: 1.5rem 1rem;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1rem;
-      transition: all 0.3s ease;
+      border: 2px solid var(--accent);
       color: var(--text);
-      text-decoration: none;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .roster-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-      transition: left 0.5s ease;
+      padding: 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
     }
 
     .roster-btn:hover {
-      border-color: var(--accent);
-      background: rgba(187, 134, 252, 0.1);
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 0 20px var(--accent);
+      transform: scale(1.05);
     }
 
-    .roster-btn:hover::before {
-      left: 100%;
-    }
-
-    .roster-avatar {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      overflow: hidden;
-      border: 3px solid var(--player-color, var(--accent));
-      flex-shrink: 0;
-      background: #222;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .roster-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .roster-avatar svg {
-      width: 100%;
-      height: 100%;
-      color: var(--accent);
-      padding: 10px;
-    }
-
-    .roster-name {
-      font-size: 1.1rem;
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #fff;
-      margin: 0;
-    }
-
-    .roster-class {
-      font-size: 0.85rem;
-      color: var(--accent);
-      margin: 0;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .login-loading {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(5, 5, 5, 0.95);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 2rem;
-      z-index: 2600;
-      animation: fade-in 0.3s ease;
-    }
-
-    .login-loading.hidden {
-      display: none;
-    }
-
-    .loading-spinner {
-      width: 80px;
-      height: 80px;
-      border: 4px solid var(--glass-border);
-      border-top: 4px solid var(--accent);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .loading-spinner.pulse {
-      animation: spin 1s linear infinite, pulse-glow 1.5s ease-in-out infinite;
-    }
-
-    @keyframes pulse-glow {
-      0%, 100% { box-shadow: 0 0 20px var(--accent); }
-      50% { box-shadow: 0 0 40px var(--accent); }
-    }
-
-    #auth-id {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: var(--accent);
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      margin: 0;
-      text-align: center;
-    }
-
-    .auth-tip {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-      font-style: italic;
-      text-align: center;
-      max-width: 400px;
-      margin: 0;
-      line-height: 1.5;
-    }
-
-    /* ========== LAYER 1: MARQUEE ========== */
-    .ticker-marquee {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      background: rgba(0, 0, 0, 0.95);
-      border-bottom: 1px solid var(--ai-terminal);
-      padding: 8px 0;
-      overflow: hidden;
-      z-index: 200;
-      transition: all 0.3s ease;
-      height: 28px;
-    }
-
-    .ticker-marquee.hidden {
-      height: 0;
-      padding: 0;
-      border: none;
-    }
-
-    .marquee-track {
-      display: flex;
-      width: max-content;
-      animation: scroll-left 40s linear infinite;
-    }
-
-    .marquee-text {
-      font-family: monospace;
-      font-size: 0.75rem;
-      font-weight: bold;
-      color: var(--ai-terminal);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      padding-right: 100px;
-      white-space: nowrap;
-    }
-
-    @keyframes scroll-left {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-
-    /* ========== PHASE 4: TICKER PILL ========== */
-    .ticker-pill {
-      position: fixed;
-      bottom: 120px;
-      right: 20px;
-      max-width: 320px;
-      width: auto;
-      padding: 0.75rem 1rem;
-      background: var(--glass);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border: 1px solid var(--accent);
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      z-index: 950;
-      animation: pill-slide-in 0.4s ease;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    }
-
-    .ticker-pill.hidden {
-      display: none;
-    }
-
-    @keyframes pill-slide-in {
-      from { opacity: 0; transform: translateX(100px); }
-      to { opacity: 1; transform: translateX(0); }
-    }
-
-    .ticker-pill:hover {
-      background: rgba(187, 134, 252, 0.15);
-      border-color: #fff;
-      transform: translateY(-2px);
-    }
-
-    .ticker-icon {
-      width: 24px;
-      height: 24px;
-      color: var(--ai-terminal);
-      flex-shrink: 0;
-      animation: blink-icon 2s ease-in-out infinite;
-    }
-
-    @keyframes blink-icon {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
-    }
-
-    .ticker-text {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--ai-terminal);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      line-height: 1.2;
-    }
-
-    @media (max-width: 768px) {
-      .ticker-pill {
-        max-width: 70vw;
-        bottom: 110px;
-        right: 10px;
-        left: 10px;
-        width: auto;
-      }
-      .ticker-text {
-        font-size: 0.8rem;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .ticker-pill {
-        max-width: calc(100vw - 20px);
-        font-size: 0.75rem;
-        padding: 0.6rem 0.8rem;
-        gap: 0.5rem;
-      }
-      .ticker-text {
-        font-size: 0.75rem;
-      }
-      .ticker-icon {
-        width: 18px;
-        height: 18px;
-      }
-    }
-
-    /* ========== LAYER 2: PLAYER HUD WIDGET ========== */
+    /* Player HUD */
     .player-hud {
       position: fixed;
       bottom: 20px;
-      right: 20px;
-      max-width: 480px;
-      width: auto;
-      border-radius: 8px;
+      left: 20px;
+      width: 320px;
+      max-height: calc(100vh - 40px);
       background: var(--glass);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border: 1px solid var(--glass-border);
-      padding: 1rem;
+      border: 2px solid var(--accent);
+      border-radius: 12px;
+      padding: 1.5rem;
       z-index: 1000;
-      font-size: 0.9rem;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-      transition: all 0.3s ease;
-      animation: hud-slide-up 0.4s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      overflow-y: auto;
     }
 
     .player-hud.hidden {
       display: none;
     }
 
-    @keyframes hud-slide-up {
-      from { opacity: 0; transform: translateY(40px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @media (max-width: 768px) {
-      .player-hud {
-        max-width: 90vw;
-        width: 90vw;
-        bottom: 10px;
-        right: 10px;
-        padding: 0.75rem;
-        font-size: 0.85rem;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .player-hud {
-        max-width: calc(100vw - 20px);
-        width: calc(100vw - 20px);
-        bottom: 10px;
-        right: 10px;
-        left: 10px;
-        padding: 0.7rem;
-        font-size: 0.8rem;
-      }
-    }
-
     .hud-header {
       display: flex;
-      justify-content: space-between;
+      gap: 1rem;
       align-items: center;
-      margin-bottom: 1rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 1px solid var(--glass-border);
-      gap: 0.75rem;
-    }
-
-    .hud-player-info {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      flex: 1;
     }
 
     .hud-player-avatar {
-      position: relative;
-      width: 48px;
-      height: 48px;
+      width: 60px;
+      height: 60px;
       border-radius: 50%;
-      padding: 2px;
+      background: var(--accent);
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--player-color, var(--accent));
       flex-shrink: 0;
     }
 
-    .hud-player-avatar img,
-    .hud-player-avatar svg {
-      width: 44px;
-      height: 44px;
+    .hud-player-avatar img {
+      width: 56px;
+      height: 56px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #000;
-      background: #222;
     }
 
-    .hud-player-avatar.state-healthy {
-      background: linear-gradient(135deg, var(--player-color, var(--accent)) 0%, rgba(187, 134, 252, 0.6) 100%);
-      box-shadow: 0 0 15px rgba(187, 134, 252, 0.3);
-    }
-
-    .hud-player-avatar.state-critical {
-      background: linear-gradient(135deg, var(--danger) 0%, #800 100%);
-      animation: pulse-avatar-crit 1.5s infinite;
-    }
-
-    .hud-player-avatar.state-fallen {
-      background: linear-gradient(135deg, #666 0%, #333 100%);
-      filter: grayscale(1);
-    }
-
-    @keyframes pulse-avatar-crit {
-      0%, 100% { box-shadow: 0 0 20px var(--danger), inset 0 0 20px rgba(255, 71, 87, 0.2); }
-      50% { box-shadow: 0 0 30px var(--danger), inset 0 0 30px rgba(255, 71, 87, 0.3); }
-    }
-
-    .hud-player-name {
-      font-weight: bold;
-      color: #fff;
-      margin: 0;
-      font-size: 0.9rem;
-    }
-
-    .hud-player-hp {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin: 0;
-    }
-
-    .hud-controls {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .hud-btn {
-      background: transparent;
-      border: 1px solid var(--glass-border);
-      color: var(--text);
-      width: 32px;
-      height: 32px;
-      border-radius: 4px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-      transition: 0.2s;
-      flex-shrink: 0;
-    }
-
-    .hud-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: rgba(187, 134, 252, 0.1);
-    }
-
-    .notif-badge {
-      background: var(--danger);
-      color: #fff;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.2s;
-      flex-shrink: 0;
-    }
-
-    .notif-badge:hover {
-      background: #ff6b7a;
-      transform: scale(1.1);
-    }
-
-    .notif-badge.empty {
-      background: var(--text-muted);
-      cursor: default;
-    }
-
-    .notif-badge.empty:hover {
-      background: var(--text-muted);
-      transform: scale(1);
-    }
-
-    /* ========== NOTIFICATION QUEUE ========== */
-    .notification-queue {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      max-height: 300px;
-      overflow-y: auto;
-      margin-bottom: 0.75rem;
-    }
-
-    .notification-queue::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .notification-queue::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .notification-queue::-webkit-scrollbar-thumb {
-      background: var(--accent);
-      border-radius: 3px;
-    }
-
-    .notification {
-      background: rgba(187, 134, 252, 0.15);
-      border: 1px solid var(--accent);
-      border-radius: 4px;
-      padding: 0.75rem;
-      cursor: pointer;
-      transition: 0.2s;
-      animation: notif-slide-in 0.3s ease;
-    }
-
-    @keyframes notif-slide-in {
-      from {
-        opacity: 0;
-        transform: translateX(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-
-    .notification:hover {
-      background: rgba(187, 134, 252, 0.25);
-      border-color: #fff;
-      transform: translateX(-4px);
-    }
-
-    .notification.loot {
-      border-color: var(--success);
-      background: rgba(3, 218, 198, 0.15);
-    }
-
-    .notification.loot:hover {
-      background: rgba(3, 218, 198, 0.25);
-    }
-
-    .notification.achievement {
-      border-color: var(--warning);
-      background: rgba(241, 196, 15, 0.15);
-    }
-
-    .notification.achievement:hover {
-      background: rgba(241, 196, 15, 0.25);
-    }
-
-    .notif-content {
-      margin: 0;
-    }
-
-    .notif-content h4 {
-      margin: 0 0 0.25rem 0;
-      font-size: 0.9rem;
-      font-weight: bold;
-      color: #fff;
-    }
-
-    .notif-content p {
-      margin: 0;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-
-    .notif-rarity {
-      font-weight: bold;
-      margin-top: 0.25rem;
-    }
-
-    .rarity-common { color: #999; }
-    .rarity-uncommon { color: #4ae54a; }
-    .rarity-rare { color: var(--accent); }
-    .rarity-epic { color: #ff6b6b; }
-    .rarity-legendary { color: var(--warning); }
-    .rarity-contraband { color: #ff00ff; }
-
-    /* ========== NOTIFICATION STACK MODAL ========== */
-    .notification-stack {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--glass);
-      border: 1px solid var(--glass-border);
-      border-top: 4px solid var(--accent);
-      border-radius: 8px;
-      padding: 1.5rem;
-      max-width: 500px;
-      max-height: 80vh;
-      overflow-y: auto;
-      z-index: 2000;
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      visibility: hidden;
-      opacity: 0;
-      transition: all 0.3s ease;
-    }
-
-    .notification-stack.visible {
-      visibility: visible;
-      opacity: 1;
-    }
-
-    .stack-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-      border-bottom: 1px solid var(--glass-border);
-      padding-bottom: 0.75rem;
-    }
-
-    .stack-header h3 {
-      margin: 0;
-      color: var(--accent);
-      text-transform: uppercase;
-      font-size: 1.1rem;
-      letter-spacing: 0.1em;
-    }
-
-    .stack-close {
-      background: transparent;
-      border: 1px solid var(--glass-border);
-      color: var(--text);
-      width: 28px;
-      height: 28px;
-      border-radius: 4px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: 0.2s;
-    }
-
-    .stack-close:hover {
-      border-color: var(--danger);
-      color: var(--danger);
-    }
-
-    .stack-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .stack-item {
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid var(--glass-border);
-      border-left: 4px solid var(--accent);
-      border-radius: 4px;
-      padding: 0.75rem;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .stack-item:hover {
-      background: rgba(0, 0, 0, 0.5);
-      border-left-color: #fff;
-    }
-
-    .stack-item.loot {
-      border-left-color: var(--success);
-    }
-
-    .stack-item.loot:hover {
-      border-left-color: #fff;
-    }
-
-    .stack-item.achievement {
-      border-left-color: var(--warning);
-    }
-
-    .stack-item.achievement:hover {
-      border-left-color: #fff;
-    }
-
-    .stack-item h4 {
-      margin: 0 0 0.25rem 0;
-      font-size: 0.9rem;
-      font-weight: bold;
-      color: #fff;
-    }
-
-    .stack-item p {
-      margin: 0;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-
-    .btn-view-history {
-      width: 100%;
-      background: rgba(187, 134, 252, 0.1);
-      border: 1px solid var(--accent);
-      color: var(--accent);
-      padding: 0.75rem;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      transition: 0.2s;
-      margin-bottom: 0.5rem;
-    }
-
-    .btn-view-history:hover {
-      background: var(--accent);
+    .hud-player-avatar svg {
+      width: 40px;
+      height: 40px;
       color: #000;
     }
 
-    .btn-spell-slots {
-      width: 100%;
-      background: rgba(3, 218, 198, 0.1);
-      border: 1px solid var(--success);
-      color: var(--success);
-      padding: 0.75rem;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      transition: 0.2s;
-    }
-
-    .btn-spell-slots:hover {
-      background: var(--success);
-      color: #000;
-    }
-
-    /* ========== PHASE 3: SPELL SLOTS MODAL ========== */
-    .spell-slots-modal {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--glass);
-      border: 1px solid var(--glass-border);
-      border-top: 4px solid var(--success);
-      border-radius: 8px;
-      padding: 1.5rem;
-      max-width: 500px;
-      max-height: 80vh;
-      overflow-y: auto;
-      z-index: 2000;
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      visibility: hidden;
-      opacity: 0;
-      transition: all 0.3s ease;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .spell-slots-modal.visible {
-      visibility: visible;
-      opacity: 1;
-    }
-
-    .spell-slots-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-      border-bottom: 1px solid var(--glass-border);
-      padding-bottom: 1rem;
-    }
-
-    .spell-slots-header h3 {
+    .hud-player-info h2 {
+      font-size: 1.2rem;
       margin: 0;
-      color: var(--success);
-      text-transform: uppercase;
-      font-size: 1.1rem;
-      letter-spacing: 0.1em;
+      color: var(--ai-terminal);
     }
 
-    .spell-slots-close {
-      background: transparent;
-      border: 1px solid var(--glass-border);
-      color: var(--text);
-      width: 28px;
-      height: 28px;
-      border-radius: 4px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: 0.2s;
-    }
-
-    .spell-slots-close:hover {
-      border-color: var(--danger);
-      color: var(--danger);
-    }
-
-    .spell-slots-content {
-      flex: 1;
-      overflow-y: auto;
-      margin-bottom: 1rem;
-    }
-
-    .spell-slots-content::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .spell-slots-content::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .spell-slots-content::-webkit-scrollbar-thumb {
-      background: var(--success);
-      border-radius: 3px;
-    }
-
-    .spell-level-row {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 0.75rem;
-      background: rgba(0, 0, 0, 0.2);
-      border: 1px solid var(--glass-border);
-      border-radius: 4px;
-      margin-bottom: 0.75rem;
-      transition: 0.2s;
-    }
-
-    .spell-level-row:hover {
-      background: rgba(0, 0, 0, 0.3);
-      border-color: var(--success);
-    }
-
-    .spell-level-label {
-      min-width: 80px;
-      font-weight: bold;
-      color: var(--success);
-      text-transform: uppercase;
+    .hud-player-info p {
       font-size: 0.85rem;
-      letter-spacing: 0.05em;
+      color: var(--text-dark);
+      margin: 0;
     }
 
-    .spell-slot-boxes {
-      display: flex;
+    /* Vitals */
+    .vitals-display {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 1rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .vitals-stat {
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 0.5rem;
+      background: rgba(187, 134, 252, 0.1);
+      border-radius: 4px;
+      color: var(--ai-terminal);
+    }
+
+    /* Spell Slots (Phase 5) */
+    .spell-slots-section {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+
+    .spell-slots-section h3 {
+      margin: 0 0 0.75rem 0;
+      font-size: 0.95rem;
+      color: var(--ai-terminal);
+      text-transform: uppercase;
+    }
+
+    .spell-slots-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
       gap: 0.5rem;
-      flex-wrap: wrap;
-      flex: 1;
+      margin-bottom: 1rem;
     }
 
-    .spell-slot-box {
-      width: 28px;
-      height: 28px;
-      border: 2px solid var(--success);
+    .spell-level-btn {
+      background: var(--accent);
+      border: none;
+      color: #000;
+      padding: 0.75rem;
       border-radius: 4px;
       cursor: pointer;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(3, 218, 198, 0.1);
-      user-select: none;
-    }
-
-    .spell-slot-box:hover {
-      background: rgba(3, 218, 198, 0.2);
-      transform: scale(1.1);
-    }
-
-    .spell-slot-box.used {
-      background: rgba(136, 136, 136, 0.2);
-      border-color: var(--text-muted);
-      color: var(--text-muted);
-    }
-
-    .spell-slot-box.used::after {
-      content: '✓';
       font-weight: bold;
-      font-size: 0.9rem;
+      transition: all 0.2s ease;
+      font-size: 0.75rem;
     }
 
-    .spell-slot-box.available {
-      background: rgba(3, 218, 198, 0.15);
-      border-color: var(--success);
-      color: var(--success);
+    .spell-level-btn:hover {
+      filter: brightness(1.1);
     }
 
-    .spell-slot-box.available::after {
-      content: '●';
+    .spell-level-btn .level {
+      display: block;
       font-size: 0.7rem;
+      margin-bottom: 0.25rem;
     }
 
-    .spell-slots-footer {
+    .spell-level-btn .count {
+      display: block;
+      font-size: 1rem;
+    }
+
+    .slots-detail {
+      display: none;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 4px;
+      margin-top: 0.5rem;
+    }
+
+    .slots-detail.show {
       display: flex;
-      gap: 0.75rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--glass-border);
+    }
+
+    .slots-detail button {
+      background: var(--ai-terminal);
+      color: #000;
+      border: none;
+      padding: 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
     }
 
     .long-rest-btn {
-      flex: 1;
-      background: rgba(3, 218, 198, 0.1);
-      border: 1px solid var(--success);
-      color: var(--success);
+      background: var(--success);
+      color: #000;
+      border: none;
       padding: 0.75rem;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 0.9rem;
       font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      transition: 0.2s;
+      width: 100%;
+      transition: all 0.2s ease;
     }
 
     .long-rest-btn:hover {
-      background: var(--success);
-      color: #000;
+      filter: brightness(1.1);
     }
 
-    /* ========== TOAST NOTIFICATIONS ========== */
-    #toast-container {
-      position: fixed;
-      bottom: 120px;
-      right: 20px;
+    /* Notification Pill (Phase 5) */
+    .notification-pill {
       display: flex;
-      flex-direction: column;
+      align-items: center;
       gap: 0.5rem;
-      z-index: 900;
-      pointer-events: none;
-    }
-
-    .toast {
-      background: rgba(0, 0, 0, 0.95);
-      color: #fff;
-      padding: 1rem 1.5rem;
-      border-radius: 4px;
-      border: 1px solid var(--glass-border);
-      font-size: 0.9rem;
+      background: var(--accent);
+      color: #000;
+      border-radius: 20px;
+      padding: 0.5rem 1rem;
       font-weight: bold;
-      letter-spacing: 0.05em;
-      animation: toast-in 0.3s ease, toast-out 0.3s ease 2.7s forwards;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.8);
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
 
-    @keyframes toast-in {
-      from {
-        opacity: 0;
-        transform: translateX(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
+    .notification-pill:hover {
+      filter: brightness(1.1);
     }
 
-    @keyframes toast-out {
-      from {
-        opacity: 1;
-        transform: translateX(0);
-      }
-      to {
-        opacity: 0;
-        transform: translateX(20px);
-      }
+    .notification-pill .badge {
+      background: var(--danger);
+      color: #fff;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: bold;
     }
 
-    /* ========== MODAL OVERLAY ========== */
+    .notification-pill svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Ticker Pill */
+    .ticker-pill {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--glass);
+      border: 1px solid var(--ai-terminal);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      color: var(--ai-terminal);
+      z-index: 999;
+    }
+
+    .ticker-pill.hidden {
+      display: none;
+    }
+
+    .ticker-icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    .ticker-text {
+      font-size: 0.85rem;
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      background: var(--glass);
+      border: 1px solid var(--accent);
+      color: var(--text);
+      padding: 1rem;
+      border-radius: 8px;
+      z-index: 2000;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(400px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Modal */
     .modal-overlay {
       position: fixed;
       top: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       background: rgba(0, 0, 0, 0.7);
-      z-index: 1999;
-      display: none;
-    }
-
-    .modal-overlay.visible {
-      display: block;
-    }
-
-    /* ========== HISTORY MODAL ========== */
-    .history-modal {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--glass);
-      border: 1px solid var(--glass-border);
-      border-top: 4px solid var(--accent);
-      border-radius: 8px;
-      padding: 1.5rem;
-      max-width: 550px;
-      max-height: 80vh;
-      overflow: hidden;
-      z-index: 2000;
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      visibility: hidden;
-      opacity: 0;
-      transition: all 0.3s ease;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .history-modal.visible {
-      visibility: visible;
-      opacity: 1;
-    }
-
-    .history-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-      border-bottom: 1px solid var(--glass-border);
-      padding-bottom: 1rem;
-    }
-
-    .history-header h3 {
-      margin: 0;
-      color: var(--accent);
-      text-transform: uppercase;
-      font-size: 1.1rem;
-      letter-spacing: 0.1em;
-    }
-
-    .history-close {
-      background: transparent;
-      border: 1px solid var(--glass-border);
-      color: var(--text);
-      width: 28px;
-      height: 28px;
-      border-radius: 4px;
-      cursor: pointer;
+      z-index: 1500;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: 0.2s;
     }
 
-    .history-close:hover {
-      border-color: var(--danger);
-      color: var(--danger);
+    .modal-overlay.hidden {
+      display: none;
     }
 
-    .history-tabs {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-      border-bottom: 1px solid var(--glass-border);
-      padding-bottom: 0.75rem;
-    }
-
-    .history-tab {
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--text-muted);
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: 0.2s;
-      font-weight: bold;
-      text-transform: uppercase;
-      font-size: 0.85rem;
-      letter-spacing: 0.05em;
-    }
-
-    .history-tab:hover {
-      color: var(--text);
-      border-color: var(--glass-border);
-    }
-
-    .history-tab.active {
-      color: var(--accent);
-      border-color: var(--accent);
-    }
-
-    .history-content {
-      flex: 1;
-      overflow-y: auto;
-    }
-
-    .history-content::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .history-content::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .history-content::-webkit-scrollbar-thumb {
-      background: var(--accent);
-      border-radius: 3px;
-    }
-
-    .history-item {
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid var(--glass-border);
-      border-left: 4px solid var(--accent);
-      border-radius: 4px;
-      padding: 0.75rem;
-      margin-bottom: 0.75rem;
-      transition: 0.2s;
-    }
-
-    .history-item:hover {
-      background: rgba(0, 0, 0, 0.5);
-      border-left-color: #fff;
-    }
-
-    .history-item.archived {
-      border-left-color: var(--text-muted);
-      opacity: 0.7;
-    }
-
-    .history-item.loot {
-      border-left-color: var(--success);
-    }
-
-    .history-item h4 {
-      margin: 0 0 0.25rem 0;
-      font-size: 0.95rem;
-      font-weight: bold;
-      color: #fff;
-    }
-
-    .history-item p {
-      margin: 0;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-
-    .history-badge {
-      display: inline-block;
-      font-size: 0.7rem;
-      font-weight: bold;
-      padding: 0.2rem 0.5rem;
-      border-radius: 3px;
-      margin-top: 0.5rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .badge-active {
-      background: rgba(3, 218, 198, 0.2);
-      color: var(--success);
-      border: 1px solid var(--success);
-    }
-
-    .badge-archived {
-      background: rgba(136, 136, 136, 0.2);
-      color: var(--text-muted);
-      border: 1px solid var(--text-muted);
-    }
-
-    .history-empty {
+    .achievement-modal {
+      background: var(--glass);
+      border: 2px solid var(--accent);
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 400px;
       text-align: center;
-      color: var(--text-muted);
-      padding: 2rem 1rem;
-      font-style: italic;
     }
 
-    .logout-btn {
-      width: 100%;
-      background: rgba(255, 71, 87, 0.1);
-      border: 1px solid var(--danger);
-      color: var(--danger);
-      padding: 0.75rem;
+    .achievement-modal h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      color: var(--ai-terminal);
+    }
+
+    .achievement-modal p {
+      font-size: 0.9rem;
+      color: var(--text-dark);
+      margin-bottom: 1.5rem;
+    }
+
+    .achievement-modal button {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 0.75rem 1.5rem;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 0.9rem;
       font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      transition: 0.2s;
-      margin-top: 0.75rem;
+      width: 100%;
     }
 
-    .logout-btn:hover {
-      background: var(--danger);
-      color: #fff;
-    }
   </style>
-</head>
-<body>
-
-  <!-- VFX Layer -->
-  <div id="vfx-layer" class="vfx-overlay"></div>
-
-  <!-- PHASE 1: LOGIN SCREEN -->
-  <div class="login-layer" id="login-layer">
-    <div class="login-hero">
-      <div class="hero-avatar-ring" id="hero-avatar-ring">
-        <svg id="hero-avatar-svg" class="icon-xl" viewBox="0 0 24 24">
-          <use xlink:href="#icon-user"></use>
-        </svg>
-      </div>
-      <h1 class="hero-player-name" id="hero-player-name">SELECT CHARACTER</h1>
-      <p class="hero-subtitle" id="hero-subtitle">Choose your Crawler</p>
-    </div>
-
-    <div class="roster-grid" id="roster-grid"></div>
-
-    <div class="login-loading hidden" id="loading-layer">
-      <div class="loading-spinner" id="loading-spinner"></div>
-      <h2 id="auth-id">Loading...</h2>
-      <p class="auth-tip" id="auth-tip">Stay calm and wait for extraction.</p>
-    </div>
-  </div>
-
-  <!-- Ticker Marquee -->
-  <div class="ticker-marquee" id="ticker">
-    <div class="marquee-track">
-      <span class="marquee-text" id="marquee-text-1"></span>
-      <span class="marquee-text" id="marquee-text-2" aria-hidden="true"></span>
-    </div>
-  </div>
-
-  <!-- PHASE 4: Ticker Pill -->
-  <div class="ticker-pill hidden" id="ticker-pill">
-    <svg class="ticker-icon" viewBox="0 0 24 24">
-      <use xlink:href="#icon-eye"></use>
-    </svg>
-    <span class="ticker-text" id="ticker-pill-text">Loading...</span>
-  </div>
-
-  <!-- Player HUD Widget (Bottom Right) -->
-  <div class="player-hud hidden" id="main-hud">
-    <div class="hud-header">
-      <div class="hud-player-info">
-        <div class="hud-player-avatar" id="hud-player-avatar">
-          <svg viewBox="0 0 24 24">
-            <use xlink:href="#icon-user"></use>
-          </svg>
-        </div>
-        <div>
-          <p class="hud-player-name" id="hud-player-name">Player</p>
-          <p class="hud-player-hp" id="hud-player-hp">HP: —</p>
-        </div>
-      </div>
-      <div class="hud-controls">
-        <button class="hud-btn" id="ticker-toggle" title="Toggle ticker" aria-label="Toggle ticker visibility">👁</button>
-        <div class="notif-badge empty" id="notif-badge" title="View all notifications" aria-label="Notification count">0</div>
-      </div>
-    </div>
-
-    <div class="notification-queue" id="notif-queue"></div>
-
-    <div style="border-top: 1px solid var(--glass-border); padding-top: 0.75rem; margin-top: 0.75rem;">
-      <button class="btn-view-history" id="btn-view-history" title="View achievement and loot history" aria-label="View my items">📋 My Items</button>
-      <button class="btn-spell-slots" id="btn-spell-slots" title="Manage spell slots" aria-label="Spell Slots">⚡ Spell Slots</button>
-      <button class="logout-btn" id="btn-logout" title="Return to character select" aria-label="Logout">🚪 Logout</button>
-    </div>
-  </div>
-
-  <!-- Notification Stack Modal -->
-  <div class="modal-overlay" id="stack-overlay" onclick="closeStack()"></div>
-  <div class="notification-stack" id="notif-stack">
-    <div class="stack-header">
-      <h3>Notifications</h3>
-      <button class="stack-close" id="stack-close-btn" onclick="closeStack()" aria-label="Close notifications">×</button>
-    </div>
-    <div class="stack-list" id="stack-list"></div>
-  </div>
-
-  <!-- PHASE 3: Spell Slots Modal -->
-  <div class="modal-overlay" id="spell-slots-overlay" onclick="closeSpellSlotsModal()"></div>
-  <div class="spell-slots-modal" id="spell-slots-modal">
-    <div class="spell-slots-header">
-      <h3>⚡ Spell Slots</h3>
-      <button class="spell-slots-close" onclick="closeSpellSlotsModal()" aria-label="Close spell slots">×</button>
-    </div>
-    <div class="spell-slots-content" id="spell-slots-content"></div>
-    <div class="spell-slots-footer">
-      <button class="long-rest-btn" id="long-rest-btn">🌙 Long Rest</button>
-    </div>
-  </div>
-
-  <!-- History Modal (Achievements + Loot) -->
-  <div class="modal-overlay" id="history-overlay" onclick="closeHistory()"></div>
-  <div class="history-modal" id="history-modal">
-    <div class="history-header">
-      <h3>My Items & Achievements</h3>
-      <button class="history-close" onclick="closeHistory()" aria-label="Close history">×</button>
-    </div>
-    
-    <div class="history-tabs">
-      <button class="history-tab active" data-tab="achievements" onclick="switchHistoryTab('achievements')">🏆 Achievements</button>
-      <button class="history-tab" data-tab="loot" onclick="switchHistoryTab('loot')">⭐ Loot Awards</button>
-    </div>
-
-    <div class="history-content" id="history-content"></div>
-  </div>
-
-  <!-- Toast Container -->
-  <div id="toast-container"></div>
 
   <script>
     // ========== CONFIGURATION ==========
     const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
+    const AUTH_TOKEN_KEY = 'showrunner_auth_token';
     const TICKER_STORAGE_KEY = 'showrunner_ticker_visible';
     const PLAYER_ACTIVE_KEY = 'showrunner_active_player';
-
-    // ========== PLAYER DEFAULTS (SP1: PHASE 1) ==========
-    const PLAYER_DEFAULTS = {
-      'Chuck': { race: 'Half-Orc', class: 'Barbarian', subclass: 'Berserker' },
-      'Tilly': { race: 'Gnome', class: 'Rogue', subclass: 'Arcane Trickster' },
-      'Hendrick': { race: 'Human', class: 'Fighter', subclass: 'Battle Master' },
-      'Aelar': { race: 'Elf', class: 'Wizard', subclass: 'Evocation' },
-      'Jimothy': { race: 'Halfling', class: 'Cleric', subclass: 'Life' }
-    };
-
-    const PLAYER_COLORS = {
-      'Chuck': 'color-chuck',
-      'Tilly': 'color-tilly',
-      'Hendrick': 'color-hendrick',
-      'Aelar': 'color-aelar',
-      'Jimothy': 'color-jimothy'
-    };
+    const POLLING_INTERVAL = 30000; // 30 seconds (Phase 4)
 
     // ========== STATE ==========
-    let localState = {
-      version: 0,
-      players: [
-        { name: "Chuck", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, stats: { hp_current: 35, hp_max: 60 }, resources: [] },
-        { name: "Tilly", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, stats: { hp_current: 28, hp_max: 32 }, resources: [] },
-        { name: "Hendrick", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, stats: { hp_current: 52, hp_max: 72 }, resources: [] },
-        { name: "Aelar", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, stats: { hp_current: 22, hp_max: 26 }, resources: [] },
-        { name: "Jimothy", is_deleted: false, status: { conditions: [] }, achievements: { pending: [] }, stats: { hp_current: 44, hp_max: 48 }, resources: [] }
-      ]
-    };
-
+    let campaignState = null; // Phase 4: KV-synced campaign state
+    let currentPlayer = null; // Phase 4: Current player from campaign state
+    let playerName = new URLSearchParams(window.location.search).get("player") || "Jimothy"; // Phase 4: Player name from URL or default
+    
     let activePlayerIndex = null;
     let notificationCache = [];
-    let tickerData = null;
-    let historyDataCache = { achievements: [], loot: [] };
-    let currentHistoryTab = 'achievements';
+    let pollingInterval = null; // Phase 4: Polling timer
+    let currentAchievementModal = null; // Phase 5: Achievement modal tracking
 
     // ========== INITIALIZATION ==========
     window.addEventListener('DOMContentLoaded', () => {
       initLoginScreen();
       initTickerToggle();
       initNotificationBadge();
-      initHistoryButton();
-      initSpellSlotsButton();
       initLogoutButton();
-      fetchTickerData();
-      generateAiMessage();
-      setInterval(generateAiMessage, 180000);
-      setInterval(rotateTickerPill, 8000);
-      pollDatabase(false);
-      setInterval(() => pollDatabase(false), 60000);
+      
+      // Phase 4: Start KV polling for campaign state
+      startKVPolling();
 
       // Auto-login check
       const savedIdx = localStorage.getItem(PLAYER_ACTIVE_KEY);
-      if (savedIdx !== null && localState.players[savedIdx] && !localState.players[savedIdx].is_deleted) {
-        activePlayerIndex = parseInt(savedIdx);
-        selectPlayer(localState.players[activePlayerIndex].name, activePlayerIndex, true);
+      if (savedIdx !== null) {
+        const idx = parseInt(savedIdx);
+        if (idx === 0) selectPlayer(playerName, idx, true);
       }
     });
 
@@ -1754,734 +664,415 @@
       const grid = document.getElementById('roster-grid');
       grid.innerHTML = '';
 
-      localState.players.forEach((player, idx) => {
-        if (player.is_deleted) return;
-
+      const players = ['Chuck', 'Tilly', 'Hendrick', 'Aelar', 'Jimothy'];
+      
+      players.forEach((name, idx) => {
         const btn = document.createElement('button');
-        btn.className = `roster-btn ${PLAYER_COLORS[player.name] || ''}`;
-        btn.tabIndex = 0;
-        btn.setAttribute('aria-label', `Select ${player.name}`);
-
-        const defaults = PLAYER_DEFAULTS[player.name] || { race: 'Unknown', class: 'Adventurer' };
-
+        btn.className = 'roster-btn';
         btn.innerHTML = `
-          <div class="roster-avatar">
-            <svg viewBox="0 0 24 24">
+          <div style="text-align: center;">
+            <svg style="width: 40px; height: 40px; margin-bottom: 0.5rem;" viewBox="0 0 24 24">
               <use xlink:href="#icon-user"></use>
             </svg>
+            <p style="margin: 0.5rem 0 0 0; font-weight: bold;">${name}</p>
           </div>
-          <p class="roster-name">${escapeHtml(player.name)}</p>
-          <p class="roster-class">${defaults.race} ${defaults.class}</p>
         `;
-
-        btn.addEventListener('click', () => selectPlayer(player.name, idx, false));
-        btn.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') selectPlayer(player.name, idx, false);
-        });
-
+        btn.addEventListener('click', () => selectPlayer(name, idx, false));
         grid.appendChild(btn);
       });
     }
 
     function selectPlayer(name, idx, isAutoLogin) {
       activePlayerIndex = idx;
+      playerName = name; // Phase 4: Track player name for KV lookups
       localStorage.setItem(PLAYER_ACTIVE_KEY, idx.toString());
 
-      const defaults = PLAYER_DEFAULTS[name] || { race: 'Unknown', class: 'Adventurer' };
-
-      // Update hero display
-      const heroRing = document.getElementById('hero-avatar-ring');
-      heroRing.className = `hero-avatar-ring ${PLAYER_COLORS[name] || ''}`;
-
-      document.getElementById('hero-player-name').textContent = escapeHtml(name);
-      document.getElementById('hero-subtitle').textContent = `${defaults.race} ${defaults.class}`;
-
-      // Show loading screen
-      const loginLayer = document.getElementById('login-layer');
-      const loadingLayer = document.getElementById('loading-layer');
-
-      loginLayer.style.opacity = '0.5';
-      loginLayer.style.pointerEvents = 'none';
-
-      loadingLayer.classList.remove('hidden');
-      document.getElementById('auth-id').textContent = `EXTRACTING ${escapeHtml(name.toUpperCase())}...`;
-
-      // Random tip from ticker
-      const tip = getRandomTip();
-      document.getElementById('auth-tip').textContent = tip;
-
-      // 6 second delay
-      setTimeout(() => transitionToHUD(), 6000);
-    }
-
-    function getRandomTip() {
-      if (!tickerData || !tickerData.tips || tickerData.tips.length === 0) {
-        return "Loading...";
-      }
-      return tickerData.tips[Math.floor(Math.random() * tickerData.tips.length)];
-    }
-
-    function transitionToHUD() {
       const loginLayer = document.getElementById('login-layer');
       const hudLayer = document.getElementById('main-hud');
+      
+      document.getElementById('hero-player-name').textContent = name;
+      document.getElementById('hero-avatar-ring').style.background = 'var(--accent)';
+      
+      // Phase 4: Try to get data from KV first
+      if (campaignState && campaignState.characters) {
+        currentPlayer = campaignState.characters.find(c => c.name === name);
+        if (currentPlayer) {
+          document.getElementById('hero-subtitle').textContent = `${currentPlayer.race} ${currentPlayer.class}`;
+        }
+      }
 
-      loginLayer.style.animation = 'fade-out 0.4s ease forwards';
-      loginLayer.style.pointerEvents = 'none';
-
+      // Transition to HUD
+      loginLayer.style.animation = 'fadeOut 0.5s ease forwards';
       setTimeout(() => {
         loginLayer.classList.add('hidden');
         hudLayer.classList.remove('hidden');
-        syncAndRender();
-        displayTickerPill();
-      }, 400);
+        renderPlayerHUD();
+        updateAchievementNotifier();
+      }, 500);
     }
 
-    function renderPlayerHUD() {
-      if (activePlayerIndex === null || !localState.players[activePlayerIndex]) return;
-
-      const player = localState.players[activePlayerIndex];
-
-      // Update player info in HUD header
-      document.getElementById('hud-player-name').textContent = escapeHtml(player.name);
-
-      const hp = player.stats?.hp_current || 0;
-      const maxHp = player.stats?.hp_max || 1;
-      document.getElementById('hud-player-hp').textContent = `HP: ${hp}/${maxHp}`;
-
-      // Update avatar ring state
-      const avatarRing = document.getElementById('hud-player-avatar');
-      avatarRing.className = `hud-player-avatar ${PLAYER_COLORS[player.name] || ''}`;
-
-      const hpPercent = (hp / maxHp) * 100;
-      if (hpPercent > 50) {
-        avatarRing.classList.add('state-healthy');
-      } else if (hpPercent > 0) {
-        avatarRing.classList.add('state-critical');
-      } else {
-        avatarRing.classList.add('state-fallen');
-      }
-    }
-
-    // ========== TICKER SYSTEM ==========
-    async function fetchTickerData() {
+    // ========== KV POLLING (Phase 4) ==========
+    async function fetchCampaignStateFromKV() {
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch('ticker.json', { signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        if (res.ok) {
-          tickerData = await res.json();
-        } else {
-          tickerData = getDefaultTickerData();
+        const token = localStorage.getItem(AUTH_TOKEN_KEY) || sessionStorage.getItem(AUTH_TOKEN_KEY);
+        if (!token) {
+          console.warn("No auth token for KV polling");
+          return;
+        }
+        
+        const response = await fetch(WORKER_URL, {
+          method: "GET",
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          campaignState = await response.json();
+          currentPlayer = campaignState.characters?.find(c => c.name === playerName);
+          updatePlayerDisplayFromKV();
         }
       } catch (e) {
-        tickerData = getDefaultTickerData();
+        console.error("KV polling error:", e);
       }
     }
 
-    function getDefaultTickerData() {
-      return {
-        subjects: ["SYSTEM", "NETWORK", "PROTOCOL"],
-        actions: ["REPORTS", "CONFIRMS", "DENIES"],
-        results: ["STABLE", "CRITICAL", "NOMINAL"],
-        signoffs: ["STAY CALM", "CONTINUE", "ABORT"],
-        tips: ["Explore every corridor", "Trust your party", "Gold is life", "Stay vigilant"]
-      };
-    }
-
-    function generateAiMessage() {
-      if (!tickerData) return;
-
-      const sub = tickerData.subjects[Math.floor(Math.random() * tickerData.subjects.length)];
-      const act = tickerData.actions[Math.floor(Math.random() * tickerData.actions.length)];
-      const reslt = tickerData.results[Math.floor(Math.random() * tickerData.results.length)];
-      const sign = tickerData.signoffs[Math.floor(Math.random() * tickerData.signoffs.length)];
-
-      const fullMessage = `[SYS_BROADCAST] ${sub} ${act} ${reslt} — ${sign}`;
-
-      const track = document.querySelector('.marquee-track');
-      if (track) {
-        track.style.animation = 'none';
-        track.offsetHeight;
-        track.style.animation = '';
-      }
-      document.querySelectorAll('.marquee-text').forEach(el => { el.innerText = fullMessage; });
-    }
-
-    function initTickerToggle() {
-      const toggle = document.getElementById('ticker-toggle');
-      toggle.addEventListener('click', () => {
-        const ticker = document.getElementById('ticker');
-        const isHidden = ticker.classList.toggle('hidden');
-        toggle.textContent = isHidden ? '🔒' : '👁';
-        localStorage.setItem(TICKER_STORAGE_KEY, !isHidden);
-      });
-
-      // Restore ticker visibility
-      const tickerVisible = localStorage.getItem(TICKER_STORAGE_KEY) !== 'false';
-      if (!tickerVisible) {
-        document.getElementById('ticker').classList.add('hidden');
-        toggle.textContent = '🔒';
-      }
-    }
-
-    // ========== PHASE 4: TICKER PILL ==========
-    function displayTickerPill() {
-      const pill = document.getElementById('ticker-pill');
-      pill.classList.remove('hidden');
-      rotateTickerPill();
-    }
-
-    function rotateTickerPill() {
-      if (!tickerData) return;
-
-      const pillText = document.getElementById('ticker-pill-text');
-      const sub = tickerData.subjects[Math.floor(Math.random() * tickerData.subjects.length)];
-      const act = tickerData.actions[Math.floor(Math.random() * tickerData.actions.length)];
-      const reslt = tickerData.results[Math.floor(Math.random() * tickerData.results.length)];
-
-      pillText.textContent = `${sub} ${act} ${reslt}`;
-    }
-
-    // ========== POLLING & SYNC ==========
-    async function pollDatabase(isManual = false) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
-        const res = await fetch(WORKER_URL, { signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        if (res.ok) {
-          const remote = await res.json();
-          if (remote.players && remote.players.length > 0) {
-            localState = remote;
-          } else {
-            localState.version = remote.version || localState.version;
-          }
-          if (activePlayerIndex !== null) syncAndRender();
-          if (isManual) showToast("Synchronized.");
-        }
-      } catch (e) {
-        if (isManual) showToast("Sync failed. Offline mode.");
-      }
-    }
-
-    function syncAndRender() {
-      if (activePlayerIndex === null || !localState.players[activePlayerIndex] || localState.players[activePlayerIndex].is_deleted) {
-        activePlayerIndex = null;
+    function updatePlayerDisplayFromKV() {
+      if (!currentPlayer) {
+        console.warn(`Player "${playerName}" not found in campaign state.`);
         return;
       }
-
-      const player = localState.players[activePlayerIndex];
-      renderPlayerHUD();
-      updateConditions(player.status?.conditions || []);
-      evaluateNotifications(player);
+      
+      // Update profile image (Phase 4)
+      const profileImg = document.querySelector(".hud-player-avatar img");
+      if (profileImg) {
+        profileImg.src = currentPlayer.profileImage || `/players/${playerName}.png`;
+        profileImg.onerror = function() {
+          this.style.display = 'none';
+        };
+      }
+      
+      // Update vitals display
+      updateVitalsDisplay();
+      updateSpellSlotsDisplay();
+      updateAchievementNotifier();
     }
 
-    // ========== VFX SYSTEM ==========
-    function updateConditions(conditions) {
-      const vfx = document.getElementById('vfx-layer');
-      vfx.className = 'vfx-overlay';
-
-      if (!conditions || conditions.length === 0) return;
-
-      const condList = conditions.map(c => c.toLowerCase());
-
-      if (condList.includes('critical trauma') || condList.includes('critical')) {
-        vfx.classList.add('vfx-critical');
-      } else if (condList.includes('bleeding')) {
-        vfx.classList.add('vfx-bleeding');
-      } else if (condList.includes('poisoned') || condList.includes('poison')) {
-        vfx.classList.add('vfx-poison');
-      } else if (condList.includes('blinded') || condList.includes('blind')) {
-        vfx.classList.add('vfx-blinded');
+    function updateVitalsDisplay() {
+      if (!currentPlayer) return;
+      
+      const vitalsContainer = document.querySelector(".vitals-display");
+      if (vitalsContainer) {
+        vitalsContainer.innerHTML = `
+          <div class="vitals-stat">HP: ${currentPlayer.currentHP}/${currentPlayer.maxHP}</div>
+          <div class="vitals-stat">AC: ${currentPlayer.ac}</div>
+          <div class="vitals-stat">Passive: ${currentPlayer.passivePerception}</div>
+        `;
       }
     }
 
-    // ========== NOTIFICATION SYSTEM ==========
-    function evaluateNotifications(player) {
-      const pending = player.achievements?.pending || [];
-      notificationCache = pending;
-      renderNotificationQueue();
-      updateNotificationBadge();
+    function startKVPolling() {
+      // Fetch immediately
+      fetchCampaignStateFromKV();
+      
+      // Then set interval (Phase 4: 30 second polling)
+      pollingInterval = setInterval(fetchCampaignStateFromKV, POLLING_INTERVAL);
     }
 
-    function renderNotificationQueue() {
-      const queue = document.getElementById('notif-queue');
-      queue.innerHTML = '';
-
-      notificationCache.forEach((item, idx) => {
-        const notif = document.createElement('div');
-        const isLoot = item.rewards && item.rewards.items && item.rewards.items.length > 0;
-        const type = isLoot ? 'loot' : 'achievement';
-
-        notif.className = `notification ${type}`;
-        notif.tabIndex = 0;
-        notif.setAttribute('role', 'button');
-        notif.setAttribute('aria-label', `${isLoot ? 'Loot' : 'Achievement'}: ${item.name}`);
-
-        const actualItem = isLoot ? item.rewards.items[0] : item;
-        const rarity = actualItem?.rarity || 'standard';
-
-        let rarityClass = 'rarity-common';
-        if (rarity.toLowerCase() === 'uncommon') rarityClass = 'rarity-uncommon';
-        else if (rarity.toLowerCase() === 'rare') rarityClass = 'rarity-rare';
-        else if (rarity.toLowerCase() === 'epic') rarityClass = 'rarity-epic';
-        else if (rarity.toLowerCase() === 'legendary') rarityClass = 'rarity-legendary';
-        else if (rarity.toLowerCase() === 'contraband') rarityClass = 'rarity-contraband';
-
-        const icon = isLoot ? '⭐' : '🏆';
-
-        notif.innerHTML = `
-          <div class="notif-content">
-            <h4>${icon} ${escapeHtml(item.name || actualItem.name)}</h4>
-            <p>${escapeHtml(actualItem.description || '')}</p>
-            ${isLoot ? `<p class="notif-rarity ${rarityClass}">${rarity.toUpperCase()}</p>` : ''}
-          </div>
-        `;
-
-        notif.addEventListener('click', () => {
-          notif.remove();
-          notificationCache.splice(idx, 1);
-          updateNotificationBadge();
-          acknowledgeNotification(idx);
-        });
-
-        notif.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            notif.click();
-          }
-        });
-
-        queue.appendChild(notif);
-      });
+    function stopKVPolling() {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+      }
     }
 
-    function updateNotificationBadge() {
-      const badge = document.getElementById('notif-badge');
-      const count = notificationCache.length;
+    // ========== SPELL SLOTS (Phase 5) ==========
+    function updateSpellSlotsDisplay() {
+      if (!currentPlayer || !currentPlayer.spellSlots) return;
+      
+      for (let i = 1; i <= 3; i++) {
+        const key = `level${i}`;
+        const slot = currentPlayer.spellSlots[key];
+        const countEl = document.getElementById(`slots-l${i}`);
+        if (countEl) {
+          countEl.textContent = `${slot.current}/${slot.max}`;
+        }
+      }
+    }
 
-      badge.textContent = count;
-      badge.setAttribute('aria-label', `${count} notification${count !== 1 ? 's' : ''}`);
+    function toggleSpellSlots(level) {
+      const detail = document.getElementById(`slots-l${level}-detail`);
+      if (detail) {
+        detail.classList.toggle('show');
+      }
+    }
 
-      if (count === 0) {
-        badge.classList.add('empty');
+    function decrementSpellSlot(level) {
+      if (!currentPlayer || !currentPlayer.spellSlots) return;
+      
+      const key = `level${level}`;
+      if (currentPlayer.spellSlots[key].current > 0) {
+        currentPlayer.spellSlots[key].current--;
+        updateSpellSlotsDisplay();
+        syncPlayerToKV();
+      }
+    }
+
+    function incrementSpellSlot(level) {
+      if (!currentPlayer || !currentPlayer.spellSlots) return;
+      
+      const key = `level${level}`;
+      const max = currentPlayer.spellSlots[key].max;
+      if (currentPlayer.spellSlots[key].current < max) {
+        currentPlayer.spellSlots[key].current++;
+        updateSpellSlotsDisplay();
+        syncPlayerToKV();
+      }
+    }
+
+    async function longRest() {
+      if (!currentPlayer || !currentPlayer.spellSlots) return;
+      if (!confirm("Reset all spell slots? This triggers a long rest.")) return;
+      
+      for (let i = 1; i <= 3; i++) {
+        const key = `level${i}`;
+        currentPlayer.spellSlots[key].current = currentPlayer.spellSlots[key].max;
+      }
+      currentPlayer.spellSlots.lastLongRest = new Date().toISOString();
+      
+      updateSpellSlotsDisplay();
+      await syncPlayerToKV();
+      showToast("Long rest completed!");
+    }
+
+    // ========== ACHIEVEMENTS (Phase 5) ==========
+    function getUnacknowledgedAchievements() {
+      if (!campaignState || !campaignState.achievements) return [];
+      return campaignState.achievements.filter(a => 
+        !a.archived && 
+        !a.acknowledgedBy?.includes(playerName)
+      );
+    }
+
+    function updateAchievementNotifier() {
+      const unack = getUnacknowledgedAchievements();
+      const badge = document.getElementById('achievement-badge');
+      const pill = document.getElementById('achievement-pill');
+      
+      if (unack.length > 0) {
+        if (badge) badge.textContent = unack.length;
+        if (pill) pill.style.display = 'flex';
+        
+        // Add glow if any are glowing
+        const glowing = unack.some(a => a.glow);
+        if (glowing && pill) {
+          pill.style.animation = 'pulse 1s infinite';
+        }
       } else {
-        badge.classList.remove('empty');
+        if (pill) pill.style.display = 'none';
+      }
+    }
+
+    function openAchievementModal() {
+      const unack = getUnacknowledgedAchievements();
+      if (unack.length === 0) return;
+      
+      currentAchievementModal = unack[0];
+      const overlay = document.getElementById('achievement-overlay');
+      const modal = document.getElementById('achievement-modal');
+      
+      if (modal) {
+        modal.innerHTML = `
+          <svg style="width: 60px; height: 60px; margin: 0 auto 1rem; color: var(--ai-terminal);" viewBox="0 0 24 24">
+            <use xlink:href="#icon-star"></use>
+          </svg>
+          <h2>${currentAchievementModal.name}</h2>
+          <p>Earned on ${new Date(currentAchievementModal.earned).toLocaleDateString()}</p>
+          <button onclick="acknowledgeAchievement()">Acknowledge</button>
+        `;
+      }
+      
+      if (overlay) overlay.classList.remove('hidden');
+    }
+
+    function closeAchievementModal() {
+      const overlay = document.getElementById('achievement-overlay');
+      if (overlay) overlay.classList.add('hidden');
+      currentAchievementModal = null;
+    }
+
+    async function acknowledgeAchievement() {
+      if (!currentAchievementModal || !campaignState) return;
+      
+      const ach = campaignState.achievements.find(a => a.id === currentAchievementModal.id);
+      if (ach) {
+        if (!ach.acknowledgedBy) ach.acknowledgedBy = [];
+        if (!ach.acknowledgedBy.includes(playerName)) {
+          ach.acknowledgedBy.push(playerName);
+        }
+        ach.glow = false;
+        
+        await syncPlayerToKV();
+        updateAchievementNotifier();
+        closeAchievementModal();
+      }
+    }
+
+    // ========== PLAYER HUD RENDERING ==========
+    function renderPlayerHUD() {
+      if (!currentPlayer) return;
+      
+      const hudHeader = document.querySelector('.hud-player-info');
+      if (hudHeader) {
+        hudHeader.innerHTML = `
+          <h2>${currentPlayer.name}</h2>
+          <p>${currentPlayer.race} ${currentPlayer.class}</p>
+        `;
+      }
+
+      const vitalsContainer = document.querySelector(".vitals-display");
+      if (!vitalsContainer) {
+        const hud = document.getElementById('main-hud');
+        if (hud) {
+          const vitals = document.createElement('div');
+          vitals.className = 'vitals-display';
+          vitals.innerHTML = `
+            <div class="vitals-stat">HP: ${currentPlayer.currentHP}/${currentPlayer.maxHP}</div>
+            <div class="vitals-stat">AC: ${currentPlayer.ac}</div>
+            <div class="vitals-stat">Passive: ${currentPlayer.passivePerception}</div>
+          `;
+          hud.appendChild(vitals);
+        }
+      } else {
+        updateVitalsDisplay();
+      }
+
+      // Create spell slots section if needed
+      const spellSection = document.querySelector('.spell-slots-section');
+      if (!spellSection && currentPlayer.spellSlots) {
+        const hud = document.getElementById('main-hud');
+        if (hud) {
+          const section = document.createElement('div');
+          section.className = 'spell-slots-section';
+          section.innerHTML = `
+            <h3>Spell Slots</h3>
+            <div class="spell-slots-grid">
+              <button class="spell-level-btn" onclick="toggleSpellSlots(1)">
+                <span class="level">L1</span>
+                <span class="count" id="slots-l1">2/2</span>
+              </button>
+              <button class="spell-level-btn" onclick="toggleSpellSlots(2)">
+                <span class="level">L2</span>
+                <span class="count" id="slots-l2">0/0</span>
+              </button>
+              <button class="spell-level-btn" onclick="toggleSpellSlots(3)">
+                <span class="level">L3</span>
+                <span class="count" id="slots-l3">0/0</span>
+              </button>
+            </div>
+            <div id="slots-l1-detail" class="slots-detail">
+              <button onclick="decrementSpellSlot(1)">−</button>
+              <span id="slots-l1-current">2</span>
+              <button onclick="incrementSpellSlot(1)">+</button>
+              <button onclick="toggleSpellSlots(1)">Close</button>
+            </div>
+            <div id="slots-l2-detail" class="slots-detail">
+              <button onclick="decrementSpellSlot(2)">−</button>
+              <span id="slots-l2-current">0</span>
+              <button onclick="incrementSpellSlot(2)">+</button>
+              <button onclick="toggleSpellSlots(2)">Close</button>
+            </div>
+            <div id="slots-l3-detail" class="slots-detail">
+              <button onclick="decrementSpellSlot(3)">−</button>
+              <span id="slots-l3-current">0</span>
+              <button onclick="incrementSpellSlot(3)">+</button>
+              <button onclick="toggleSpellSlots(3)">Close</button>
+            </div>
+            <button class="long-rest-btn" onclick="longRest()">Long Rest (Reset)</button>
+          `;
+          hud.appendChild(section);
+          updateSpellSlotsDisplay();
+        }
+      }
+    }
+
+    // ========== SYNC TO KV ==========
+    async function syncPlayerToKV() {
+      if (!currentPlayer || !campaignState) return;
+      
+      try {
+        const token = localStorage.getItem(AUTH_TOKEN_KEY) || sessionStorage.getItem(AUTH_TOKEN_KEY);
+        if (!token) {
+          console.error("No auth token for sync.");
+          return;
+        }
+        
+        const response = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            action: "update",
+            state: campaignState,
+            base_version: campaignState.base_version || 1
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          campaignState.base_version = data.base_version;
+          console.log("Player synced to KV");
+        }
+      } catch (e) {
+        console.error("Sync error:", e);
+      }
+    }
+
+    // ========== TICKER & NOTIFICATIONS ==========
+    function initTickerToggle() {
+      const pill = document.getElementById('ticker-pill');
+      if (pill) {
+        pill.addEventListener('click', () => {
+          const isVisible = localStorage.getItem(TICKER_STORAGE_KEY) === 'true';
+          localStorage.setItem(TICKER_STORAGE_KEY, (!isVisible).toString());
+        });
       }
     }
 
     function initNotificationBadge() {
-      const badge = document.getElementById('notif-badge');
-      badge.addEventListener('click', openStack);
-      badge.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') openStack();
-      });
-    }
-
-    function openStack() {
-      const stack = document.getElementById('notif-stack');
-      const overlay = document.getElementById('stack-overlay');
-      const list = document.getElementById('stack-list');
-
-      list.innerHTML = '';
-      notificationCache.forEach((item, idx) => {
-        const isLoot = item.rewards && item.rewards.items && item.rewards.items.length > 0;
-        const type = isLoot ? 'loot' : 'achievement';
-
-        const stackItem = document.createElement('div');
-        stackItem.className = `stack-item ${type}`;
-        stackItem.tabIndex = 0;
-        stackItem.setAttribute('role', 'option');
-
-        const actualItem = isLoot ? item.rewards.items[0] : item;
-        const rarity = actualItem?.rarity || 'standard';
-        const icon = isLoot ? '⭐' : '🏆';
-
-        stackItem.innerHTML = `
-          <h4>${icon} ${escapeHtml(item.name || actualItem.name)}</h4>
-          <p>${escapeHtml(actualItem.description || '')}</p>
-          ${isLoot ? `<p style="margin-top: 0.25rem; font-weight: bold; color: var(--text);">Rarity: ${rarity.toUpperCase()}</p>` : ''}
-        `;
-
-        stackItem.addEventListener('click', () => {
-          notificationCache.splice(idx, 1);
-          renderNotificationQueue();
-          updateNotificationBadge();
-          renderStackList();
-          acknowledgeNotification(idx);
-        });
-
-        stackItem.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') stackItem.click();
-        });
-
-        list.appendChild(stackItem);
-      });
-
-      stack.classList.add('visible');
-      overlay.classList.add('visible');
-    }
-
-    function renderStackList() {
-      const list = document.getElementById('stack-list');
-      list.innerHTML = '';
-      notificationCache.forEach((item, idx) => {
-        const isLoot = item.rewards && item.rewards.items && item.rewards.items.length > 0;
-        const type = isLoot ? 'loot' : 'achievement';
-
-        const stackItem = document.createElement('div');
-        stackItem.className = `stack-item ${type}`;
-        stackItem.tabIndex = 0;
-        stackItem.setAttribute('role', 'option');
-
-        const actualItem = isLoot ? item.rewards.items[0] : item;
-        const rarity = actualItem?.rarity || 'standard';
-        const icon = isLoot ? '⭐' : '🏆';
-
-        stackItem.innerHTML = `
-          <h4>${icon} ${escapeHtml(item.name || actualItem.name)}</h4>
-          <p>${escapeHtml(actualItem.description || '')}</p>
-          ${isLoot ? `<p style="margin-top: 0.25rem; font-weight: bold; color: var(--text);">Rarity: ${rarity.toUpperCase()}</p>` : ''}
-        `;
-
-        stackItem.addEventListener('click', () => {
-          notificationCache.splice(idx, 1);
-          renderNotificationQueue();
-          updateNotificationBadge();
-          renderStackList();
-          acknowledgeNotification(idx);
-        });
-
-        stackItem.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') stackItem.click();
-        });
-
-        list.appendChild(stackItem);
-      });
-    }
-
-    function closeStack() {
-      const stack = document.getElementById('notif-stack');
-      const overlay = document.getElementById('stack-overlay');
-      stack.classList.remove('visible');
-      overlay.classList.remove('visible');
-    }
-
-    async function acknowledgeNotification(idx) {
-      if (activePlayerIndex === null) return;
-
-      try {
-        const latestRes = await fetch(WORKER_URL);
-        if (!latestRes.ok) throw new Error("Fetch failed");
-        const remoteState = await latestRes.json();
-        const remotePlayer = remoteState.players ? remoteState.players[activePlayerIndex] : null;
-
-        if (!remotePlayer || remotePlayer.is_deleted) throw new Error("Player invalid");
-
-        if (remotePlayer.achievements && remotePlayer.achievements.pending && remotePlayer.achievements.pending[idx]) {
-          remotePlayer.achievements.pending[idx].is_acknowledged = true;
-        }
-
-        remoteState.version = (remoteState.version || 0) + 1;
-        remoteState.last_modified = Date.now();
-        const payload = { base_version: remoteState.version - 1, last_modified: remoteState.last_modified, data: remoteState };
-
-        const postRes = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        if (!postRes.ok) throw new Error("Push failed");
-
-        localState = remoteState;
-      } catch (e) {
-        showToast("Sync error. Local only.");
+      const pill = document.getElementById('achievement-pill');
+      if (pill) {
+        pill.addEventListener('click', openAchievementModal);
       }
     }
 
-    // ========== PHASE 3: SPELL SLOTS SYSTEM ==========
-    function initSpellSlotsButton() {
-      const btn = document.getElementById('btn-spell-slots');
-      btn.addEventListener('click', openSpellSlotsModal);
-    }
-
-    function openSpellSlotsModal() {
-      if (activePlayerIndex === null) return;
-
-      const player = localState.players[activePlayerIndex];
-      const spellSlots = player.resources?.find(r => r.type === 'spell_slots');
-
-      if (!spellSlots) {
-        showToast("No spell slots configured.");
-        return;
-      }
-
-      renderSpellSlotsUI(spellSlots);
-      document.getElementById('spell-slots-modal').classList.add('visible');
-      document.getElementById('spell-slots-overlay').classList.add('visible');
-    }
-
-    function renderSpellSlotsUI(spellSlots) {
-      const content = document.getElementById('spell-slots-content');
-      content.innerHTML = '';
-
-      const SPELL_LEVELS = [
-        { level: 1, name: 'Cantrips' },
-        { level: 1, name: '1st Level' },
-        { level: 2, name: '2nd Level' },
-        { level: 3, name: '3rd Level' },
-        { level: 4, name: '4th Level' },
-        { level: 5, name: '5th Level' },
-        { level: 6, name: '6th Level' },
-        { level: 7, name: '7th Level' },
-        { level: 8, name: '8th Level' },
-        { level: 9, name: '9th Level' }
-      ];
-
-      SPELL_LEVELS.forEach((spellLevel, idx) => {
-        const slot = spellSlots.slots?.[idx] || { level: idx + 1, current: 0, max: 0 };
-        const rowHtml = document.createElement('div');
-        rowHtml.className = 'spell-level-row';
-
-        const label = document.createElement('div');
-        label.className = 'spell-level-label';
-        label.textContent = spellLevel.name;
-
-        const boxesContainer = document.createElement('div');
-        boxesContainer.className = 'spell-slot-boxes';
-
-        for (let i = 0; i < slot.max; i++) {
-          const box = document.createElement('div');
-          box.className = `spell-slot-box ${i < slot.current ? 'used' : 'available'}`;
-          box.tabIndex = 0;
-          box.setAttribute('role', 'button');
-          box.setAttribute('aria-label', `Slot ${i + 1}`);
-
-          box.addEventListener('click', () => toggleSpellSlot(idx, i));
-          box.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') toggleSpellSlot(idx, i);
-          });
-
-          boxesContainer.appendChild(box);
-        }
-
-        rowHtml.appendChild(label);
-        rowHtml.appendChild(boxesContainer);
-        content.appendChild(rowHtml);
-      });
-    }
-
-    function toggleSpellSlot(levelIdx, slotIdx) {
-      if (activePlayerIndex === null) return;
-
-      const player = localState.players[activePlayerIndex];
-      const spellSlots = player.resources?.find(r => r.type === 'spell_slots');
-
-      if (!spellSlots || !spellSlots.slots?.[levelIdx]) return;
-
-      const slot = spellSlots.slots[levelIdx];
-      if (slot.current > slotIdx) {
-        slot.current--;
-      } else if (slot.current === slotIdx) {
-        slot.current++;
-      } else {
-        slot.current = slotIdx + 1;
-      }
-
-      renderSpellSlotsUI(spellSlots);
-      saveSpellSlotState();
-    }
-
-    function closeSpellSlotsModal() {
-      document.getElementById('spell-slots-modal').classList.remove('visible');
-      document.getElementById('spell-slots-overlay').classList.remove('visible');
-    }
-
-    function performLongRest() {
-      if (activePlayerIndex === null) return;
-
-      const player = localState.players[activePlayerIndex];
-      const spellSlots = player.resources?.find(r => r.type === 'spell_slots');
-
-      if (!spellSlots || !spellSlots.slots) return;
-
-      spellSlots.slots.forEach(slot => {
-        slot.current = 0;
-      });
-
-      renderSpellSlotsUI(spellSlots);
-      saveSpellSlotState();
-      showToast("Long rest: Spell slots restored!");
-    }
-
-    async function saveSpellSlotState() {
-      if (activePlayerIndex === null) return;
-
-      try {
-        const latestRes = await fetch(WORKER_URL);
-        if (!latestRes.ok) throw new Error("Fetch failed");
-        const remoteState = await latestRes.json();
-
-        remoteState.version = (remoteState.version || 0) + 1;
-        remoteState.last_modified = Date.now();
-        const payload = { base_version: remoteState.version - 1, last_modified: remoteState.last_modified, data: remoteState };
-
-        const postRes = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        if (!postRes.ok) throw new Error("Push failed");
-
-        localState = remoteState;
-      } catch (e) {
-        showToast("Spell slot save failed.");
-      }
-    }
-
-    // Long rest button
-    document.addEventListener('DOMContentLoaded', () => {
-      const longRestBtn = document.getElementById('long-rest-btn');
-      if (longRestBtn) {
-        longRestBtn.addEventListener('click', performLongRest);
-      }
-    });
-
-    // ========== HISTORY MODAL (PHASE 5) ==========
-    function initHistoryButton() {
-      const btn = document.getElementById('btn-view-history');
-      btn.addEventListener('click', openHistory);
-    }
-
-    async function openHistory() {
-      if (activePlayerIndex === null) return;
-
-      const playerName = localState.players[activePlayerIndex].name;
-
-      try {
-        const res = await fetch(WORKER_URL);
-        if (!res.ok) throw new Error("Fetch failed");
-        const data = await res.json();
-
-        const allAchievements = [];
-        if (data.players && data.players[activePlayerIndex] && data.players[activePlayerIndex].achievements) {
-          const playerAchievements = data.players[activePlayerIndex].achievements;
-          if (playerAchievements.pending) {
-            allAchievements.push(...playerAchievements.pending.map(a => ({ ...a, status: 'active' })));
-          }
-          if (playerAchievements.archived) {
-            allAchievements.push(...playerAchievements.archived.map(a => ({ ...a, status: 'archived' })));
-          }
-        }
-
-        const allLoot = [];
-        if (data.campaign_notes && data.campaign_notes.loot) {
-          data.campaign_notes.loot.forEach(loot => {
-            if (!loot.is_deleted) {
-              allLoot.push({ ...loot, status: 'active' });
-            }
-          });
-        }
-
-        historyDataCache = {
-          achievements: allAchievements,
-          loot: allLoot
-        };
-
-        renderHistoryTab('achievements');
-        document.getElementById('history-modal').classList.add('visible');
-        document.getElementById('history-overlay').classList.add('visible');
-      } catch (e) {
-        showToast("Failed to load history.");
-      }
-    }
-
-    function switchHistoryTab(tab) {
-      currentHistoryTab = tab;
-
-      document.querySelectorAll('.history-tab').forEach(t => {
-        t.classList.remove('active');
-      });
-      document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
-
-      renderHistoryTab(tab);
-    }
-
-    function renderHistoryTab(tab) {
-      const content = document.getElementById('history-content');
-      const items = tab === 'achievements' ? historyDataCache.achievements : historyDataCache.loot;
-
-      if (items.length === 0) {
-        content.innerHTML = '<div class="history-empty">No ' + tab + ' yet.</div>';
-        return;
-      }
-
-      let html = '';
-      items.forEach(item => {
-        const isArchived = item.status === 'archived';
-        const isLoot = tab === 'loot';
-
-        if (isLoot) {
-          const name = item.raw_text ? item.raw_text.split('\n')[0] : 'Unknown Item';
-          html += `
-            <div class="history-item loot ${isArchived ? 'archived' : ''}">
-              <h4>⭐ ${escapeHtml(name)}</h4>
-              <span class="history-badge ${isArchived ? 'badge-archived' : 'badge-active'}">
-                ${isArchived ? 'Archived' : 'Active'}
-              </span>
-            </div>
-          `;
-        } else {
-          const name = item.name || 'Unknown Achievement';
-          html += `
-            <div class="history-item ${isArchived ? 'archived' : ''}">
-              <h4>🏆 ${escapeHtml(name)}</h4>
-              <span class="history-badge ${isArchived ? 'badge-archived' : 'badge-active'}">
-                ${isArchived ? 'Archived' : 'Active'}
-              </span>
-            </div>
-          `;
-        }
-      });
-
-      content.innerHTML = html;
-    }
-
-    function closeHistory() {
-      const modal = document.getElementById('history-modal');
-      const overlay = document.getElementById('history-overlay');
-      modal.classList.remove('visible');
-      overlay.classList.remove('visible');
-    }
-
-    // ========== LOGOUT ==========
     function initLogoutButton() {
       const btn = document.getElementById('btn-logout');
-      btn.addEventListener('click', logout);
+      if (btn) {
+        btn.addEventListener('click', logout);
+      }
     }
 
     function logout() {
       activePlayerIndex = null;
       localStorage.removeItem(PLAYER_ACTIVE_KEY);
-
+      stopKVPolling();
+      
       const loginLayer = document.getElementById('login-layer');
       const hudLayer = document.getElementById('main-hud');
-      const loadingLayer = document.getElementById('loading-layer');
-      const tickerPill = document.getElementById('ticker-pill');
-
-      loadingLayer.classList.add('hidden');
-      loginLayer.classList.remove('hidden');
+      
       hudLayer.classList.add('hidden');
-      tickerPill.classList.add('hidden');
-      loginLayer.style.opacity = '1';
-      loginLayer.style.pointerEvents = 'auto';
+      loginLayer.classList.remove('hidden');
       loginLayer.style.animation = '';
-
       populateRoster();
     }
 
     // ========== UTILITIES ==========
     function showToast(msg) {
-      const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
       toast.className = 'toast';
       toast.textContent = msg;
-      toast.setAttribute('role', 'status');
-      container.appendChild(toast);
+      document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 3000);
     }
 
@@ -2498,11 +1089,75 @@
     // Keyboard support
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        closeStack();
-        closeHistory();
-        closeSpellSlotsModal();
+        closeAchievementModal();
       }
     });
   </script>
+
+</head>
+
+<body>
+  <div class="vfx-overlay" id="vfx-layer"></div>
+
+  <!-- PHASE 1: LOGIN SCREEN -->
+  <div class="login-layer" id="login-layer">
+    <div class="login-hero">
+      <div class="hero-avatar-ring" id="hero-avatar-ring">
+        <svg id="hero-avatar-svg" class="icon-xl" viewBox="0 0 24 24" style="width: 192px; height: 192px;">
+          <use xlink:href="#icon-user"></use>
+        </svg>
+      </div>
+      <h1 class="hero-player-name" id="hero-player-name">SELECT CHARACTER</h1>
+      <p class="hero-subtitle" id="hero-subtitle">Choose your hero</p>
+    </div>
+
+    <div class="roster-grid" id="roster-grid"></div>
+
+    <div class="login-loading hidden" id="loading-layer">
+      <h2 id="auth-id">EXTRACTING...</h2>
+      <p id="auth-tip">Stay calm and wait for extraction.</p>
+    </div>
+  </div>
+
+  <!-- Ticker Pill (Phase 5) -->
+  <div class="ticker-pill hidden" id="ticker-pill">
+    <svg class="ticker-icon" viewBox="0 0 24 24">
+      <use xlink:href="#icon-eye"></use>
+    </svg>
+    <span class="ticker-text">TICKER</span>
+  </div>
+
+  <!-- Player HUD Widget (Bottom Left) -->
+  <div class="player-hud hidden" id="main-hud">
+    <div class="hud-header">
+      <div class="hud-player-avatar" id="hud-player-avatar">
+        <svg viewBox="0 0 24 24">
+          <use xlink:href="#icon-user"></use>
+        </svg>
+      </div>
+      <div class="hud-player-info"></div>
+      <button id="btn-logout" style="background: var(--danger); border: none; color: #fff; width: 32px; height: 32px; border-radius: 4px; cursor: pointer; flex-shrink: 0;">×</button>
+    </div>
+
+    <div class="vitals-display"></div>
+  </div>
+
+  <!-- Achievement Notification Pill (Phase 5) -->
+  <div id="achievement-pill" class="notification-pill" style="position: fixed; bottom: 30px; right: 30px; display: none; z-index: 999;">
+    <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24">
+      <use xlink:href="#icon-star"></use>
+    </svg>
+    <span>Achievement</span>
+    <span class="badge" id="achievement-badge">1</span>
+  </div>
+
+  <!-- Achievement Modal (Phase 5) -->
+  <div class="modal-overlay hidden" id="achievement-overlay" onclick="closeAchievementModal()">
+    <div class="achievement-modal" id="achievement-modal" onclick="event.stopPropagation()"></div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" style="position: fixed; bottom: 1rem; right: 1rem; z-index: 3000;"></div>
+
 </body>
 </html>
