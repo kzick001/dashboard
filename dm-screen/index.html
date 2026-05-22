@@ -1453,7 +1453,7 @@
         
         const firstName = p.name.toLowerCase().split(' ')[0];
         const avatarSrc = VALID_AVATARS.includes(firstName) 
-          ? `/dashboard/dm-screen/players/${firstName}.png` 
+          ? `/players/${firstName}.png` 
           : GENERIC_SVG_AVATAR;
 
         let ringClass = 'ring-healthy';
