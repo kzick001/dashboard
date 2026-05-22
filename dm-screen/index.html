@@ -2,30 +2,99 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Showrunner | Dashboard V3.1</title>
+  <title>Showrunner | Dashboard V4.1</title>
   
   <script>
-    const SECURE_PIN = "goddammit_doughnut"; 
-    let savedPin = null;
-    try {
-      savedPin = localStorage.getItem('showrunner_pin');
-    } catch(e) {
-      console.warn("Storage unreachable. Dropping back to temporary session context layers.");
+    // V4.1: Worker-backed auth system
+    const WORKER_URL = "https://dmscreen.askozicki.workers.dev";
+    const AUTH_TOKEN_KEY = "showrunner_auth_token";
+    
+    let campaignState = null;
+    
+    async function initAuth() {
+      document.documentElement.style.display = 'none';
+      
+      let token = null;
+      try {
+        token = localStorage.getItem(AUTH_TOKEN_KEY);
+      } catch (e) {
+        console.warn("localStorage unavailable; using session fallback.");
+      }
+      
+      if (token) {
+        // Try to validate existing token by fetching state
+        try {
+          const response = await fetch(WORKER_URL, {
+            method: "GET",
+            headers: { "Authorization": `Bearer ${token}` }
+          });
+          if (response.ok) {
+            campaignState = await response.json();
+            if (!campaignState.characters) campaignState.characters = [];
+            document.documentElement.style.display = '';
+            return;
+          }
+        } catch (e) {
+          console.warn("Token validation failed; prompting for password.");
+        }
+      }
+      
+      // Prompt for password
+      const password = prompt("🔐 ACCESS RESTRICTED: Enter Showrunner password.");
+      if (!password) {
+        window.location.href = "about:blank";
+        return;
+      }
+      
+      // Validate against worker
+      try {
+        const response = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "auth", password })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.token) {
+            token = data.token;
+            try {
+              localStorage.setItem(AUTH_TOKEN_KEY, token);
+            } catch (e) {
+              console.warn("Failed to store token in localStorage; using session.");
+              sessionStorage.setItem(AUTH_TOKEN_KEY, token);
+            }
+            
+            // Fetch campaign state
+            const stateResponse = await fetch(WORKER_URL, {
+              method: "GET",
+              headers: { "Authorization": `Bearer ${token}` }
+            });
+            campaignState = await stateResponse.json();
+            
+            // Initialize character array from campaign state if not present
+            if (!campaignState.characters || campaignState.characters.length === 0) {
+              console.log("Initializing character array from campaign state...");
+              campaignState.characters = [];
+            }
+            
+            document.documentElement.style.display = '';
+            return;
+          }
+        }
+      } catch (e) {
+        console.error("Auth failed:", e);
+      }
+      
+      alert("Authentication failed. Access denied.");
+      window.location.href = "about:blank";
     }
     
-    if (savedPin !== SECURE_PIN) {
-      document.documentElement.style.display = 'none'; 
-      let input = prompt("ACCESS RESTRICTED: Enter Showrunner PIN.");
-      
-      if (input === SECURE_PIN) {
-        try {
-          localStorage.setItem('showrunner_pin', input);
-        } catch(e) {}
-        document.documentElement.style.display = ''; 
-      } else {
-        window.location.href = "https://kzick001.github.io/dashboard/dm-screen/players/players.html"; 
-      }
-    }
+    // Run auth on page load
+    initAuth().catch(e => {
+      console.error("Auth init error:", e);
+      window.location.href = "about:blank";
+    });
   </script>
 
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='none' stroke='white' stroke-width='4' stroke-linejoin='round' d='M50 5 L90 30 L90 70 L50 95 L10 70 L10 30 Z M50 5 L50 45 M10 30 L50 45 L90 30 M10 70 L50 45 L90 70 M50 95 L50 45'/></svg>">
@@ -158,810 +227,433 @@
 
       <!-- Light Bulb (Idea / Custom) -->
       <svg id="icon-light" viewBox="0 0 24 24">
-        <path d="M21 17v2H3v-2s0-4 9-4 9 4 9 4zM3.21 9a6 6 0 0 1 9.58-9 6 6 0 1 0 .02 12A6.97 6.97 0 0 1 3.21 9z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>
+        <path d="M21 17v2H3v-2s0-4 9-4 9 4 9 4z" fill="currentColor"/>
+        <path d="M3.21 7a7 7 0 0 1 13.58 0M7 17v2m10 0v2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </defs>
   </svg>
-  
+
   <style>
     :root {
-      --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --text-muted: #888;
-      --accent: #bb86fc; --info: #74b9ff; --success: #03dac6; --danger: #cf6679; --warning: #f1c40f;
-      --nav-bg: #161616;
-      --glass: rgba(20, 20, 25, 0.7); --glass-border: rgba(255, 255, 255, 0.1);
-    }
-    
-    /* === ICON UTILITIES === */
-    .inline-icon {
-      display: inline-block;
-      width: 1em;
-      height: 1em;
-      vertical-align: -0.125em;
-      color: inherit;
-    }
-    .icon-sm { width: 16px; height: 16px; }
-    .icon-md { width: 24px; height: 24px; }
-    .icon-lg { width: 32px; height: 32px; }
-    .icon-xl { width: 48px; height: 48px; }
-    
-    /* === PLAYER COLOR PALETTE (SP1: Foundations) === */
-    .color-chuck { --player-color: #ff6b6b; }     /* Red */
-    .color-tilly { --player-color: #4ecdc4; }     /* Teal */
-    .color-hendrick { --player-color: #ffd93d; }  /* Gold */
-    .color-aelar { --player-color: #a78bfa; }     /* Purple */
-    .color-jimothy { --player-color: #60a5fa; }   /* Blue */
-    
-    body { 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-      background: var(--bg); color: var(--text); margin: 0; line-height: 1.5; 
-      height: 100vh; overflow: hidden; display: flex; flex-direction: column; font-variant-numeric: tabular-nums;
+      --primary: #6366f1;
+      --accent: #bb86fc;
+      --danger: #f87171;
+      --success: #4ade80;
+      --warning: #facc15;
+      --ai-terminal: #ffeb3b;
+      --glass: rgba(30, 30, 40, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --text: #e0e0e0;
+      --text-muted: #888888;
+      --bg-dark: #0a0e27;
+      --subtle-dark: #1a1f3a;
     }
 
-    /* --- Global Navbar --- */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    html, body { 
+      width: 100%; 
+      height: 100%; 
+      background: var(--bg-dark);
+      color: var(--text);
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      overflow-x: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Navbar */
     .navbar {
-      height: 60px; display: flex; align-items: center; justify-content: space-between;
-      padding: 0 2rem; background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-      border-bottom: 1px solid var(--glass-border); z-index: 600; flex-shrink: 0;
+      background: var(--subtle-dark);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
-    .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; letter-spacing: 0.15em; font-size: 1.2rem; color: #fff; text-shadow: 0 0 10px rgba(187,134,252,0.5); }
-    .nav-links { display: flex; gap: 1rem; align-items: center; }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: bold;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
     .nav-link {
-      color: var(--text); text-decoration: none; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;
-      letter-spacing: 0.1em; padding: 6px 12px; border-radius: 20px; border: 1px solid transparent; transition: 0.3s;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      transition: all 0.2s ease;
     }
-    .nav-link:hover { background: rgba(255,255,255,0.05); border-color: var(--glass-border); color: #fff; }
-    .nav-link.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(187,134,252,0.2); }
 
-    .btn-global-action { background: #222; border: 1px solid #444; color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
-    .btn-global-action:hover { background: #333; border-color: #666; }
-    .btn-global-action.toggle-active { background: rgba(187, 134, 252, 0.15); border-color: var(--accent); color: var(--accent); }
+    .nav-link:hover, .nav-link.active {
+      color: var(--accent);
+      background: rgba(187, 134, 252, 0.1);
+    }
 
-    /* Heartbeat Indicator */
-    .heartbeat { width: 10px; height: 10px; border-radius: 50%; background: #444; transition: 0.3s ease; display: inline-block; margin-left: 8px; }
-    .heartbeat-success { animation: pulse-green 1s ease-out; }
-    .heartbeat-fail { animation: pulse-red 1s ease-out; }
-    @keyframes pulse-green { 0% { background: var(--success); box-shadow: 0 0 10px var(--success); } 100% { background: #444; box-shadow: 0 0 0 transparent; } }
-    @keyframes pulse-red { 0% { background: var(--danger); box-shadow: 0 0 10px var(--danger); } 100% { background: #444; box-shadow: 0 0 0 transparent; } }
+    .btn-global-action {
+      background: transparent;
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+    }
 
-    /* --- Workspace Architectures --- */
-    .workspace { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-    
-    /* Tactical Mode (Split Pane) */
-    .layout-tactical { display: grid; grid-template-columns: 400px 1fr; height: 100%; overflow: hidden; }
-    .layout-tactical .roster-wrapper { overflow-y: auto; padding: 1rem; border-right: 1px solid #333; background: #0a0a0c; display: flex; flex-direction: column; gap: 1rem; }
-    .layout-tactical .roster-grid { display: flex; flex-direction: column; gap: 1.5rem; flex: 1; }
-    .layout-tactical .theater-stage { overflow-y: auto; background: var(--bg); padding: 2rem 4rem; }
-    
-    /* Theater Mode (Top Bar) */
-    .layout-theater { display: flex; flex-direction: column; height: 100%; }
-    .layout-theater .roster-wrapper { padding: 1rem 1rem 0.5rem 1rem; background: #0a0a0c; border-bottom: 1px solid #333; flex-shrink: 0; overflow-x: auto; }
-    .layout-theater .roster-grid { display: flex; flex-direction: row; gap: 1rem; padding-bottom: 0.5rem; }
-    .layout-theater .roster-card { width: 280px; flex-shrink: 0; }
-    .layout-theater .roster-card .loadout-drawer, .layout-theater .roster-card .tag-row { display: none; } 
-    .layout-theater .theater-stage { flex-grow: 1; overflow-y: auto; background: var(--bg); padding: 2rem 4rem; }
-    .theater-content { max-width: 850px; margin: 0 auto; padding-bottom: 6rem; }
+    .btn-global-action:hover, .btn-global-action.toggle-active {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
 
-    /* --- Roster Cards (The Live Widgets) --- */
-    .roster-card { background: var(--card); padding: 1.25rem; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; gap: 0.75rem; box-shadow: 0 4px 10px rgba(0,0,0,0.4); transition: 0.3s; position: relative; overflow: hidden; }
-    
-    /* Dynamic Rings & Glows */
-    .ring-healthy { border-top: 4px solid var(--player-color, var(--info)); }
-    .ring-critical { border-top: 4px solid var(--danger); box-shadow: inset 0 0 15px rgba(255, 71, 87, 0.15), 0 4px 10px rgba(0,0,0,0.4); animation: pulse-crit 2s infinite; }
-    .ring-bleeding { border-top: 4px solid var(--danger); box-shadow: inset 0 0 15px rgba(255, 71, 87, 0.1); }
-    .ring-poisoned { border-top: 4px solid var(--success); box-shadow: inset 0 0 15px rgba(3, 218, 198, 0.1); }
-    @keyframes pulse-crit { 0% { border-color: var(--danger); } 50% { border-color: #800; } 100% { border-color: var(--danger); } }
+    .mini-select {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      padding: 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+    }
 
-    .card-header { display: flex; align-items: center; gap: 1rem; }
-    .avatar-thumb { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #000; background: #222; flex-shrink: 0; }
-    
-    /* === PROFILE PICTURE RINGS & GLOWS (SP1: Foundations) === */
-    .avatar-ring {
-      position: relative;
-      width: 56px;
-      height: 56px;
+    .mini-select:hover {
+      border-color: var(--accent);
+    }
+
+    /* Heartbeat */
+    .heartbeat {
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
-      padding: 3px;
+      background: var(--success);
+      animation: pulse 2s infinite;
+      display: inline-block;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Buttons */
+    button { cursor: pointer; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      font-weight: bold;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 0 16px rgba(187, 134, 252, 0.4);
+      transform: scale(1.02);
+    }
+
+    .btn-secondary {
+      background: var(--glass);
+      color: var(--text);
+      border: 1px solid var(--glass-border);
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text-muted);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-danger:hover {
+      filter: brightness(1.1);
+    }
+
+    .btn-icon {
+      background: none;
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--player-color, var(--accent));
-      flex-shrink: 0;
-    }
-    
-    .avatar-ring img {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #000;
-      background: #222;
-    }
-    
-    .avatar-ring.state-critical {
-      background: linear-gradient(135deg, var(--danger) 0%, #800 100%);
-      animation: pulse-avatar-crit 1.5s infinite;
-    }
-    
-    .avatar-ring.state-healthy {
-      background: linear-gradient(135deg, var(--player-color, var(--info)) 0%, rgba(116, 185, 255, 0.6) 100%);
-    }
-    
-    @keyframes pulse-avatar-crit {
-      0%, 100% { box-shadow: 0 0 20px var(--danger), inset 0 0 20px rgba(255, 71, 87, 0.2); }
-      50% { box-shadow: 0 0 30px var(--danger), inset 0 0 30px rgba(255, 71, 87, 0.3); }
-    }
-    
-    .header-info { flex-grow: 1; display: flex; justify-content: space-between; align-items: flex-start; }
-    .header-info h3 { margin: 0; color: #fff; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.05em; line-height: 1; }
-    .header-actions { display: flex; gap: 4px; }
-
-    /* Vitals Pills & Invisible Edits */
-    .vitals-pill-row { display: flex; justify-content: space-between; gap: 0.5rem; }
-    .vital-pill { background: #111; border: 1px solid #333; padding: 4px 8px; border-radius: 6px; display: flex; align-items: center; gap: 6px; font-size: 1rem; font-weight: bold; color: #fff; flex: 1; justify-content: center; }
-    .vital-pill svg { color: var(--text-muted); flex-shrink: 0; }
-    
-    .edit-val { cursor: pointer; border-bottom: 1px dashed rgba(255, 255, 255, 0.3); padding: 2px 4px; border-radius: 3px; transition: all 0.2s ease; display: inline-block; min-width: 24px; text-align: center; }
-    .edit-val:hover { color: var(--accent); border-color: var(--accent); background: rgba(255, 255, 255, 0.1); }
-    .math-input { background: #000; color: var(--info); border: 1px dashed var(--info); border-radius: 3px; font-family: monospace; font-size: 1rem; font-weight: bold; outline: none; width: 55px; text-align: center; padding: 4px 2px; min-height: 24px; }
-
-    /* Tags & Conditions */
-    .tag-row { padding-top: 0.5rem; border-top: 1px dashed #333; display: flex; flex-direction: column; gap: 0.5rem; }
-    .active-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-    .condition-badge { background: rgba(255, 255, 255, 0.05); border: 1px solid #555; color: #ccc; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; transition: 0.2s; text-transform: uppercase; font-weight: bold; display: flex; align-items: center; gap: 4px; }
-    .condition-badge:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
-    .condition-badge svg { width: 12px; height: 12px; }
-    .mini-select { background: #111; color: #fff; border: 1px solid #444; padding: 4px; border-radius: 4px; outline: none; font-size: 0.8rem; flex-grow: 1; }
-
-    /* Loadout Drawer & Ghost Items */
-    .loadout-drawer { background: #151515; padding: 0.5rem; border-radius: 4px; border: 1px solid #222; }
-    .loadout-drawer summary { font-size: 0.85rem; font-weight: bold; cursor: pointer; color: #888; text-transform: uppercase; letter-spacing: 0.05em; outline: none; display: flex; align-items: center; justify-content: space-between; }
-    .loadout-drawer summary::-webkit-details-marker { display: none; }
-    .loadout-drawer summary:hover { color: #fff; }
-    .loadout-list { list-style-type: none; padding: 0; margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #ccc; max-height: 140px; overflow-y: auto; border-top: 1px solid #333; padding-top: 0.5rem; display: flex; flex-direction: column; gap: 4px; }
-    
-    .loadout-item { display: flex; justify-content: space-between; align-items: center; background: #0a0a0a; padding: 4px 8px; border-radius: 4px; border: 1px solid #222; transition: 0.2s ease; }
-    .loadout-item.ghosted { opacity: 0.4; background: transparent; border: 1px dashed #333; }
-    .loadout-item.ghosted span:first-child { text-decoration: line-through; color: #888; }
-    
-    .loadout-controls { display: flex; align-items: center; gap: 8px; }
-    .qty-btn { background: #222; border: 1px solid #444; color: #fff; border-radius: 2px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; }
-    .qty-btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
-    .btn-trash-item { background: transparent; border: none; color: #666; cursor: pointer; padding: 0 4px; }
-    .btn-trash-item:hover { color: var(--danger); }
-
-    /* Death Saves UI */
-    .death-saves-ui { background: #1a0f0f; border: 2px solid var(--danger); border-radius: 4px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; text-align: center; box-shadow: 0 0 15px rgba(207, 102, 121, 0.2); }
-    .death-saves-title { color: var(--danger); font-weight: bold; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 0.1em; margin: 0; display: flex; align-items: center; justify-content: center; gap: 6px; }
-    .death-saves-icon { width: 16px; height: 16px; }
-    .save-row { display: flex; justify-content: center; gap: 2rem; align-items: center; font-size: 0.8rem; font-weight: bold; }
-    .save-label { color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-    .save-boxes { display: flex; gap: 6px; }
-    .save-boxes input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
-
-    /* === DEATH SAVES MODAL (SP2: Death Management) === */
-    .death-saves-modal {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: var(--card); border: 2px solid var(--danger); border-radius: 8px;
-      width: 90%; max-width: 500px; z-index: 1100;
-      display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(207, 102, 121, 0.3);
+      transition: all 0.2s ease;
     }
 
-    .death-saves-modal.hidden { display: none; }
-
-    .death-saves-modal-header {
-      padding: 1.5rem; border-bottom: 1px solid var(--danger);
-      background: rgba(207, 102, 121, 0.1);
+    .btn-icon:hover {
+      border-color: var(--accent);
+      color: var(--accent);
     }
 
-    .death-saves-modal-header h2 {
-      margin: 0; color: var(--danger); font-size: 1.3rem;
-      display: flex; align-items: center; gap: 8px;
-    }
-
-    .death-saves-modal-body {
-      padding: 2rem; display: flex; flex-direction: column; gap: 2rem; align-items: center;
-    }
-
-    .death-save-section {
-      display: flex; flex-direction: column; align-items: center; gap: 1rem;
-    }
-
-    .death-save-label {
-      font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em;
-      color: var(--text); font-size: 1rem;
-    }
-
-    .death-save-checkboxes {
-      display: flex; gap: 12px;
-    }
-
-    .death-save-checkboxes input[type="checkbox"] {
-      width: 24px; height: 24px; accent-color: var(--accent); cursor: pointer;
-    }
-
-    .death-saves-modal-footer {
-      padding: 1.5rem; border-top: 1px solid #333;
-      display: flex; gap: 1rem; justify-content: flex-end;
-      background: rgba(0,0,0,0.3);
-    }
-
-    .notable-items {
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
       display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
+      align-items: center;
+      justify-content: center;
     }
 
-    .notable-item {
-      font-size: 0.85rem;
+    .modal-overlay.hidden {
+      display: none;
+    }
+
+    .modal-content {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 2rem;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    /* Character Cards & Editor Modal (Phase 2) */
+    .character-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .character-tile {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .character-tile:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 16px rgba(187, 134, 252, 0.2);
+    }
+    
+    .character-tile img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin-bottom: 0.5rem;
+      object-fit: cover;
+    }
+    
+    .character-tile .name {
+      font-weight: bold;
+      font-size: 0.9rem;
+      margin-bottom: 0.25rem;
+    }
+    
+    .character-tile .class {
+      font-size: 0.75rem;
       color: var(--text-muted);
-      padding: 0.25rem 0;
+    }
+    
+    .modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 1001;
+    }
+    
+    .modal.hidden {
+      display: none;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
     }
 
-    /* HP Section */
-    .hp-section {
+    .modal-header h2 {
+      margin: 0;
+    }
+
+    .modal-header button {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+    }
+    
+    .modal-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--glass-border);
+    }
+    
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+    
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    
+    .tab-content {
+      padding: 1rem 0;
+    }
+    
+    .tab-content.hidden {
+      display: none;
+    }
+
+    textarea, input[type="number"], input[type="text"] {
+      width: 100%;
+      padding: 0.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      margin-bottom: 0.5rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
+      color: var(--text);
+    }
+
+    /* Main content area */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem 1rem;
+    }
+
+    .section {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .section h2 {
+      margin: 0 0 1.5rem 0;
+      font-size: 1.3rem;
+    }
+
+    /* Room Navigation */
+    .room-nav-bar {
+      background: var(--subtle-dark);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 1rem;
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+    }
+
+    .room-tab {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .room-tab.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+
+    .room-tab:hover {
+      border-color: var(--accent);
+    }
+
+    /* Toast notifications */
+    #toast-container {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 999;
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
     }
 
-    /* Conditions Tags Inline */
-    .conditions-tags {
-      align-items: center;
-    }
-
-    .conditions-tags .mini-select,
-    .conditions-tags .action {
-      flex-shrink: 0;
-    }
-
-    /* Loot Sidebar */
-    .loot-sidebar {
-      background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px;
-      padding: 1rem; display: flex; flex-direction: column; gap: 1rem;
-    }
-
-    .loot-sidebar h3 {
-      margin: 0; color: var(--accent); font-size: 1rem; text-transform: uppercase;
-      letter-spacing: 0.1em; border-bottom: 1px solid #333; padding-bottom: 0.75rem;
-    }
-
-    .tier-item {
-      display: flex; flex-direction: column; gap: 0.5rem;
-    }
-
-    .tier-header {
-      display: flex; justify-content: space-between; align-items: center;
-      font-size: 0.9rem; font-weight: bold; color: var(--text);
-    }
-
-    .slot-count {
-      font-size: 0.8rem; color: var(--text-muted);
-    }
-
-    .slot-bar {
-      height: 4px; background: var(--accent); border-radius: 2px; opacity: 0.6;
-    }
-
-    .btn-open-loot {
-      width: 100%; padding: 0.75rem; background: rgba(187, 134, 252, 0.1);
-      border: 1px solid var(--accent); color: var(--accent); border-radius: 4px;
-      font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em;
-      cursor: pointer; transition: 0.2s; font-size: 0.85rem;
-    }
-
-    .btn-open-loot:hover {
-      background: var(--accent); color: #000;
-    }
-
-    /* --- Slide-Out Trophy Drawer --- */
-    .trophy-drawer { position: fixed; top: 60px; right: 0; width: 400px; height: calc(100vh - 60px); background: rgba(15,15,18,0.95); backdrop-filter: blur(10px); border-left: 1px solid #333; z-index: 500; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; }
-    .trophy-drawer.open { transform: translateX(0); }
-    .drawer-header { padding: 1.5rem; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
-    .drawer-header h2 { margin: 0; color: var(--warning); font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.1em; display: flex; align-items: center; gap: 8px; }
-    .drawer-content { padding: 1.5rem; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 1rem; }
-    .trophy-card { background: #111; border-left: 4px solid var(--warning); padding: 1rem; border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
-    .trophy-title { font-size: 1.1rem; color: #fff; font-weight: bold; margin-bottom: 0.5rem; }
-    .dispatch-row { display: flex; gap: 0.5rem; margin-top: 1rem; }
-
-    /* --- Archive Modal --- */
-    .archive-modal {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: var(--card); border: 1px solid #444; border-radius: 8px;
-      width: 90%; max-width: 700px; max-height: 80vh; overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.9); z-index: 1000;
-      display: flex; flex-direction: column;
-    }
-
-    .archive-modal.hidden { display: none; }
-
-    .archive-header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 1.5rem; border-bottom: 1px solid #333; background: rgba(0,0,0,0.3);
-    }
-
-    .archive-header h2 {
-      margin: 0; color: var(--success); font-size: 1.3rem; letter-spacing: 0.05em;
-      display: flex; align-items: center; gap: 10px;
-    }
-
-    .archive-tabs {
-      display: flex; gap: 0; border-bottom: 1px solid #333; padding: 0;
-      background: rgba(0,0,0,0.2);
-    }
-
-    .archive-tab {
-      flex: 1; padding: 1rem; text-align: center; cursor: pointer;
-      border: none; background: transparent; color: var(--text-muted);
-      font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em;
-      font-size: 0.9rem; transition: 0.2s; border-bottom: 3px solid transparent;
-    }
-
-    .archive-tab:hover { color: #fff; }
-
-    .archive-tab.active {
-      color: var(--success); border-bottom-color: var(--success);
-    }
-
-    .archive-list {
-      flex: 1; overflow-y: auto; padding: 1rem;
-      display: flex; flex-direction: column; gap: 0.75rem;
-    }
-
-    .archive-item {
-      background: #111; border: 1px solid #333; border-left: 4px solid var(--accent);
-      padding: 1rem; border-radius: 4px; display: flex; align-items: flex-start; gap: 1rem;
-    }
-
-    .archive-item.loot { border-left-color: var(--success); }
-
-    .archive-item input[type="checkbox"] {
-      width: 20px; height: 20px; margin-top: 2px; accent-color: var(--accent);
-      cursor: pointer; flex-shrink: 0;
-    }
-
-    .archive-item-info { flex: 1; }
-
-    .archive-item h4 {
-      margin: 0 0 0.25rem 0; color: #fff; font-size: 1rem; font-weight: bold;
-    }
-
-    .archive-item p {
-      margin: 0; color: var(--text-muted); font-size: 0.85rem;
-    }
-
-    .archive-footer {
-      display: flex; gap: 0.5rem; padding: 1rem; border-top: 1px solid #333;
-      background: rgba(0,0,0,0.3); justify-content: flex-end;
-    }
-
-    .archive-footer button {
-      padding: 0.75rem 1rem; font-size: 0.85rem; font-weight: bold; border-radius: 4px;
-      cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.05em;
-    }
-
-    .btn-restore {
-      background: rgba(3, 218, 198, 0.1); border: 1px solid var(--success);
-      color: var(--success);
-    }
-
-    .btn-restore:hover { background: var(--success); color: #000; }
-
-    .btn-delete {
-      background: rgba(207, 102, 121, 0.1); border: 1px solid var(--danger);
-      color: var(--danger);
-    }
-
-    .btn-delete:hover { background: var(--danger); color: #fff; }
-
-    /* --- Quick Edit Modal --- */
-    .quick-edit-content {
-      background: var(--card); border: 1px solid #444; border-radius: 8px; 
-      width: 90%; max-width: 1200px; height: 85vh; display: flex; flex-direction: column;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.9); z-index: 1000;
-    }
-
-    .quick-edit-header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 1.5rem; border-bottom: 1px solid #333; background: rgba(0,0,0,0.3);
-      flex-shrink: 0;
-    }
-
-    .quick-edit-header h2 { margin: 0; color: var(--accent); font-size: 1.3rem; letter-spacing: 0.05em; }
-
-    .quick-edit-body {
-      display: grid; grid-template-columns: 1fr 400px; gap: 1rem; flex: 1; overflow: hidden;
+    .toast {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      color: var(--text);
       padding: 1rem;
+      border-radius: 4px;
+      animation: slideIn 0.3s ease;
     }
 
-    .quick-edit-body textarea {
-      border: 1px solid #333; background: #111; color: var(--text); padding: 1rem;
-      border-radius: 4px; font-family: monospace; font-size: 0.9rem; resize: none; outline: none;
-      line-height: 1.6;
+    @keyframes slideIn {
+      from { transform: translateX(400px); }
+      to { transform: translateX(0); }
     }
 
-    .quick-edit-preview {
-      display: flex; flex-direction: column; overflow: hidden; border: 1px solid #333;
-      border-radius: 4px; background: #0a0a0c; padding: 1rem;
-    }
-
-    .preview-output {
-      flex: 1; overflow-y: auto; font-size: 0.9rem; line-height: 1.6; color: #ccc;
-    }
-
-    .quick-edit-footer {
-      display: flex; gap: 0.5rem; padding: 1rem; border-top: 1px solid #333; background: rgba(0,0,0,0.3);
-      flex-shrink: 0;
-    }
-
-    .quick-edit-footer .action { flex: 0 1 auto; padding: 10px 16px; }
-
-    @media (max-width: 1024px) {
-      .quick-edit-body { grid-template-columns: 1fr; }
-      .quick-edit-preview { max-height: 300px; }
-    }
-
-    /* --- Quick Roller Tray --- */
-    .dice-tray { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); background: rgba(10,10,12,0.9); border: 1px solid #333; border-bottom: none; border-radius: 8px 8px 0 0; padding: 6px 12px; display: flex; gap: 8px; z-index: 400; box-shadow: 0 -4px 15px rgba(0,0,0,0.5); }
-    .btn-die { background: #222; border: 1px solid #444; color: var(--info); padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; font-family: monospace; display: flex; align-items: center; gap: 6px; }
-    .btn-die:hover { background: var(--info); color: #000; }
-
-    /* --- Theater Stage Typography & Auto-Formatter --- */
-    .read-aloud-block { background: #1a1e24; border-left: 4px solid var(--info); padding: 1.25rem 1.5rem; font-family: 'Georgia', serif; font-style: italic; font-size: 1.15rem; color: #d1d5db; border-radius: 0 4px 4px 0; margin: 1.5rem 0; line-height: 1.6; position: relative; }
-    
-    /* === ROOM NAVIGATION TABS (SP2: Theater Mode) === */
-    .room-nav-bar {
-      background: var(--glass); border-bottom: 1px solid var(--glass-border);
-      padding: 0.75rem 1.5rem; display: flex; gap: 0.5rem; align-items: center;
-      flex-wrap: wrap; z-index: 100; flex-shrink: 0;
-    }
-
-    .room-tab {
-      background: #222; border: 1px solid #444; color: var(--text-muted);
-      padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;
-      font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em;
-      transition: all 0.2s; white-space: nowrap;
-    }
-
-    .room-tab:hover { background: #333; color: #fff; }
-
-    .room-tab.active {
-      background: linear-gradient(135deg, var(--accent), rgba(187, 134, 252, 0.6));
-      border-color: var(--accent); color: #fff; box-shadow: 0 0 15px rgba(187, 134, 252, 0.3);
-    }
-
-    .room-tab-add {
-      background: transparent; border: 1px dashed #555; color: var(--accent);
-      padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;
-      transition: 0.2s;
-    }
-
-    .room-tab-add:hover { border-color: var(--accent); background: rgba(187, 134, 252, 0.1); }
-
-    /* === CONDITION BUILDER MODAL (SP2: Condition Management) === */
-    .condition-form-modal {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: var(--card); border: 1px solid #444; border-radius: 8px;
-      width: 90%; max-width: 600px; max-height: 85vh; z-index: 1100;
-      display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.9);
-      overflow: hidden;
-    }
-
-    .condition-form-modal.hidden { display: none; }
-
-    .condition-form-header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 1.5rem; border-bottom: 1px solid #333; background: rgba(0,0,0,0.3);
-    }
-
-    .condition-form-header h2 {
-      margin: 0; color: var(--accent); font-size: 1.2rem;
-      display: flex; align-items: center; gap: 8px;
-    }
-
-    .condition-form-body {
-      padding: 1.5rem; overflow-y: auto; flex: 1;
-      display: flex; flex-direction: column; gap: 1.5rem;
-    }
-
-    .condition-type-selector {
-      display: flex; gap: 1rem; margin-bottom: 1rem;
-    }
-
-    #btn-standard-cond, #btn-custom-cond {
-      flex: 1; padding: 10px; background: #222; border: 1px solid #444;
-      color: var(--text-muted); cursor: pointer; font-weight: bold;
-      text-transform: uppercase; letter-spacing: 0.05em; border-radius: 4px;
-      transition: 0.2s;
-    }
-
-    #btn-standard-cond:hover, #btn-custom-cond:hover {
-      background: #333; color: #fff;
-    }
-
-    #btn-standard-cond.active, #btn-custom-cond.active {
-      background: var(--accent); color: #000; border-color: var(--accent);
-    }
-
-    .form-group {
-      display: flex; flex-direction: column; gap: 0.5rem;
-    }
-
-    .form-label {
-      font-weight: bold; color: #fff; text-transform: uppercase;
-      font-size: 0.85rem; letter-spacing: 0.05em;
-    }
-
-    .form-input, .form-select {
-      background: #111; border: 1px solid #333; color: #fff;
-      padding: 8px 12px; border-radius: 4px; font-size: 0.95rem;
-      outline: none; transition: 0.2s;
-    }
-
-    .form-input:focus, .form-select:focus {
-      border-color: var(--accent); box-shadow: 0 0 8px rgba(187, 134, 252, 0.2);
-    }
-
-    .icon-picker-grid {
-      display: grid; grid-template-columns: repeat(5, 1fr);
-      gap: 0.75rem; margin: 1rem 0;
-    }
-
-    .icon-picker-item {
-      background: #222; border: 2px solid #333; border-radius: 6px;
-      padding: 12px; display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: all 0.2s;
-    }
-
-    .icon-picker-item:hover { border-color: var(--accent); background: #2a2a2a; }
-
-    .icon-picker-item.selected {
-      background: var(--accent); border-color: var(--accent); color: #000;
-    }
-
-    .icon-picker-item svg { width: 24px; height: 24px; }
-
-    .condition-duration-section {
-      background: #111; padding: 1rem; border-radius: 4px; border: 1px solid #333;
-    }
-
-    .duration-type-radio {
-      display: flex; gap: 1.5rem; margin-bottom: 1rem;
-    }
-
-    .duration-type-radio label {
-      display: flex; align-items: center; gap: 0.5rem; cursor: pointer;
-      color: var(--text); font-weight: bold;
-    }
-
-    .duration-type-radio input[type="radio"] {
-      accent-color: var(--accent);
-    }
-
-    #duration-rounds-input, #duration-until-input {
-      max-width: 150px;
-    }
-
-    .glow-settings {
-      background: #0a0a0c; padding: 1rem; border-radius: 4px;
-      border: 1px dashed #555;
-    }
-
-    .glow-settings label {
-      display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;
-      cursor: pointer; color: var(--text);
-    }
-
-    .glow-settings input[type="checkbox"] {
-      accent-color: var(--accent);
-    }
-
-    #glow-section {
-      display: none; margin-top: 1rem;
-    }
-
-    .condition-form-footer {
-      padding: 1.5rem; border-top: 1px solid #333;
-      display: flex; gap: 1rem; justify-content: flex-end;
-      background: rgba(0,0,0,0.3);
-    }
-
-    .btn-ack {
-      background: var(--accent); color: #000; padding: 10px 18px;
-      border: none; border-radius: 4px; font-weight: bold; cursor: pointer;
-      text-transform: uppercase; letter-spacing: 0.05em; transition: 0.2s;
-    }
-
-    .btn-ack:hover { background: rgba(187, 134, 252, 0.8); }
-
-    .btn-ack.btn-secondary {
-      background: #222; color: var(--text); border: 1px solid #444;
-    }
-
-    .btn-ack.btn-secondary:hover { background: #333; color: #fff; }
-
-    .btn-ack.btn-danger {
-      background: var(--danger); color: #fff;
-    }
-
-    .btn-ack.btn-danger:hover { background: rgba(207, 102, 121, 0.8); }
-
-    .stage-block { background: #1a1e24; border-radius: 6px; margin: 1.5rem 0; overflow: hidden; border: 1px solid #333; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-    .stage-block summary { background: #111; padding: 0.75rem 1.5rem; font-weight: bold; cursor: pointer; color: #aaa; text-transform: uppercase; letter-spacing: 0.05em; list-style: none; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid transparent; transition: 0.2s; }
-    .stage-block[open] summary { border-bottom: 1px solid #333; color: #fff; }
-    .stage-block summary:hover { color: #fff; background: #151515; }
-    .stage-block summary::-webkit-details-marker { display: none; }
-    .stage-block-content { padding: 1.5rem; line-height: 1.6; font-size: 1.05rem; white-space: normal; color: #ccc; }
-    
-    .stage-block.mechanics summary { border-left: 4px solid var(--warning); }
-    .stage-block.npc summary { border-left: 4px solid var(--danger); }
-    .stage-block.tooltip summary { border-left: 4px solid var(--success); }
-
-    .keyword-highlight { color: var(--info); font-weight: bold; letter-spacing: 0.05em; margin-top: 1rem; display: inline-block; }
-    .math-highlight { color: #ffeaa7; font-weight: bold; }
-
-    /* --- Utilities & Modals --- */
-    button.action { background: var(--card); color: var(--text); cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 0.9rem; border: 1px solid #555; padding: 6px 12px; transition: 0.2s; }
-    button.action:hover { background: #333; border-color: #888; }
-    .btn-icon { background: transparent; border: none; padding: 4px; color: var(--text-muted); cursor: pointer; border-radius: 4px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
-    .btn-icon:hover { color: #fff; background: rgba(255,255,255,0.1); }
-    .btn-danger { background: rgba(207, 102, 121, 0.1); border: 1px solid var(--danger); color: var(--danger); }
-    .btn-danger:hover { background: var(--danger); color: #fff; }
-
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 999; display: flex; align-items: center; justify-content: center; }
-    .modal-overlay.hidden { display: none; }
-    .modal-content { background: var(--card); padding: 2rem; border-radius: 8px; border: 1px solid #444; width: 90%; max-width: 500px; box-shadow: 0 10px 40px rgba(0,0,0,0.9); }
-    #memo-input { width: 100%; background: #111; color: #fff; border: 1px solid #444; padding: 0.75rem; border-radius: 4px; font-family: monospace; box-sizing: border-box; resize: vertical; margin-bottom: 1.5rem; outline: none; }
-    
-    #toast-container { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
-    .toast { background: rgba(10, 10, 12, 0.95); color: #fff; padding: 0.75rem 1.5rem; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); font-size: 0.95rem; border: 1px solid var(--accent); animation: fadein 0.3s, fadeout 0.3s 2.7s forwards; }
-    @keyframes fadein { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
-    .hidden { display: none !important; }
-
-    /* === PLAYER DETAILS MODAL (SP3: Player Profile Management) === */
-    .player-details-overlay {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 999;
-      display: flex; align-items: center; justify-content: center;
-    }
-
-    .player-details-overlay.hidden { display: none; }
-
-    .player-details-modal {
-      position: fixed; right: -500px; top: 60px;
-      width: 500px; height: calc(100vh - 60px);
-      background: var(--glass); border-left: 1px solid #333;
-      padding: 2rem; z-index: 1200;
-      transition: right 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-      overflow-y: auto; display: flex; flex-direction: column; gap: 1.5rem;
-    }
-
-    .player-details-modal.visible { right: 0; }
-
-    .details-header {
-      display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid #333; padding-bottom: 1rem; margin-bottom: 1rem;
-    }
-
-    .details-header h2 { margin: 0; color: #fff; font-size: 1.3rem; }
-
-    .details-tabs {
-      display: flex; gap: 1rem; border-bottom: 1px solid #333; margin-bottom: 1.5rem;
-    }
-
-    .tab-btn {
-      background: transparent; border: none; color: #888; cursor: pointer;
-      padding: 8px 16px; font-weight: bold; text-transform: uppercase;
-      font-size: 0.85rem; border-bottom: 2px solid transparent;
-      transition: 0.2s;
-    }
-
-    .tab-btn:hover { color: #fff; }
-
-    .tab-btn.active {
-      color: #fff; border-bottom-color: var(--accent);
-    }
-
-    .details-content { flex-grow: 1; overflow-y: auto; }
-
-    .tab-content { display: none; }
-
-    .tab-content.active { display: block; }
-
-    .tab-content.hidden { display: none !important; }
-
-    .details-textarea {
-      width: 100%; min-height: 300px; background: #000; border: 1px solid #333;
-      color: #fff; padding: 12px; border-radius: 4px; font-family: inherit;
-      font-size: 0.9rem; resize: vertical; outline: none;
-    }
-
-    .details-textarea:focus { border-color: var(--accent); }
-
-    .stats-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
-    }
-
-    .stat { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
-
-    .stat label {
-      font-weight: bold; color: var(--accent); font-size: 0.9rem;
-      text-transform: uppercase;
-    }
-
-    .stat input {
-      width: 60px; text-align: center; background: #000; border: 1px solid #333;
-      color: #fff; padding: 8px; border-radius: 4px; font-size: 0.95rem;
-      outline: none;
-    }
-
-    .stat input:focus { border-color: var(--accent); }
-
-    .inventory-list { display: flex; flex-direction: column; gap: 0.75rem; }
-
-    .inventory-item {
-      background: #111; border: 1px solid #333; padding: 1rem; border-radius: 4px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-
-    .item-name { flex-grow: 1; font-weight: bold; color: #fff; }
-
-    .item-qty { color: #888; font-size: 0.85rem; min-width: 40px; text-align: center; }
-
-    .item-controls { display: flex; gap: 0.5rem; margin-left: 1rem; }
-
-    .item-controls button {
-      background: transparent; border: 1px solid #333; color: #888;
-      width: 32px; height: 32px; border-radius: 3px; cursor: pointer;
-      transition: 0.2s; font-size: 0.9rem;
-    }
-
-    .item-controls button:hover { border-color: var(--accent); color: var(--accent); }
-
-    /* === ITEM FORM SLIDER (SP3: Inventory Management) === */
-    .item-form-slider {
-      position: fixed; right: -420px; top: 60px; width: 420px;
-      height: calc(100vh - 60px); background: var(--glass); border-left: 1px solid #333;
-      padding: 2rem; z-index: 1250; transition: right 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-      overflow-y: auto; display: flex; flex-direction: column; gap: 1.5rem;
-    }
-
-    .item-form-slider.visible { right: 0; }
-
-    .form-header {
-      display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid #333; padding-bottom: 1rem;
-    }
-
-    .form-header h3 { margin: 0; color: #fff; font-size: 1.2rem; }
-
-    .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
-
-    .form-label {
-      font-weight: bold; color: #fff; text-transform: uppercase;
-      font-size: 0.85rem; letter-spacing: 0.05em;
-    }
-
-    .form-input, .form-select {
-      background: #111; border: 1px solid #333; color: #fff;
-      padding: 8px 12px; border-radius: 4px; font-size: 0.95rem;
-      outline: none; transition: 0.2s;
-    }
-
-    .form-input:focus, .form-select:focus {
-      border-color: var(--accent); box-shadow: 0 0 8px rgba(187, 134, 252, 0.2);
-    }
-
-    #charges-section { display: none; }
-
-    .item-footer {
-      display: flex; gap: 1rem; margin-top: 2rem; justify-content: space-between;
-    }
-
-    #btn-delete-item { display: none; }
   </style>
-</head>
-<body>
 
   <script>
     const ICONS = {
@@ -974,10 +666,220 @@
       close: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
       trophy: `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>`,
       dice: `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><circle cx="15.5" cy="15.5" r="1.5"></circle><circle cx="15.5" cy="8.5" r="1.5"></circle><circle cx="8.5" cy="15.5" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle></svg>`,
-      tag: `<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>`,
-      focus: `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>`
     };
   </script>
+
+  <script>
+    // Lore Parser (Phase 2)
+    function parseLoreDocument(loreText) {
+      const characters = [];
+      
+      // Split by character name at start of line (followed by parentheses)
+      const characterBlocks = loreText.split(/^(?:[\d+\.]?\s+)?"?([A-Z][a-zA-Z\s]+)"?\s*\(Played by:/m);
+      
+      // Process matches (every odd index is a name, every even+1 is the block)
+      for (let i = 1; i < characterBlocks.length; i += 2) {
+        const name = characterBlocks[i].trim();
+        const blockText = characterBlocks[i + 1] || "";
+        
+        // Extract Vitals: Max HP | AC | Passive Perception
+        const vitalMatch = blockText.match(/Vitals:?\s*(?:Max\s+)?HP:\s*(\d+)\s*\|\s*AC:\s*(\d+)(?:\s*\([^)]+\))?\s*\|\s*Passive Perception:\s*(\d+)/);
+        const maxHP = vitalMatch ? parseInt(vitalMatch[1]) : 20;
+        const ac = vitalMatch ? parseInt(vitalMatch[2]) : 10;
+        const passivePerception = vitalMatch ? parseInt(vitalMatch[3]) : 10;
+        
+        // Extract Build: Class - Race
+        const buildMatch = blockText.match(/Build:\s*(.+?)(?:\n|Backstory|Death Save|Companions|$)/);
+        const buildText = buildMatch ? buildMatch[1].trim() : "";
+        
+        // Parse class and race from build text (e.g., "College of Lore Bard - Lightfoot Halfling")
+        const classRaceMatch = buildText.match(/^(.+?)\s+-\s+(.+)$/);
+        const charClass = classRaceMatch ? classRaceMatch[1].trim() : buildText.split(' - ')[0] || "Unknown Class";
+        const race = classRaceMatch ? classRaceMatch[2].trim() : buildText.split(' - ')[1] || "Unknown Race";
+        
+        // Extract Backstory/Lore
+        const backstoryMatch = blockText.match(/Backstory\/Lore:\s*(.+?)(?:\nParty Connections|Inventory|Death Save|Economy|Companions|$)/s);
+        const lore = backstoryMatch ? backstoryMatch[1].trim() : "";
+        
+        // Extract Economy (gold)
+        const economyMatch = blockText.match(/Economy:\s*(.+?)(?:\n|Death Save|$)/);
+        const gold = economyMatch ? economyMatch[1].trim() : "0gp";
+        
+        characters.push({
+          id: name.toLowerCase().replace(/\s+/g, "_"),
+          name: name,
+          class: charClass,
+          race: race,
+          maxHP: maxHP,
+          currentHP: maxHP,
+          ac: ac,
+          passivePerception: passivePerception,
+          lore: lore,
+          gold: gold,
+          profileImage: `/players/${name}.png`,
+          stats: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+          spellSlots: {
+            cantrips: 99,
+            level1: 2,
+            level2: 0,
+            level3: 0,
+            lastLongRest: new Date().toISOString()
+          }
+        });
+      }
+      
+      return characters;
+    }
+
+    // KV Sync Function (Phase 1)
+    async function syncCampaignStateToKV() {
+      try {
+        const token = localStorage.getItem(AUTH_TOKEN_KEY) || sessionStorage.getItem(AUTH_TOKEN_KEY);
+        if (!token) {
+          console.error("No auth token available for sync.");
+          return;
+        }
+        
+        const response = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            action: "update",
+            state: campaignState,
+            base_version: campaignState.base_version || 1
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          campaignState.base_version = data.base_version;
+          console.log("State synced to KV");
+        } else {
+          console.error("KV sync failed:", response.status);
+          alert("Failed to save changes. Please try again.");
+        }
+      } catch (e) {
+        console.error("Sync error:", e);
+        alert("Network error while saving.");
+      }
+    }
+
+    // Character Editor Functions (Phase 2)
+    let currentCharacterEditing = null;
+
+    function openCharacterEditor(character) {
+      currentCharacterEditing = character;
+      
+      document.getElementById("char-editor-name").textContent = character.name;
+      document.getElementById("char-lore-text").value = character.lore || "";
+      document.getElementById("char-stat-str").value = character.stats?.str || 10;
+      document.getElementById("char-stat-dex").value = character.stats?.dex || 10;
+      document.getElementById("char-stat-con").value = character.stats?.con || 10;
+      document.getElementById("char-stat-int").value = character.stats?.int || 10;
+      document.getElementById("char-stat-wis").value = character.stats?.wis || 10;
+      document.getElementById("char-stat-cha").value = character.stats?.cha || 10;
+      document.getElementById("char-current-hp").value = character.currentHP;
+      document.getElementById("char-max-hp").value = character.maxHP;
+      document.getElementById("char-ac").value = character.ac;
+      document.getElementById("char-passive-per").value = character.passivePerception;
+      
+      document.getElementById("char-editor-overlay").classList.remove("hidden");
+      document.getElementById("char-editor-modal").classList.remove("hidden");
+    }
+
+    function closeCharacterEditor() {
+      document.getElementById("char-editor-overlay").classList.add("hidden");
+      document.getElementById("char-editor-modal").classList.add("hidden");
+      currentCharacterEditing = null;
+    }
+
+    function switchCharTab(tabName) {
+      document.querySelectorAll(".tab-content").forEach(t => t.classList.add("hidden"));
+      document.getElementById(`char-${tabName}-tab`).classList.remove("hidden");
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+      event.target.classList.add("active");
+    }
+
+    async function saveCharacterEditor() {
+      if (!currentCharacterEditing) return;
+      
+      const updated = {
+        ...currentCharacterEditing,
+        lore: document.getElementById("char-lore-text").value,
+        stats: {
+          str: parseInt(document.getElementById("char-stat-str").value) || 10,
+          dex: parseInt(document.getElementById("char-stat-dex").value) || 10,
+          con: parseInt(document.getElementById("char-stat-con").value) || 10,
+          int: parseInt(document.getElementById("char-stat-int").value) || 10,
+          wis: parseInt(document.getElementById("char-stat-wis").value) || 10,
+          cha: parseInt(document.getElementById("char-stat-cha").value) || 10
+        },
+        currentHP: parseInt(document.getElementById("char-current-hp").value) || 0,
+        maxHP: parseInt(document.getElementById("char-max-hp").value) || 1,
+        ac: parseInt(document.getElementById("char-ac").value) || 10,
+        passivePerception: parseInt(document.getElementById("char-passive-per").value) || 10
+      };
+      
+      // Update local state
+      const idx = campaignState.characters.findIndex(c => c.id === updated.id);
+      if (idx !== -1) campaignState.characters[idx] = updated;
+      
+      // Sync to KV
+      await syncCampaignStateToKV();
+      renderCharacterTiles();
+      closeCharacterEditor();
+    }
+
+    // Character Tile Rendering
+    function renderCharacterTiles() {
+      const grid = document.getElementById("character-grid");
+      if (!grid) return;
+      grid.innerHTML = "";
+      
+      if (!campaignState || !campaignState.characters) return;
+      
+      campaignState.characters.forEach(char => {
+        const tile = document.createElement("div");
+        tile.className = "character-tile";
+        tile.innerHTML = `
+          <img src="${char.profileImage}" alt="${char.name}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%23333%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2214%22%3E?%3C/text%3E%3C/svg%3E'">
+          <div class="name">${char.name}</div>
+          <div class="class">${char.class}</div>
+          <div style="font-size: 0.7rem; color: var(--text-muted);">HP: ${char.currentHP}/${char.maxHP}</div>
+        `;
+        tile.onclick = () => openCharacterEditor(char);
+        grid.appendChild(tile);
+      });
+    }
+
+    function renderAll() {
+      renderCharacterTiles();
+    }
+
+    // Delete Room Function (Phase 3)
+    async function deleteRoom(roomId) {
+      if (!confirm("Soft delete this room? It will not appear in the UI.")) return;
+      
+      const room = campaignState.rooms?.find(r => r.id === roomId);
+      if (room) {
+        room.deleted = true;
+        await syncCampaignStateToKV();
+        renderAll();
+      }
+    }
+
+    // Initialize on page ready
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAll();
+    });
+  </script>
+
+</head>
+
+<body>
 
   <nav class="navbar">
     <div class="brand">
@@ -986,1706 +888,98 @@
       <div id="sync-heartbeat" class="heartbeat" title="Live Database Connection"></div>
     </div>
     <div class="nav-links">
-      <div style="display:flex; gap: 8px; margin-right: 1.5rem; border-right: 1px solid #333; padding-right: 1.5rem;">
-        <button class="btn-global-action toggle-active" id="btn-tactical" onclick="setMode('tactical')">TACTICAL</button>
-        <button class="btn-global-action" id="btn-theater" onclick="setMode('theater')">THEATER</button>
-      </div>
       <a href="index.html" class="nav-link active">Dashboard</a>
       <a href="loot.html" class="nav-link">Loot</a>
       <a href="data-forge.html" class="nav-link">Data Forge</a>
-      
-      <div style="display:flex; gap: 8px; margin-left: 1.5rem; border-left: 1px solid #333; padding-left: 1.5rem;">
-        <select id="global-rest" class="mini-select" style="width: auto; cursor:pointer;" onchange="applyRest(this.value); this.value='';">
-          <option value="" disabled selected>Camp...</option>
-          <option value="Short">Short Rest</option>
-          <option value="Long">Long Rest</option>
-        </select>
-        <button class="btn-global-action" onclick="toggleDrawer()" style="color:var(--warning); border-color:var(--warning); background:transparent;">
-          <script>document.write(ICONS.trophy)</script> QUEUE (<span id="queue-count">0</span>)
-        </button>
-        <button class="btn-global-action" onclick="openArchiveModal()" style="color:var(--success); border-color:var(--success); background:transparent;">
-          📦 ARCHIVES
-        </button>
-      </div>
     </div>
   </nav>
 
   <div id="toast-container"></div>
 
-  <div id="memo-modal" class="modal-overlay hidden" onclick="if(event.target===this) closeMemoModal()">
-    <div class="modal-content" style="border-top: 4px solid var(--danger);">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 0.5rem;">
-        <h2 style="color: var(--danger); margin: 0; display:flex; align-items:center; gap:8px;"><script>document.write(ICONS.transmit)</script> PRIORITY TRANSMISSION</h2>
-        <button class="btn-icon" style="border: 1px solid #444;" onclick="closeMemoModal()"><script>document.write(ICONS.close)</script></button>
-      </div>
-      <p style="color: #aaa; font-size: 0.9rem; margin-top: 0; margin-bottom: 1.5rem;">Override HUDs with an un-closable directive.</p>
-      
-      <select id="memo-target-select" class="mini-select" style="width: 100%; margin-bottom: 1rem; padding: 8px;"></select>
-      <textarea id="memo-input" rows="4" placeholder="You hear a scratching inside your skull..."></textarea>
-      
-      <div style="display:flex; justify-content:space-between;">
-        <button class="action btn-danger" style="padding: 8px 16px;" onclick="sendMemo()">TRANSMIT SIGNAL</button>
-        <button class="action" onclick="closeMemoModal()">Cancel</button>
-      </div>
+  <!-- CHARACTER CARDS SECTION (Phase 2) -->
+  <section id="character-cards" class="section" style="padding: 2rem 1rem;">
+    <h2 style="margin: 0 0 1.5rem 0;">Party</h2>
+    <div class="character-grid" id="character-grid">
+      <!-- Populated by renderCharacterTiles() -->
     </div>
-  </div>
+  </section>
 
-  <!-- Archive Modal (Phase 5) -->
-  <div class="modal-overlay hidden" id="archive-overlay" onclick="if(event.target===this) closeArchiveModal()">
-    <div class="archive-modal">
-      <div class="archive-header">
-        <h2>📦 Global Archives</h2>
-        <button class="btn-icon" style="border: 1px solid #444;" onclick="closeArchiveModal()"><script>document.write(ICONS.close)</script></button>
-      </div>
-
-      <div class="archive-tabs">
-        <button class="archive-tab active" onclick="switchArchiveTab('achievements')">🏆 Achievements</button>
-        <button class="archive-tab" onclick="switchArchiveTab('loot')">⭐ Loot Awards</button>
-      </div>
-
-      <div class="archive-list" id="archive-list"></div>
-
-      <div class="archive-footer">
-        <button class="archive-footer button btn-restore" onclick="restoreSelectedArchive()">Restore Selected</button>
-        <button class="archive-footer button btn-delete" onclick="deleteSelectedArchive()">Delete Selected</button>
-      </div>
+  <!-- CHARACTER EDITOR MODAL (Phase 2) -->
+  <div id="char-editor-overlay" class="modal-overlay hidden" onclick="closeCharacterEditor()"></div>
+  <div id="char-editor-modal" class="modal hidden">
+    <div class="modal-header">
+      <h2 id="char-editor-name" style="margin: 0;"></h2>
+      <button onclick="closeCharacterEditor()" style="cursor: pointer; background: none; border: none; color: var(--text); font-size: 1.5rem; padding: 0;">✕</button>
     </div>
-  </div>
-
-  <div id="focus-overlay" class="modal-overlay hidden" onclick="this.classList.add('hidden')">
-    <div class="read-aloud-block" id="focus-text" style="font-size: 1.8rem; max-width: 800px; padding: 2.5rem; box-shadow: 0 10px 40px rgba(0,0,0,0.9);" onclick="event.stopPropagation()">
-      </div>
-  </div>
-
-  <div id="quick-edit-modal" class="modal-overlay hidden" onclick="if(event.target===this) closeQuickEdit()">
-    <div class="quick-edit-content" onclick="event.stopPropagation()">
-      <div class="quick-edit-header">
-        <h2 id="quick-edit-title">Edit Content</h2>
-        <button class="btn-icon" onclick="closeQuickEdit()" style="border: 1px solid #444;"><script>document.write(ICONS.close)</script></button>
-      </div>
-      
-      <div class="quick-edit-body">
-        <textarea id="quick-edit-textarea" placeholder="Edit content..."></textarea>
-        
-        <div class="quick-edit-preview">
-          <h3 style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0;">PREVIEW</h3>
-          <div id="quick-edit-preview-output" class="preview-output"></div>
-        </div>
-      </div>
-      
-      <div class="quick-edit-footer">
-        <button class="action btn-primary" onclick="saveQuickEdit()">Save (Ctrl+S)</button>
-        <button class="action" onclick="closeQuickEdit()">Cancel</button>
-        <span id="quick-edit-badge" style="margin-left: auto; color: var(--text-muted); font-size: 0.8rem;"></span>
-      </div>
-    </div>
-  </div>
-
-  <div id="trophy-drawer" class="trophy-drawer">
-    <div class="drawer-header">
-      <h2><script>document.write(ICONS.trophy)</script> Global Trophy Queue</h2>
-      <div style="display:flex; gap:8px;">
-        <button class="btn-icon" style="border: 1px solid var(--success); color: var(--success);" onclick="manuallyForgeTrophy()" title="Forge Custom Trophy">+</button>
-        <button class="btn-icon" style="border: 1px solid #444;" onclick="toggleDrawer()"><script>document.write(ICONS.close)</script></button>
-      </div>
-    </div>
-    <div class="drawer-content" id="trophy-queue-container">
-      <div style="color: #666; font-style: italic;">Loading queue...</div>
-    </div>
-  </div>
-
-  <!-- ROOM NAVIGATION BAR (SP2: Theater Mode) -->
-  <div class="room-nav-bar" id="room-nav-bar">
-    <button class="room-tab active" data-room-id="room_1" onclick="switchRoom('room_1')">The Tavern</button>
-    <button class="room-tab" data-room-id="room_2" onclick="switchRoom('room_2')">The Forest</button>
-    <button class="room-tab" data-room-id="room_3" onclick="switchRoom('room_3')">The Dungeon</button>
-    <button class="room-tab-add" onclick="addNewRoom()">+ NEW ROOM</button>
-  </div>
-
-  <div id="dashboard-wrapper" class="workspace layout-tactical">
     
-    <div class="roster-wrapper">
-      <div class="roster-grid" id="roster-container">
-        <div style="color: #666; font-style: italic; padding: 2rem;">Loading live feed...</div>
-      </div>
-      
-      <!-- Loot Sidebar -->
-      <div class="loot-sidebar" id="loot-sidebar">
-        <h3>Loot Tiers</h3>
-        <div id="loot-tiers-container"></div>
-        <button class="btn-open-loot" onclick="openLootTable()">Open Loot Table</button>
-      </div>
+    <div class="modal-tabs">
+      <button class="tab-btn active" onclick="switchCharTab('lore')">Lore</button>
+      <button class="tab-btn" onclick="switchCharTab('stats')">Stats</button>
+      <button class="tab-btn" onclick="switchCharTab('vitals')">Vitals</button>
     </div>
-
-    <div class="theater-stage" id="theater-stage">
-      <div class="theater-content" id="theater-content">
-        <h2 style="color:#555; text-align:center; margin-top:4rem;">No Active Room Prepped.</h2>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="dice-tray">
-    <button class="btn-die" onclick="rollDice(4)"><script>document.write(ICONS.dice)</script> d4</button>
-    <button class="btn-die" onclick="rollDice(6)"><script>document.write(ICONS.dice)</script> d6</button>
-    <button class="btn-die" onclick="rollDice(8)"><script>document.write(ICONS.dice)</script> d8</button>
-    <button class="btn-die" onclick="rollDice(10)"><script>document.write(ICONS.dice)</script> d10</button>
-    <button class="btn-die" onclick="rollDice(12)"><script>document.write(ICONS.dice)</script> d12</button>
-    <button class="btn-die" onclick="rollDice(20)"><script>document.write(ICONS.dice)</script> d20</button>
-  </div>
-
-  <script>
-    const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
-    const VALID_AVATARS = ['chuck', 'hendrick', 'jimothy', 'aelar', 'tilly'];
-    const GENERIC_SVG_AVATAR = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%23555' viewBox='0 0 24 24'><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/></svg>`;
     
-    let appState = { players: [], achievement_queue: [], campaign_notes: { rooms: [] }, loot_tables: { tiers: {} }, loot_awarded: { active: [], archived: [] } };
-    let isPushing = false;
-    let isTheaterMode = false;
-    const colorPalette = ['#ff7675', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe'];
-
-    // --- Archive Modal State ---
-    let archiveState = {
-      currentTab: 'achievements',
-      selectedItems: new Set()
-    };
-
-    // --- Quick Edit State ---
-    let quickEditState = { 
-      contentId: null, 
-      contentType: null,
-      originalText: '',
-      syncTimer: null
-    };
-
-    // --- State Engine & Sync Heartbeat ---
-    function triggerHeartbeat(success) {
-      const hb = document.getElementById('sync-heartbeat');
-      if (!hb) return;
-      hb.className = 'heartbeat';
-      void hb.offsetWidth;
-      hb.className = success ? 'heartbeat heartbeat-success' : 'heartbeat heartbeat-fail';
-    }
-
-    async function mutateAndPush(mutationCallback, successMessage) {
-      if (isPushing) return showToast("Busy syncing...");
-      isPushing = true;
-      document.body.style.cursor = 'wait';
+    <div class="modal-content" style="padding: 0;">
+      <!-- LORE TAB -->
+      <div id="char-lore-tab" class="tab-content">
+        <textarea id="char-lore-text" placeholder="Character lore..."></textarea>
+      </div>
       
-      try {
-        const fetchRes = await fetch(WORKER_URL);
-        if (!fetchRes.ok) throw new Error("Fetch failed");
-        let latestState = await fetchRes.json();
-
-        if (!latestState.achievement_queue) latestState.achievement_queue = [];
-        if (!latestState.players) latestState.players = [];
-        if (!latestState.loot_awarded) latestState.loot_awarded = { active: [], archived: [] };
-
-        mutationCallback(latestState);
-
-        latestState.version = (latestState.version || 0) + 1;
-        latestState.last_modified = Date.now();
-
-        const payload = { 
-          base_version: latestState.version - 1, 
-          last_modified: latestState.last_modified,
-          data: latestState 
-        };
-        
-        const postRes = await fetch(WORKER_URL, { 
-          method: 'POST', 
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        
-        if (!postRes.ok) throw new Error("Version collision");
-
-        appState = latestState;
-        renderAll();
-        if (successMessage) showToast(successMessage);
-        triggerHeartbeat(true);
-
-      } catch (e) {
-        showToast("Sync collision. Refreshing live state...");
-        triggerHeartbeat(false);
-        await init(); 
-      } finally {
-        isPushing = false;
-        document.body.style.cursor = 'default';
-      }
-    }
-
-    async function init() {
-      try {
-        const response = await fetch(WORKER_URL);
-        if (response.ok) {
-          const data = await response.json();
-          if (data) appState = data;
-          triggerHeartbeat(true);
-        } else {
-          triggerHeartbeat(false);
-        }
-      } catch (e) { 
-        console.warn("Fetch failed.");
-        triggerHeartbeat(false);
-      }
-      renderAll();
-    }
-
-    // --- Core UI & Modes ---
-    function setMode(mode) {
-      isTheaterMode = (mode === 'theater');
-      document.getElementById('btn-tactical').classList.toggle('toggle-active', !isTheaterMode);
-      document.getElementById('btn-theater').classList.toggle('toggle-active', isTheaterMode);
-      document.getElementById('dashboard-wrapper').className = isTheaterMode ? 'workspace layout-theater' : 'workspace layout-tactical';
-      renderAll();
-    }
-
-    function toggleDrawer() { document.getElementById('trophy-drawer').classList.toggle('open'); }
-
-    function rollDice(sides) {
-      const result = Math.floor(Math.random() * sides) + 1;
-      showToast(`Rolled D${sides}: [ ${result} ]`);
-    }
-
-    function applyRest(type) {
-      if(!confirm(`Apply ${type} rest to all active players?`)) return;
-      mutateAndPush((state) => {
-        state.players.forEach(p => {
-          if(p.is_deleted) return;
-          if(type === 'Long') {
-             if(p.stats) p.stats.hp_current = p.stats.hp_max || 0;
-             if(p.status && p.status.conditions) {
-                p.status.conditions = p.status.conditions.filter(c => !['poisoned','blinded','bleeding','critical trauma'].includes(c.toLowerCase()));
-             }
-          }
-        });
-      }, `Global ${type} Rest Applied.`);
-    }
-
-    // --- ARCHIVE MODAL (Phase 5) ---
-    function openArchiveModal() {
-      archiveState.selectedItems.clear();
-      switchArchiveTab('achievements');
-      document.getElementById('archive-overlay').classList.remove('hidden');
-    }
-
-    function closeArchiveModal() {
-      document.getElementById('archive-overlay').classList.add('hidden');
-      archiveState.selectedItems.clear();
-    }
-
-    function switchArchiveTab(tab) {
-      archiveState.currentTab = tab;
-      document.querySelectorAll('.archive-tab').forEach(t => t.classList.remove('active'));
-      event.target.classList.add('active');
-      archiveState.selectedItems.clear();
-      renderArchiveList();
-    }
-
-    function renderArchiveList() {
-      const listEl = document.getElementById('archive-list');
-      let items = [];
-
-      if (archiveState.currentTab === 'achievements') {
-        appState.players.forEach(p => {
-          if (p.achievements && p.achievements.archived) {
-            p.achievements.archived.forEach(ach => {
-              items.push({ ...ach, type: 'achievement', player: p.name, id: `ach-${p.name}-${ach.id || ach.name}` });
-            });
-          }
-        });
-      } else {
-        if (appState.loot_awarded && appState.loot_awarded.archived) {
-          appState.loot_awarded.archived.forEach(loot => {
-            items.push({ ...loot, type: 'loot', id: loot.id || `loot-${loot.name}` });
-          });
-        }
-      }
-
-      if (items.length === 0) {
-        listEl.innerHTML = `<div style="padding: 2rem; text-align: center; color: #666;">No archived ${archiveState.currentTab}.</div>`;
-        return;
-      }
-
-      let html = '';
-      items.forEach(item => {
-        const isLoot = item.type === 'loot';
-        html += `
-          <div class="archive-item ${isLoot ? 'loot' : ''}">
-            <input type="checkbox" class="archive-checkbox" data-id="${escapeHtml(item.id)}" onchange="toggleArchiveSelect(this)">
-            <div class="archive-item-info">
-              <h4>${escapeHtml(item.name)}</h4>
-              <p>${isLoot ? 'Loot Award' : `Achievement - ${escapeHtml(item.player || 'Unknown')}`}</p>
-            </div>
+      <!-- STATS TAB -->
+      <div id="char-stats-tab" class="tab-content hidden">
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
+          <div>
+            <label>STR</label>
+            <input type="number" id="char-stat-str" min="1" max="20">
           </div>
-        `;
-      });
-
-      listEl.innerHTML = html;
-    }
-
-    function toggleArchiveSelect(checkbox) {
-      if (checkbox.checked) {
-        archiveState.selectedItems.add(checkbox.dataset.id);
-      } else {
-        archiveState.selectedItems.delete(checkbox.dataset.id);
-      }
-    }
-
-    function restoreSelectedArchive() {
-      if (archiveState.selectedItems.size === 0) {
-        showToast("Select items to restore.");
-        return;
-      }
-
-      if (!confirm(`Restore ${archiveState.selectedItems.size} ${archiveState.currentTab}?`)) return;
-
-      mutateAndPush((state) => {
-        if (archiveState.currentTab === 'achievements') {
-          state.players.forEach(p => {
-            if (p.achievements && p.achievements.archived) {
-              p.achievements.archived = p.achievements.archived.filter(ach => {
-                const itemId = `ach-${p.name}-${ach.id || ach.name}`;
-                if (archiveState.selectedItems.has(itemId)) {
-                  if (!p.achievements.pending) p.achievements.pending = [];
-                  p.achievements.pending.push(ach);
-                  return false;
-                }
-                return true;
-              });
-            }
-          });
-        } else {
-          if (state.loot_awarded && state.loot_awarded.archived) {
-            state.loot_awarded.archived = state.loot_awarded.archived.filter(loot => {
-              const itemId = loot.id || `loot-${loot.name}`;
-              if (archiveState.selectedItems.has(itemId)) {
-                if (!state.loot_awarded.active) state.loot_awarded.active = [];
-                state.loot_awarded.active.push(loot);
-                return false;
-              }
-              return true;
-            });
-          }
-        }
-      }, `Restored ${archiveState.selectedItems.size} ${archiveState.currentTab}.`);
-
-      archiveState.selectedItems.clear();
-      renderArchiveList();
-    }
-
-    function deleteSelectedArchive() {
-      if (archiveState.selectedItems.size === 0) {
-        showToast("Select items to delete.");
-        return;
-      }
-
-      if (!confirm(`Permanently delete ${archiveState.selectedItems.size} archived ${archiveState.currentTab}? This cannot be undone.`)) return;
-
-      mutateAndPush((state) => {
-        if (archiveState.currentTab === 'achievements') {
-          state.players.forEach(p => {
-            if (p.achievements && p.achievements.archived) {
-              p.achievements.archived = p.achievements.archived.filter(ach => {
-                const itemId = `ach-${p.name}-${ach.id || ach.name}`;
-                return !archiveState.selectedItems.has(itemId);
-              });
-            }
-          });
-        } else {
-          if (state.loot_awarded && state.loot_awarded.archived) {
-            state.loot_awarded.archived = state.loot_awarded.archived.filter(loot => {
-              const itemId = loot.id || `loot-${loot.name}`;
-              return !archiveState.selectedItems.has(itemId);
-            });
-          }
-        }
-      }, `Permanently deleted ${archiveState.selectedItems.size} items.`);
-
-      archiveState.selectedItems.clear();
-      renderArchiveList();
-    }
-
-    // --- Dynamic Renderers & Invisible Edit ---
-    function makeMathEditable(val, pIdx, fieldName) {
-      return `<span class="edit-val" onclick="event.stopPropagation(); startMathEdit(this, ${pIdx}, '${fieldName}')" title="Click to edit">${val}</span>`;
-    }
-
-    function startMathEdit(el, pIdx, fieldName) {
-      const currentVal = el.innerText;
-      const input = document.createElement('input');
-      input.className = 'math-input';
-      input.value = currentVal;
-      
-      input.onblur = () => {
-         let text = input.value.trim();
-         let delta = 0; let isDelta = false;
-         if(text.startsWith('+')) { delta = parseInt(text.substring(1)); isDelta = true; }
-         else if(text.startsWith('-')) { delta = -parseInt(text.substring(1)); isDelta = true; }
-
-         mutateAndPush((state) => {
-            if(!state.players[pIdx].stats) state.players[pIdx].stats = {};
-            let baseVal = parseInt(state.players[pIdx].stats[fieldName]) || 0;
-            state.players[pIdx].stats[fieldName] = isDelta ? (baseVal + delta) : (parseInt(text) || 0);
-         }, null);
-      };
-      
-      input.onkeydown = (e) => { if(e.key === 'Enter') input.blur(); };
-      input.onclick = (e) => e.stopPropagation();
-      
-      const parent = el.parentNode;
-      parent.replaceChild(input, el);
-      input.focus();
-    }
-
-    function renderRoster() {
-      const container = document.getElementById('roster-container');
-      if (!appState.players || appState.players.length === 0) {
-        container.innerHTML = `<div style="color: #666; font-style: italic;">No players found.</div>`;
-        return;
-      }
-
-      let html = '';
-      appState.players.forEach((p, pIdx) => {
-        if (p.is_deleted) return;
-        const color = colorPalette[pIdx % colorPalette.length];
-        
-        const firstName = p.name.toLowerCase().split(' ')[0];
-        const avatarSrc = VALID_AVATARS.includes(firstName) 
-          ? `/players/${firstName}.png` 
-          : GENERIC_SVG_AVATAR;
-
-        let ringClass = 'ring-healthy';
-        const conditions = p.status?.conditions || [];
-        const cLower = conditions.map(c => c.toLowerCase());
-        
-        if (cLower.some(c => c.includes('critical'))) ringClass = 'ring-critical';
-        else if (cLower.some(c => c.includes('bleeding'))) ringClass = 'ring-bleeding';
-        else if (cLower.some(c => c.includes('poison'))) ringClass = 'ring-poisoned';
-
-        const activeConditionsHtml = conditions.map((c, cIdx) => 
-          `<span class="condition-badge" onclick="removeCondition('${escapeJS(p.name)}', ${cIdx})" title="Click to clear">${ICONS.tag} ${escapeHtml(c)}</span>`
-        ).join('');
-
-        const notableItems = (p.inventory || []).filter(i => !i.is_deleted && i.is_notable);
-        const notableItemsHtml = notableItems.map(i => `<div class="notable-item">${escapeHtml(i.name)}</div>`).join('');
-
-        const activeInventory = (p.inventory || []).filter(i => !i.is_deleted);
-        const inventoryHtml = activeInventory.map((i, iIdx) => {
-          let currentQty = i.quantity !== undefined ? i.quantity : 1;
-          let ghostClass = currentQty === 0 ? 'ghosted' : '';
-          return `
-            <li class="loadout-item ${ghostClass}">
-              <span>${escapeHtml(i.name)}</span> 
-              <div class="loadout-controls">
-                <button class="qty-btn" onclick="adjQty(${pIdx}, ${iIdx}, -1)">-</button>
-                <span style="display:inline-block; width:20px; text-align:center;">${currentQty}</span>
-                <button class="qty-btn" onclick="adjQty(${pIdx}, ${iIdx}, 1)">+</button>
-                <button class="btn-trash-item" title="Consume/Delete" onclick="trashInvItem(${pIdx}, ${iIdx})">${ICONS.close}</button>
-              </div>
-            </li>
-          `;
-        }).join('') || "<li style='color:#666; border:none; text-align:center;'>Empty.</li>";
-
-        const isDying = (p.stats?.hp_current !== undefined) && (p.stats.hp_current <= 0);
-        let lowerPanel = '';
-
-        if (isDying) {
-           lowerPanel = `
-             <div class="death-saves-ui">
-               <h4 class="death-saves-title">DEATH SAVES</h4>
-               <div class="save-row">
-                 <span style="color:var(--success)">PASS</span>
-                 <div class="save-boxes"><input type="checkbox"><input type="checkbox"><input type="checkbox"></div>
-               </div>
-               <div class="save-row">
-                 <span style="color:var(--danger)">FAIL</span>
-                 <div class="save-boxes"><input type="checkbox"><input type="checkbox"><input type="checkbox"></div>
-               </div>
-             </div>
-           `;
-        } else {
-           lowerPanel = `
-             <details class="loadout-drawer" style="background: #151515; padding: 0.5rem; border-radius: 4px; border: 1px solid #222; margin-top: 0.5rem;">
-               <summary style="font-size: 0.85rem; font-weight: bold; cursor: pointer; color: #888; text-transform: uppercase; letter-spacing: 0.05em; outline: none; display: flex; align-items: center; justify-content: space-between;"><span>▶ Loadout (${activeInventory.length})</span> <button class="btn-icon" style="padding:0; color:var(--success);" onclick="event.preventDefault(); forgeCustomItem(${pIdx})" title="Quick Add">+</button></summary>
-               <ul class="loadout-list">${inventoryHtml}</ul>
-             </details>
-           `;
-        }
-
-        html += `
-          <div class="roster-card ${ringClass}" style="--player-color: ${color}">
-            <div class="card-header">
-              <div class="avatar-ring state-${hpPercent > 50 ? 'healthy' : hpPercent > 0 ? 'critical' : 'fallen'}">
-                <img src="${avatarSrc}" alt="${escapeHtml(p.name)}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22%23555%22 viewBox=%220 0 24 24%22><circle cx=%2212%22 cy=%229%22 r=%224%22/><path d=%22M12%2015c-3.31%200-6%201.79-6%204v2h12v-2c0-2.21-2.69-4-6-4z%22/></svg>'">
-              </div>
-              <div class="header-info">
-                <h3>${escapeHtml(p.name)}</h3>
-                <div class="header-actions">
-                  <button class="btn-icon" onclick="sendPing('${escapeJS(p.name)}')" title="Ping Player HUD">${ICONS.ping}</button>
-                  <button class="btn-icon" onclick="openMemoModal('${escapeJS(p.name)}')" title="Transmit Priority Directive">${ICONS.transmit}</button>
-                  <button class="btn-icon" onclick="openPlayerDetails(${pIdx})" title="Character Details" style="color: var(--info);">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><use xlink:href="#icon-star"></use></svg>
-                  </button>
-                  <button class="btn-icon" onclick="openConditionForm(${pIdx})" title="Manage Conditions" style="color: var(--warning);">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><use xlink:href="#icon-alert-triangle"></use></svg>
-                  </button>
-                  <button class="btn-icon" onclick="openDeathSavesModal(${pIdx})" title="Death Saves" style="color: var(--danger);">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><use xlink:href="#icon-skull"></use></svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Simplified Vitals Row -->
-            <div class="vitals-pill-row">
-              <div class="vital-pill">${ICONS.shield} AC ${makeMathEditable(p.stats?.ac || 0, pIdx, 'ac')}</div>
-              <div class="vital-pill">${ICONS.eye} PP ${makeMathEditable(p.stats?.passive_perception || 0, pIdx, 'passive_perception')}</div>
-            </div>
-            
-            <!-- HP Bar -->
-            <div class="hp-section" style="margin: 0.75rem 0;">
-              <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem;">
-                <span>${ICONS.heart} ${makeMathEditable(p.stats?.hp_current || 0, pIdx, 'hp_current')} / ${makeMathEditable(p.stats?.hp_max || 0, pIdx, 'hp_max')}</span>
-              </div>
-              <div style="width: 100%; height: 6px; background: #111; border-radius: 3px; overflow: hidden;">
-                <div style="height: 100%; width: ${(p.stats?.hp_current || 0) / (p.stats?.hp_max || 1) * 100}%; background: linear-gradient(to right, var(--success) 0%, #f1c40f 50%, var(--danger) 100%); transition: width 0.3s ease;"></div>
-              </div>
-            </div>
-
-            <!-- Conditions Tags -->
-            <div class="conditions-tags" style="display: flex; flex-wrap: wrap; gap: 6px; padding-top: 0.5rem; border-top: 1px dashed #333;">
-              ${activeConditionsHtml}
-              <select id="condition-select-${pIdx}" class="mini-select" style="flex: 1; font-size: 0.75rem; padding: 3px 6px;">
-                <option value="" disabled selected>+ Tag...</option>
-                <option value="Poisoned">Poisoned</option>
-                <option value="Bleeding">Bleeding</option>
-                <option value="Blinded">Blinded</option>
-                <option value="Charmed">Charmed</option>
-                <option value="Paralyzed">Paralyzed</option>
-                <option value="Critical Trauma">Critical Trauma</option>
-              </select>
-              <button class="action btn-sm" onclick="addCondition('${escapeJS(p.name)}', ${pIdx})" style="padding: 3px 8px; font-size: 0.75rem;">Add</button>
-            </div>
-
-            <!-- Notable Items -->
-            ${notableItemsHtml ? `
-              <div class="notable-items" style="font-size: 0.85rem; padding: 0.5rem 0; border-top: 1px solid #333; border-bottom: 1px solid #333;">
-                ${notableItemsHtml}
-              </div>
-            ` : ''}
-
-            <!-- Collapsed Loadout Drawer -->
-            ${lowerPanel}
+          <div>
+            <label>DEX</label>
+            <input type="number" id="char-stat-dex" min="1" max="20">
           </div>
-        `;
-      });
-      container.innerHTML = html;
-    }
-
-    // --- Wall of Text Auto-Formatter & Title Extractor ---
-    function autoFormat(text) {
-      if (!text) return '';
-      let safeText = escapeHtml(text);
-      safeText = parseMath(safeText);
-      safeText = safeText.replace(/\b([A-Z][A-Z0-9\s\/]{2,30}):/g, '<br><br><span class="keyword-highlight">$1:</span>');
-      safeText = safeText.replace(/\n/g, '<br>');
-      return safeText.replace(/^(<br>)+/, '');
-    }
-
-    function parseMath(text) { return text ? text.replace(/\b(\d+d\d+(?:\s*[+-]\s*\d+)?|DC\s*\d+)\b/gi, '<span class="math-highlight">$&</span>') : ''; }
-
-    function extractTitle(text, fallback) {
-      if (!text) return fallback;
-      const match = text.match(/^(.+?)(?:\. |\n| - )/);
-      let title = match ? match[1] : text;
-      if (title.length > 45) title = title.substring(0, 45) + "...";
-      return escapeHtml(title.trim() || fallback);
-    }
-
-    function triggerFocusMode(escapedText) {
-      document.getElementById('focus-text').innerHTML = autoFormat(escapedText);
-      document.getElementById('focus-overlay').classList.remove('hidden');
-    }
-
-    function renderLootSidebar() {
-      const container = document.getElementById('loot-tiers-container');
-      const tiers = ['bronze', 'silver', 'gold', 'platinum'];
-      
-      let html = '';
-      tiers.forEach(tierName => {
-        const tierData = appState.loot_tables?.tiers?.[tierName] || [];
-        const slotCount = Array.isArray(tierData) ? tierData.length : 0;
-        const filled = Array.isArray(tierData) ? tierData.filter(s => s.item && s.item.name).length : 0;
-        const percentage = slotCount > 0 ? (filled / slotCount * 100) : 0;
-
-        html += `
-          <div class="tier-item">
-            <div class="tier-header">
-              <span style="text-transform: capitalize;">${tierName}</span>
-              <span class="slot-count">${filled}/${slotCount}</span>
-            </div>
-            <div class="slot-bar" style="width: ${percentage}%"></div>
+          <div>
+            <label>CON</label>
+            <input type="number" id="char-stat-con" min="1" max="20">
           </div>
-        `;
-      });
-
-      container.innerHTML = html || '<div style="color: #666; font-size: 0.85rem; text-align: center;">No loot tables loaded.</div>';
-    }
-
-    function openLootTable() {
-      window.open('loot.html', '_blank');
-    }
-
-    function renderStageWithEditButton() {
-      const container = document.getElementById('theater-content');
-      const room = appState.campaign_notes?.rooms?.find(r => !r.is_deleted);
-      
-      if (!room) {
-        container.innerHTML = `<h2 style="color:#555; text-align:center; margin-top:4rem;">No Active Room Found.</h2><p style="text-align:center; color:#444;">Prep a room in the Data Forge to project it here.</p>`;
-        return;
-      }
-
-      let html = `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:1.5rem;">
-        <h1 style="color:var(--accent); font-size:2.5rem; margin:0;">${escapeHtml(room.room_id || room.title)}</h1>
-        <button class="btn-icon" style="color:var(--text-muted); border:1px solid #444;" onclick="openQuickEdit('${escapeJS(room.room_id)}', 'room', '${escapeJS(room.readaloud)}')" title="Edit Room">✎</button>
-      </div>`;
-      
-      if (room.readaloud) {
-        html += `
-          <div class="read-aloud-block">
-            <button class="btn-icon" style="position:absolute; top:8px; right:8px; color:var(--info);" onclick="triggerFocusMode('${escapeJS(room.readaloud)}')" title="Enter Focus Mode">
-              ${ICONS.focus} Focus
-            </button>
-            ${autoFormat(room.readaloud)}
-          </div>`;
-      }
-      
-      const mechanics = room.mechanics || "";
-      const mechString = Array.isArray(mechanics) ? mechanics.join('\n') : mechanics;
-      if (mechString) {
-        const isOpen = mechString.length > 400 ? '' : 'open';
-        html += `
-          <details class="stage-block mechanics" ${isOpen}>
-            <summary>Mechanics & Notes</summary>
-            <div class="stage-block-content">${autoFormat(mechString)}</div>
-          </details>`;
-      }
-
-      if (room.npcs && room.npcs.length > 0) {
-        room.npcs.forEach(npc => { 
-          if(!npc.is_deleted) {
-            const isOpen = npc.raw_text.length > 400 ? '' : 'open';
-            html += `
-              <details class="stage-block npc" ${isOpen}>
-                <summary>${extractTitle(npc.raw_text, "NPC")}</summary>
-                <div class="stage-block-content">${autoFormat(npc.raw_text)}</div>
-              </details>`;
-          }
-        });
-      }
-
-      if (room.tooltips && room.tooltips.length > 0) {
-        room.tooltips.forEach(tt => { 
-          if(!tt.is_deleted) {
-            const isOpen = tt.raw_text.length > 400 ? '' : 'open';
-            html += `
-              <details class="stage-block tooltip" ${isOpen}>
-                <summary>${extractTitle(tt.raw_text, "Tooltip")}</summary>
-                <div class="stage-block-content">${autoFormat(tt.raw_text)}</div>
-              </details>`;
-          }
-        });
-      }
-
-      container.innerHTML = html;
-    }
-
-    function renderTrophyQueue() {
-      const container = document.getElementById('trophy-queue-container');
-      const q = appState.achievement_queue || [];
-      const activeQ = q.filter(t => !t.is_deleted);
-      
-      document.getElementById('queue-count').innerText = activeQ.length;
-
-      if (activeQ.length === 0) {
-        container.innerHTML = `<div style="padding:1.5rem; background:#111; border:1px dashed #333; border-radius:6px; color:#666; text-align:center;">Queue is empty.</div>`;
-        return;
-      }
-
-      const playerOptions = appState.players.filter(p => !p.is_deleted).map(p => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`).join('');
-
-      let html = '';
-      q.forEach((trophy, idx) => {
-        if (trophy.is_deleted) return;
-        html += `
-          <div class="trophy-card">
-            <div class="trophy-title">${escapeHtml(trophy.name)}</div>
-            <div style="font-size:0.85rem; color:#aaa; margin-bottom:10px;">${escapeHtml(trophy.description)}</div>
-            <div class="dispatch-row">
-              <select id="trophy-target-${idx}" class="mini-select" style="padding: 6px;">
-                <option value="" disabled selected>Assign to...</option>
-                ${playerOptions}
-              </select>
-              <button class="action btn-send btn-sm" onclick="dispatchTrophy(${idx})">Send</button>
-              <button class="action btn-danger btn-sm" onclick="discardTrophy(${idx})">${ICONS.close}</button>
-            </div>
+          <div>
+            <label>INT</label>
+            <input type="number" id="char-stat-int" min="1" max="20">
           </div>
-        `;
-      });
-      container.innerHTML = html;
-    }
-
-    function renderAll() {
-      renderRoster();
-      renderTrophyQueue();
-      renderLootSidebar();
-      renderStageWithEditButton();
-    }
-
-    // --- Quick Edit Functions ---
-    function openQuickEdit(contentId, contentType, currentText) {
-      quickEditState.contentId = contentId;
-      quickEditState.contentType = contentType;
-      quickEditState.originalText = currentText;
-
-      const titleMap = { room: 'Edit Room Description', note: 'Edit Session Note' };
-      document.getElementById('quick-edit-title').innerText = titleMap[contentType] || 'Edit Content';
-      document.getElementById('quick-edit-textarea').value = currentText;
-      document.getElementById('quick-edit-preview-output').innerHTML = autoFormat(currentText);
-      document.getElementById('quick-edit-badge').innerText = '';
-      document.getElementById('quick-edit-modal').classList.remove('hidden');
-      
-      document.getElementById('quick-edit-textarea').focus();
-    }
-
-    function closeQuickEdit() {
-      document.getElementById('quick-edit-modal').classList.add('hidden');
-      quickEditState = { contentId: null, contentType: null, originalText: '', syncTimer: null };
-    }
-
-    function saveQuickEdit() {
-      const newText = document.getElementById('quick-edit-textarea').value;
-      const badge = document.getElementById('quick-edit-badge');
-      const textarea = document.getElementById('quick-edit-textarea');
-
-      badge.innerText = 'Syncing...';
-      badge.style.color = 'var(--text-muted)';
-
-      if (quickEditState.syncTimer) clearTimeout(quickEditState.syncTimer);
-
-      quickEditState.syncTimer = setTimeout(() => {
-        mutateAndPush((state) => {
-          if (quickEditState.contentType === 'room') {
-            const room = state.campaign_notes.rooms.find(r => r.room_id === quickEditState.contentId);
-            if (room) room.readaloud = newText;
-          } else if (quickEditState.contentType === 'note') {
-            const note = state.campaign_notes.notes.find(n => n.note_id === quickEditState.contentId);
-            if (note) note.content = newText;
-          }
-        }, null);
-
-        badge.innerText = '✓ Synced';
-        badge.style.color = 'var(--success)';
-
-        setTimeout(() => {
-          closeQuickEdit();
-        }, 1200);
-      }, 1000);
-    }
-
-    const debouncedPreview = (() => {
-      let timer;
-      return function(text) {
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-          document.getElementById('quick-edit-preview-output').innerHTML = autoFormat(text);
-        }, 500);
-      };
-    })();
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const textarea = document.getElementById('quick-edit-textarea');
-      if (textarea) {
-        textarea.addEventListener('input', (e) => {
-          debouncedPreview(e.target.value);
-        });
-
-        textarea.addEventListener('keydown', (e) => {
-          if (e.ctrlKey && e.key === 's') {
-            e.preventDefault();
-            saveQuickEdit();
-          }
-        });
-      }
-    });
-
-    // --- Action Controllers ---
-    function sendPing(playerName) {
-      mutateAndPush((state) => {
-        const p = state.players.find(x => x.name === playerName);
-        if (p) p.override = { is_active: true, type: "ping" };
-      }, `Pinged ${playerName}.`);
-    }
-
-    function openMemoModal(preselectedName = null) {
-      const selectEl = document.getElementById('memo-target-select');
-      let optionsHtml = `<option value="ALL">ALL PLAYERS (BROADCAST)</option>`;
-      appState.players.forEach(p => { if (!p.is_deleted) optionsHtml += `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`; });
-      selectEl.innerHTML = optionsHtml;
-      selectEl.value = preselectedName || "ALL";
-      document.getElementById('memo-input').value = "";
-      document.getElementById('memo-modal').classList.remove('hidden');
-      document.getElementById('memo-input').focus();
-    }
-
-    function closeMemoModal() { document.getElementById('memo-modal').classList.add('hidden'); }
-
-    function sendMemo() {
-      const target = document.getElementById('memo-target-select').value;
-      let text = document.getElementById('memo-input').value.trim();
-      if (!text) return showToast("Message cannot be empty.");
-      text = text.substring(0, 500).replace(/[<>]/g, '');
-
-      mutateAndPush((state) => {
-        if (target === "ALL") {
-           state.players.forEach(p => { if (!p.is_deleted) p.override = { is_active: true, message: text }; });
-        } else {
-           const p = state.players.find(x => x.name === target);
-           if (p) p.override = { is_active: true, message: text };
-        }
-      }, target === "ALL" ? "Global transmission sent." : `Transmission sent to ${target}.`);
-      closeMemoModal();
-    }
-
-    function addCondition(playerName, selectIdx) {
-      const selectEl = document.getElementById(`condition-select-${selectIdx}`);
-      const condition = selectEl.value;
-      if (!condition) return;
-
-      mutateAndPush((state) => {
-        const p = state.players.find(x => x.name === playerName);
-        if (!p) return;
-        if (!p.status) p.status = { conditions: [] };
-        if (!p.status.conditions) p.status.conditions = [];
-        if (!p.status.conditions.includes(condition)) p.status.conditions.push(condition);
-      }, null);
-      selectEl.value = "";
-    }
-
-    function removeCondition(playerName, conditionIndex) {
-      mutateAndPush((state) => {
-        const p = state.players.find(x => x.name === playerName);
-        if (p && p.status && p.status.conditions) p.status.conditions.splice(conditionIndex, 1);
-      }, null);
-    }
-
-    function adjQty(pIdx, iIdx, delta) {
-      mutateAndPush((state) => {
-        const item = state.players[pIdx].inventory[iIdx];
-        let currentQty = item.quantity !== undefined ? item.quantity : 1;
-        item.quantity = Math.max(0, currentQty + delta);
-      }, null);
-    }
-
-    function trashInvItem(pIdx, iIdx) {
-      if(!confirm("Permanently consume/trash this item?")) return;
-      mutateAndPush((state) => {
-        state.players[pIdx].inventory[iIdx].is_deleted = true;
-      }, null);
-    }
-
-    function forgeCustomItem(pIdx) {
-      let name = prompt("Quick Item Name:");
-      if(!name) return;
-      mutateAndPush((state) => {
-         if(!state.players[pIdx].inventory) state.players[pIdx].inventory = [];
-         state.players[pIdx].inventory.push({ name: name.substring(0,50).replace(/[<>]/g,''), flavor_text: "Item", mechanics: "Forged on the fly.", quantity: 1, is_deleted: false });
-      }, null);
-    }
-
-    function manuallyForgeTrophy() {
-      let name = prompt("Trophy Name:");
-      if (!name) return;
-      let desc = prompt("Reward/Description:") || "A heroic deed.";
-      
-      mutateAndPush((state) => {
-        if (!state.achievement_queue) state.achievement_queue = [];
-        state.achievement_queue.push({
-          name: name.substring(0, 60).replace(/[<>]/g, ''),
-          description: desc.substring(0, 200).replace(/[<>]/g, ''),
-          is_acknowledged: false, is_deleted: false,
-          rewards: { gold: 0, items: [] }
-        });
-      }, "Trophy queued.");
-    }
-
-    function dispatchTrophy(queueIndex) {
-      const targetEl = document.getElementById(`trophy-target-${queueIndex}`);
-      const targetPlayerName = targetEl ? targetEl.value : null;
-      if (!targetPlayerName) return showToast("Select a player first.");
-
-      mutateAndPush((state) => {
-        state.achievement_queue[queueIndex].is_deleted = true;
-        const p = state.players.find(x => x.name === targetPlayerName);
-        if (!p) throw new Error("Player not found.");
-
-        if (!p.achievements) p.achievements = { pending: [], archived: [] };
-        if (!p.achievements.pending) p.achievements.pending = [];
-        
-        const { is_deleted, ...cleanTrophy } = state.achievement_queue[queueIndex];
-        p.achievements.pending.push(cleanTrophy);
-      }, `Trophy sent to ${targetPlayerName}.`);
-    }
-
-    function discardTrophy(queueIndex) {
-      mutateAndPush((state) => { state.achievement_queue[queueIndex].is_deleted = true; }, null);
-    }
-
-    function showToast(msg) {
-      const c = document.getElementById('toast-container');
-      const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
-      c.appendChild(t); setTimeout(() => t.remove(), 3000);
-    }
-    function escapeHtml(str) { return str ? str.toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : ''; }
-    function escapeJS(str) { return str ? str.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;') : ''; }
-
-    /* === SP2: ROOM NAVIGATION & CONDITION BUILDER === */
-    let currentRoomId = 'room_1';
-    let activePlayerIndex = null;
-    let editingConditionId = null;
-    let conditionFormMode = 'standard';
-    const currentRound = 1;
-
-    const STANDARD_CONDITIONS = [
-      { name: 'Blinded', icon: 'icon-eye-off', icon_color: '#4a4a4a', glow_color: null, glow_effect: null },
-      { name: 'Charmed', icon: 'icon-heart', icon_color: '#ff69b4', glow_color: '#ff69b4', glow_effect: 'pulse' },
-      { name: 'Deafened', icon: 'icon-eye-off', icon_color: '#888', glow_color: null, glow_effect: null },
-      { name: 'Frightened', icon: 'icon-alert-triangle', icon_color: '#ffd700', glow_color: '#ffd700', glow_effect: 'pulse' },
-      { name: 'Grappled', icon: 'icon-link', icon_color: '#666', glow_color: null, glow_effect: null },
-      { name: 'Incapacitated', icon: 'icon-pause-circle', icon_color: '#888', glow_color: null, glow_effect: null },
-      { name: 'Invisible', icon: 'icon-eye-off', icon_color: '#7851a9', glow_color: '#7851a9', glow_effect: 'shimmer' },
-      { name: 'Paralyzed', icon: 'icon-pause-circle', icon_color: '#00bfff', glow_color: '#00bfff', glow_effect: 'glow' },
-      { name: 'Petrified', icon: 'icon-layers', icon_color: '#696969', glow_color: null, glow_effect: null },
-      { name: 'Poisoned', icon: 'icon-droplet', icon_color: '#2ecc71', glow_color: '#2ecc71', glow_effect: 'pulse' },
-      { name: 'Prone', icon: 'icon-arrow-down', icon_color: '#888', glow_color: null, glow_effect: null },
-      { name: 'Restrained', icon: 'icon-lock', icon_color: '#ff4500', glow_color: null, glow_effect: null },
-      { name: 'Stunned', icon: 'icon-zap', icon_color: '#ffff00', glow_color: '#ffff00', glow_effect: 'pulse' },
-      { name: 'Unconscious', icon: 'icon-x-circle', icon_color: '#cf6679', glow_color: '#cf6679', glow_effect: 'pulse' }
-    ];
-
-    function switchRoom(roomId) {
-      currentRoomId = roomId;
-      document.querySelectorAll('.room-tab').forEach(tab => tab.classList.remove('active'));
-      document.querySelector(`[data-room-id="${roomId}"]`)?.classList.add('active');
-      renderTheaterContent(roomId);
-      showToast(`Room: ${document.querySelector(`[data-room-id="${roomId}"]`)?.textContent || 'Unknown'}`);
-    }
-
-    function addNewRoom() {
-      const name = prompt('New room name:');
-      if (!name) return;
-      const roomId = `room_${Date.now()}`;
-      const newRoom = { id: roomId, name: name, description: '', session_notes: '' };
-      
-      localState.rooms = localState.rooms || [];
-      localState.rooms.push(newRoom);
-      
-      mutateAndPush((state) => { state.rooms.push(newRoom); }, `Added room: ${name}`);
-      
-      const navBar = document.getElementById('room-nav-bar');
-      const newTab = document.createElement('button');
-      newTab.className = 'room-tab active';
-      newTab.dataset.roomId = roomId;
-      newTab.textContent = name;
-      newTab.onclick = () => switchRoom(roomId);
-      navBar.insertBefore(newTab, navBar.lastElementChild);
-      
-      switchRoom(roomId);
-    }
-
-    function renderTheaterContent(roomId) {
-      const room = (localState.rooms || []).find(r => r.id === roomId);
-      const content = document.getElementById('theater-content');
-      if (!room) {
-        content.innerHTML = '<h2 style="color:#555; text-align:center; margin-top:4rem;">No room data.</h2>';
-        return;
-      }
-      content.innerHTML = `
-        <h1>${escapeHtml(room.name)}</h1>
-        <p>${escapeHtml(room.description)}</p>
-        <div style="background: #111; padding: 1rem; border-radius: 4px; margin-top: 1rem; color: #999; font-size: 0.9rem;">
-          <strong>Session Notes:</strong><br>${escapeHtml(room.session_notes || '(none)')}
-        </div>
-      `;
-    }
-
-    function openConditionForm(playerIdx) {
-      activePlayerIndex = playerIdx;
-      editingConditionId = null;
-      conditionFormMode = 'standard';
-      
-      document.getElementById('condition-form-overlay').classList.remove('hidden');
-      document.getElementById('condition-form-modal').classList.remove('hidden');
-      document.getElementById('condition-form-title').textContent = `Add Condition to ${escapeHtml(localState.players[playerIdx].name)}`;
-      document.getElementById('btn-delete-condition').style.display = 'none';
-      
-      switchConditionType('standard');
-    }
-
-    function closeConditionForm() {
-      document.getElementById('condition-form-overlay').classList.add('hidden');
-      document.getElementById('condition-form-modal').classList.add('hidden');
-      editingConditionId = null;
-    }
-
-    function switchConditionType(type) {
-      conditionFormMode = type;
-      const stdSection = document.getElementById('standard-cond-section');
-      const custSection = document.getElementById('custom-cond-section');
-      
-      if (type === 'standard') {
-        stdSection.style.display = 'block';
-        custSection.style.display = 'none';
-        document.getElementById('btn-standard-cond').classList.add('active');
-        document.getElementById('btn-custom-cond').classList.remove('active');
-        
-        const select = document.getElementById('standard-condition-select');
-        select.innerHTML = '<option value="">-- Choose --</option>';
-        STANDARD_CONDITIONS.forEach(cond => {
-          const opt = document.createElement('option');
-          opt.value = JSON.stringify(cond);
-          opt.textContent = cond.name;
-          select.appendChild(opt);
-        });
-      } else {
-        stdSection.style.display = 'none';
-        custSection.style.display = 'block';
-        document.getElementById('btn-standard-cond').classList.remove('active');
-        document.getElementById('btn-custom-cond').classList.add('active');
-        populateIconPicker();
-      }
-    }
-
-    function populateIconPicker() {
-      const grid = document.getElementById('icon-picker-grid');
-      grid.innerHTML = '';
-      
-      const icons = [
-        'icon-droplet', 'icon-skull', 'icon-eye', 'icon-heart', 'icon-lock',
-        'icon-zap', 'icon-flame', 'icon-x-circle', 'icon-alert-triangle', 'icon-target',
-        'icon-pause-circle', 'icon-layers', 'icon-link', 'icon-arrow-down', 'icon-battery',
-        'icon-star', 'icon-shield', 'icon-gear', 'icon-plus', 'icon-light'
-      ];
-      
-      icons.forEach(iconId => {
-        const item = document.createElement('div');
-        item.className = 'icon-picker-item';
-        item.innerHTML = `<svg class="inline-icon" viewBox="0 0 24 24"><use xlink:href="#${iconId}"></use></svg>`;
-        item.onclick = () => selectIcon(item, iconId);
-        grid.appendChild(item);
-      });
-    }
-
-    function selectIcon(element, iconId) {
-      document.querySelectorAll('.icon-picker-item').forEach(item => item.classList.remove('selected'));
-      element.classList.add('selected');
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-      document.querySelectorAll('input[name="duration-type"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-          const roundsInput = document.getElementById('duration-rounds-input');
-          const untilInput = document.getElementById('duration-until-input');
-          
-          roundsInput.style.display = this.value === 'rounds' ? 'block' : 'none';
-          untilInput.style.display = this.value === 'until' ? 'block' : 'none';
-        });
-      });
-      
-      const glowCheckbox = document.getElementById('custom-has-glow');
-      if (glowCheckbox) {
-        glowCheckbox.addEventListener('change', function() {
-          document.getElementById('glow-section').style.display = this.checked ? 'block' : 'none';
-        });
-      }
-    });
-
-    function saveCondition() {
-      const player = localState.players[activePlayerIndex];
-      let conditionData = {};
-      
-      if (conditionFormMode === 'standard') {
-        const select = document.getElementById('standard-condition-select');
-        if (!select.value) {
-          showToast('Please select a condition');
-          return;
-        }
-        conditionData = JSON.parse(select.value);
-        conditionData.source = 'standard';
-      } else {
-        const name = document.getElementById('custom-condition-name').value.trim();
-        if (!name) {
-          showToast('Condition name required');
-          return;
-        }
-        const selectedIcon = document.querySelector('.icon-picker-item.selected');
-        if (!selectedIcon) {
-          showToast('Please select an icon');
-          return;
-        }
-        
-        conditionData = {
-          name: name,
-          icon: selectedIcon.innerHTML.match(/#(icon-\w+)/)[1],
-          icon_color: document.getElementById('custom-icon-color').value,
-          glow_color: document.getElementById('custom-has-glow').checked ? document.getElementById('custom-glow-color').value : null,
-          glow_effect: document.getElementById('custom-has-glow').checked ? document.getElementById('custom-glow-effect').value : null,
-          source: 'custom',
-          custom_description: document.getElementById('custom-condition-notes').value
-        };
-      }
-      
-      const durationType = document.querySelector('input[name="duration-type"]:checked').value;
-      conditionData.created_at = Date.now();
-      
-      if (durationType === 'permanent') {
-        conditionData.expires_at = null;
-        conditionData.duration_rounds = null;
-      } else if (durationType === 'rounds') {
-        const rounds = parseInt(document.getElementById('duration-rounds').value);
-        if (!rounds || rounds < 1) {
-          showToast('Please enter valid number of rounds');
-          return;
-        }
-        conditionData.duration_rounds = rounds;
-        conditionData.expires_at = currentRound + rounds;
-      } else {
-        conditionData.expires_at = null;
-        conditionData.duration_rounds = null;
-      }
-      
-      if (editingConditionId) {
-        const idx = player.status.conditions.findIndex(c => c.id === editingConditionId);
-        if (idx >= 0) {
-          conditionData.id = editingConditionId;
-          player.status.conditions[idx] = conditionData;
-        }
-      } else {
-        conditionData.id = `condition_${Math.random().toString(36).substr(2, 9)}`;
-        if (!player.status) player.status = { conditions: [] };
-        if (!player.status.conditions) player.status.conditions = [];
-        player.status.conditions.push(conditionData);
-      }
-      
-      mutateAndPush((state) => {}, `Condition ${editingConditionId ? 'updated' : 'added'}.`);
-      closeConditionForm();
-      renderIdentity();
-    }
-
-    function deleteCondition() {
-      if (!confirm('Delete this condition?')) return;
-      const player = localState.players[activePlayerIndex];
-      player.status.conditions = player.status.conditions.filter(c => c.id !== editingConditionId);
-      mutateAndPush((state) => {}, 'Condition removed.');
-      closeConditionForm();
-      renderIdentity();
-    }
-
-    /* === DEATH SAVES MANAGEMENT === */
-    function openDeathSavesModal(playerIdx) {
-      activePlayerIndex = playerIdx;
-      const player = localState.players[playerIdx];
-      const deathThrows = player.death_throws || { failed: 0, passed: 0 };
-      
-      document.getElementById('death-saves-overlay').classList.remove('hidden');
-      document.getElementById('death-saves-modal').classList.remove('hidden');
-      document.getElementById('death-saves-player-name').textContent = `⚰ ${escapeHtml(player.name)}: Death Saves`;
-      
-      // Load current state
-      for (let i = 1; i <= 3; i++) {
-        document.getElementById(`death-success-${i}`).checked = i <= deathThrows.passed;
-        document.getElementById(`death-failure-${i}`).checked = i <= deathThrows.failed;
-      }
-    }
-
-    function closeDeathSavesModal() {
-      document.getElementById('death-saves-overlay').classList.add('hidden');
-      document.getElementById('death-saves-modal').classList.add('hidden');
-    }
-
-    function updateDeathSave() {
-      const player = localState.players[activePlayerIndex];
-      const passed = [1, 2, 3].filter(i => document.getElementById(`death-success-${i}`).checked).length;
-      const failed = [1, 2, 3].filter(i => document.getElementById(`death-failure-${i}`).checked).length;
-      
-      player.death_throws = { passed, failed };
-      mutateAndPush((state) => {}, 'Death save updated.');
-      renderIdentity();
-    }
-
-    function resetDeathSaves() {
-      if (!confirm('Reset death saves?')) return;
-      const player = localState.players[activePlayerIndex];
-      player.death_throws = { passed: 0, failed: 0 };
-      [1, 2, 3].forEach(i => {
-        document.getElementById(`death-success-${i}`).checked = false;
-        document.getElementById(`death-failure-${i}`).checked = false;
-      });
-      mutateAndPush((state) => {}, 'Death saves reset.');
-      renderIdentity();
-    }
-
-    /* === PLAYER DETAILS MODAL (SP3: Player Profile Management) === */
-    let currentEditingPlayerIdx = null;
-    let currentEditingItemIdx = null;
-
-    function openPlayerDetails(playerIdx) {
-      currentEditingPlayerIdx = playerIdx;
-      const player = localState.players[playerIdx];
-      
-      document.getElementById('player-details-overlay').classList.remove('hidden');
-      document.getElementById('player-details-modal').classList.add('visible');
-      document.getElementById('details-player-name').textContent = escapeHtml(player.name);
-      
-      // Load lore
-      document.getElementById('lore-text').value = player.lore || '';
-      
-      // Load stats
-      const stats = player.stats || {};
-      document.getElementById('stat-str').value = stats.STR || 10;
-      document.getElementById('stat-dex').value = stats.DEX || 10;
-      document.getElementById('stat-con').value = stats.CON || 10;
-      document.getElementById('stat-int').value = stats.INT || 10;
-      document.getElementById('stat-wis').value = stats.WIS || 10;
-      document.getElementById('stat-cha').value = stats.CHA || 10;
-      
-      // Load inventory
-      renderInventoryList(player);
-      
-      switchDetailsTab('lore');
-    }
-
-    function closePlayerDetails() {
-      document.getElementById('player-details-overlay').classList.add('hidden');
-      document.getElementById('player-details-modal').classList.remove('visible');
-      currentEditingPlayerIdx = null;
-    }
-
-    function switchDetailsTab(tabName) {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.remove('active');
-        tab.classList.add('hidden');
-      });
-      
-      document.querySelector(`[onclick="switchDetailsTab('${tabName}')"]`).classList.add('active');
-      const tab = document.getElementById(`${tabName}-tab`);
-      if (tab) {
-        tab.classList.add('active');
-        tab.classList.remove('hidden');
-      }
-    }
-
-    function savePlayerDetails() {
-      const player = localState.players[currentEditingPlayerIdx];
-      
-      // Save lore
-      player.lore = document.getElementById('lore-text').value;
-      
-      // Save stats
-      if (!player.stats) player.stats = {};
-      player.stats.STR = parseInt(document.getElementById('stat-str').value) || 10;
-      player.stats.DEX = parseInt(document.getElementById('stat-dex').value) || 10;
-      player.stats.CON = parseInt(document.getElementById('stat-con').value) || 10;
-      player.stats.INT = parseInt(document.getElementById('stat-int').value) || 10;
-      player.stats.WIS = parseInt(document.getElementById('stat-wis').value) || 10;
-      player.stats.CHA = parseInt(document.getElementById('stat-cha').value) || 10;
-      
-      mutateAndPush((state) => {}, 'Player details saved.');
-      closePlayerDetails();
-      renderIdentity();
-    }
-
-    function renderInventoryList(player) {
-      const list = document.getElementById('inventory-list');
-      const inv = player.inventory || [];
-      
-      if (inv.length === 0) {
-        list.innerHTML = '<p style="color: #888; font-style: italic;">No items.</p>';
-        return;
-      }
-      
-      list.innerHTML = inv.map((item, idx) => `
-        <div class="inventory-item">
-          <div class="item-name">${escapeHtml(item.name)}</div>
-          <div class="item-qty">x${item.quantity || 1}</div>
-          <div class="item-controls">
-            <button onclick="editItem(${idx})" title="Edit">✎</button>
-            <button onclick="removeItem(${idx})" title="Delete">🗑</button>
+          <div>
+            <label>WIS</label>
+            <input type="number" id="char-stat-wis" min="1" max="20">
+          </div>
+          <div>
+            <label>CHA</label>
+            <input type="number" id="char-stat-cha" min="1" max="20">
           </div>
         </div>
-      `).join('');
-    }
-
-    function openItemForm(itemIdx = null) {
-      currentEditingItemIdx = itemIdx;
-      const player = localState.players[currentEditingPlayerIdx];
-      
-      document.getElementById('item-form-overlay').classList.remove('hidden');
-      document.getElementById('item-form-slider').classList.add('visible');
-      
-      if (itemIdx !== null) {
-        const item = player.inventory[itemIdx];
-        document.getElementById('item-name').value = item.name || '';
-        document.getElementById('item-desc').value = item.description || '';
-        document.getElementById('item-qty').value = item.quantity || 1;
-        document.getElementById('item-rarity').value = item.rarity || 'common';
-        document.getElementById('item-consumable').checked = item.is_consumable || false;
-        document.getElementById('item-stackable').checked = item.is_stackable || false;
-        document.getElementById('item-has-charges').checked = item.has_charges || false;
-        
-        if (item.charges) {
-          document.getElementById('item-charges-current').value = item.charges.current || 0;
-          document.getElementById('item-charges-max').value = item.charges.max || 0;
-          document.getElementById('item-charges-reset').value = item.charges.resets_on || 'long_rest';
-        }
-        
-        document.getElementById('btn-delete-item').style.display = 'block';
-      } else {
-        document.getElementById('item-name').value = '';
-        document.getElementById('item-desc').value = '';
-        document.getElementById('item-qty').value = 1;
-        document.getElementById('item-rarity').value = 'common';
-        document.getElementById('item-consumable').checked = false;
-        document.getElementById('item-stackable').checked = false;
-        document.getElementById('item-has-charges').checked = false;
-        document.getElementById('btn-delete-item').style.display = 'none';
-      }
-      
-      toggleChargesSection();
-    }
-
-    function closeItemForm() {
-      document.getElementById('item-form-overlay').classList.add('hidden');
-      document.getElementById('item-form-slider').classList.remove('visible');
-      currentEditingItemIdx = null;
-    }
-
-    function toggleChargesSection() {
-      const hasCharges = document.getElementById('item-has-charges').checked;
-      document.getElementById('charges-section').style.display = hasCharges ? 'block' : 'none';
-    }
-
-    function saveItem() {
-      const player = localState.players[currentEditingPlayerIdx];
-      if (!player.inventory) player.inventory = [];
-      
-      const item = {
-        id: currentEditingItemIdx !== null ? player.inventory[currentEditingItemIdx].id : `item_${Math.random().toString(36).substr(2, 9)}`,
-        name: document.getElementById('item-name').value.trim(),
-        description: document.getElementById('item-desc').value.trim(),
-        quantity: parseInt(document.getElementById('item-qty').value) || 1,
-        rarity: document.getElementById('item-rarity').value,
-        is_consumable: document.getElementById('item-consumable').checked,
-        is_stackable: document.getElementById('item-stackable').checked,
-        has_charges: document.getElementById('item-has-charges').checked
-      };
-      
-      if (item.has_charges) {
-        item.charges = {
-          current: parseInt(document.getElementById('item-charges-current').value) || 0,
-          max: parseInt(document.getElementById('item-charges-max').value) || 0,
-          resets_on: document.getElementById('item-charges-reset').value
-        };
-      }
-      
-      if (!item.name) {
-        showToast('Item name required');
-        return;
-      }
-      
-      if (currentEditingItemIdx !== null) {
-        player.inventory[currentEditingItemIdx] = item;
-      } else {
-        player.inventory.push(item);
-      }
-      
-      mutateAndPush((state) => {}, `Item ${currentEditingItemIdx !== null ? 'updated' : 'added'}.`);
-      closeItemForm();
-      renderInventoryList(player);
-    }
-
-    function editItem(itemIdx) {
-      openItemForm(itemIdx);
-    }
-
-    function removeItem(itemIdx) {
-      if (!confirm('Delete this item?')) return;
-      const player = localState.players[currentEditingPlayerIdx];
-      player.inventory.splice(itemIdx, 1);
-      mutateAndPush((state) => {}, 'Item removed.');
-      renderInventoryList(player);
-    }
-
-    function deleteItem() {
-      if (!confirm('Delete this item?')) return;
-      const player = localState.players[currentEditingPlayerIdx];
-      player.inventory.splice(currentEditingItemIdx, 1);
-      mutateAndPush((state) => {}, 'Item deleted.');
-      closeItemForm();
-      renderInventoryList(player);
-    }
-
-    init();
-    setInterval(init, 30000);
-  </script>
-
-  <!-- DEATH SAVES MODAL (SP2: Death Management) -->
-  <div id="death-saves-overlay" class="modal-overlay hidden" onclick="closeDeathSavesModal()"></div>
-  <div id="death-saves-modal" class="death-saves-modal hidden">
-    <div class="death-saves-modal-header">
-      <h2 id="death-saves-player-name"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><use xlink:href="#icon-skull"></use></svg> Death Saves</h2>
-    </div>
-
-    <div class="death-saves-modal-body">
-      <div class="death-save-section">
-        <div class="death-save-label">Successes</div>
-        <div class="death-save-checkboxes">
-          <input type="checkbox" id="death-success-1" onchange="updateDeathSave()">
-          <input type="checkbox" id="death-success-2" onchange="updateDeathSave()">
-          <input type="checkbox" id="death-success-3" onchange="updateDeathSave()">
-        </div>
       </div>
-
-      <div style="width: 100%; height: 2px; background: #444;"></div>
-
-      <div class="death-save-section">
-        <div class="death-save-label">Failures</div>
-        <div class="death-save-checkboxes">
-          <input type="checkbox" id="death-failure-1" onchange="updateDeathSave()">
-          <input type="checkbox" id="death-failure-2" onchange="updateDeathSave()">
-          <input type="checkbox" id="death-failure-3" onchange="updateDeathSave()">
-        </div>
-      </div>
-
-      <div style="font-size: 0.9rem; color: var(--text-muted); text-align: center; margin-top: 1rem;">
-        <p style="margin: 0 0 0.5rem 0;"><strong>Stable at 0 HP:</strong> Regain 1 HP after 1d4 hours</p>
-        <p style="margin: 0;"><strong>3 Failures:</strong> Death | <strong>3 Successes:</strong> Stabilized</p>
-      </div>
-    </div>
-
-    <div class="death-saves-modal-footer">
-      <button class="btn-ack btn-secondary" onclick="resetDeathSaves()">Reset</button>
-      <button class="btn-ack btn-secondary" onclick="closeDeathSavesModal()">Close</button>
-    </div>
-  </div>
-
-
-  <div id="condition-form-overlay" class="modal-overlay hidden" onclick="closeConditionForm()"></div>
-  <div id="condition-form-modal" class="condition-form-modal hidden">
-    <div class="condition-form-header">
-      <h2 id="condition-form-title">Add Condition</h2>
-      <button class="btn-icon" onclick="closeConditionForm()" style="border: 1px solid #444;">✕</button>
-    </div>
-
-    <div class="condition-form-body">
-      <div class="condition-type-selector">
-        <button id="btn-standard-cond" class="active" onclick="switchConditionType('standard')">Standard</button>
-        <button id="btn-custom-cond" onclick="switchConditionType('custom')">Custom</button>
-      </div>
-
-      <!-- Standard Condition Section -->
-      <div id="standard-cond-section">
-        <div class="form-group">
-          <label class="form-label">Condition</label>
-          <select id="standard-condition-select" class="form-input">
-            <option value="">-- Choose --</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Custom Condition Section (hidden by default) -->
-      <div id="custom-cond-section" style="display: none;">
-        <div class="form-group">
-          <label class="form-label">Name</label>
-          <input type="text" id="custom-condition-name" class="form-input" placeholder="e.g., Cursed, Silenced...">
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Icon</label>
-          <div class="icon-picker-grid" id="icon-picker-grid"></div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Icon Color</label>
-          <input type="color" id="custom-icon-color" class="form-input" value="#bb86fc" style="height: 40px;">
-        </div>
-
-        <div class="glow-settings">
-          <label>
-            <input type="checkbox" id="custom-has-glow"> Enable Glow Effect
-          </label>
-          <div id="glow-section">
-            <div class="form-group">
-              <label class="form-label">Glow Color</label>
-              <input type="color" id="custom-glow-color" class="form-input" value="#bb86fc" style="height: 40px;">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Glow Type</label>
-              <select id="custom-glow-effect" class="form-input">
-                <option value="pulse">Pulse</option>
-                <option value="glow">Steady Glow</option>
-                <option value="shimmer">Shimmer</option>
-              </select>
-            </div>
+      
+      <!-- VITALS TAB -->
+      <div id="char-vitals-tab" class="tab-content hidden">
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
+          <div>
+            <label>Current HP</label>
+            <input type="number" id="char-current-hp" min="0">
+          </div>
+          <div>
+            <label>Max HP</label>
+            <input type="number" id="char-max-hp" min="1">
+          </div>
+          <div>
+            <label>AC</label>
+            <input type="number" id="char-ac" min="1">
+          </div>
+          <div>
+            <label>Passive Perception</label>
+            <input type="number" id="char-passive-per" min="1">
           </div>
         </div>
-
-        <div class="form-group">
-          <label class="form-label">Notes</label>
-          <textarea id="custom-condition-notes" class="form-input" placeholder="Mechanical details, save DCs, anything..." style="min-height: 60px;"></textarea>
-        </div>
-      </div>
-
-      <!-- Duration Settings -->
-      <div class="condition-duration-section">
-        <label class="form-label" style="margin-bottom: 1rem;">Duration</label>
-        <div class="duration-type-radio">
-          <label>
-            <input type="radio" name="duration-type" value="permanent" checked> Permanent
-          </label>
-          <label>
-            <input type="radio" name="duration-type" value="rounds"> Rounds
-          </label>
-          <label>
-            <input type="radio" name="duration-type" value="until"> Until...
-          </label>
-        </div>
-
-        <div id="duration-rounds-input" style="display: none;">
-          <input type="number" id="duration-rounds" class="form-input" min="1" placeholder="e.g., 3">
-        </div>
-
-        <div id="duration-until-input" style="display: none;">
-          <input type="text" id="duration-until-text" class="form-input" placeholder="e.g., Combat ends, morning light...">
-        </div>
       </div>
     </div>
-
-    <div class="condition-form-footer">
-      <button class="btn-ack btn-secondary" onclick="closeConditionForm()">Cancel</button>
-      <button id="btn-delete-condition" class="btn-ack btn-danger" style="display: none;" onclick="deleteCondition()">Delete</button>
-      <button class="btn-ack" onclick="saveCondition()">Save Condition</button>
-    </div>
-  </div>
-
-  <!-- PLAYER DETAILS MODAL (SP3: Player Profile Management) -->
-  <div id="player-details-overlay" class="player-details-overlay hidden" onclick="closePlayerDetails()"></div>
-  <div id="player-details-modal" class="player-details-modal hidden">
-    <div class="details-header">
-      <button class="btn-icon" onclick="closePlayerDetails()">← BACK</button>
-      <h2 id="details-player-name"></h2>
-      <button class="btn-icon" onclick="closePlayerDetails()">✕</button>
-    </div>
-
-    <div class="details-tabs">
-      <button class="tab-btn active" onclick="switchDetailsTab('lore')">Lore</button>
-      <button class="tab-btn" onclick="switchDetailsTab('stats')">Stats</button>
-      <button class="tab-btn" onclick="switchDetailsTab('inventory')">Inventory</button>
-    </div>
-
-    <div class="details-content">
-      <div id="lore-tab" class="tab-content active">
-        <textarea id="lore-text" class="details-textarea" placeholder="Character background, motivations, secrets..."></textarea>
-      </div>
-
-      <div id="stats-tab" class="tab-content hidden">
-        <div class="stats-grid">
-          <div class="stat"><label>STR</label><input type="number" id="stat-str" min="1" max="20"></div>
-          <div class="stat"><label>DEX</label><input type="number" id="stat-dex" min="1" max="20"></div>
-          <div class="stat"><label>CON</label><input type="number" id="stat-con" min="1" max="20"></div>
-          <div class="stat"><label>INT</label><input type="number" id="stat-int" min="1" max="20"></div>
-          <div class="stat"><label>WIS</label><input type="number" id="stat-wis" min="1" max="20"></div>
-          <div class="stat"><label>CHA</label><input type="number" id="stat-cha" min="1" max="20"></div>
-        </div>
-      </div>
-
-      <div id="inventory-tab" class="tab-content hidden">
-        <div class="inventory-list" id="inventory-list"></div>
-        <button class="btn-ack" style="margin-top: 1rem;" onclick="openItemForm()">+ ADD ITEM</button>
-      </div>
-    </div>
-
-    <button class="btn-ack" onclick="savePlayerDetails()" style="margin-top: 2rem;">SAVE CHANGES</button>
-  </div>
-
-  <!-- ITEM FORM SLIDER (SP3: Inventory Management) -->
-  <div id="item-form-overlay" class="player-details-overlay hidden" onclick="closeItemForm()"></div>
-  <div id="item-form-slider" class="item-form-slider hidden">
-    <div class="form-header">
-      <button class="btn-icon" onclick="closeItemForm()">← BACK</button>
-      <h3>Item Details</h3>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Name</label>
-      <input type="text" id="item-name" class="form-input" placeholder="e.g., Shortsword +1">
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Description</label>
-      <textarea id="item-desc" class="form-input" placeholder="..." style="min-height: 60px;"></textarea>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Quantity</label>
-      <input type="number" id="item-qty" class="form-input" min="1" value="1">
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Rarity</label>
-      <select id="item-rarity" class="form-select">
-        <option value="common">Common</option>
-        <option value="uncommon">Uncommon</option>
-        <option value="rare">Rare</option>
-        <option value="very rare">Very Rare</option>
-        <option value="legendary">Legendary</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label><input type="checkbox" id="item-consumable"> Consumable</label>
-      <label><input type="checkbox" id="item-stackable"> Stackable</label>
-      <label><input type="checkbox" id="item-has-charges" onchange="toggleChargesSection()"> Has Charges</label>
-    </div>
-
-    <div id="charges-section" style="display: none;">
-      <div class="form-group">
-        <label class="form-label">Current Charges</label>
-        <input type="number" id="item-charges-current" class="form-input" min="0">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Max Charges</label>
-        <input type="number" id="item-charges-max" class="form-input" min="0">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Resets On</label>
-        <select id="item-charges-reset" class="form-select">
-          <option value="long_rest">Long Rest</option>
-          <option value="short_rest">Short Rest</option>
-          <option value="never">Never</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="item-footer">
-      <div style="display: flex; gap: 1rem;">
-        <button class="btn-ack" onclick="saveItem()">SAVE ITEM</button>
-        <button class="btn-ack btn-secondary" onclick="closeItemForm()">CANCEL</button>
-      </div>
-      <button id="btn-delete-item" class="btn-ack btn-danger" style="display: none;" onclick="deleteItem()">DELETE</button>
+    
+    <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+      <button onclick="closeCharacterEditor()" class="btn-secondary" style="flex: 1;">Cancel</button>
+      <button onclick="saveCharacterEditor()" class="btn-primary" style="flex: 1;">Save and Close</button>
     </div>
   </div>
 
