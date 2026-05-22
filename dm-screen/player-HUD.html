@@ -106,98 +106,100 @@
     .av-inner svg { width:55%; height:55%; color:var(--accent); }
     .hud-info { flex:1; min-width:0; }
     .hud-info h2 { font-size:1.05rem; color:var(--terminal); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:0; }
-    .hud-info p  { font-size:.75rem; color:var(--muted); margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    #btn-logout { background:rgba(248,113,113,.12); border:1px solid var(--danger); color:var(--danger); width:30px; height:30px; border-radius:var(--r-sm); font-size:1rem; line-height:1; flex-shrink:0; transition:background .2s; }
-    #btn-logout:hover { background:rgba(248,113,113,.32); }
+    .hud-info p { font-size:.75rem; color:var(--muted); margin:0.2rem 0 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-    /* Vitals */
-    .vitals-grid { display:grid; grid-template-columns:1fr 1fr; gap:.45rem; }
-    .vs { background:var(--accent-dim); border:1px solid var(--border); border-radius:var(--r-sm); padding:.55rem .45rem; text-align:center; color:var(--terminal); transition:background .3s; }
-    .vs .sl { font-size:.58rem; color:var(--muted); display:block; text-transform:uppercase; letter-spacing:.1em; margin-bottom:.15rem; }
-    .vs .sv { font-size:.95rem; font-weight:bold; }
-    .vs.hp-low  { color:var(--orange); border-color:rgba(251,146,60,.35); }
-    .vs.hp-crit { color:var(--danger);  border-color:rgba(248,113,113,.45); animation:hp-pulse 1s ease-in-out infinite; }
-
-    /* Conditions */
-    .cond-grid { display:flex; flex-wrap:wrap; gap:.32rem; min-height:1.4rem; }
-    .chip { display:inline-flex; align-items:center; gap:.28rem; padding:.22rem .5rem; border-radius:var(--r-pill); font-size:.68rem; font-weight:bold; text-transform:uppercase; letter-spacing:.04em; border:1px solid currentColor; }
-    .chip svg { width:10px; height:10px; flex-shrink:0; }
-    .no-cond { font-size:.75rem; color:var(--muted); font-style:italic; }
-    .c-poison{color:#4ade80;background:rgba(74,222,128,.09)}
-    .c-bleeding{color:#f87171;background:rgba(248,113,113,.09)}
-    .c-burning{color:#fb923c;background:rgba(251,146,60,.09)}
-    .c-stunned{color:#fbbf24;background:rgba(251,191,36,.09)}
-    .c-charmed{color:#f472b6;background:rgba(244,114,182,.09)}
-    .c-frightened{color:#a78bfa;background:rgba(167,139,250,.09)}
-    .c-blinded{color:#94a3b8;background:rgba(148,163,184,.09)}
-    .c-deafened{color:#94a3b8;background:rgba(148,163,184,.09)}
-    .c-restrained{color:#60a5fa;background:rgba(96,165,250,.09)}
-    .c-grappled{color:#60a5fa;background:rgba(96,165,250,.09)}
-    .c-incap{color:#f87171;background:rgba(248,113,113,.09)}
-    .c-unconscious{color:#64748b;background:rgba(100,116,139,.14)}
-    .c-petrified{color:#78716c;background:rgba(120,113,108,.14)}
-    .c-concentrating{color:#00e5ff;background:rgba(0,229,255,.07)}
-    .c-exhaustion{color:#fb923c;background:rgba(251,146,60,.09)}
-    .c-inspired{color:#fbbf24;background:rgba(251,191,36,.11)}
-    .c-protected{color:#00e5ff;background:rgba(0,229,255,.07)}
-    .c-cursed{color:#94a3b8;background:rgba(148,163,184,.09)}
-    .c-default{color:var(--text);background:rgba(255,255,255,.06)}
-
-    /* Spell Slots */
-    .spell-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.45rem; margin-bottom:.55rem; }
-    .sp-btn { background:var(--accent); border:none; color:#000; padding:.65rem .35rem; border-radius:var(--r-sm); font-weight:bold; font-family:inherit; font-size:.68rem; transition:filter .2s; display:flex; flex-direction:column; align-items:center; gap:.12rem; }
-    .sp-btn:hover { filter:brightness(1.14); }
-    .sp-btn .lbl { font-size:.57rem; text-transform:uppercase; opacity:.65; }
-    .sp-btn .cnt { font-size:.95rem; font-weight:bold; }
-    .sp-btn.depleted { background:rgba(187,134,252,.18); color:var(--muted); }
-    .sp-btn.depleted:hover { filter:none; }
-    .sp-btn.no-slots { background:rgba(255,255,255,.04); color:var(--muted); pointer-events:none; }
-    .sp-detail { display:none; background:rgba(0,0,0,.38); border:1px solid var(--border); border-radius:var(--r-sm); padding:.6rem; margin-bottom:.45rem; align-items:center; justify-content:space-between; gap:.45rem; }
-    .sp-detail.open { display:flex; }
-    .sp-dlabel { font-size:.72rem; color:var(--muted); text-transform:uppercase; }
-    .sp-ctrl { display:flex; align-items:center; gap:.45rem; }
-    .sp-adj { background:var(--terminal); color:#000; border:none; width:26px; height:26px; border-radius:var(--r-sm); font-size:.95rem; font-weight:bold; font-family:inherit; line-height:1; transition:filter .2s; }
-    .sp-adj:hover { filter:brightness(1.14); }
-    .sp-adj:disabled { opacity:.28; cursor:default; }
-    .sp-val { font-size:.88rem; color:var(--text); min-width:42px; text-align:center; }
-    .sp-close { background:transparent; border:1px solid var(--border); color:var(--muted); padding:.18rem .45rem; border-radius:var(--r-sm); font-size:.67rem; font-family:inherit; }
-    .lr-btn { width:100%; background:rgba(74,222,128,.12); border:1px solid var(--success); color:var(--success); padding:.6rem; border-radius:var(--r-sm); font-weight:bold; font-family:inherit; font-size:.78rem; text-transform:uppercase; letter-spacing:.06em; transition:background .2s; }
-    .lr-btn:hover { background:rgba(74,222,128,.28); }
+    /* Vitals Grid */
+    #vitals-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:.6rem; }
+    .vs { background:rgba(0,0,0,.15); border:1px solid var(--border); border-radius:var(--r-sm); padding:.65rem; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; }
+    .vs .sl { font-size:.6rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:.2rem; }
+    .vs .sv { font-size:.95rem; font-weight:bold; color:var(--primary); font-family:monospace; }
+    .vs.hp-low .sv { color:var(--orange); }
+    .vs.hp-crit { border-color:var(--danger); box-shadow:inset 0 0 16px rgba(248,113,113,.15); animation:hp-pulse 1.2s ease-in-out infinite; }
+    .vs.hp-crit .sv { color:var(--danger); }
 
     /* Actions */
-    .action-row { display:flex; gap:.45rem; }
-    .act-btn { flex:1; background:var(--accent-dim); border:1px solid var(--border); color:var(--accent); padding:.6rem; border-radius:var(--r-sm); font-size:.75rem; font-weight:bold; text-transform:uppercase; letter-spacing:.05em; font-family:inherit; transition:background .2s,border-color .2s; }
-    .act-btn:hover { background:rgba(187,134,252,.28); border-color:var(--accent); }
+    #actions { display:grid; grid-template-columns:repeat(2,1fr); gap:.6rem; }
+    .action-btn { background:rgba(0,0,0,.2); border:1px solid var(--border); color:var(--text); padding:.65rem; border-radius:var(--r-sm); font-size:.75rem; font-weight:bold; letter-spacing:.07em; text-transform:uppercase; transition:all .2s ease; cursor:pointer; }
+    .action-btn:hover { border-color:var(--accent); box-shadow:0 0 12px rgba(187,134,252,.25); transform:translateY(-1px); }
+    .action-btn:active { transform:translateY(0); }
+
+    /* Conditions */
+    #cond-grid { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; min-height:2.4rem; }
+    .chip { display:inline-flex; align-items:center; gap:.4rem; background:rgba(0,0,0,.2); border:1px solid var(--border); border-radius:var(--r-pill); padding:.4rem .65rem; font-size:.7rem; font-weight:bold; text-transform:uppercase; letter-spacing:.06em; }
+    .chip svg { width:14px; height:14px; }
+    .c-poison { border-color:rgba(74,222,128,.4); color:rgba(74,222,128,.9); }
+    .c-bleeding { border-color:rgba(248,113,113,.4); color:rgba(248,113,113,.9); }
+    .c-burning { border-color:rgba(251,146,60,.4); color:rgba(251,146,60,.9); }
+    .c-stunned { border-color:rgba(251,191,36,.4); color:rgba(251,191,36,.9); }
+    .c-charmed { border-color:rgba(236,72,153,.4); color:rgba(236,72,153,.9); }
+    .c-frightened { border-color:rgba(139,92,246,.4); color:rgba(139,92,246,.9); }
+    .c-blinded { border-color:rgba(100,116,139,.4); color:rgba(100,116,139,.9); }
+    .c-deafened { border-color:rgba(100,116,139,.4); color:rgba(100,116,139,.9); }
+    .c-restrained { border-color:rgba(59,130,246,.4); color:rgba(59,130,246,.9); }
+    .c-grappled { border-color:rgba(59,130,246,.4); color:rgba(59,130,246,.9); }
+    .c-incap { border-color:rgba(255,193,7,.4); color:rgba(255,193,7,.9); }
+    .c-unconscious { border-color:rgba(255,0,0,.4); color:rgba(255,0,0,.9); }
+    .c-petrified { border-color:rgba(156,163,175,.4); color:rgba(156,163,175,.9); }
+    .c-concentrating { border-color:rgba(59,130,246,.4); color:rgba(59,130,246,.9); }
+    .c-exhaustion { border-color:rgba(248,113,113,.4); color:rgba(248,113,113,.9); }
+    .c-inspired { border-color:rgba(34,197,94,.4); color:rgba(34,197,94,.9); }
+    .c-protected { border-color:rgba(59,130,246,.4); color:rgba(59,130,246,.9); }
+    .c-cursed { border-color:rgba(139,92,246,.4); color:rgba(139,92,246,.9); }
+    .c-default { border-color:var(--border); color:var(--text); }
+    .no-cond { font-size:.75rem; color:var(--muted); font-style:italic; }
+
+    /* Spells */
+    #spell-section { margin-top:.6rem; padding-top:.6rem; border-top:1px solid var(--border); }
+    .sp-intro { font-size:.75rem; color:var(--muted); margin-bottom:.6rem; }
+    .sp-btns { display:flex; gap:.4rem; margin-bottom:.8rem; flex-wrap:wrap; }
+    .sp-btn { background:rgba(0,0,0,.2); border:1px solid var(--border); color:var(--text); padding:.5rem .8rem; border-radius:var(--r-sm); font-size:.7rem; font-weight:bold; text-transform:uppercase; letter-spacing:.06em; transition:all .2s ease; position:relative; }
+    .sp-btn:hover { border-color:var(--primary); }
+    .sp-btn.no-slots { opacity:.5; cursor:not-allowed; }
+    .sp-btn.depleted { border-color:var(--danger); color:var(--danger); }
+    .cnt { position:absolute; top:.3rem; right:.5rem; font-size:.55rem; }
+    .sp-detail { max-height:0; overflow:hidden; transition:max-height .3s ease; }
+    .sp-detail.open { max-height:200px; }
+    .sp-dlabel { display:block; font-size:.65rem; color:var(--muted); margin-bottom:.4rem; }
+    .sp-ctrl { display:flex; align-items:center; gap:.4rem; margin-bottom:.5rem; }
+    .sp-adj { background:rgba(0,0,0,.15); border:1px solid var(--border); color:var(--primary); padding:.35rem .5rem; font-size:.8rem; border-radius:var(--r-sm); cursor:pointer; transition:all .2s ease; }
+    .sp-adj:hover { border-color:var(--primary); box-shadow:0 0 8px rgba(0,229,255,.2); }
+    .sp-adj:disabled { opacity:.4; cursor:not-allowed; }
+    .sp-val { font-family:monospace; font-size:.85rem; flex:1; text-align:center; }
+    .sp-close { background:rgba(248,113,113,.15); border:1px solid rgba(248,113,113,.3); color:var(--danger); padding:.35rem .65rem; font-size:.65rem; border-radius:var(--r-sm); cursor:pointer; transition:all .2s ease; }
+    .sp-close:hover { border-color:var(--danger); background:rgba(248,113,113,.25); }
+    .lr-btn { background:linear-gradient(135deg,rgba(187,134,252,.2),rgba(0,229,255,.15)); border:1px solid var(--accent); color:var(--accent); padding:.65rem; border-radius:var(--r-sm); font-size:.75rem; font-weight:bold; text-transform:uppercase; letter-spacing:.07em; margin-top:.6rem; cursor:pointer; transition:all .2s ease; }
+    .lr-btn:hover { box-shadow:0 0 16px rgba(187,134,252,.35); }
 
     /* Achievement Pill */
-    #ach-pill { position:fixed; bottom:28px; right:18px; display:none; align-items:center; gap:.38rem; background:var(--glass); border:1px solid var(--accent); color:var(--accent); padding:.5rem .85rem; border-radius:var(--r-pill); font-size:.75rem; font-weight:bold; z-index:1200; cursor:pointer; transition:box-shadow .2s; }
-    #ach-pill:hover { box-shadow:0 0 20px rgba(187,134,252,.5); }
-    #ach-pill svg { width:15px; height:15px; }
-    #ach-pill .badge { background:var(--danger); color:#fff; width:19px; height:19px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.67rem; font-weight:bold; }
-    @keyframes pill-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+    #ach-pill { position:fixed; bottom:2rem; right:2rem; display:none; align-items:center; gap:.6rem; background:linear-gradient(135deg,var(--accent),var(--primary)); padding:1rem 1.4rem; border-radius:var(--r-pill); box-shadow:0 4px 20px rgba(187,134,252,.4); cursor:pointer; transition:all .3s ease; z-index:500; }
+    #ach-pill:hover { transform:scale(1.08); box-shadow:0 6px 30px rgba(187,134,252,.6); }
+    #ach-pill svg { width:20px; height:20px; color:#fff; }
+    #ach-pill > span:nth-child(2) { font-size:.8rem; font-weight:bold; color:#fff; text-transform:uppercase; letter-spacing:.06em; }
+    .badge { display:inline-flex; align-items:center; justify-content:center; background:var(--danger); color:#fff; width:20px; height:20px; border-radius:50%; font-size:.65rem; font-weight:bold; }
+    @keyframes pill-pulse { 0%,100%{box-shadow:0 4px 20px rgba(187,134,252,.4)} 50%{box-shadow:0 4px 40px rgba(187,134,252,.8)} }
 
-    /* Ticker Pill */
-    #ticker-pill { position:fixed; bottom:72px; right:18px; display:flex; align-items:center; gap:.38rem; background:var(--glass); border:1px solid rgba(255,235,59,.35); color:var(--terminal); padding:.42rem .65rem; border-radius:var(--r); font-size:.68rem; max-width:215px; z-index:1100; cursor:pointer; overflow:hidden; }
-    #ticker-pill svg { width:13px; height:13px; flex-shrink:0; }
-    #ticker-text { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; flex:1; min-width:0; opacity:1; transition:opacity .4s ease; }
-    #ticker-text.fade { opacity:0; }
+    /* Ticker */
+    #ticker-pill { position:fixed; bottom:2rem; left:2rem; max-width:400px; background:rgba(14,18,40,.95); border:1px solid var(--terminal); border-radius:var(--r-sm); padding:.6rem .8rem; font-size:.7rem; color:var(--terminal); letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:all .2s ease; z-index:500; }
+    #ticker-pill:hover { box-shadow:inset 0 0 12px rgba(255,235,59,.2); }
+    #ticker-text { display:block; word-break:break-word; font-weight:bold; }
+    #ticker-text.fade { opacity:.2; transition:opacity .4s ease; }
 
     /* Modal */
-    #modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:3000; display:flex; align-items:center; justify-content:center; padding:1.5rem; }
-    .ach-modal { background:var(--bg-card); border:2px solid var(--accent); border-radius:12px; padding:2rem 1.5rem; max-width:370px; width:100%; text-align:center; display:flex; flex-direction:column; gap:.9rem; box-shadow:0 0 60px rgba(187,134,252,.28); }
-    .ach-modal svg { width:48px; height:48px; color:var(--terminal); margin:0 auto; }
-    .ach-modal h2 { font-size:1.2rem; color:var(--terminal); }
-    .ach-modal p  { font-size:.8rem; color:var(--muted); }
-    .ack-btn { background:var(--accent); border:none; color:#000; padding:.7rem; border-radius:var(--r-sm); font-weight:bold; font-family:inherit; font-size:.88rem; width:100%; transition:filter .2s; }
-    .ack-btn:hover { filter:brightness(1.1); }
+    #modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:3000; backdrop-filter:blur(4px); }
+    .ach-modal { background:var(--bg-card); border:2px solid var(--accent); border-radius:var(--r); padding:1.5rem; max-width:320px; text-align:center; box-shadow:0 8px 32px rgba(187,134,252,.25); }
+    .ach-modal svg { width:48px; height:48px; color:var(--accent); margin:0 auto 1rem; }
+    .ach-modal h2 { font-size:1.1rem; color:var(--terminal); margin-bottom:.5rem; text-transform:uppercase; letter-spacing:.08em; }
+    .ach-modal p { font-size:.8rem; color:var(--muted); margin-bottom:1.2rem; }
+    .ack-btn { background:linear-gradient(135deg,var(--accent),var(--primary)); border:none; color:#fff; padding:.7rem 1.4rem; border-radius:var(--r-sm); font-size:.8rem; font-weight:bold; text-transform:uppercase; letter-spacing:.07em; cursor:pointer; transition:all .2s ease; }
+    .ack-btn:hover { transform:translateY(-2px); box-shadow:0 4px 16px rgba(187,134,252,.4); }
 
     /* Toast */
-    .toast { position:fixed; bottom:1.4rem; left:50%; transform:translateX(-50%); background:var(--glass); border:1px solid var(--border); color:var(--text); padding:.7rem 1.2rem; border-radius:var(--r); z-index:4000; font-size:.82rem; white-space:nowrap; animation:t-in .28s ease; pointer-events:none; }
-    @keyframes t-in { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+    .toast { position:fixed; bottom:1rem; left:50%; transform:translateX(-50%); background:rgba(14,18,40,.95); border:1px solid var(--accent); color:var(--text); padding:.8rem 1.2rem; border-radius:var(--r-sm); font-size:.8rem; z-index:4000; box-shadow:0 4px 16px rgba(0,0,0,.6); animation:toast-slide 0.3s ease-out; }
+    @keyframes toast-slide { from { transform:translateX(-50%) translateY(20px); opacity:0; } to { transform:translateX(-50%) translateY(0); opacity:1; } }
 
-    /* Responsive */
-    @media(max-width:480px){ .hero-ring{width:150px;height:150px} #main-hud{padding:.9rem;gap:.65rem;width:97vw} }
-    @media(max-height:660px){ .hero-ring{width:120px;height:120px} #login-layer{gap:1.2rem} }
+    /* Logout Button */
+    #btn-logout { position:fixed; top:1rem; right:1rem; background:rgba(248,113,113,.1); border:1px solid var(--danger); color:var(--danger); padding:.5rem .8rem; border-radius:var(--r-sm); font-size:.7rem; font-weight:bold; text-transform:uppercase; letter-spacing:.06em; cursor:pointer; transition:all .2s ease; z-index:500; }
+    #btn-logout:hover { background:rgba(248,113,113,.2); box-shadow:0 0 12px rgba(248,113,113,.3); }
   </style>
 </head>
 <body>
@@ -207,46 +209,56 @@
 <!-- LOGIN -->
 <div id="login-layer">
   <div class="login-hero">
-    <div class="hero-ring"><div class="hero-inner" id="hero-inner"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg></div></div>
-    <h1 id="hero-name">SELECT CHARACTER</h1>
-    <p id="hero-sub">Choose Your Crawler</p>
+    <div class="hero-ring">
+      <div class="hero-inner">
+        <svg viewBox="0 0 24 24"><use href="#icon-user"/></svg>
+      </div>
+    </div>
+    <h1 id="hero-name">CRAWLERS</h1>
+    <p id="hero-sub">Terminal Ready</p>
   </div>
   <div class="roster-grid" id="roster-grid"></div>
 </div>
 
 <!-- LOADING -->
 <div id="loading-layer" class="hidden">
-  <svg class="load-icon" viewBox="0 0 24 24"><use href="#icon-settings"/></svg>
-  <h2 id="load-title">LOADING...</h2>
+  <svg class="load-icon" viewBox="0 0 24 24"><use href="#icon-radio"/></svg>
+  <h1 id="load-title">STANDBY</h1>
   <p id="load-tip"></p>
   <div class="bar-wrap"><div class="bar" id="load-bar"></div></div>
 </div>
 
-<!-- HUD -->
+<!-- MAIN HUD -->
 <div id="main-hud" class="hidden">
   <div class="hud-header">
-    <div id="hud-avatar"><div class="av-inner" id="av-inner"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg></div></div>
-    <div class="hud-info"><h2 id="hud-name">—</h2><p id="hud-sub">—</p></div>
-    <button id="btn-logout" title="Logout">✕</button>
+    <div id="hud-avatar">
+      <div class="av-inner"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg></div>
+    </div>
+    <div class="hud-info">
+      <h2 id="hud-name">—</h2>
+      <p id="hud-sub">Awaiting data...</p>
+    </div>
   </div>
+
   <div class="hud-section">
     <div class="section-label">Vitals</div>
-    <div class="vitals-grid" id="vitals-grid"></div>
+    <div id="vitals-grid"></div>
   </div>
+
   <div class="hud-section">
-    <div class="section-label">Conditions</div>
-    <div class="cond-grid" id="cond-grid"><span class="no-cond">No active conditions</span></div>
+    <div class="section-label">Status</div>
+    <div id="cond-grid"><span class="no-cond">No active conditions</span></div>
   </div>
-  <!-- spell-section injected here if character has spellSlots -->
-  <div class="action-row">
-    <button class="act-btn" id="btn-items">📋 Items</button>
-    <button class="act-btn" id="btn-ach">🏆 Achievements</button>
+
+  <div id="actions">
+    <button class="action-btn" id="btn-items">Inventory</button>
+    <button class="action-btn" id="btn-ach">Achievements</button>
   </div>
+  <button id="btn-logout" style="position:fixed; top:1rem; right:1rem;">Logout</button>
 </div>
 
 <!-- TICKER -->
 <div id="ticker-pill" class="hidden">
-  <svg viewBox="0 0 24 24"><use href="#icon-radio"/></svg>
   <span id="ticker-text">DUNGEON BROADCAST SYSTEM</span>
 </div>
 
@@ -425,6 +437,10 @@ async function fetchState() {
     const res = await fetch(WORKER_URL, {method:'GET', mode:'cors'});
     if (!res.ok) { console.error('[HUD] Poll', res.status); return; }
     state = await res.json();
+    // Migrate old v31 schema (players → characters)
+    if (state.version === 31 && state.players && !state.characters) {
+      state.characters = state.players;
+    }
     if (playerName) player = state.characters?.find(c => c.name === playerName) || null;
     if (!get('main-hud').classList.contains('hidden')) renderAll();
   } catch (e) { console.error('[HUD] Poll error:', e.message); }
@@ -506,8 +522,8 @@ function updateAvatar() {
    VITALS
 ══════════════════════════════ */
 function updateVitals() {
-  const hp    = player?.currentHP ?? null;
-  const maxHp = player?.maxHP     ?? null;
+  const hp    = player?.stats?.hp?.current ?? null;
+  const maxHp = player?.stats?.hp?.max     ?? null;
   const pct   = (hp !== null && maxHp) ? hp/maxHp : 1;
 
   let cls = 'vs';
@@ -518,9 +534,9 @@ function updateVitals() {
 
   get('vitals-grid').innerHTML = `
     <div class="${cls}"><span class="sl">HP</span><span class="sv">${x(fmt(hp)+'/'+ fmt(maxHp))}</span></div>
-    <div class="vs"><span class="sl">AC</span><span class="sv">${x(fmt(player?.ac))}</span></div>
-    <div class="vs"><span class="sl">Passive</span><span class="sv">${x(fmt(player?.passivePerception))}</span></div>
-    <div class="vs"><span class="sl">Speed</span><span class="sv">${x(fmt(player?.speed,' ft'))}</span></div>
+    <div class="vs"><span class="sl">AC</span><span class="sv">${x(fmt(player?.stats?.ac))}</span></div>
+    <div class="vs"><span class="sl">Passive</span><span class="sv">${x(fmt(player?.stats?.passivePerception))}</span></div>
+    <div class="vs"><span class="sl">Speed</span><span class="sv">${x(fmt(player?.stats?.speed,' ft'))}</span></div>
   `;
 }
 
@@ -552,51 +568,33 @@ function updateConditions() {
    VFX
 ══════════════════════════════ */
 function applyVFX() {
-  const layer = get('vfx-layer');
-  VFX_ALL.forEach(c => layer.classList.remove(c));
-  if (!player) return;
-
-  const hp    = player.currentHP ?? 1;
-  const maxHp = player.maxHP     ?? 1;
-  if (maxHp > 0 && hp/maxHp <= 0.25 && hp > 0) { layer.classList.add('vfx-critical'); return; }
-
-  for (const raw of (player.conditions || [])) {
-    const def = CDEF[raw.toLowerCase().replace(/\s+/g,'_')];
-    if (def?.vfx) { layer.classList.add(def.vfx); return; }
-  }
+  const vfx = get('vfx-layer');
+  VFX_ALL.forEach(c => vfx.classList.remove(c));
+  if (!player?.conditions) return;
+  const conds = player.conditions.map(c => c.toLowerCase().replace(/\s+/g,'_'));
+  conds.forEach(c => {
+    const vfxClass = CDEF[c]?.vfx;
+    if (vfxClass) vfx.classList.add(vfxClass);
+  });
 }
 
 /* ══════════════════════════════
-   SPELL SLOTS
-   Build DOM once per login; update counts on every poll
+   SPELLS
 ══════════════════════════════ */
 function renderSpellSection() {
-  const existing = document.getElementById('spell-section');
-
-  // If player has no spell slots, remove section if present and bail
-  if (!player?.spellSlots) {
-    if (existing) existing.remove();
-    spellBuilt = false;
-    return;
-  }
-
-  // Already built for this login session — don't rebuild
-  if (spellBuilt && existing) return;
-
-  // Remove stale DOM from previous login
-  if (existing) existing.remove();
-
-  const hud     = get('main-hud');
-  const actions = hud.querySelector('.action-row');
-  const sec     = document.createElement('div');
-  sec.id        = 'spell-section';
+  if (!player?.spellSlots || spellBuilt) return;
+  const hud = get('main-hud');
+  const actions = document.getElementById('actions');
+  const sec = document.createElement('div');
+  sec.id = 'spell-section';
   sec.className = 'hud-section';
   sec.innerHTML = `
     <div class="section-label">Spell Slots</div>
-    <div class="spell-grid">
+    <div class="sp-intro">Track and spend spell slots across levels.</div>
+    <div class="sp-btns">
       ${[1,2,3].map(i=>`
         <button class="sp-btn" id="sp-btn-${i}" onclick="toggleDetail(${i})">
-          <span class="lbl">Level ${i}</span>
+          Level ${i}
           <span class="cnt" id="sp-cnt-${i}">—</span>
         </button>`).join('')}
     </div>
