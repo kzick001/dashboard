@@ -2,88 +2,79 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Showrunner | Dashboard V4.1</title>
+  <title>Showrunner | Dashboard V4.1.1</title>
   
   <script>
-    // V4.1: Worker-backed auth system
+    // V3.1: PIN-based auth system (restored)
     const WORKER_URL = "https://dmscreen.askozicki.workers.dev";
-    const AUTH_TOKEN_KEY = "showrunner_auth_token";
+    const PIN_STORAGE_KEY = "showrunner_pin_authenticated";
     
     let campaignState = null;
     
     async function initAuth() {
       document.documentElement.style.display = 'none';
       
-      let token = null;
+      // Check if PIN already validated in this session
+      let isAuthenticated = false;
       try {
-        token = localStorage.getItem(AUTH_TOKEN_KEY);
+        isAuthenticated = localStorage.getItem(PIN_STORAGE_KEY) === "true";
       } catch (e) {
-        console.warn("localStorage unavailable; using session fallback.");
+        console.warn("localStorage unavailable; will require PIN validation.");
       }
       
-      if (token) {
-        // Try to validate existing token by fetching state
+      if (isAuthenticated) {
+        // Try to fetch campaign state to verify we're still connected
         try {
-          const response = await fetch(WORKER_URL, {
-            method: "GET",
-            headers: { "Authorization": `Bearer ${token}` }
-          });
+          const response = await fetch(WORKER_URL);
           if (response.ok) {
             campaignState = await response.json();
-            if (!campaignState.characters) campaignState.characters = [];
+            if (!campaignState.players) campaignState.players = [];
             document.documentElement.style.display = '';
             return;
           }
         } catch (e) {
-          console.warn("Token validation failed; prompting for password.");
+          console.warn("State fetch failed; prompting for PIN again.");
         }
       }
       
-      // Prompt for password
-      const password = prompt("🔐 ACCESS RESTRICTED: Enter Showrunner password.");
-      if (!password) {
+      // Prompt for PIN
+      const pin = prompt("🔐 ACCESS RESTRICTED: Enter Showrunner PIN.");
+      if (!pin) {
         window.location.href = "about:blank";
         return;
       }
       
-      // Validate against worker
+      // Validate PIN against Worker
       try {
         const response = await fetch(WORKER_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "auth", password })
+          body: JSON.stringify({ action: "validate_pin", pin: pin })
         });
         
         if (response.ok) {
           const data = await response.json();
-          if (data.token) {
-            token = data.token;
+          if (data.valid === true) {
+            // PIN is valid; mark as authenticated
             try {
-              localStorage.setItem(AUTH_TOKEN_KEY, token);
+              localStorage.setItem(PIN_STORAGE_KEY, "true");
             } catch (e) {
-              console.warn("Failed to store token in localStorage; using session.");
-              sessionStorage.setItem(AUTH_TOKEN_KEY, token);
+              console.warn("Failed to store auth in localStorage; using session only.");
+              sessionStorage.setItem(PIN_STORAGE_KEY, "true");
             }
             
             // Fetch campaign state
-            const stateResponse = await fetch(WORKER_URL, {
-              method: "GET",
-              headers: { "Authorization": `Bearer ${token}` }
-            });
-            campaignState = await stateResponse.json();
-            
-            // Initialize character array from campaign state if not present
-            if (!campaignState.characters || campaignState.characters.length === 0) {
-              console.log("Initializing character array from campaign state...");
-              campaignState.characters = [];
+            const stateResponse = await fetch(WORKER_URL);
+            if (stateResponse.ok) {
+              campaignState = await stateResponse.json();
+              if (!campaignState.players) campaignState.players = [];
+              document.documentElement.style.display = '';
+              return;
             }
-            
-            document.documentElement.style.display = '';
-            return;
           }
         }
       } catch (e) {
-        console.error("Auth failed:", e);
+        console.error("PIN validation failed:", e);
       }
       
       alert("Authentication failed. Access denied.");
