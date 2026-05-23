@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Crawler Terminal V5.0</title>
+  <title>Showrunner | Crawler Terminal V5.1</title>
 
   <svg xmlns="http://www.w3.org/2000/svg" style="display:none;position:absolute">
     <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
@@ -152,7 +152,7 @@
     #spell-section { margin-top:.6rem; padding-top:.6rem; border-top:1px solid var(--border); }
     .sp-intro { font-size:.75rem; color:var(--muted); margin-bottom:.6rem; }
     .sp-btns { display:flex; gap:.4rem; margin-bottom:.8rem; flex-wrap:wrap; }
-    .sp-btn { background:rgba(0,0,0,.2); border:1px solid var(--border); color:var(--text); padding:.5rem .8rem; border-radius:var(--r-sm); font-size:.7rem; font-weight:bold; text-transform:uppercase; letter-spacing:.06em; transition:all .2s ease; position:relative; }
+    .sp-btn { background:rgba(0,0,0,.2); border:1px solid var(--border); color:var(--text); padding:.5rem 1.6rem .5rem .8rem; border-radius:var(--r-sm); font-size:.7rem; font-weight:bold; text-transform:uppercase; letter-spacing:.06em; transition:all .2s ease; position:relative; }
     .sp-btn:hover { border-color:var(--primary); }
     .sp-btn.no-slots { opacity:.5; cursor:not-allowed; }
     .sp-btn.depleted { border-color:var(--danger); color:var(--danger); }
@@ -181,8 +181,9 @@
     /* Ticker */
     #ticker-pill { position:fixed; bottom:2rem; left:2rem; max-width:400px; background:rgba(14,18,40,.95); border:1px solid var(--terminal); border-radius:var(--r-sm); padding:.6rem .8rem; font-size:.7rem; color:var(--terminal); letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:all .2s ease; z-index:500; }
     #ticker-pill:hover { box-shadow:inset 0 0 12px rgba(255,235,59,.2); }
-    #ticker-text { display:block; word-break:break-word; font-weight:bold; }
-    #ticker-text.fade { opacity:.2; transition:opacity .4s ease; }
+    #ticker-pill { overflow:hidden; white-space:nowrap; }
+    #ticker-text { display:inline-block; padding-left:100%; font-weight:bold; animation:ticker-scroll 18s linear infinite; }
+    @keyframes ticker-scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-100%)} }
 
     /* Modal */
     #modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:3000; backdrop-filter:blur(4px); }
@@ -232,7 +233,7 @@
 <div id="main-hud" class="hidden">
   <div class="hud-header">
     <div id="hud-avatar">
-      <div class="av-inner"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg></div>
+      <div id="av-inner" class="av-inner"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg></div>
     </div>
     <div class="hud-info">
       <h2 id="hud-name">—</h2>
@@ -289,7 +290,7 @@ const AVATAR_BASE  = 'https://cdn.jsdelivr.net/gh/kzick001/dashboard@main/dm-scr
 const P_KEY        = 'showrunner_active_player';
 const T_KEY        = 'showrunner_ticker_visible';
 const POLL_MS      = 30000;
-const TICKER_MS    = 8000;
+const TICKER_MS    = 180000; // 3 minutes per message
 const LOAD_MS      = 6000;
 const ROSTER       = ['Chuck','Tilly Tiggins','Hendrick Hill','Aelar Menendez','Jimothy'];
 
@@ -535,7 +536,7 @@ function updateAvatar() {
   }
   
   const name    = player.name?.split(' ')[0].toLowerCase() || '';
-  const imgPath = `${AVATAR_BASE}${name}.png`;
+  const imgPath = `${AVATAR_BASE}${name}.png?v=51`;
   console.log('[HUD] Loading avatar:', imgPath);
   
   const existing = inner.querySelector('img');
@@ -706,8 +707,8 @@ function longRest() {
    ACHIEVEMENTS
 ══════════════════════════════ */
 function unacked() {
-  if (!state?.achievements) return [];
-  return state.achievements.filter(a => !a.archived && !a.acknowledgedBy?.includes(playerName));
+  if (!state?.achievements || !player) return [];
+  return state.achievements.filter(a => !a.isArchived && !a.acknowledgedBy?.includes(player.id));
 }
 
 function updateAchPill() {
@@ -729,8 +730,9 @@ function openModal() {
   if (!list.length) { toast('No new achievements.'); return; }
   curAch = list[0];
   get('modal-name').textContent = curAch.name || 'Achievement';
-  get('modal-date').textContent = curAch.earned
-    ? `Earned ${new Date(curAch.earned).toLocaleDateString()}` : '';
+  const earnedTs = curAch.earnedBy && player ? curAch.earnedBy[player.id] : null;
+  get('modal-date').textContent = earnedTs
+    ? `Earned ${new Date(earnedTs).toLocaleDateString()}` : '';
   get('modal-overlay').classList.remove('hidden');
 }
 
@@ -742,9 +744,9 @@ function closeModal() {
 async function acknowledgeAch() {
   if (!curAch || !state) return;
   const ach = state.achievements?.find(a => a.id === curAch.id);
-  if (ach) {
+  if (ach && player) {
     if (!ach.acknowledgedBy) ach.acknowledgedBy = [];
-    if (!ach.acknowledgedBy.includes(playerName)) ach.acknowledgedBy.push(playerName);
+    if (!ach.acknowledgedBy.includes(player.id)) ach.acknowledgedBy.push(player.id);
     ach.glow = false;
     await syncToKV();
     updateAchPill();
@@ -786,12 +788,7 @@ function initTicker() {
 function rotateTick() {
   const textEl = get('ticker-text');
   if (!textEl) return;
-  // Fade out → swap text → fade in
-  textEl.classList.add('fade');
-  setTimeout(() => {
-    textEl.textContent = randomMsg();
-    textEl.classList.remove('fade');
-  }, 400);
+  textEl.textContent = randomMsg();
 }
 
 function toggleTicker() {
