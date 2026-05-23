@@ -534,7 +534,7 @@ function updateAvatar() {
     return;
   }
   
-  const name    = player.name?.toLowerCase() || '';
+  const name    = player.name?.split(' ')[0].toLowerCase() || '';
   const imgPath = `${AVATAR_BASE}${name}.png`;
   console.log('[HUD] Loading avatar:', imgPath);
   
