@@ -522,8 +522,17 @@ function updateHeader() {
 ══════════════════════════════ */
 function updateAvatar() {
   if (!player) { console.warn('[HUD] updateAvatar: player is null'); return; }
-  const inner = get('av-inner');
-  if (!inner) { console.error('[HUD] updateAvatar: av-inner element not found'); return; }
+  
+  // Try multiple selectors to find the element
+  let inner = get('av-inner');
+  if (!inner) {
+    console.error('[HUD] av-inner not found via getElementById, trying querySelector');
+    inner = document.querySelector('.av-inner');
+  }
+  if (!inner) {
+    console.error('[HUD] av-inner not found. Available DOM:', document.body.innerHTML.substring(0, 500));
+    return;
+  }
   
   const name    = player.name?.toLowerCase() || '';
   const imgPath = `${AVATAR_BASE}${name}.png`;
