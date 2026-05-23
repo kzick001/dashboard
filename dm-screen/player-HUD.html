@@ -343,12 +343,14 @@ document.addEventListener('DOMContentLoaded', () => {
   get('modal-overlay').addEventListener('click', e => { if (e.target === get('modal-overlay')) closeModal(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-  // Auto-login
-  const saved = localStorage.getItem(P_KEY);
-  if (saved !== null) {
-    const idx = parseInt(saved);
-    if (!isNaN(idx) && ROSTER[idx]) doLogin(ROSTER[idx], idx, true);
-  }
+  // Auto-login after first state fetch
+  fetchState().then(() => {
+    const saved = localStorage.getItem(P_KEY);
+    if (saved !== null) {
+      const idx = parseInt(saved);
+      if (!isNaN(idx) && ROSTER[idx]) doLogin(ROSTER[idx], idx, true);
+    }
+  });
 });
 
 /* ══════════════════════════════
@@ -500,7 +502,7 @@ function updateHeader() {
 function updateAvatar() {
   if (!player) return;
   const name    = player.name?.toLowerCase() || '';
-  const imgPath = player.profileImage || `${AVATAR_BASE}${name}.png`;
+  const imgPath = `${AVATAR_BASE}${name}.png`;
   const inner   = get('av-inner');
   const existing = inner.querySelector('img');
   if (existing && existing.dataset.src === imgPath) return; // no-op if unchanged
