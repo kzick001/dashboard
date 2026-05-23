@@ -25,6 +25,7 @@
     <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
     <symbol id="icon-radio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></symbol>
     <symbol id="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="icon-eye-hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
   </svg>
 
   <style>
@@ -98,9 +99,9 @@
     .av-inner { width:100%; height:100%; border-radius:50%; background:var(--bg); display:flex; align-items:center; justify-content:center; overflow:hidden; }
     .av-inner img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
     .av-inner svg { width:55%; height:55%; color:var(--accent); }
-    .hud-info { flex:1; min-width:0; }
-    .hud-info h2 { font-size:1.05rem; color:var(--terminal); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:0; }
-    .hud-info p { font-size:.75rem; color:var(--muted); margin:0.2rem 0 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .hud-info { flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .hud-info h2 { font-size:1.575rem; color:var(--terminal); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:0; font-weight:bold; letter-spacing:.05em; }
+    .hud-info p { font-size:.75rem; color:var(--muted); margin:0.4rem 0 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
     /* Vitals Inline */
     #vitals-inline { font-size:.82rem; color:var(--text); text-align:center; padding:.7rem; background:rgba(0,0,0,.22); border:1px solid var(--border); border-radius:var(--r); font-family:monospace; letter-spacing:.03em; }
@@ -204,6 +205,17 @@
     @keyframes cond-pulse { 0%,100%{border-color:var(--border)} 50%{border-color:var(--accent); box-shadow:0 0 12px rgba(187,134,252,.3)} }
     .cond-alert { animation:cond-pulse .6s ease-in-out; }
 
+    /* Logout Confirmation Modal */
+    #logout-confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:3500; backdrop-filter:blur(4px); }
+    .logout-confirm-modal { background:var(--bg-card); border:2px solid var(--danger); border-radius:var(--r); padding:2rem; width:min(92vw,340px); text-align:center; box-shadow:0 8px 32px rgba(248,113,113,.35); }
+    .logout-confirm-modal h3 { font-size:1.2rem; color:var(--danger); margin:0 0 .8rem 0; text-transform:uppercase; letter-spacing:.06em; }
+    .logout-confirm-modal p { font-size:.9rem; color:var(--text); margin:0 0 1.4rem 0; }
+    .logout-confirm-buttons { display:flex; gap:.8rem; }
+    .btn-cancel { flex:1; background:rgba(255,255,255,.08); border:1px solid var(--border); color:var(--text); padding:.7rem; border-radius:var(--r-sm); font-size:.8rem; font-weight:bold; text-transform:uppercase; letter-spacing:.05em; cursor:pointer; transition:all .2s ease; }
+    .btn-cancel:hover { background:rgba(255,255,255,.15); border-color:var(--text); }
+    .btn-confirm { flex:1; background:linear-gradient(135deg,var(--danger),rgba(248,113,113,.7)); border:1px solid var(--danger); color:#fff; padding:.7rem; border-radius:var(--r-sm); font-size:.8rem; font-weight:bold; text-transform:uppercase; letter-spacing:.05em; cursor:pointer; transition:all .2s ease; }
+    .btn-confirm:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(248,113,113,.4); }
+
     /* Toast */
     .toast { position:fixed; bottom:1rem; left:50%; transform:translateX(-50%); background:rgba(14,18,40,.95); border:1px solid var(--accent); color:var(--text); padding:.8rem 1.2rem; border-radius:var(--r-sm); font-size:.8rem; z-index:4000; box-shadow:0 4px 16px rgba(0,0,0,.6); animation:toast-slide 0.3s ease-out; }
     @keyframes toast-slide { from { transform:translateX(-50%) translateY(20px); opacity:0; } to { transform:translateX(-50%) translateY(0); opacity:1; } }
@@ -277,7 +289,7 @@
 
 <!-- MAIN HUD -->
 <div id="main-hud" class="hidden">
-  <button id="btn-logout" class="btn-logout-hud" onclick="logout();" title="Logout">✕</button>
+  <button id="btn-logout" class="btn-logout-hud" onclick="confirmLogout();" title="Logout">✕</button>
   <div id="ach-pill" class="ach-badge-hud" onclick="openModal();" title="View achievements">
     <span id="ach-badge">0</span>
   </div>
@@ -309,7 +321,11 @@
   <div id="ticker-pill" class="ticker-pill hidden">
     <span id="ticker-text">DUNGEON BROADCAST SYSTEM</span>
   </div>
-  <button id="ticker-eye" class="ticker-eye hidden" onclick="toggleTicker();" title="Toggle ticker">👁</button>
+  <button id="ticker-eye" class="ticker-eye hidden" onclick="toggleTicker(event);" title="Toggle ticker">
+    <svg id="ticker-eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px; height:20px;">
+      <use href="#icon-eye"/>
+    </svg>
+  </button>
 </div>
 
 <!-- MODAL -->
@@ -333,6 +349,18 @@
     <div id="ach-tab-archive" class="ach-tab-content">
       <div id="ach-list-archive"></div>
       <p id="ach-empty-archive" class="ach-empty">Archive empty.</p>
+    </div>
+  </div>
+</div>
+
+<!-- LOGOUT CONFIRMATION -->
+<div id="logout-confirm-overlay" class="hidden">
+  <div class="logout-confirm-modal">
+    <h3>Confirm Logout</h3>
+    <p>Are you sure you want to log out?</p>
+    <div class="logout-confirm-buttons">
+      <button class="btn-cancel" onclick="closeLogoutConfirm();">Cancel</button>
+      <button class="btn-confirm" onclick="logout();">Logout</button>
     </div>
   </div>
 </div>
@@ -483,6 +511,14 @@ function showHUD() {
 /* ══════════════════════════════
    LOGOUT
 ══════════════════════════════ */
+function confirmLogout() {
+  get('logout-confirm-overlay').classList.remove('hidden');
+}
+
+function closeLogoutConfirm() {
+  get('logout-confirm-overlay').classList.add('hidden');
+}
+
 function logout() {
   localStorage.removeItem(P_KEY);
   playerName = null; player = null; curAch = null; spellBuilt = false;
@@ -505,6 +541,7 @@ function logout() {
 
   get('main-hud').classList.add('hidden');
   get('login-layer').classList.remove('hidden');
+  get('logout-confirm-overlay').classList.add('hidden');
   buildRoster();
 }
 
@@ -859,7 +896,19 @@ function longRest() {
 ══════════════════════════════ */
 function unacked() {
   if (!state?.achievements || !player) return [];
-  return state.achievements.filter(a => !a.isArchived && !a.acknowledgedBy?.includes(player.id));
+  return state.achievements.filter(a => {
+    if (a.isArchived) return false;
+    if (a.acknowledgedBy?.includes(player.id)) return false;
+    
+    // Determine visibility: show if party achievement OR player earned it
+    if (!a.earnedBy || typeof a.earnedBy === 'boolean' || (typeof a.earnedBy === 'object' && Object.keys(a.earnedBy).length === 0)) {
+      return true; // party achievement
+    }
+    if (typeof a.earnedBy === 'object' && a.earnedBy[player.id]) {
+      return true; // player earned it
+    }
+    return false; // player didn't earn it
+  });
 }
 
 function updateAchPill() {
@@ -965,8 +1014,9 @@ function randomMsg() {
 function initTicker() {
   const visible = localStorage.getItem(T_KEY) !== 'false';
   const pill = get('ticker-pill');
-  const eye  = get('ticker-eye');
-  eye.classList.remove('hidden'); // eye always visible once logged in
+  const eye  = get('ticker-eye-icon');
+  get('ticker-eye').classList.remove('hidden'); // eye always visible once logged in
+  if (eye) eye.setAttribute('href', visible ? '#icon-eye' : '#icon-eye-hidden');
   if (visible) {
     pill.classList.remove('hidden');
     rotateTick();
@@ -985,13 +1035,16 @@ function rotateTick() {
 function toggleTicker(e) {
   if (e) e.stopPropagation();
   const pill    = get('ticker-pill');
+  const eye     = get('ticker-eye-icon');
   const visible = !pill.classList.contains('hidden');
   if (visible) {
     pill.classList.add('hidden');
+    if (eye) eye.setAttribute('href', '#icon-eye-hidden');
     localStorage.setItem(T_KEY, 'false');
     if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
   } else {
     pill.classList.remove('hidden');
+    if (eye) eye.setAttribute('href', '#icon-eye');
     localStorage.setItem(T_KEY, 'true');
     rotateTick();
     tickTimer = setInterval(rotateTick, TICKER_MS);
