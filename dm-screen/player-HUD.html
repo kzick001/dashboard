@@ -439,13 +439,16 @@ async function fetchState() {
     const res = await fetch(WORKER_URL, {method:'GET', mode:'cors'});
     if (!res.ok) { console.error('[HUD] Poll', res.status); return; }
     state = await res.json();
+    console.log('[HUD] State fetched:', state?.version, 'characters:', state?.characters?.length);
     // Migrate old v31 schema (players → characters)
     if (state.version === 31 && state.players && !state.characters) {
       state.characters = state.players;
+      console.log('[HUD] Migrated v31 players → characters');
     }
     if (playerName) player = state.characters?.find(c => c.name === playerName) || null;
+    console.log('[HUD] Player set:', player?.name);
     if (!get('main-hud').classList.contains('hidden')) renderAll();
-  } catch (e) { console.error('[HUD] Poll error:', e.message); }
+  } catch (e) { console.error('[HUD] Poll error:', e.message, e.stack); }
 }
 
 function startPolling() {
@@ -500,21 +503,27 @@ function updateHeader() {
    AVATAR
 ══════════════════════════════ */
 function updateAvatar() {
-  if (!player) return;
+  if (!player) { console.warn('[HUD] updateAvatar: player is null'); return; }
+  const inner = get('av-inner');
+  if (!inner) { console.error('[HUD] updateAvatar: av-inner element not found'); return; }
+  
   const name    = player.name?.toLowerCase() || '';
   const imgPath = `${AVATAR_BASE}${name}.png`;
-  const inner   = get('av-inner');
+  console.log('[HUD] Loading avatar:', imgPath);
+  
   const existing = inner.querySelector('img');
   if (existing && existing.dataset.src === imgPath) return; // no-op if unchanged
 
   const img = new Image();
   img.dataset.src = imgPath;
   img.onload = () => {
+    console.log('[HUD] Avatar loaded:', imgPath);
     inner.innerHTML = '';
     img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;';
     inner.appendChild(img);
   };
   img.onerror = () => {
+    console.warn('[HUD] Avatar failed to load:', imgPath);
     inner.innerHTML = '<svg viewBox="0 0 24 24"><use href="#icon-user"/></svg>';
   };
   img.src = imgPath;
@@ -524,9 +533,11 @@ function updateAvatar() {
    VITALS
 ══════════════════════════════ */
 function updateVitals() {
+  if (!player) { console.warn('[HUD] updateVitals: player is null'); return; }
   const hp    = player?.stats?.hp?.current ?? null;
   const maxHp = player?.stats?.hp?.max     ?? null;
   const pct   = (hp !== null && maxHp) ? hp/maxHp : 1;
+  console.log('[HUD] Vitals:', {hp, maxHp, ac: player?.stats?.ac});
 
   let cls = 'vs';
   if      (pct <= 0.25) cls += ' hp-crit';
