@@ -330,6 +330,7 @@ let spellBuilt = false;  // track whether spell section DOM exists
    INIT
 ══════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('[HUD] DOM loaded, starting init...');
   fetchTickerData();
   startPolling();
   buildRoster();
@@ -344,12 +345,19 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
   // Auto-login after first state fetch
+  console.log('[HUD] Attempting auto-login...');
   fetchState().then(() => {
+    console.log('[HUD] fetchState resolved, state version:', state?.version);
     const saved = localStorage.getItem(P_KEY);
     if (saved !== null) {
       const idx = parseInt(saved);
+      console.log('[HUD] Auto-login index:', idx, 'player:', ROSTER[idx]);
       if (!isNaN(idx) && ROSTER[idx]) doLogin(ROSTER[idx], idx, true);
+    } else {
+      console.log('[HUD] No saved player index');
     }
+  }).catch(e => {
+    console.error('[HUD] fetchState rejected:', e);
   });
 });
 
@@ -372,8 +380,14 @@ function buildRoster() {
    LOGIN / LOADING
 ══════════════════════════════ */
 function doLogin(name, idx, isAuto) {
+  console.log('[HUD] doLogin:', name, 'auto:', isAuto);
   playerName = name;
-  if (state?.characters) player = state.characters.find(c => c.name === name) || null;
+  if (state?.characters) {
+    player = state.characters.find(c => c.name === name) || null;
+    console.log('[HUD] Found player:', player?.name, 'from', state.characters.length, 'chars');
+  } else {
+    console.warn('[HUD] doLogin: state.characters not available');
+  }
 
   if (isAuto) { showHUD(); return; }
 
@@ -404,8 +418,11 @@ function showHUD() {
   get('login-layer').classList.add('hidden');
   get('loading-layer').classList.add('hidden');
   get('main-hud').classList.remove('hidden');
-  renderAll();
-  initTicker();
+  // Delay render to allow DOM to paint
+  requestAnimationFrame(() => {
+    renderAll();
+    initTicker();
+  });
 }
 
 /* ══════════════════════════════
@@ -480,6 +497,7 @@ async function syncToKV() {
    RENDER ALL
 ══════════════════════════════ */
 function renderAll() {
+  console.log('[HUD] renderAll called, player:', player?.name);
   updateHeader();
   updateAvatar();
   updateVitals();
