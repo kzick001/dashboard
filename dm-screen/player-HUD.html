@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Crawler Terminal V5.1.1</title>
+  <title>Showrunner | Crawler Terminal V5.1.2</title>
 
   <svg xmlns="http://www.w3.org/2000/svg" style="display:none;position:absolute">
     <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
@@ -290,7 +290,7 @@
 <!-- MAIN HUD -->
 <div id="main-hud" class="hidden">
   <button id="btn-logout" class="btn-logout-hud" onclick="confirmLogout();" title="Logout">✕</button>
-  <div id="ach-pill" class="ach-badge-hud" onclick="openModal();" title="View achievements">
+  <div id="ach-pill" onclick="openModal();" title="View achievements">
     <span id="ach-badge">0</span>
   </div>
   <div class="hud-header">
@@ -409,7 +409,6 @@ let playerName = null;   // active player name string
 let pollTimer  = null;
 let tickTimer  = null;
 let tickData   = null;
-let curAch     = null;   // achievement currently in modal
 let spellBuilt = false;  // track whether spell section DOM exists
 
 /* ══════════════════════════════
@@ -521,7 +520,7 @@ function closeLogoutConfirm() {
 
 function logout() {
   localStorage.removeItem(P_KEY);
-  playerName = null; player = null; curAch = null; spellBuilt = false;
+  playerName = null; player = null; spellBuilt = false;
 
   VFX_ALL.forEach(c => get('vfx-layer').classList.remove(c));
   if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
@@ -932,7 +931,6 @@ function openModal() {
 
 function closeModal() {
   get('modal-overlay').classList.add('hidden');
-  curAch = null;
 }
 
 function switchAchTab(tab) {
@@ -948,8 +946,18 @@ function populateAchList(tab) {
   if (!state?.achievements || !player) return;
 
   const list = tab === 'new'
-    ? state.achievements.filter(a => !a.isArchived && !a.acknowledgedBy?.includes(player.id))
-    : state.achievements.filter(a => a.isArchived || a.acknowledgedBy?.includes(player.id));
+    ? state.achievements.filter(a => {
+        if (a.isArchived) return false;
+        if (a.acknowledgedBy?.includes(player.id)) return false;
+        if (!a.earnedBy || typeof a.earnedBy === 'boolean' || Object.keys(a.earnedBy).length === 0) return true;
+        return typeof a.earnedBy === 'object' && !!a.earnedBy[player.id];
+      })
+    : state.achievements.filter(a => {
+        if (!a.isArchived) return false;
+        if (!a.acknowledgedBy?.includes(player.id)) return false;
+        if (!a.earnedBy || typeof a.earnedBy === 'boolean' || Object.keys(a.earnedBy).length === 0) return true;
+        return typeof a.earnedBy === 'object' && !!a.earnedBy[player.id];
+      });
 
   const container = tab === 'new' ? get('ach-list-new') : get('ach-list-archive');
   const empty     = tab === 'new' ? get('ach-empty-new') : get('ach-empty-archive');
