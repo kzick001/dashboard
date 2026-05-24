@@ -2,23 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Showrunner // Data Forge V3.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Showrunner // Data Forge V4.0</title>
 
   <script>
-    const SECURE_PIN = "goddammit_doughnut"; 
-    let savedPin = localStorage.getItem('showrunner_pin');
-    
-    if (savedPin !== SECURE_PIN) {
-      document.documentElement.style.display = 'none'; 
-      let input = prompt("ACCESS RESTRICTED: Enter Showrunner PIN.");
-      
+    /* ──────────────────────────────────────────────
+       PIN GATE (artifact-safe: localStorage wrapped)
+       On GitHub Pages this gates access. In the Claude
+       artifact preview localStorage may throw, so we
+       degrade gracefully instead of hard-crashing.
+    ────────────────────────────────────────────── */
+    (function () {
+      const SECURE_PIN = "goddammit_doughnut";
+      let savedPin = null;
+      try { savedPin = localStorage.getItem('showrunner_pin'); } catch (e) { /* sandboxed */ }
+
+      if (savedPin === SECURE_PIN) return; // already authed
+
+      // If localStorage is unavailable (artifact preview), skip the prompt loop.
+      let storageOk = true;
+      try { localStorage.setItem('__sr_test', '1'); localStorage.removeItem('__sr_test'); }
+      catch (e) { storageOk = false; }
+
+      if (!storageOk) return; // preview mode — let it render
+
+      const input = prompt("ACCESS RESTRICTED: Enter Showrunner PIN.");
       if (input === SECURE_PIN) {
-        localStorage.setItem('showrunner_pin', input);
-        document.documentElement.style.display = ''; 
+        try { localStorage.setItem('showrunner_pin', input); } catch (e) {}
       } else {
-        window.location.href = "https://kzick001.github.io/dashboard/dm-screen/players/players.html"; 
+        document.documentElement.style.display = 'none';
+        window.location.href = "https://kzick001.github.io/dashboard/dm-screen/players/players.html";
       }
-    }
+    })();
   </script>
 
   <style>
@@ -27,132 +42,219 @@
       --glass: rgba(20, 20, 25, 0.7);
       --glass-border: rgba(255, 255, 255, 0.1);
       --accent: #bb86fc;
+      --accent-dim: rgba(187, 134, 252, 0.15);
       --danger: #ff4757;
+      --warn: #ffb300;
       --success: #03dac6;
       --text: #e0e0e0;
       --text-muted: #666;
+      --field-bg: #111114;
     }
 
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
 
     body, html {
       margin: 0; padding: 0; height: 100vh; width: 100vw;
-      background-color: var(--bg); color: var(--text); overflow: hidden; display: flex; flex-direction: column;
+      background-color: var(--bg); color: var(--text); overflow: hidden;
+      display: flex; flex-direction: column;
     }
 
+    /* ── NAVBAR ── */
     .navbar {
       height: 60px; display: flex; align-items: center; justify-content: space-between;
       padding: 0 2rem; background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
       border-bottom: 1px solid var(--glass-border); z-index: 100; flex-shrink: 0;
     }
-
     .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; letter-spacing: 0.15em; font-size: 1.2rem; color: #fff; text-shadow: 0 0 10px rgba(187,134,252,0.5); }
-
     .nav-links { display: flex; gap: 1rem; }
-
     .nav-link {
       color: var(--text); text-decoration: none; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;
       letter-spacing: 0.1em; padding: 6px 12px; border-radius: 20px; border: 1px solid transparent; transition: 0.3s;
     }
-
     .nav-link:hover { background: rgba(255,255,255,0.05); border-color: var(--glass-border); color: #fff; }
     .nav-link.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(187,134,252,0.2); }
 
-    /* Tab Navigation */
-    .tab-container {
-      padding: 1rem 2rem 0 2rem; flex-shrink: 0;
-    }
-
-    .tabs {
-      display: flex; gap: 10px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border);
-    }
-
+    /* ── TABS ── */
+    .tab-container { padding: 1rem 2rem 0 2rem; flex-shrink: 0; }
+    .tabs { display: flex; gap: 10px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); }
     .tab-btn {
       flex: 1; background: transparent; color: var(--text-muted); border: 1px solid transparent; padding: 10px;
-      border-radius: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; transition: 0.3s;
+      border-radius: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; transition: 0.3s; font-size: 0.8rem;
     }
-
     .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
-    .tab-btn.active { background: rgba(187, 134, 252, 0.15); color: var(--accent); border-color: var(--accent); box-shadow: 0 0 15px rgba(187, 134, 252, 0.2); }
+    .tab-btn.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); box-shadow: 0 0 15px rgba(187, 134, 252, 0.2); }
 
-    /* Main Content */
-    .workspace {
-      display: flex; flex: 1; gap: 1rem; padding: 1rem 2rem 2rem 2rem; overflow: hidden;
-    }
+    /* ── WORKSPACE ── */
+    .workspace { display: flex; flex: 1; gap: 1rem; padding: 1rem 2rem 1.5rem 2rem; overflow: hidden; }
+    .tab-pane { display: none; flex: 1; gap: 1rem; overflow: hidden; }
+    .tab-pane.active { display: flex; }
 
     .pane {
       background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px;
       display: flex; flex-direction: column; backdrop-filter: blur(10px); overflow: hidden;
     }
-
-    .pane-edit { flex: 1; }
-    .pane-preview { flex: 0.8; min-width: 300px; }
+    .pane-input { flex: 0.85; min-width: 280px; }
+    .pane-review { flex: 1.2; }
+    .pane-output { flex: 0.85; min-width: 280px; }
 
     .pane-header {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 0.75rem 1rem; border-bottom: 1px solid var(--glass-border); background: rgba(0,0,0,0.3);
+      padding: 0.75rem 1rem; border-bottom: 1px solid var(--glass-border); background: rgba(0,0,0,0.3); flex-shrink: 0;
     }
-
     .pane-header-title { font-size: 0.85rem; font-weight: bold; color: #fff; letter-spacing: 0.1em; }
+    .pane-header-badge { font-size: 0.7rem; color: var(--text-muted); font-family: monospace; }
 
-    .pane-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .pane-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+    .pane-scroll { flex: 1; overflow-y: auto; padding: 1rem; }
 
-    textarea, pre {
+    textarea.raw {
       flex: 1; width: 100%; resize: none; border: none; outline: none; padding: 1rem;
-      background: transparent; color: var(--text); font-family: monospace; font-size: 0.9rem;
-      line-height: 1.5; overflow-y: auto;
+      background: transparent; color: var(--text); font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 0.85rem;
+      line-height: 1.55; overflow-y: auto;
     }
 
-    pre { background: #050505; color: #a6e22e; margin: 0; white-space: pre-wrap; word-wrap: break-word; }
+    pre.json {
+      flex: 1; margin: 0; padding: 1rem; background: #050505; color: #a6e22e; overflow: auto;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 0.78rem; line-height: 1.5;
+      white-space: pre-wrap; word-wrap: break-word;
+    }
 
-    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
     ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-    .pane-footer { padding: 1rem; border-top: 1px solid var(--glass-border); background: rgba(0,0,0,0.3); }
+    .pane-footer { padding: 0.85rem; border-top: 1px solid var(--glass-border); background: rgba(0,0,0,0.3); flex-shrink: 0; display: flex; flex-direction: column; gap: 0.6rem; }
 
+    /* ── BUTTONS ── */
     .btn-action {
-      width: 100%; padding: 12px; border-radius: 4px; font-weight: bold; text-transform: uppercase;
-      letter-spacing: 0.1em; cursor: pointer; transition: 0.2s; border: 1px solid transparent;
+      width: 100%; padding: 11px; border-radius: 4px; font-weight: bold; text-transform: uppercase;
+      letter-spacing: 0.1em; cursor: pointer; transition: 0.2s; border: 1px solid transparent; font-size: 0.8rem;
     }
-
-    .btn-primary { background: rgba(187, 134, 252, 0.1); border-color: var(--accent); color: var(--accent); }
+    .btn-primary { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
     .btn-primary:hover:not(:disabled) { background: var(--accent); color: #000; }
-    .btn-primary:disabled { border-color: #444; color: #666; cursor: not-allowed; background: transparent; }
+    .btn-primary:disabled { border-color: #333; color: #555; cursor: not-allowed; background: transparent; }
+    .btn-success { background: rgba(3,218,198,0.1); border-color: var(--success); color: var(--success); }
+    .btn-success:hover:not(:disabled) { background: var(--success); color: #000; }
+    .btn-success:disabled { border-color: #333; color: #555; cursor: not-allowed; background: transparent; }
+    .btn-ghost { background: transparent; border-color: var(--glass-border); color: var(--text-muted); }
+    .btn-ghost:hover:not(:disabled) { color: #fff; border-color: #888; }
 
-    .btn-danger { background: rgba(255, 71, 87, 0.1); border-color: var(--danger); color: var(--danger); }
-    .btn-danger:hover:not(:disabled) { background: var(--danger); color: #000; }
-    .btn-danger:disabled { border-color: #444; color: #666; cursor: not-allowed; }
-
-    /* Preview List */
-    .preview-list { list-style: none; padding: 0; margin: 0; }
-    .preview-item { padding: 0.75rem; border-bottom: 1px solid #333; cursor: pointer; transition: 0.2s; }
-    .preview-item:hover { background: rgba(187,134,252,0.1); }
-    .preview-item-title { font-weight: bold; color: var(--accent); font-size: 0.9rem; }
-    .preview-item-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
-
-    .preview-item-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
-    .btn-remove {
-      flex: 1; padding: 4px 8px; background: rgba(255,71,87,0.15); border: 1px solid var(--danger); color: var(--danger);
-      border-radius: 3px; font-size: 0.7rem; cursor: pointer; transition: 0.2s;
+    /* ── INPUT CONTROLS ── */
+    .control-row { display: flex; gap: 0.5rem; align-items: center; }
+    .select, .text-input {
+      background: var(--field-bg); color: var(--text); border: 1px solid var(--glass-border);
+      border-radius: 4px; padding: 8px 10px; font-size: 0.8rem; outline: none; transition: 0.2s; width: 100%;
     }
-    .btn-remove:hover { background: var(--danger); color: #000; }
+    .select:focus, .text-input:focus { border-color: var(--accent); }
+    .control-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 0.3rem; display: block; }
 
-    /* Toasts */
+    .model-toggle { display: flex; gap: 0; border: 1px solid var(--glass-border); border-radius: 4px; overflow: hidden; }
+    .model-toggle button {
+      flex: 1; background: transparent; border: none; color: var(--text-muted); padding: 7px 4px;
+      font-size: 0.68rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: 0.2s;
+    }
+    .model-toggle button.active { background: var(--accent-dim); color: var(--accent); }
+    .model-toggle button:hover:not(.active) { color: #fff; }
+
+    /* ── REVIEW CARDS ── */
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); text-align: center; padding: 2rem; gap: 0.5rem; }
+    .empty-state .big { font-size: 2rem; opacity: 0.5; }
+    .empty-state .sub { font-size: 0.8rem; max-width: 280px; line-height: 1.5; }
+
+    .card {
+      background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: 6px;
+      margin-bottom: 0.85rem; overflow: hidden; transition: 0.2s;
+    }
+    .card.is-new { border-left: 3px solid var(--success); }
+    .card.is-update { border-left: 3px solid var(--warn); }
+    .card.is-flagged { border-left: 3px solid var(--danger); }
+
+    .card-head {
+      display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.85rem;
+      background: rgba(255,255,255,0.02); cursor: pointer; user-select: none;
+    }
+    .card-head:hover { background: rgba(187,134,252,0.06); }
+    .card-chevron { transition: transform 0.2s; color: var(--text-muted); font-size: 0.7rem; }
+    .card.open .card-chevron { transform: rotate(90deg); }
+    .card-title { flex: 1; font-weight: bold; font-size: 0.85rem; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .card-tag {
+      font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 7px; border-radius: 10px; font-weight: bold; flex-shrink: 0;
+    }
+    .tag-new { background: rgba(3,218,198,0.15); color: var(--success); }
+    .tag-update { background: rgba(255,179,0,0.15); color: var(--warn); }
+    .tag-flagged { background: rgba(255,71,87,0.15); color: var(--danger); }
+
+    .card-body { padding: 0.85rem; display: none; border-top: 1px solid var(--glass-border); }
+    .card.open .card-body { display: block; }
+
+    .field { margin-bottom: 0.75rem; }
+    .field:last-child { margin-bottom: 0; }
+    .field label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 0.25rem; display: block; }
+    .field input, .field textarea, .field select {
+      width: 100%; background: var(--field-bg); color: var(--text); border: 1px solid var(--glass-border);
+      border-radius: 4px; padding: 7px 9px; font-size: 0.8rem; outline: none; transition: 0.2s; font-family: inherit;
+    }
+    .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--accent); }
+    .field textarea { resize: vertical; min-height: 60px; line-height: 1.45; }
+    .field-row { display: flex; gap: 0.6rem; }
+    .field-row .field { flex: 1; }
+
+    .subsection { margin-top: 0.6rem; border-top: 1px dashed #333; padding-top: 0.6rem; }
+    .subsection-title { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
+    .sub-item { background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 4px; padding: 0.6rem; margin-bottom: 0.5rem; position: relative; }
+
+    .chip-input-wrap { display: flex; flex-wrap: wrap; gap: 0.3rem; background: var(--field-bg); border: 1px solid var(--glass-border); border-radius: 4px; padding: 5px; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; background: var(--accent-dim); color: var(--accent); border-radius: 10px; padding: 2px 8px; font-size: 0.72rem; }
+    .chip button { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.85rem; line-height: 1; padding: 0; }
+    .chip-input-wrap input { flex: 1; min-width: 80px; background: transparent; border: none; outline: none; color: var(--text); font-size: 0.78rem; padding: 2px; }
+
+    .card-actions { display: flex; gap: 0.5rem; margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px solid var(--glass-border); }
+    .btn-mini {
+      flex: 1; padding: 6px; border-radius: 3px; font-size: 0.68rem; font-weight: bold; text-transform: uppercase;
+      letter-spacing: 0.05em; cursor: pointer; transition: 0.2s; border: 1px solid;
+    }
+    .btn-mini-danger { background: rgba(255,71,87,0.12); border-color: var(--danger); color: var(--danger); }
+    .btn-mini-danger:hover { background: var(--danger); color: #000; }
+    .btn-mini-ghost { background: transparent; border-color: var(--glass-border); color: var(--text-muted); }
+    .btn-mini-ghost:hover { color: #fff; border-color: #888; }
+
+    .btn-add-sub {
+      width: 100%; padding: 5px; background: transparent; border: 1px dashed #444; color: var(--text-muted);
+      border-radius: 4px; font-size: 0.7rem; cursor: pointer; transition: 0.2s;
+    }
+    .btn-add-sub:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── REVIEW HEADER STATS ── */
+    .review-stats { display: flex; gap: 0.75rem; font-size: 0.7rem; }
+    .review-stats span { display: flex; align-items: center; gap: 0.3rem; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot-new { background: var(--success); }
+    .dot-update { background: var(--warn); }
+    .dot-flagged { background: var(--danger); }
+
+    /* ── LOADER ── */
+    .loader { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── TOASTS ── */
     #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 4000; display: flex; flex-direction: column; gap: 0.5rem; }
-    .toast { background: rgba(10,10,12,0.95); color: #fff; padding: 1rem 1.5rem; border-radius: 4px; border-left: 4px solid var(--accent); box-shadow: 0 4px 15px rgba(0,0,0,0.8); animation: fadein 0.3s, fadeout 0.3s 3.7s forwards; font-size: 0.9rem; font-weight: bold; }
+    .toast { background: rgba(10,10,12,0.96); color: #fff; padding: 0.85rem 1.3rem; border-radius: 4px; border-left: 4px solid var(--accent); box-shadow: 0 4px 15px rgba(0,0,0,0.8); animation: fadein 0.3s, fadeout 0.3s 4.2s forwards; font-size: 0.85rem; font-weight: bold; max-width: 340px; }
+    .toast.err { border-left-color: var(--danger); }
+    .toast.ok { border-left-color: var(--success); }
     @keyframes fadein { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
     @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
 
-    /* Tab Content (Hidden by default) */
-    .tab-pane { display: none; }
-    .tab-pane.active { display: flex; }
+    .hint { font-size: 0.68rem; color: var(--text-muted); line-height: 1.4; padding: 0 0.1rem; }
+    .badge-count { background: var(--accent-dim); color: var(--accent); border-radius: 10px; padding: 1px 8px; font-size: 0.7rem; font-weight: bold; }
 
-    /* Responsive */
-    @media (max-width: 1024px) {
-      .workspace { flex-direction: column; }
-      .pane-preview { flex: none; height: 300px; }
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1100px) {
+      .tab-pane.active { flex-direction: column; overflow-y: auto; }
+      .pane { min-height: 320px; }
+      .pane-input, .pane-review, .pane-output { flex: none; }
+      body, html { overflow: auto; }
+      .workspace { overflow: visible; }
     }
   </style>
 </head>
@@ -161,7 +263,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-      SHOWRUNNER // DATA FORGE V3.0
+      SHOWRUNNER // DATA FORGE V4.0
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">Dashboard</a>
@@ -172,439 +274,858 @@
 
   <div class="tab-container">
     <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('rooms')">📜 Rooms & Notes</button>
-      <button class="tab-btn" onclick="switchTab('loot')">💎 Loot Tables</button>
+      <button class="tab-btn active" data-type="rooms"     onclick="switchTab('rooms')">🏛 Rooms</button>
+      <button class="tab-btn"        data-type="npcs"      onclick="switchTab('npcs')">👤 NPCs</button>
+      <button class="tab-btn"        data-type="rules"     onclick="switchTab('rules')">📐 Rules</button>
+      <button class="tab-btn"        data-type="timeline"  onclick="switchTab('timeline')">🕓 Timeline</button>
+      <button class="tab-btn"        data-type="characters" onclick="switchTab('characters')">⚔ Characters</button>
     </div>
   </div>
 
   <div class="workspace">
-    
-    <!-- ROOMS & NOTES TAB -->
-    <div id="tab-rooms" class="tab-pane active">
-      
-      <!-- Edit Pane -->
-      <div class="pane pane-edit">
+    <div id="tab-pane" class="tab-pane active">
+
+      <!-- INPUT -->
+      <div class="pane pane-input">
         <div class="pane-header">
-          <span class="pane-header-title">Paste Raw Content</span>
+          <span class="pane-header-title">1 · Raw Notes</span>
+          <span class="pane-header-badge" id="input-char-count">0 chars</span>
         </div>
         <div class="pane-content">
-          <textarea id="rooms-input" placeholder="Paste room descriptions and session notes here...&#10;&#10;Format:&#10;ROOM: Room Name&#10;Text content...&#10;&#10;Or:&#10;NOTE: Session X&#10;Text content..."></textarea>
+          <textarea id="raw-input" class="raw" placeholder="Paste raw notes here.&#10;&#10;The Forge sends them to Claude, which extracts structured entities matching the KV schema. You then review and edit every field before syncing.&#10;&#10;Formatting is forgiving — paste straight from your RTF/Doc dumps."></textarea>
         </div>
         <div class="pane-footer">
-          <button class="btn-action btn-primary" onclick="parseRoomsAndNotes()">Parse Content</button>
+          <div>
+            <span class="control-label">Parser Model</span>
+            <div class="model-toggle" id="model-toggle">
+              <button data-model="claude-haiku-4-5-20251001" class="active" onclick="setModel(this)">Haiku 4.5</button>
+              <button data-model="claude-sonnet-4-20250514" onclick="setModel(this)">Sonnet 4</button>
+            </div>
+          </div>
+          <p class="hint">Haiku is fast/cheap for clean dumps. Switch to Sonnet for dense or ambiguous notes.</p>
+          <button id="btn-parse" class="btn-action btn-primary" onclick="runParse()">⚡ Forge Entities</button>
         </div>
       </div>
 
-      <!-- Preview Pane -->
-      <div class="pane pane-preview">
+      <!-- REVIEW -->
+      <div class="pane pane-review">
         <div class="pane-header">
-          <span class="pane-header-title">Preview</span>
+          <span class="pane-header-title">2 · Review &amp; Edit</span>
+          <span class="review-stats" id="review-stats"></span>
         </div>
         <div class="pane-content">
-          <ul id="rooms-preview" class="preview-list"></ul>
+          <div class="pane-scroll" id="review-scroll">
+            <div class="empty-state">
+              <div class="big">🪄</div>
+              <div class="sub">Forged entities appear here as editable cards. Nothing is sent to KV until you sync.</div>
+            </div>
+          </div>
         </div>
         <div class="pane-footer">
-          <button class="btn-action btn-danger" id="btn-sync-rooms" onclick="syncRoomsAndNotes()" disabled>Sync to KV</button>
+          <div class="control-row">
+            <button class="btn-action btn-ghost" style="flex:1" onclick="addBlankCard()">+ Add Blank</button>
+            <button class="btn-action btn-ghost" style="flex:1" onclick="expandCollapseAll()">Toggle All</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- OUTPUT -->
+      <div class="pane pane-output">
+        <div class="pane-header">
+          <span class="pane-header-title">3 · JSON &amp; Sync</span>
+          <span class="pane-header-badge" id="kv-status">KV: idle</span>
+        </div>
+        <div class="pane-content">
+          <pre class="json" id="json-preview">// Forge entities to preview output JSON.</pre>
+        </div>
+        <div class="pane-footer">
+          <p class="hint" id="merge-hint">Sync merges by <code>id</code>: existing entries update, new ones append. Fetches latest KV first to avoid collisions.</p>
+          <div class="control-row">
+            <button class="btn-action btn-ghost" style="flex:1" onclick="copyJson()">Copy JSON</button>
+            <button id="btn-sync" class="btn-action btn-success" style="flex:1.4" onclick="syncToKV()" disabled>Sync to KV</button>
+          </div>
         </div>
       </div>
 
     </div>
-
-    <!-- LOOT TABLES TAB -->
-    <div id="tab-loot" class="tab-pane">
-      
-      <!-- Edit Pane -->
-      <div class="pane pane-edit">
-        <div class="pane-header">
-          <span class="pane-header-title">Paste Raw Loot Tables</span>
-        </div>
-        <div class="pane-content">
-          <textarea id="loot-input" placeholder="Paste loot table data here...&#10;&#10;Format:&#10;TIER: Gold (slots: 100)&#10;Roll 1: Item Name | Type: Weapon | Description: ...&#10;Roll 2: Item Name | Type: Armor | Description: ..."></textarea>
-        </div>
-        <div class="pane-footer">
-          <button class="btn-action btn-primary" onclick="parseLootTables()">Parse Loot</button>
-        </div>
-      </div>
-
-      <!-- Preview Pane -->
-      <div class="pane pane-preview">
-        <div class="pane-header">
-          <span class="pane-header-title">Preview</span>
-        </div>
-        <div class="pane-content">
-          <ul id="loot-preview" class="preview-list"></ul>
-        </div>
-        <div class="pane-footer">
-          <button class="btn-action btn-danger" id="btn-sync-loot" onclick="syncLootTables()" disabled>Sync to KV</button>
-        </div>
-      </div>
-
-    </div>
-
   </div>
 
   <div id="toast-container"></div>
 
   <script>
-    const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
-    
-    let parsedRoomsAndNotes = null;
-    let parsedLootTables = null;
+  /* ══════════════════════════════════════════════════
+     CONFIG
+  ══════════════════════════════════════════════════ */
+  const WORKER_URL = "https://dmscreen.askozicki.workers.dev";
 
-    // --- Tab Switching ---
-    function switchTab(tabName) {
-      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      
-      document.getElementById(`tab-${tabName}`).classList.add('active');
-      event.target.classList.add('active');
-      
-      showToast(`${tabName.toUpperCase()} tab activated.`);
+  let MODEL = "claude-haiku-4-5-20251001";
+  let activeType = "rooms";
+
+  // entities[type] = array of entity objects (schema-shaped)
+  const entities = { rooms: [], npcs: [], rules: [], timeline: [], characters: [] };
+  // status[type][id] = 'new' | 'update' | 'flagged'
+  const cardStatus = { rooms: {}, npcs: {}, rules: {}, timeline: {}, characters: {} };
+  // openState[type][id] = bool
+  const openState = { rooms: {}, npcs: {}, rules: {}, timeline: {}, characters: {} };
+
+  // Cache of the last fetched KV state, used for new/update diffing.
+  let kvCache = null;
+
+  /* ══════════════════════════════════════════════════
+     SCHEMA — defaults + ID resolution per entity type.
+     idKey: which field is the primary identity for merge.
+     For timeline (no id) we synthesize a stable key from
+     date+event.
+  ══════════════════════════════════════════════════ */
+  const SCHEMA = {
+    rooms: {
+      label: "Room",
+      idKey: "id",
+      kvPath: ["campaign", "rooms"],
+      blank: () => ({
+        id: genId("room"),
+        name: "",
+        area: "",
+        description: "",
+        readaloud: "",
+        encounters: [],
+        mechanics: { terrain: "", hazards: [], interactables: [] },
+        connections: { north: null, south: null, east: null, west: null },
+        discovered: false,
+        cleared: false,
+        notes: ""
+      })
+    },
+    npcs: {
+      label: "NPC",
+      idKey: "id",
+      kvPath: ["campaign", "npcs"],
+      blank: () => ({
+        id: genId("npc"),
+        name: "",
+        race: "",
+        role: "",
+        personality: "",
+        locations: [],
+        isDefeated: false
+      })
+    },
+    rules: {
+      label: "Rule",
+      idKey: "id",
+      kvPath: ["campaign", "rules"],
+      blank: () => ({
+        id: genId("rule"),
+        name: "",
+        description: "",
+        appliesTo: []
+      })
+    },
+    timeline: {
+      label: "Event",
+      idKey: "__key", // synthetic
+      kvPath: ["campaign", "timeline"],
+      blank: () => ({
+        date: "",
+        event: "",
+        notes: ""
+      })
+    },
+    characters: {
+      label: "Character",
+      idKey: "id",
+      kvPath: ["characters"],
+      blank: () => ({
+        id: genId("char"),
+        name: "",
+        race: "",
+        class: "",
+        level: 1,
+        profileImage: null,
+        stats: { hp: { current: 0, max: 0 }, ac: 10, passivePerception: 10, passiveInsight: 10, speed: 30 },
+        abilities: { strength: 10, dexterity: 10, constitution: 10, intelligence: 10, wisdom: 10, charisma: 10 },
+        conditions: [],
+        deathSaves: { successes: 0, failures: 0, isStabilized: false, timestampAtDeathStart: null },
+        spellSlots: null,
+        familiar: null,
+        gold: 0,
+        inventory: [],
+        isArchived: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      })
     }
+  };
 
-    // --- Utilities ---
-    function showToast(msg) {
-      const c = document.getElementById('toast-container');
-      const t = document.createElement('div'); 
-      t.className = 'toast'; 
-      t.innerText = msg;
-      c.appendChild(t); 
-      setTimeout(() => t.remove(), 4000);
+  function genId(prefix) {
+    return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  }
+
+  // Synthetic identity for timeline events (no id field in schema).
+  function entityKey(type, ent) {
+    if (type === "timeline") return `${(ent.date || "").trim()}|${(ent.event || "").trim()}`;
+    return ent.id || "";
+  }
+
+  /* ══════════════════════════════════════════════════
+     AI PARSE PROMPTS — instruct Claude to emit a strict
+     JSON array matching the schema for the active type.
+  ══════════════════════════════════════════════════ */
+  function buildPrompt(type, raw) {
+    const shapes = {
+      rooms: `Each object: {
+  "id": "room_<slug>"  (lowercase, derive from the room name/number; stable),
+  "name": string,
+  "area": string  (e.g. "Level 3"; "" if unknown),
+  "description": string  (DM-facing summary / DM notes),
+  "readaloud": string  (the read-aloud / visuals text players hear),
+  "encounters": [ { "id":"enc_<slug>", "name":string, "type":"combat"|"social"|"exploration"|"trap", "enemies":[ {"id":"enemy_<slug>","name":string,"hp":number|null,"ac":number|null,"cr":number|null,"notes":string} ], "completed":false, "completedDate":null, "notes":string } ],
+  "mechanics": { "terrain": string, "hazards": [string], "interactables": [string] },
+  "connections": { "north":null,"south":null,"east":null,"west":null }  (fill with room ids only if explicitly stated, else null),
+  "discovered": false,
+  "cleared": false,
+  "notes": string  (any extra DM notes, achievements, tooltips, loot references as plain text)
+}`,
+      npcs: `Each object: {
+  "id": "npc_<slug>",
+  "name": string,
+  "race": string,
+  "role": string  (e.g. "Encounter Boss", "Quest Giver"),
+  "personality": string,
+  "locations": [string]  (room ids or room names if ids unknown),
+  "isDefeated": false
+}`,
+      rules: `Each object: {
+  "id": "rule_<slug>",
+  "name": string,
+  "description": string,
+  "appliesTo": [string]  (room ids or descriptive scope)
+}`,
+      timeline: `Each object: {
+  "date": string  (ISO date "YYYY-MM-DD" if given, else best guess or ""),
+  "event": string  (short title),
+  "notes": string
+}`,
+      characters: `Each object: {
+  "id": "char_<firstname-lower>",
+  "name": string,
+  "race": string,
+  "class": string,
+  "level": number,
+  "stats": { "hp": {"current":number,"max":number}, "ac":number, "passivePerception":number, "passiveInsight":number, "speed":number },
+  "abilities": { "strength":number,"dexterity":number,"constitution":number,"intelligence":number,"wisdom":number,"charisma":number },
+  "gold": number
+}
+Only include fields you can determine; omit unknown numeric fields rather than guessing wildly.`
+    };
+
+    return `You are a data extraction engine for a D&D 5e campaign manager. Extract every ${SCHEMA[type].label} from the raw notes below into a JSON array.
+
+OUTPUT RULES:
+- Respond with ONLY a JSON array. No prose, no markdown fences, no preamble.
+- If nothing of this type is present, respond with [].
+- ${shapes[type]}
+- Preserve the campaign's flavor text faithfully; do not summarize away detail in description/readaloud/notes.
+- Generate stable lowercase ids from names. Do not invent data that isn't implied by the notes.
+
+RAW NOTES:
+"""
+${raw}
+"""`;
+  }
+
+  /* ══════════════════════════════════════════════════
+     PARSE — call the Anthropic API (Claude-in-Claude).
+  ══════════════════════════════════════════════════ */
+  async function runParse() {
+    const raw = document.getElementById("raw-input").value.trim();
+    if (!raw) return toast("Paste some notes first.", "err");
+
+    const btn = document.getElementById("btn-parse");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loader"></span> Forging…';
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 8000,
+          messages: [{ role: "user", content: buildPrompt(activeType, raw) }]
+        })
+      });
+
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+
+      const text = (data.content || [])
+        .filter(b => b.type === "text")
+        .map(b => b.text)
+        .join("\n")
+        .trim();
+
+      const parsed = extractJsonArray(text);
+      if (!Array.isArray(parsed)) throw new Error("Model did not return an array");
+
+      mergeParsedIntoReview(activeType, parsed);
+      const n = parsed.length;
+      toast(n ? `Forged ${n} ${SCHEMA[activeType].label.toLowerCase()}${n === 1 ? "" : "s"}. Review before syncing.` : "No entities found in those notes.", n ? "ok" : "err");
+    } catch (err) {
+      console.error(err);
+      toast(`Parse failed: ${err.message}`, "err");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = "⚡ Forge Entities";
     }
+  }
 
-    function debounce(fn, ms) {
-      let timer;
-      return function(...args) {
-        clearTimeout(timer);
-        timer = setTimeout(() => fn(...args), ms);
-      };
+  // Strip fences / preamble and pull the first JSON array out of a string.
+  function extractJsonArray(text) {
+    let t = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+    try { return JSON.parse(t); } catch (e) { /* fall through */ }
+    const start = t.indexOf("[");
+    const end = t.lastIndexOf("]");
+    if (start !== -1 && end !== -1 && end > start) {
+      try { return JSON.parse(t.slice(start, end + 1)); } catch (e) { /* fall through */ }
     }
+    throw new Error("Could not parse JSON from model output");
+  }
 
-    // --- PARSER 1: Rooms & Notes ---
-    function parseRoomsAndNotes() {
-      const rawText = document.getElementById('rooms-input').value.trim();
-      if (!rawText) return showToast("Please paste content first.");
-
-      parsedRoomsAndNotes = { rooms: [], notes: [] };
-
-      // Split by "ROOM:" or "NOTE:" headers
-      const sections = rawText.split(/^(ROOM:|NOTE:)\s*/m);
-
-      for (let i = 1; i < sections.length; i += 2) {
-        const type = sections[i].trim().toLowerCase();
-        const content = sections[i + 1];
-
-        if (!content) continue;
-
-        const lines = content.trim().split('\n');
-        const firstLine = lines[0].trim();
-        const restContent = lines.slice(1).join('\n').trim();
-
-        if (type === 'room:') {
-          parsedRoomsAndNotes.rooms.push({
-            room_id: firstLine || `room_${Date.now()}`,
-            readaloud: restContent,
-            mechanics: '',
-            npcs: [],
-            tooltips: [],
-            achievements: [],
-            loot: [],
-            is_deleted: false
-          });
-        } else if (type === 'note:') {
-          parsedRoomsAndNotes.notes.push({
-            note_id: `note_${Date.now()}_${Math.random()}`,
-            session: firstLine || 'Untitled',
-            content: restContent,
-            timestamp: new Date().toISOString(),
-            is_deleted: false
-          });
-        }
+  // Normalize a parsed object against the schema blank so all expected
+  // fields exist (the model may omit some). Then push/replace into review.
+  function mergeParsedIntoReview(type, arr) {
+    arr.forEach(obj => {
+      const ent = deepMerge(SCHEMA[type].blank(), obj || {});
+      // Ensure timeline has no stray id; ensure others have an id.
+      if (type !== "timeline" && !ent.id) ent.id = genId(type.slice(0, 4));
+      const key = entityKey(type, ent);
+      const existingIdx = entities[type].findIndex(e => entityKey(type, e) === key && key !== "|");
+      if (existingIdx >= 0 && key !== "|") {
+        entities[type][existingIdx] = ent;
+      } else {
+        entities[type].push(ent);
       }
+      openState[type][key] = false;
+    });
+    recomputeStatus(type);
+    renderReview();
+    renderJson();
+  }
 
-      renderRoomsAndNotesPreview();
-      document.getElementById('btn-sync-rooms').disabled = false;
-      showToast(`Parsed ${parsedRoomsAndNotes.rooms.length} rooms, ${parsedRoomsAndNotes.notes.length} notes.`);
-    }
-
-    function renderRoomsAndNotesPreview() {
-      const preview = document.getElementById('rooms-preview');
-      preview.innerHTML = '';
-
-      parsedRoomsAndNotes.rooms.forEach((room, idx) => {
-        const li = document.createElement('li');
-        li.className = 'preview-item';
-        li.innerHTML = `
-          <div class="preview-item-title">🏛 ${room.room_id}</div>
-          <div class="preview-item-meta">${room.readaloud.substring(0, 60)}...</div>
-          <div class="preview-item-actions">
-            <button class="btn-remove" onclick="removeRoomFromPreview(${idx})">Remove</button>
-          </div>
-        `;
-        preview.appendChild(li);
-      });
-
-      parsedRoomsAndNotes.notes.forEach((note, idx) => {
-        const li = document.createElement('li');
-        li.className = 'preview-item';
-        li.innerHTML = `
-          <div class="preview-item-title">📝 ${note.session}</div>
-          <div class="preview-item-meta">${note.content.substring(0, 60)}...</div>
-          <div class="preview-item-actions">
-            <button class="btn-remove" onclick="removeNoteFromPreview(${idx})">Remove</button>
-          </div>
-        `;
-        preview.appendChild(li);
-      });
-    }
-
-    function removeRoomFromPreview(idx) {
-      parsedRoomsAndNotes.rooms.splice(idx, 1);
-      renderRoomsAndNotesPreview();
-    }
-
-    function removeNoteFromPreview(idx) {
-      parsedRoomsAndNotes.notes.splice(idx, 1);
-      renderRoomsAndNotesPreview();
-    }
-
-    // --- PARSER 2: Loot Tables ---
-    function parseLootTables() {
-      const rawText = document.getElementById('loot-input').value.trim();
-      if (!rawText) return showToast("Please paste loot content first.");
-
-      parsedLootTables = { tiers: {} };
-
-      // Match "TIER: Name (slots: N)" headers
-      const tierBlocks = rawText.split(/^TIER:\s*/m).filter(b => b.trim());
-
-      tierBlocks.forEach(block => {
-        const lines = block.split('\n');
-        const firstLine = lines[0].trim();
-        
-        // Extract tier name and slot count
-        const tierMatch = firstLine.match(/^([^(]+)(?:\s*\(slots:\s*(\d+)\))?/i);
-        const tierName = tierMatch ? tierMatch[1].trim().toLowerCase() : 'unknown';
-        const slotCount = tierMatch && tierMatch[2] ? parseInt(tierMatch[2]) : 100;
-
-        // Initialize tier
-        parsedLootTables.tiers[tierName] = {
-          name: tierName,
-          slot_count: slotCount,
-          slots: []
-        };
-
-        // Parse roll entries
-        const rollLines = lines.slice(1).join('\n');
-        const rollMatches = rollLines.matchAll(/Roll\s+(\d+(?:-\d+)?)[:\s]+(.*)/gi);
-
-        for (const match of rollMatches) {
-          const rollNum = match[1];
-          const itemText = match[2];
-
-          // Parse: Name | Type: X | Description: Y
-          const nameMatch = itemText.match(/^([^|]+?)\s*\|/);
-          const typeMatch = itemText.match(/Type:\s*([^|]+?)(?:\||$)/i);
-          const descMatch = itemText.match(/Description:\s*(.+?)$/i);
-
-          const itemName = nameMatch ? nameMatch[1].trim() : 'Unnamed Item';
-          const itemType = typeMatch ? typeMatch[1].trim() : 'Wondrous Item';
-          const itemDesc = descMatch ? descMatch[1].trim() : '';
-
-          // Handle roll ranges (e.g., "1-5")
-          let rollNums = [];
-          if (rollNum.includes('-')) {
-            const [start, end] = rollNum.split('-').map(Number);
-            for (let r = start; r <= end; r++) rollNums.push(r);
-          } else {
-            rollNums.push(parseInt(rollNum));
-          }
-
-          rollNums.forEach(r => {
-            parsedLootTables.tiers[tierName].slots[r - 1] = {
-              roll: r,
-              item: {
-                name: itemName,
-                type: itemType,
-                desc: itemDesc
-              }
-            };
-          });
-        }
-
-        // Fill empty slots
-        for (let i = 0; i < slotCount; i++) {
-          if (!parsedLootTables.tiers[tierName].slots[i]) {
-            parsedLootTables.tiers[tierName].slots[i] = {
-              roll: i + 1,
-              item: null
-            };
-          }
-        }
-      });
-
-      renderLootPreview();
-      document.getElementById('btn-sync-loot').disabled = false;
-      showToast(`Parsed ${Object.keys(parsedLootTables.tiers).length} loot tiers.`);
-    }
-
-    function renderLootPreview() {
-      const preview = document.getElementById('loot-preview');
-      preview.innerHTML = '';
-
-      Object.entries(parsedLootTables.tiers).forEach(([tierName, tierData]) => {
-        const filled = tierData.slots.filter(s => s.item).length;
-        const li = document.createElement('li');
-        li.className = 'preview-item';
-        li.innerHTML = `
-          <div class="preview-item-title">💎 ${tierName.toUpperCase()}</div>
-          <div class="preview-item-meta">${filled}/${tierData.slot_count} slots filled</div>
-          <div class="preview-item-actions">
-            <button class="btn-remove" onclick="removeTierFromPreview('${tierName}')">Remove</button>
-          </div>
-        `;
-        preview.appendChild(li);
-      });
-    }
-
-    function removeTierFromPreview(tierName) {
-      delete parsedLootTables.tiers[tierName];
-      renderLootPreview();
-    }
-
-    // --- SYNC FUNCTIONS ---
-    async function syncRoomsAndNotes() {
-      if (!parsedRoomsAndNotes) return showToast("No parsed data to sync.");
-
-      const syncBtn = document.getElementById('btn-sync-rooms');
-      syncBtn.disabled = true;
-      syncBtn.innerText = 'Syncing...';
-
-      try {
-        const response = await fetch(WORKER_URL);
-        if (!response.ok) throw new Error('Fetch failed');
-        let latestState = await response.json();
-
-        // Initialize campaign_notes if needed
-        if (!latestState.campaign_notes) {
-          latestState.campaign_notes = { rooms: [], notes: [] };
-        }
-        if (!latestState.campaign_notes.rooms) latestState.campaign_notes.rooms = [];
-        if (!latestState.campaign_notes.notes) latestState.campaign_notes.notes = [];
-
-        // Merge rooms (update if exists, insert if new)
-        parsedRoomsAndNotes.rooms.forEach(newRoom => {
-          const existingIdx = latestState.campaign_notes.rooms.findIndex(r => r.room_id === newRoom.room_id);
-          if (existingIdx >= 0) {
-            latestState.campaign_notes.rooms[existingIdx] = newRoom;
-          } else {
-            latestState.campaign_notes.rooms.push(newRoom);
-          }
-        });
-
-        // Merge notes (always append)
-        latestState.campaign_notes.notes.push(...parsedRoomsAndNotes.notes);
-
-        // Increment version and timestamp
-        latestState.version = (latestState.version || 0) + 1;
-        latestState.last_modified = Date.now();
-
-        // Push to KV
-        const postRes = await fetch(WORKER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            base_version: latestState.version - 1,
-            data: latestState
-          })
-        });
-
-        if (!postRes.ok) throw new Error('Sync failed');
-
-        syncBtn.style.borderColor = 'var(--success)';
-        syncBtn.style.color = 'var(--success)';
-        syncBtn.innerText = 'Synced ✓';
-        showToast('Rooms & notes successfully synced.');
-
-        // Reset
-        setTimeout(() => {
-          document.getElementById('rooms-input').value = '';
-          parsedRoomsAndNotes = null;
-          document.getElementById('rooms-preview').innerHTML = '';
-          syncBtn.disabled = true;
-          syncBtn.innerText = 'Sync to KV';
-          syncBtn.style.borderColor = '';
-          syncBtn.style.color = '';
-        }, 2000);
-
-      } catch (err) {
-        console.error(err);
-        syncBtn.disabled = false;
-        syncBtn.innerText = 'Sync Failed - Retry';
-        showToast('Sync error. Check console.');
+  // Deep merge source onto a fresh target (target = schema blank).
+  // Arrays from source replace target arrays.
+  function deepMerge(target, source) {
+    if (Array.isArray(source)) return source;
+    if (typeof source !== "object" || source === null) return source;
+    const out = Array.isArray(target) ? [] : { ...target };
+    for (const k of Object.keys(source)) {
+      const sv = source[k];
+      if (sv && typeof sv === "object" && !Array.isArray(sv) && target[k] && typeof target[k] === "object" && !Array.isArray(target[k])) {
+        out[k] = deepMerge(target[k], sv);
+      } else {
+        out[k] = sv;
       }
     }
+    return out;
+  }
 
-    async function syncLootTables() {
-      if (!parsedLootTables) return showToast("No parsed data to sync.");
+  /* ══════════════════════════════════════════════════
+     DIFF STATUS — compare each review entity to kvCache.
+     new = not in KV; update = id exists in KV; flagged =
+     missing required identity field (name / event).
+  ══════════════════════════════════════════════════ */
+  function recomputeStatus(type) {
+    const existingKeys = getKvKeySet(type);
+    entities[type].forEach(ent => {
+      const key = entityKey(type, ent);
+      const requiredOk = type === "timeline" ? !!(ent.event && ent.event.trim()) : !!(ent.name && ent.name.trim());
+      if (!requiredOk) { cardStatus[type][key] = "flagged"; return; }
+      cardStatus[type][key] = existingKeys.has(key) ? "update" : "new";
+    });
+  }
 
-      const syncBtn = document.getElementById('btn-sync-loot');
-      syncBtn.disabled = true;
-      syncBtn.innerText = 'Syncing...';
+  function getKvKeySet(type) {
+    const set = new Set();
+    if (!kvCache) return set;
+    const list = readKvPath(kvCache, SCHEMA[type].kvPath);
+    if (Array.isArray(list)) list.forEach(e => set.add(entityKey(type, e)));
+    return set;
+  }
 
-      try {
-        const response = await fetch(WORKER_URL);
-        if (!response.ok) throw new Error('Fetch failed');
-        let latestState = await response.json();
+  function readKvPath(obj, path) {
+    let cur = obj;
+    for (const p of path) { if (cur == null) return undefined; cur = cur[p]; }
+    return cur;
+  }
 
-        // Initialize loot_tables if needed
-        if (!latestState.loot_tables) {
-          latestState.loot_tables = { tiers: {}, personal: {} };
-        }
-        if (!latestState.loot_tables.tiers) latestState.loot_tables.tiers = {};
+  /* ══════════════════════════════════════════════════
+     RENDER — REVIEW CARDS
+  ══════════════════════════════════════════════════ */
+  function renderReview() {
+    const scroll = document.getElementById("review-scroll");
+    const list = entities[activeType];
 
-        // Merge loot tiers (overwrites existing)
-        Object.assign(latestState.loot_tables.tiers, parsedLootTables.tiers);
-
-        // Increment version and timestamp
-        latestState.version = (latestState.version || 0) + 1;
-        latestState.last_modified = Date.now();
-
-        // Push to KV
-        const postRes = await fetch(WORKER_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            base_version: latestState.version - 1,
-            data: latestState
-          })
-        });
-
-        if (!postRes.ok) throw new Error('Sync failed');
-
-        syncBtn.style.borderColor = 'var(--success)';
-        syncBtn.style.color = 'var(--success)';
-        syncBtn.innerText = 'Synced ✓';
-        showToast('Loot tables successfully synced.');
-
-        // Reset
-        setTimeout(() => {
-          document.getElementById('loot-input').value = '';
-          parsedLootTables = null;
-          document.getElementById('loot-preview').innerHTML = '';
-          syncBtn.disabled = true;
-          syncBtn.innerText = 'Sync to KV';
-          syncBtn.style.borderColor = '';
-          syncBtn.style.color = '';
-        }, 2000);
-
-      } catch (err) {
-        console.error(err);
-        syncBtn.disabled = false;
-        syncBtn.innerText = 'Sync Failed - Retry';
-        showToast('Sync error. Check console.');
-      }
+    if (!list.length) {
+      scroll.innerHTML = `<div class="empty-state"><div class="big">🪄</div><div class="sub">Forged entities appear here as editable cards. Nothing is sent to KV until you sync.</div></div>`;
+      renderStats();
+      return;
     }
+
+    scroll.innerHTML = "";
+    list.forEach((ent, idx) => scroll.appendChild(renderCard(activeType, ent, idx)));
+    renderStats();
+  }
+
+  function renderStats() {
+    const list = entities[activeType];
+    const counts = { new: 0, update: 0, flagged: 0 };
+    list.forEach(e => { const s = cardStatus[activeType][entityKey(activeType, e)]; if (counts[s] !== undefined) counts[s]++; });
+    document.getElementById("review-stats").innerHTML = list.length
+      ? `<span><i class="dot dot-new"></i>${counts.new} new</span><span><i class="dot dot-update"></i>${counts.update} upd</span>${counts.flagged ? `<span><i class="dot dot-flagged"></i>${counts.flagged} flag</span>` : ""}`
+      : "";
+  }
+
+  function renderCard(type, ent, idx) {
+    const key = entityKey(type, ent);
+    const status = cardStatus[type][key] || "new";
+    const card = document.createElement("div");
+    card.className = `card ${status === "new" ? "is-new" : status === "update" ? "is-update" : "is-flagged"} ${openState[type][key] ? "open" : ""}`;
+
+    const titleText = type === "timeline"
+      ? (ent.event || "⚠ Untitled event")
+      : (ent.name || "⚠ Unnamed");
+    const tagClass = status === "new" ? "tag-new" : status === "update" ? "tag-update" : "tag-flagged";
+    const tagText = status === "new" ? "NEW" : status === "update" ? "UPDATE" : "FIX";
+
+    const head = document.createElement("div");
+    head.className = "card-head";
+    head.innerHTML = `<span class="card-chevron">▶</span><span class="card-title">${escapeHtml(titleText)}</span><span class="card-tag ${tagClass}">${tagText}</span>`;
+    head.onclick = () => { openState[type][key] = !openState[type][key]; card.classList.toggle("open"); };
+    card.appendChild(head);
+
+    const body = document.createElement("div");
+    body.className = "card-body";
+    body.appendChild(buildFields(type, ent, idx));
+    card.appendChild(body);
+
+    return card;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  /* ── Field builders per type ── */
+  function buildFields(type, ent, idx) {
+    const wrap = document.createElement("div");
+    if (type === "rooms") wrap.appendChild(roomFields(ent, idx));
+    else if (type === "npcs") wrap.appendChild(npcFields(ent, idx));
+    else if (type === "rules") wrap.appendChild(ruleFields(ent, idx));
+    else if (type === "timeline") wrap.appendChild(timelineFields(ent, idx));
+    else if (type === "characters") wrap.appendChild(charFields(ent, idx));
+
+    const actions = document.createElement("div");
+    actions.className = "card-actions";
+    actions.innerHTML = `
+      <button class="btn-mini btn-mini-ghost" onclick="duplicateCard('${type}', ${idx})">Duplicate</button>
+      <button class="btn-mini btn-mini-danger" onclick="deleteCard('${type}', ${idx})">Delete</button>`;
+    wrap.appendChild(actions);
+    return wrap;
+  }
+
+  // Generic field helpers — each writes back to the entity and re-renders JSON.
+  function txt(label, val, onInput, area) {
+    const f = document.createElement("div"); f.className = "field";
+    f.innerHTML = `<label>${label}</label>`;
+    const el = document.createElement(area ? "textarea" : "input");
+    if (!area) el.type = "text";
+    el.value = val == null ? "" : val;
+    el.addEventListener("input", () => onInput(el.value));
+    f.appendChild(el);
+    return f;
+  }
+  function num(label, val, onInput) {
+    const f = document.createElement("div"); f.className = "field";
+    f.innerHTML = `<label>${label}</label>`;
+    const el = document.createElement("input"); el.type = "number"; el.value = val == null ? "" : val;
+    el.addEventListener("input", () => onInput(el.value === "" ? null : Number(el.value)));
+    f.appendChild(el); return f;
+  }
+  function row(...fields) { const r = document.createElement("div"); r.className = "field-row"; fields.forEach(x => r.appendChild(x)); return r; }
+  function sel(label, val, options, onInput) {
+    const f = document.createElement("div"); f.className = "field";
+    f.innerHTML = `<label>${label}</label>`;
+    const s = document.createElement("select");
+    options.forEach(o => { const opt = document.createElement("option"); opt.value = o; opt.textContent = o; if (o === val) opt.selected = true; s.appendChild(opt); });
+    s.addEventListener("change", () => onInput(s.value));
+    f.appendChild(s); return f;
+  }
+  function bool(label, val, onInput) {
+    const f = document.createElement("div"); f.className = "field";
+    const id = "cb_" + Math.random().toString(36).slice(2);
+    f.innerHTML = `<label>${label}</label>`;
+    const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = !!val; cb.id = id;
+    cb.style.width = "auto"; cb.style.transform = "scale(1.3)"; cb.style.cursor = "pointer";
+    cb.addEventListener("change", () => onInput(cb.checked));
+    f.appendChild(cb); return f;
+  }
+  // Chip / tag editor for string arrays.
+  function chips(label, arr, onChange) {
+    const f = document.createElement("div"); f.className = "field";
+    f.innerHTML = `<label>${label}</label>`;
+    const wrap = document.createElement("div"); wrap.className = "chip-input-wrap";
+    function redraw() {
+      wrap.innerHTML = "";
+      arr.forEach((v, i) => {
+        const chip = document.createElement("span"); chip.className = "chip";
+        chip.innerHTML = `${escapeHtml(v)} `;
+        const x = document.createElement("button"); x.textContent = "×";
+        x.onclick = () => { arr.splice(i, 1); onChange(arr); redraw(); };
+        chip.appendChild(x); wrap.appendChild(chip);
+      });
+      const inp = document.createElement("input"); inp.placeholder = "add + Enter";
+      inp.addEventListener("keydown", e => {
+        if (e.key === "Enter" && inp.value.trim()) { arr.push(inp.value.trim()); onChange(arr); redraw(); }
+      });
+      wrap.appendChild(inp);
+    }
+    redraw(); f.appendChild(wrap); return f;
+  }
+
+  function reRenderJsonAndStatus() { recomputeStatus(activeType); renderJson(); renderStats(); }
+
+  /* ── ROOM ── */
+  function roomFields(r, idx) {
+    const c = document.createElement("div");
+    c.appendChild(row(
+      txt("ID", r.id, v => { r.id = v; reRenderJsonAndStatus(); }),
+      txt("Area", r.area, v => { r.area = v; renderJson(); })
+    ));
+    c.appendChild(txt("Name", r.name, v => { r.name = v; refreshTitle(idx); reRenderJsonAndStatus(); }));
+    c.appendChild(txt("Read-Aloud", r.readaloud, v => { r.readaloud = v; renderJson(); }, true));
+    c.appendChild(txt("Description / DM Notes", r.description, v => { r.description = v; renderJson(); }, true));
+
+    const ms = document.createElement("div"); ms.className = "subsection";
+    ms.innerHTML = `<div class="subsection-title">Mechanics</div>`;
+    ms.appendChild(txt("Terrain", r.mechanics.terrain, v => { r.mechanics.terrain = v; renderJson(); }));
+    ms.appendChild(chips("Hazards", r.mechanics.hazards, a => { r.mechanics.hazards = a; renderJson(); }));
+    ms.appendChild(chips("Interactables", r.mechanics.interactables, a => { r.mechanics.interactables = a; renderJson(); }));
+    c.appendChild(ms);
+
+    const cs = document.createElement("div"); cs.className = "subsection";
+    cs.innerHTML = `<div class="subsection-title">Connections (room ids)</div>`;
+    cs.appendChild(row(
+      txt("North", r.connections.north, v => { r.connections.north = v || null; renderJson(); }),
+      txt("South", r.connections.south, v => { r.connections.south = v || null; renderJson(); })
+    ));
+    cs.appendChild(row(
+      txt("East", r.connections.east, v => { r.connections.east = v || null; renderJson(); }),
+      txt("West", r.connections.west, v => { r.connections.west = v || null; renderJson(); })
+    ));
+    c.appendChild(cs);
+
+    // Encounters
+    const es = document.createElement("div"); es.className = "subsection";
+    const esTitle = document.createElement("div"); esTitle.className = "subsection-title";
+    esTitle.innerHTML = `<span>Encounters</span>`;
+    es.appendChild(esTitle);
+    r.encounters.forEach((enc, ei) => es.appendChild(encounterItem(r, enc, ei, idx)));
+    const addEnc = document.createElement("button"); addEnc.className = "btn-add-sub"; addEnc.textContent = "+ Add Encounter";
+    addEnc.onclick = () => { r.encounters.push({ id: genId("enc"), name: "", type: "combat", enemies: [], completed: false, completedDate: null, notes: "" }); renderReview(); openState.rooms[entityKey("rooms", r)] = true; renderJson(); };
+    es.appendChild(addEnc);
+    c.appendChild(es);
+
+    c.appendChild(row(
+      bool("Discovered", r.discovered, v => { r.discovered = v; renderJson(); }),
+      bool("Cleared", r.cleared, v => { r.cleared = v; renderJson(); })
+    ));
+    c.appendChild(txt("Extra Notes", r.notes, v => { r.notes = v; renderJson(); }, true));
+    return c;
+  }
+
+  function encounterItem(room, enc, ei, roomIdx) {
+    const box = document.createElement("div"); box.className = "sub-item";
+    box.appendChild(row(
+      txt("Enc Name", enc.name, v => { enc.name = v; renderJson(); }),
+      sel("Type", enc.type, ["combat", "social", "exploration", "trap"], v => { enc.type = v; renderJson(); })
+    ));
+    // Enemies
+    const enWrap = document.createElement("div");
+    (enc.enemies || []).forEach((en, eni) => {
+      const eb = document.createElement("div"); eb.className = "sub-item";
+      eb.appendChild(row(
+        txt("Enemy", en.name, v => { en.name = v; renderJson(); }),
+        num("CR", en.cr, v => { en.cr = v; renderJson(); })
+      ));
+      eb.appendChild(row(
+        num("HP", en.hp, v => { en.hp = v; renderJson(); }),
+        num("AC", en.ac, v => { en.ac = v; renderJson(); })
+      ));
+      eb.appendChild(txt("Enemy Notes", en.notes, v => { en.notes = v; renderJson(); }, true));
+      const del = document.createElement("button"); del.className = "btn-add-sub"; del.style.borderColor = "#5a2a2f"; del.style.color = "var(--danger)"; del.textContent = "− Remove Enemy";
+      del.onclick = () => { enc.enemies.splice(eni, 1); renderReview(); openState.rooms[entityKey("rooms", room)] = true; renderJson(); };
+      eb.appendChild(del);
+      enWrap.appendChild(eb);
+    });
+    box.appendChild(enWrap);
+    const addEn = document.createElement("button"); addEn.className = "btn-add-sub"; addEn.textContent = "+ Add Enemy";
+    addEn.onclick = () => { enc.enemies = enc.enemies || []; enc.enemies.push({ id: genId("enemy"), name: "", hp: null, ac: null, cr: null, notes: "" }); renderReview(); openState.rooms[entityKey("rooms", room)] = true; renderJson(); };
+    box.appendChild(addEn);
+
+    box.appendChild(txt("Encounter Notes", enc.notes, v => { enc.notes = v; renderJson(); }, true));
+    const delEnc = document.createElement("button"); delEnc.className = "btn-add-sub"; delEnc.style.borderColor = "#5a2a2f"; delEnc.style.color = "var(--danger)"; delEnc.textContent = "− Remove Encounter";
+    delEnc.onclick = () => { room.encounters.splice(ei, 1); renderReview(); openState.rooms[entityKey("rooms", room)] = true; renderJson(); };
+    box.appendChild(delEnc);
+    return box;
+  }
+
+  /* ── NPC ── */
+  function npcFields(n, idx) {
+    const c = document.createElement("div");
+    c.appendChild(row(
+      txt("ID", n.id, v => { n.id = v; reRenderJsonAndStatus(); }),
+      txt("Race", n.race, v => { n.race = v; renderJson(); })
+    ));
+    c.appendChild(txt("Name", n.name, v => { n.name = v; refreshTitle(idx); reRenderJsonAndStatus(); }));
+    c.appendChild(txt("Role", n.role, v => { n.role = v; renderJson(); }));
+    c.appendChild(txt("Personality", n.personality, v => { n.personality = v; renderJson(); }, true));
+    c.appendChild(chips("Locations", n.locations, a => { n.locations = a; renderJson(); }));
+    c.appendChild(bool("Defeated", n.isDefeated, v => { n.isDefeated = v; renderJson(); }));
+    return c;
+  }
+
+  /* ── RULE ── */
+  function ruleFields(r, idx) {
+    const c = document.createElement("div");
+    c.appendChild(txt("ID", r.id, v => { r.id = v; reRenderJsonAndStatus(); }));
+    c.appendChild(txt("Name", r.name, v => { r.name = v; refreshTitle(idx); reRenderJsonAndStatus(); }));
+    c.appendChild(txt("Description", r.description, v => { r.description = v; renderJson(); }, true));
+    c.appendChild(chips("Applies To", r.appliesTo, a => { r.appliesTo = a; renderJson(); }));
+    return c;
+  }
+
+  /* ── TIMELINE ── */
+  function timelineFields(t, idx) {
+    const c = document.createElement("div");
+    c.appendChild(row(
+      txt("Date (YYYY-MM-DD)", t.date, v => { t.date = v; reRenderJsonAndStatus(); }),
+      txt("Event", t.event, v => { t.event = v; refreshTitle(idx); reRenderJsonAndStatus(); })
+    ));
+    c.appendChild(txt("Notes", t.notes, v => { t.notes = v; renderJson(); }, true));
+    return c;
+  }
+
+  /* ── CHARACTER (lite) ── */
+  function charFields(ch, idx) {
+    const c = document.createElement("div");
+    c.appendChild(row(
+      txt("ID", ch.id, v => { ch.id = v; reRenderJsonAndStatus(); }),
+      num("Level", ch.level, v => { ch.level = v || 1; renderJson(); })
+    ));
+    c.appendChild(txt("Name", ch.name, v => { ch.name = v; refreshTitle(idx); reRenderJsonAndStatus(); }));
+    c.appendChild(row(
+      txt("Race", ch.race, v => { ch.race = v; renderJson(); }),
+      txt("Class", ch.class, v => { ch.class = v; renderJson(); })
+    ));
+    const st = document.createElement("div"); st.className = "subsection";
+    st.innerHTML = `<div class="subsection-title">Combat Stats</div>`;
+    st.appendChild(row(
+      num("HP Cur", ch.stats.hp.current, v => { ch.stats.hp.current = v || 0; renderJson(); }),
+      num("HP Max", ch.stats.hp.max, v => { ch.stats.hp.max = v || 0; renderJson(); }),
+      num("AC", ch.stats.ac, v => { ch.stats.ac = v || 10; renderJson(); })
+    ));
+    st.appendChild(row(
+      num("Pass. Perc", ch.stats.passivePerception, v => { ch.stats.passivePerception = v || 10; renderJson(); }),
+      num("Pass. Ins", ch.stats.passiveInsight, v => { ch.stats.passiveInsight = v || 10; renderJson(); }),
+      num("Speed", ch.stats.speed, v => { ch.stats.speed = v || 30; renderJson(); })
+    ));
+    c.appendChild(st);
+    const ab = document.createElement("div"); ab.className = "subsection";
+    ab.innerHTML = `<div class="subsection-title">Abilities</div>`;
+    ab.appendChild(row(
+      num("STR", ch.abilities.strength, v => { ch.abilities.strength = v || 10; renderJson(); }),
+      num("DEX", ch.abilities.dexterity, v => { ch.abilities.dexterity = v || 10; renderJson(); }),
+      num("CON", ch.abilities.constitution, v => { ch.abilities.constitution = v || 10; renderJson(); })
+    ));
+    ab.appendChild(row(
+      num("INT", ch.abilities.intelligence, v => { ch.abilities.intelligence = v || 10; renderJson(); }),
+      num("WIS", ch.abilities.wisdom, v => { ch.abilities.wisdom = v || 10; renderJson(); }),
+      num("CHA", ch.abilities.charisma, v => { ch.abilities.charisma = v || 10; renderJson(); })
+    ));
+    c.appendChild(ab);
+    c.appendChild(num("Gold", ch.gold, v => { ch.gold = v || 0; renderJson(); }));
+    const note = document.createElement("p"); note.className = "hint"; note.style.marginTop = "0.6rem";
+    note.textContent = "Character-lite: identity, stats, abilities, gold. Inventory, spell slots, and familiars are managed in the Dashboard.";
+    c.appendChild(note);
+    return c;
+  }
+
+  // Update only a card's title text without a full re-render (keeps focus).
+  function refreshTitle(idx) {
+    const cards = document.querySelectorAll("#review-scroll .card");
+    const ent = entities[activeType][idx];
+    if (!cards[idx] || !ent) return;
+    const titleEl = cards[idx].querySelector(".card-title");
+    if (titleEl) titleEl.textContent = activeType === "timeline" ? (ent.event || "⚠ Untitled event") : (ent.name || "⚠ Unnamed");
+  }
+
+  /* ══════════════════════════════════════════════════
+     CARD ACTIONS
+  ══════════════════════════════════════════════════ */
+  function deleteCard(type, idx) {
+    entities[type].splice(idx, 1);
+    recomputeStatus(type); renderReview(); renderJson();
+  }
+  function duplicateCard(type, idx) {
+    const clone = JSON.parse(JSON.stringify(entities[type][idx]));
+    if (type !== "timeline") clone.id = genId(type.slice(0, 4));
+    entities[type].splice(idx + 1, 0, clone);
+    recomputeStatus(type); renderReview(); renderJson();
+  }
+  function addBlankCard() {
+    const ent = SCHEMA[activeType].blank();
+    entities[activeType].push(ent);
+    openState[activeType][entityKey(activeType, ent)] = true;
+    recomputeStatus(activeType); renderReview(); renderJson();
+  }
+  function expandCollapseAll() {
+    const anyClosed = entities[activeType].some(e => !openState[activeType][entityKey(activeType, e)]);
+    entities[activeType].forEach(e => { openState[activeType][entityKey(activeType, e)] = anyClosed; });
+    renderReview();
+  }
+
+  /* ══════════════════════════════════════════════════
+     JSON PREVIEW
+  ══════════════════════════════════════════════════ */
+  function renderJson() {
+    const list = entities[activeType];
+    document.getElementById("btn-sync").disabled = list.length === 0;
+    const out = { _target: SCHEMA[activeType].kvPath.join("."), _count: list.length, entities: list };
+    document.getElementById("json-preview").textContent = list.length
+      ? JSON.stringify(out, null, 2)
+      : "// Forge entities to preview output JSON.";
+  }
+
+  function copyJson() {
+    const list = entities[activeType];
+    if (!list.length) return toast("Nothing to copy.", "err");
+    const txt = JSON.stringify(list, null, 2);
+    navigator.clipboard?.writeText(txt).then(
+      () => toast("JSON copied to clipboard.", "ok"),
+      () => toast("Clipboard blocked — select manually.", "err")
+    );
+  }
+
+  /* ══════════════════════════════════════════════════
+     SYNC TO KV  — fetch latest, merge by id, POST with
+     optimistic lock. Matches worker contract exactly:
+       GET  → full state
+       POST → { base_version, data }  →  { new_version }
+     Schema V5 fields: version, lastModified (camelCase).
+  ══════════════════════════════════════════════════ */
+  async function syncToKV() {
+    const type = activeType;
+    const list = entities[type];
+    if (!list.length) return toast("Nothing to sync.", "err");
+
+    // Block sync if any card is flagged (missing identity).
+    recomputeStatus(type);
+    const flagged = list.filter(e => cardStatus[type][entityKey(type, e)] === "flagged");
+    if (flagged.length) {
+      renderReview();
+      return toast(`${flagged.length} card(s) missing a ${type === "timeline" ? "event title" : "name"}. Fix before syncing.`, "err");
+    }
+
+    const btn = document.getElementById("btn-sync");
+    btn.disabled = true; btn.textContent = "Syncing…";
+    setKvStatus("fetching latest…");
+
+    try {
+      const res = await fetch(WORKER_URL, { method: "GET", mode: "cors" });
+      if (!res.ok) throw new Error(`GET ${res.status}`);
+      let state = await res.json();
+      kvCache = state;
+
+      // Ensure containers exist.
+      state.version = state.version || 0;
+      if (!state.campaign) state.campaign = { rooms: [], npcs: [], rules: [], timeline: [] };
+      if (!Array.isArray(state.characters)) state.characters = [];
+      ["rooms", "npcs", "rules", "timeline"].forEach(k => { if (!Array.isArray(state.campaign[k])) state.campaign[k] = []; });
+
+      // Merge our entities into the correct KV array by identity.
+      const targetArr = readKvPath(state, SCHEMA[type].kvPath);
+      list.forEach(ent => {
+        const key = entityKey(type, ent);
+        const i = targetArr.findIndex(e => entityKey(type, e) === key);
+        if (i >= 0) targetArr[i] = ent; else targetArr.push(ent);
+      });
+
+      const baseVersion = state.version;
+      state.version = baseVersion + 1;
+      state.lastModified = Date.now();
+
+      setKvStatus("writing…");
+      const post = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ base_version: baseVersion, data: state })
+      });
+
+      if (post.status === 409) { setKvStatus("collision"); throw new Error("Version collision — another device wrote first. Re-run sync."); }
+      if (!post.ok) throw new Error(`POST ${post.status}`);
+      const result = await post.json();
+
+      kvCache = state; // refresh cache so re-syncs diff as 'update'
+      recomputeStatus(type);
+      renderReview();
+      setKvStatus(`synced · v${result.new_version ?? state.version}`);
+      toast(`Synced ${list.length} ${SCHEMA[type].label.toLowerCase()}(s) to ${SCHEMA[type].kvPath.join(".")}.`, "ok");
+
+      btn.textContent = "Synced ✓";
+      setTimeout(() => { btn.textContent = "Sync to KV"; btn.disabled = list.length === 0; }, 2200);
+    } catch (err) {
+      console.error(err);
+      setKvStatus("error");
+      toast(`Sync failed: ${err.message}`, "err");
+      btn.textContent = "Sync to KV"; btn.disabled = false;
+    }
+  }
+
+  function setKvStatus(s) { document.getElementById("kv-status").textContent = "KV: " + s; }
+
+  /* ══════════════════════════════════════════════════
+     TABS + MISC UI
+  ══════════════════════════════════════════════════ */
+  function switchTab(type) {
+    activeType = type;
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.type === type));
+    renderReview(); renderJson();
+    setKvStatus("idle");
+  }
+
+  function setModel(btn) {
+    MODEL = btn.dataset.model;
+    document.querySelectorAll("#model-toggle button").forEach(b => b.classList.toggle("active", b === btn));
+  }
+
+  function toast(msg, kind) {
+    const c = document.getElementById("toast-container");
+    const t = document.createElement("div");
+    t.className = "toast" + (kind === "err" ? " err" : kind === "ok" ? " ok" : "");
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 4600);
+  }
+
+  // Live char counter
+  document.getElementById("raw-input").addEventListener("input", e => {
+    document.getElementById("input-char-count").textContent = `${e.target.value.length.toLocaleString()} chars`;
+  });
+
+  // Initial paint
+  renderReview();
+  renderJson();
   </script>
 </body>
 </html>
