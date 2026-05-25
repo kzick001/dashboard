@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Showrunner // Data Forge V4.0</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23bb86fc;stop-opacity:1' /><stop offset='100%' style='stop-color:%239d4edd;stop-opacity:1' /></linearGradient></defs><polygon points='50,20 70,32 70,56 50,68 30,56 30,32' fill='none' stroke='url(%23grad)' stroke-width='2'/><polygon points='50,32 62,40 62,56 50,64 38,56 38,40' fill='none' stroke='url(%23grad)' stroke-width='1.5' opacity='0.7'/><polygon points='50,42 56,46 56,54 50,58 44,54 44,46' fill='url(%23grad)'/></svg>">
 
   <script>
     /* ──────────────────────────────────────────────
@@ -83,8 +84,6 @@
     }
     .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
     .tab-btn.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); box-shadow: 0 0 15px rgba(187, 134, 252, 0.2); }
-    .tab-btn svg { vertical-align: -3px; margin-right: 5px; }
-    .btn-action svg { vertical-align: -3px; margin-right: 5px; }
 
     /* ── WORKSPACE ── */
     .workspace { display: flex; flex: 1; gap: 1rem; padding: 1rem 2rem 1.5rem 2rem; overflow: hidden; }
@@ -264,7 +263,7 @@
 
   <nav class="navbar">
     <div class="brand">
-      <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+      <svg viewBox="0 0 100 100" width="24" height="24" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="grad-dataforge" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#bb86fc;stop-opacity:1" /><stop offset="100%" style="stop-color:#9d4edd;stop-opacity:1" /></linearGradient></defs><polygon points="50,20 70,32 70,56 50,68 30,56 30,32" fill="none" stroke="url(#grad-dataforge)" stroke-width="2"/><polygon points="50,32 62,40 62,56 50,64 38,56 38,40" fill="none" stroke="url(#grad-dataforge)" stroke-width="1.5" opacity="0.7"/><polygon points="50,42 56,46 56,54 50,58 44,54 44,46" fill="url(#grad-dataforge)"/></svg>
       SHOWRUNNER // DATA FORGE V4.0
     </div>
     <div class="nav-links">
@@ -276,12 +275,11 @@
 
   <div class="tab-container">
     <div class="tabs">
-      <button class="tab-btn active" data-type="rooms"     onclick="switchTab('rooms')"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="21" x2="21" y2="21"/><line x1="5" y1="21" x2="5" y2="10"/><line x1="19" y1="21" x2="19" y2="10"/><line x1="9" y1="21" x2="9" y2="14"/><line x1="15" y1="21" x2="15" y2="14"/><polygon points="3 10 12 3 21 10"/></svg>Rooms</button>
-      <button class="tab-btn"        data-type="npcs"      onclick="switchTab('npcs')"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>NPCs</button>
-      <button class="tab-btn"        data-type="rules"     onclick="switchTab('rules')"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Rules</button>
-      <button class="tab-btn"        data-type="timeline"  onclick="switchTab('timeline')"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Timeline</button>
-      <button class="tab-btn"        data-type="characters" onclick="switchTab('characters')"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/></svg>Characters</button>
-      <button class="tab-btn"        data-type="lootItems"  onclick="switchTab('lootItems')"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.2c0-1 .9-1.7 2.5-1.7s2.5.7 2.5 1.7c0 2.4-5 1.3-5 3.6 0 1 1 1.7 2.5 1.7s2.5-.7 2.5-1.7"/></svg>Loot Items</button>
+      <button class="tab-btn active" data-type="rooms"     onclick="switchTab('rooms')">🏛 Rooms</button>
+      <button class="tab-btn"        data-type="npcs"      onclick="switchTab('npcs')">👤 NPCs</button>
+      <button class="tab-btn"        data-type="rules"     onclick="switchTab('rules')">📐 Rules</button>
+      <button class="tab-btn"        data-type="timeline"  onclick="switchTab('timeline')">🕓 Timeline</button>
+      <button class="tab-btn"        data-type="characters" onclick="switchTab('characters')">⚔ Characters</button>
     </div>
   </div>
 
@@ -306,7 +304,7 @@
             </div>
           </div>
           <p class="hint">Haiku is fast/cheap for clean dumps. Switch to Sonnet for dense or ambiguous notes.</p>
-          <button id="btn-parse" class="btn-action btn-primary" onclick="runParse()"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Forge Entities</button>
+          <button id="btn-parse" class="btn-action btn-primary" onclick="runParse()">⚡ Forge Entities</button>
         </div>
       </div>
 
@@ -319,7 +317,7 @@
         <div class="pane-content">
           <div class="pane-scroll" id="review-scroll">
             <div class="empty-state">
-              <div class="big"><svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8L19 13M15 9h0M17.8 6.2L19 5M3 21l9-9M12.2 6.2L11 5"/></svg></div>
+              <div class="big">🪄</div>
               <div class="sub">Forged entities appear here as editable cards. Nothing is sent to KV until you sync.</div>
             </div>
           </div>
@@ -365,11 +363,11 @@
   let activeType = "rooms";
 
   // entities[type] = array of entity objects (schema-shaped)
-  const entities = { rooms: [], npcs: [], rules: [], timeline: [], characters: [], lootItems: [] };
+  const entities = { rooms: [], npcs: [], rules: [], timeline: [], characters: [] };
   // status[type][id] = 'new' | 'update' | 'flagged'
-  const cardStatus = { rooms: {}, npcs: {}, rules: {}, timeline: {}, characters: {}, lootItems: {} };
+  const cardStatus = { rooms: {}, npcs: {}, rules: {}, timeline: {}, characters: {} };
   // openState[type][id] = bool
-  const openState = { rooms: {}, npcs: {}, rules: {}, timeline: {}, characters: {}, lootItems: {} };
+  const openState = { rooms: {}, npcs: {}, rules: {}, timeline: {}, characters: {} };
 
   // Cache of the last fetched KV state, used for new/update diffing.
   let kvCache = null;
@@ -457,24 +455,6 @@
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       })
-    },
-    lootItems: {
-      label: "Loot Item",
-      idKey: "id",
-      kvPath: ["lootTables", "allItems"],
-      blank: () => ({
-        id: genId("loot-item"),
-        name: "",
-        type: "wondrous",
-        rarity: "common",
-        quantity: 1,
-        description: "",
-        mechanics: { toHitBonus: null, damageBonus: null, acBase: null, acMod: null, text: "" },
-        charges: null,
-        requiresAttunement: false,
-        isAttuned: false,
-        isDeleted: false
-      })
     }
   };
 
@@ -537,27 +517,7 @@
   "abilities": { "strength":number,"dexterity":number,"constitution":number,"intelligence":number,"wisdom":number,"charisma":number },
   "gold": number
 }
-Only include fields you can determine; omit unknown numeric fields rather than guessing wildly.`,
-      lootItems: `Each object: {
-  "id": "loot-item_<slug>"  (lowercase, derive from item name; stable),
-  "name": string  (required; the ITEM: line),
-  "type": one of "weapon"|"armor"|"wand"|"ring"|"potion"|"wondrous"|"instrument"|"consumable"|"trinket"|"currency"|"arcane focus"  (map the TYPE: line; "Wondrous Item" -> "wondrous", "Armor (Shield)" -> "armor", "Weapon (Longsword)" -> "weapon"),
-  "rarity": one of "common"|"uncommon"|"rare"|"very rare"|"legendary"  (infer from tier: Bronze/Wooden -> common, Silver -> uncommon, Gold -> rare, Platinum -> "very rare"),
-  "quantity": number  (default 1),
-  "description": string  (the full DESCRIPTION: flavor + mechanics text, preserved faithfully and completely),
-  "mechanics": {
-    "toHitBonus": number|null  (e.g. +1/+2/+3 to attack on weapons),
-    "damageBonus": string|null  (e.g. "1d8+1", or extra damage dice like "2d6 lightning"),
-    "acBase": number|null  (armor base AC if stated),
-    "acMod": number|null  (e.g. +1/+2/+3 to AC on armor/shields),
-    "text": string  (concise mechanical summary: bonuses, charges, spells granted, curses)
-  },
-  "charges": { "current": number, "max": number, "resetType": "no"|"shortRest"|"longRest"|"daily", "lastReset": null } | null  (only if the item explicitly has limited charges/uses; else null),
-  "requiresAttunement": boolean,
-  "isAttuned": false,
-  "isDeleted": false
-}
-Extract EVERY item in the notes (there may be dozens). Do NOT assign roll ranges — those are set later in the Loot Manager. Preserve the full flavor + mechanical description verbatim in "description"; additionally distill the hard numbers into "mechanics". For weapons map the +X to toHitBonus; for armor/shields map +X to acMod.`
+Only include fields you can determine; omit unknown numeric fields rather than guessing wildly.`
     };
 
     return `You are a data extraction engine for a D&D 5e campaign manager. Extract every ${SCHEMA[type].label} from the raw notes below into a JSON array.
@@ -617,7 +577,7 @@ ${raw}
       toast(`Parse failed: ${err.message}`, "err");
     } finally {
       btn.disabled = false;
-      btn.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Forge Entities';
+      btn.innerHTML = "⚡ Forge Entities";
     }
   }
 
@@ -708,7 +668,7 @@ ${raw}
     const list = entities[activeType];
 
     if (!list.length) {
-      scroll.innerHTML = `<div class="empty-state"><div class="big"><svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8L19 13M15 9h0M17.8 6.2L19 5M3 21l9-9M12.2 6.2L11 5"/></svg></div><div class="sub">Forged entities appear here as editable cards. Nothing is sent to KV until you sync.</div></div>`;
+      scroll.innerHTML = `<div class="empty-state"><div class="big">🪄</div><div class="sub">Forged entities appear here as editable cards. Nothing is sent to KV until you sync.</div></div>`;
       renderStats();
       return;
     }
@@ -765,7 +725,6 @@ ${raw}
     else if (type === "rules") wrap.appendChild(ruleFields(ent, idx));
     else if (type === "timeline") wrap.appendChild(timelineFields(ent, idx));
     else if (type === "characters") wrap.appendChild(charFields(ent, idx));
-    else if (type === "lootItems") wrap.appendChild(lootItemFields(ent, idx));
 
     const actions = document.createElement("div");
     actions.className = "card-actions";
@@ -1003,76 +962,6 @@ ${raw}
     return c;
   }
 
-  /* ── LOOT ITEM ── */
-  const LOOT_TYPES = ["weapon", "armor", "wand", "ring", "potion", "wondrous", "instrument", "consumable", "trinket", "currency", "arcane focus"];
-  const LOOT_RARITIES = ["common", "uncommon", "rare", "very rare", "legendary"];
-  const CHARGE_RESETS = ["no", "shortRest", "longRest", "daily"];
-
-  function lootItemFields(it, idx) {
-    const c = document.createElement("div");
-
-    // Ensure nested shape exists (parsed objects may omit it).
-    if (!it.mechanics) it.mechanics = { toHitBonus: null, damageBonus: null, acBase: null, acMod: null, text: "" };
-
-    c.appendChild(row(
-      txt("ID", it.id, v => { it.id = v; reRenderJsonAndStatus(); }),
-      num("Quantity", it.quantity, v => { it.quantity = v || 1; renderJson(); })
-    ));
-    c.appendChild(txt("Name", it.name, v => { it.name = v; refreshTitle(idx); reRenderJsonAndStatus(); }));
-    c.appendChild(row(
-      sel("Type", it.type, LOOT_TYPES, v => { it.type = v; renderJson(); }),
-      sel("Rarity", it.rarity, LOOT_RARITIES, v => { it.rarity = v; renderJson(); })
-    ));
-    c.appendChild(txt("Description (flavor + full text)", it.description, v => { it.description = v; renderJson(); }, true));
-
-    // Mechanics subsection
-    const ms = document.createElement("div"); ms.className = "subsection";
-    ms.innerHTML = `<div class="subsection-title">Mechanics</div>`;
-    ms.appendChild(txt("Summary", it.mechanics.text, v => { it.mechanics.text = v; renderJson(); }, true));
-    ms.appendChild(row(
-      num("To-Hit Bonus", it.mechanics.toHitBonus, v => { it.mechanics.toHitBonus = v; renderJson(); }),
-      txt("Damage Bonus", it.mechanics.damageBonus, v => { it.mechanics.damageBonus = v || null; renderJson(); })
-    ));
-    ms.appendChild(row(
-      num("AC Base", it.mechanics.acBase, v => { it.mechanics.acBase = v; renderJson(); }),
-      num("AC Mod", it.mechanics.acMod, v => { it.mechanics.acMod = v; renderJson(); })
-    ));
-    c.appendChild(ms);
-
-    // Charges subsection — toggled on/off (null when off).
-    const cs = document.createElement("div"); cs.className = "subsection";
-    cs.innerHTML = `<div class="subsection-title">Charges</div>`;
-    cs.appendChild(bool("Has charges", !!it.charges, v => {
-      it.charges = v ? { current: 0, max: 0, resetType: "no", lastReset: null } : null;
-      renderReview(); openState.lootItems[entityKey("lootItems", it)] = true; renderJson();
-    }));
-    if (it.charges) {
-      cs.appendChild(row(
-        num("Current", it.charges.current, v => { it.charges.current = v || 0; renderJson(); }),
-        num("Max", it.charges.max, v => { it.charges.max = v || 0; renderJson(); })
-      ));
-      cs.appendChild(sel("Reset Type", it.charges.resetType, CHARGE_RESETS, v => { it.charges.resetType = v; renderJson(); }));
-    }
-    c.appendChild(cs);
-
-    // Attunement
-    c.appendChild(row(
-      bool("Requires Attunement", it.requiresAttunement, v => {
-        it.requiresAttunement = v;
-        if (!v) it.isAttuned = false;
-        renderReview(); openState.lootItems[entityKey("lootItems", it)] = true; renderJson();
-      }),
-      it.requiresAttunement
-        ? bool("Is Attuned", it.isAttuned, v => { it.isAttuned = v; renderJson(); })
-        : (() => { const sp = document.createElement("div"); sp.className = "field"; return sp; })()
-    ));
-
-    const note = document.createElement("p"); note.className = "hint"; note.style.marginTop = "0.6rem";
-    note.textContent = "Roll ranges are assigned later in the Loot Manager import. Sync these to lootTables.allItems, then bulk-import into a tier.";
-    c.appendChild(note);
-    return c;
-  }
-
   // Update only a card's title text without a full re-render (keeps focus).
   function refreshTitle(idx) {
     const cards = document.querySelectorAll("#review-scroll .card");
@@ -1164,12 +1053,6 @@ ${raw}
       if (!state.campaign) state.campaign = { rooms: [], npcs: [], rules: [], timeline: [] };
       if (!Array.isArray(state.characters)) state.characters = [];
       ["rooms", "npcs", "rules", "timeline"].forEach(k => { if (!Array.isArray(state.campaign[k])) state.campaign[k] = []; });
-      // Loot containers (for lootItems sync target lootTables.allItems).
-      if (!state.lootTables) state.lootTables = {};
-      if (!state.lootTables.tiers) state.lootTables.tiers = { bronze: [], silver: [], gold: [], platinum: [] };
-      if (!state.lootTables.personal) state.lootTables.personal = {};
-      if (!state.lootTables.custom) state.lootTables.custom = {};
-      if (!Array.isArray(state.lootTables.allItems)) state.lootTables.allItems = [];
 
       // Merge our entities into the correct KV array by identity.
       const targetArr = readKvPath(state, SCHEMA[type].kvPath);
