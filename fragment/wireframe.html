@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign Designer</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300aaff' stroke-width='1.5' stroke-linejoin='round'%3E%3Cpolygon points='12 12 20 8 12 4 4 8 12 12'/%3E%3Cpolyline points='4 8 4 18 12 22 20 18 20 8'/%3E%3Cline x1='12' y1='12' x2='12' y2='22'/%3E%3Cpolyline points='8 4 6 0 12 2 18 0 16 4'/%3E%3C/svg%3E">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+    <style>
+        :root {
+            --bg-base: #1e1e1e;
+            --bg-panel: #252526;
+            --bg-canvas: #1a1a1a;
+            --bg-header: #2d2d30;
+            --border-color: #333;
+            --accent: #00aaff;
+            --text-main: #eee;
+            --good: #4CAF50;
+            --danger: #ff4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, sans-serif;
+            display: grid;
+            grid-template-rows: 50px 1fr;
+            grid-template-columns: 250px 1fr 350px;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--bg-base);
+            color: var(--text-main);
+        }
+
+        #global-header {
+            grid-column: 1 / -1;
+            background: var(--bg-header);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 10px;
+            z-index: 20;
+        }
+        #global-header .branding { font-weight: 900; letter-spacing: 2px; color: var(--accent); margin-right: 15px; font-size: 0.9rem; white-space: nowrap; }
+        #global-header input.design-name { background: var(--bg-base); color: #eee; border: 1px solid #444; border-radius: 3px; padding: 6px 10px; font-size: 0.8rem; width: 180px; outline: none; }
+        #global-header input.design-name:focus { border-color: var(--accent); }
+        #global-header button { background: #3c3c3c; color: #ccc; border: 1px solid #555; border-radius: 3px; padding: 6px 12px; font-size: 0.8rem; cursor: pointer; transition: 0.1s; white-space: nowrap; }
+        #global-header button:hover { background: #555; }
+        #global-header button:active { background: #222; }
+        #global-header button.accent { border-color: var(--accent); color: var(--accent); }
+        #global-header .lock-pill { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: #888; padding: 4px 8px; border: 1px solid #444; border-radius: 12px; cursor: pointer; }
+        #global-header .lock-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
+        #global-header .lock-pill.unlocked .dot { background: var(--good); }
+        #global-header .lock-pill.unlocked { color: var(--good); border-color: rgba(76,175,80,0.4); }
+
+        @media (max-width: 900px) {
+            body { grid-template-columns: 1fr; grid-template-rows: 50px auto 1fr auto; overflow-y: auto; }
+            #canvas-wrapper { min-height: 60vh; }
+            #global-header { flex-wrap: wrap; height: auto; padding: 8px 12px; }
+        }
+
+        .panel { display: flex; flex-direction: column; background: var(--bg-panel); overflow: hidden; }
+        #sidebar { border-right: 1px solid var(--border-color); z-index: 10; }
+        #code-engine { border-left: 1px solid var(--border-color); z-index: 10; }
+        header { padding: 10px; background: var(--bg-header); border-bottom: 1px solid var(--border-color); font-weight: bold; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #aaa; flex-shrink: 0; }
+
+        #toolbar { padding: 10px 0; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+        .primitive { padding: 8px 12px; background: #3c3c3c; border: 1px solid #555; border-radius: 4px; cursor: grab; margin: 5px 10px; font-size: 0.85rem; user-select: none; display: flex; align-items: center; gap: 8px; }
+        .primitive .glyph { color: var(--accent); font-family: monospace; }
+
+        #drafts { flex: 1; overflow-y: auto; padding: 5px 0; }
+        .draft-item { padding: 8px 12px; margin: 3px 10px; background: var(--bg-base); border: 1px solid #333; border-radius: 4px; font-size: 0.8rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+        .draft-item:hover { border-color: var(--accent); }
+        .draft-item .meta { color: #666; font-size: 0.65rem; font-family: monospace; }
+        .draft-item .del { color: #777; padding: 2px 6px; border-radius: 3px; }
+        .draft-item .del:hover { color: var(--danger); background: rgba(255,68,68,0.1); }
+        .draft-empty { color: #555; font-size: 0.75rem; padding: 12px; text-align: center; }
+
+        #inspector { padding: 15px; font-size: 0.85rem; color: #888; overflow-y: auto; flex: 1; }
+
+        #canvas-wrapper { display: flex; flex-direction: column; background: var(--bg-canvas); position: relative; }
+        #canvas-toolbar { padding: 10px; background: var(--bg-header); border-bottom: 1px solid var(--border-color); display: flex; justify-content: center; gap: 8px; z-index: 5; flex-wrap: wrap; }
+        #canvas-toolbar button { background: #3c3c3c; color: #ccc; border: 1px solid #555; border-radius: 3px; padding: 12px 16px; font-size: 0.85rem; cursor: pointer; transition: 0.1s; min-height: 44px; }
+        #canvas-toolbar button:hover { background: #555; }
+        #canvas-toolbar button:active { background: #222; }
+        #canvas-toolbar button.frame-active { border-color: var(--accent); color: var(--accent); background: rgba(0,170,255,0.1); }
+
+        #canvas-container { flex: 1; overflow-y: auto; display: flex; justify-content: center; padding: 40px; }
+        #canvas { width: 100%; transition: max-width 0.3s ease; display: flex; flex-direction: column; align-items: stretch; gap: 10px; min-height: 100%; }
+
+        .drop-target { border-color: var(--good) !important; background-color: rgba(76, 175, 80, 0.1) !important; box-shadow: inset 0 0 10px rgba(76, 175, 80, 0.2); }
+        .dragging { opacity: 0.5; }
+        .active-node { box-shadow: 0 0 0 2px var(--accent) !important; z-index: 2; }
+        .x-ray [data-type="container"] { border: 2px dashed #ff00ff !important; background: rgba(255, 0, 255, 0.05) !important; }
+        .x-ray [data-type] { outline: 1px solid rgba(0,170,255,0.25); }
+
+        .insp-select, .insp-input { width: 100%; background: var(--bg-panel); color: #eee; border: 1px solid #444; padding: 6px; margin-bottom: 10px; outline: none; font-family: inherit; }
+        .insp-group { border-top: 1px solid #444; padding-top: 15px; margin-bottom: 15px; }
+        .insp-group strong { color: #fff; font-size: 0.8rem; display: block; margin-bottom: 10px; }
+        .insp-label { display: block; margin-bottom: 5px; color: #aaa; font-size: 0.72rem; }
+
+        #code-engine .tabs { display: flex; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+        #code-engine .tabs button { flex: 1; background: var(--bg-header); color: #888; border: none; padding: 10px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; font-weight: bold; }
+        #code-engine .tabs button.active { color: var(--accent); background: var(--bg-base); border-bottom: 2px solid var(--accent); }
+        #code-editor-container { position: relative; flex: 1; overflow: hidden; background: var(--bg-base); transition: border-color 0.2s; }
+        #yaml-input, #yaml-highlight, #html-highlight { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 15px; font-family: monospace; font-size: 13px; line-height: 1.5; border: none; margin: 0; }
+        #yaml-input { color: transparent; background: transparent; caret-color: #fff; z-index: 2; resize: none; outline: none; white-space: pre; }
+        #yaml-highlight, #html-highlight { z-index: 1; overflow-y: auto; pointer-events: none; }
+        #html-highlight { z-index: 3; background: var(--bg-base); display: none; }
+        #code-engine.show-html #html-highlight { display: block; }
+        #code-engine.show-html #yaml-input { display: none; }
+
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--bg-header); border: 1px solid #555; border-radius: 6px; padding: 10px 18px; font-size: 0.85rem; opacity: 0; pointer-events: none; transition: 0.25s; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast.ok { border-color: var(--good); }
+        .toast.err { border-color: var(--danger); }
+
+        .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 90; }
+        .modal-bg.open { display: flex; }
+        .modal { background: var(--bg-panel); border: 1px solid #555; border-radius: 8px; padding: 24px; width: 320px; max-width: 90vw; }
+        .modal h3 { font-size: 1rem; margin-bottom: 6px; }
+        .modal p { font-size: 0.8rem; color: #aaa; margin-bottom: 16px; line-height: 1.5; }
+        .modal input { width: 100%; background: var(--bg-base); border: 1px solid #444; color: #fff; padding: 10px; border-radius: 4px; font-family: monospace; letter-spacing: 0.3em; text-align: center; font-size: 1.1rem; outline: none; margin-bottom: 14px; }
+        .modal input.error { border-color: var(--danger); }
+        .modal .err { color: var(--danger); font-size: 0.75rem; min-height: 16px; text-align: center; margin-bottom: 8px; }
+        .modal-actions { display: flex; gap: 10px; }
+        .modal-actions button { flex: 1; padding: 10px; border-radius: 4px; border: 1px solid #555; background: #3c3c3c; color: #ccc; cursor: pointer; font-size: 0.85rem; }
+        .modal-actions button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    </style>
+</head>
+<body>
+    <div id="global-header">
+        <div class="branding">DESIGNER // V1.3.0</div>
+        <input class="design-name" id="design-name" placeholder="Untitled Design" spellcheck="false">
+        <button id="btn-undo">Undo</button>
+        <button id="btn-redo">Redo</button>
+        <div style="width:1px;height:20px;background:#555;margin:0 4px;"></div>
+        <button id="btn-save" class="accent">Save</button>
+        <button id="btn-new">New</button>
+        <div style="flex:1;"></div>
+        <button id="btn-export-yaml">Export YAML</button>
+        <button id="btn-export-html">Export HTML</button>
+        <button id="btn-to-fragment" class="accent">→ Fragment</button>
+        <div class="lock-pill" id="lock-pill" title="Write access"><span class="dot"></span><span id="lock-text">Locked</span></div>
+    </div>
+
+    <div class="panel" id="sidebar">
+        <header>Primitives</header>
+        <div id="toolbar">
+            <div class="primitive" draggable="true" data-type="container"><span class="glyph">▢</span>Container</div>
+            <div class="primitive" draggable="true" data-type="text"><span class="glyph">T</span>Text</div>
+            <div class="primitive" draggable="true" data-type="button"><span class="glyph">▣</span>Button</div>
+            <div class="primitive" draggable="true" data-type="input"><span class="glyph">▭</span>Input</div>
+            <div class="primitive" draggable="true" data-type="divider"><span class="glyph">―</span>Divider</div>
+        </div>
+        <header>Saved Designs</header>
+        <div id="drafts"><div class="draft-empty">Loading…</div></div>
+        <header>Inspector</header>
+        <div id="inspector">Select a node on the canvas.</div>
+    </div>
+
+    <div id="canvas-wrapper">
+        <div id="canvas-toolbar">
+            <button id="btn-mobile">Mobile</button>
+            <button id="btn-tablet">Tablet</button>
+            <button id="btn-desktop" class="frame-active">Desktop</button>
+            <div style="width:1px;height:30px;background:#555;align-self:center;"></div>
+            <button id="btn-xray">X-Ray</button>
+        </div>
+        <div id="canvas-container">
+            <div id="canvas"></div>
+        </div>
+    </div>
+
+    <div class="panel" id="code-engine">
+        <header style="padding:0;">
+            <div class="tabs">
+                <button id="tab-yaml" class="active">State (YAML)</button>
+                <button id="tab-html">Output (HTML)</button>
+            </div>
+        </header>
+        <div id="code-editor-container">
+            <textarea id="yaml-input" spellcheck="false"></textarea>
+            <pre id="yaml-highlight"><code class="language-yaml" id="yaml-code"></code></pre>
+            <pre id="html-highlight"><code class="language-markup" id="html-code"></code></pre>
+        </div>
+    </div>
+
+    <div class="modal-bg" id="pin-modal">
+        <div class="modal">
+            <h3>Unlock writes</h3>
+            <p>Enter your Fragment PIN to enable saving and Fragment export. Unlocks for one hour.</p>
+            <input type="password" inputmode="numeric" id="pin-input" placeholder="••••" autocomplete="off">
+            <div class="err" id="pin-err"></div>
+            <div class="modal-actions">
+                <button id="pin-cancel">Cancel</button>
+                <button id="pin-submit" class="primary">Unlock</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-bg" id="fragment-modal">
+        <div class="modal">
+            <h3>Push to Fragment</h3>
+            <p>Generates semantic HTML and saves it as a snippet in your Fragment library.</p>
+            <label class="insp-label">Snippet name</label>
+            <input type="text" id="frag-name" style="letter-spacing:normal;text-align:left;font-family:inherit;font-size:0.9rem;" placeholder="My Component">
+            <label class="insp-label">Category</label>
+            <select id="frag-category" class="insp-select" style="margin-bottom:14px;">
+                <option>UI Components</option><option>Layouts</option><option>Forms</option>
+                <option>Utilities</option><option>Animations</option><option>SVG Icons</option><option>Other</option>
+            </select>
+            <div class="modal-actions">
+                <button id="frag-cancel">Cancel</button>
+                <button id="frag-submit" class="primary">Push</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ── Config ──────────────────────────────────────────
+        const API = "https://fragment.askozicki.workers.dev";
+        const FRAME_PRESETS = { mobile: 375, tablet: 768, desktop: 1100 };
+        const generateUUID = () => crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
+
+        // ── Toast ───────────────────────────────────────────
+        let toastTimer = null;
+        function toast(msg, ok = true) {
+            const t = document.getElementById("toast");
+            t.textContent = msg;
+            t.className = "toast show " + (ok ? "ok" : "err");
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { t.className = "toast"; }, 2600);
+        }
+
+        // ── Lock state ──────────────────────────────────────
+        const lockState = { locked: true, unlockedUntil: null };
+        async function refreshLock() {
+            try {
+                const r = await fetch(API + "/api/lock");
+                const d = await r.json();
+                lockState.locked = d.locked;
+                lockState.unlockedUntil = d.unlockedUntil;
+            } catch { /* offline: stay locked */ }
+            const pill = document.getElementById("lock-pill");
+            document.getElementById("lock-text").textContent = lockState.locked ? "Locked" : "Unlocked";
+            pill.classList.toggle("unlocked", !lockState.locked);
+        }
+        async function submitPin() {
+            const input = document.getElementById("pin-input");
+            const pin = input.value;
+            if (!pin) return;
+            try {
+                const r = await fetch(API + "/api/unlock", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ pin })
+                });
+                const d = await r.json();
+                if (!r.ok) throw new Error(d.error || "Failed");
+                lockState.locked = false;
+                lockState.unlockedUntil = d.unlockedUntil;
+                closeModal("pin-modal");
+                refreshLock();
+                toast("Unlocked for 1 hour");
+            } catch (e) {
+                document.getElementById("pin-err").textContent = e.message;
+                input.classList.add("error");
+                input.value = "";
+                setTimeout(() => input.classList.remove("error"), 400);
+            }
+        }
+
+        function openModal(id) { document.getElementById(id).classList.add("open"); }
+        function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+        function requireUnlock() {
+            if (lockState.locked) { toast("Unlock first", false); openModal("pin-modal"); setTimeout(() => document.getElementById("pin-input").focus(), 100); return false; }
+            return true;
+        }
+
+        // ── Semantic HTML generator (Phase 3) ───────────────
+        function htmlEscape(s) {
+            return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+        function gapPx(g) { return g === "sm" ? "8px" : g === "lg" ? "24px" : "15px"; }
+        function padPx(p) { return p === "sm" ? "8px" : p === "lg" ? "24px" : "15px"; }
+
+        function nodeToHTML(node, depth) {
+            const pad = "  ".repeat(depth);
+            const alias = node.props.alias ? ` data-alias="${htmlEscape(node.props.alias)}"` : "";
+            const aria = node.props.alias ? ` aria-label="${htmlEscape(node.props.alias)}"` : "";
+
+            if (node.type === "container") {
+                const styles = [
+                    "display:flex",
+                    `flex-direction:${node.props.direction || "column"}`,
+                    `justify-content:${node.props.justify || "flex-start"}`,
+                    `align-items:${node.props.align || "stretch"}`,
+                    `flex-wrap:${node.props.wrap || "nowrap"}`,
+                    `gap:${gapPx(node.props.gap)}`,
+                    `padding:${padPx(node.props.spacing)}`,
+                    `overflow:${node.props.overflow || "visible"}`
+                ];
+                if (node.props.sizing === "fill") styles.push("flex:1");
+                const kids = (node.children || []).map(c => nodeToHTML(c, depth + 1)).join("\n");
+                const inner = kids ? "\n" + kids + "\n" + pad : "";
+                return `${pad}<section${alias}${aria} style="${styles.join(";")}">${inner}</section>`;
+            }
+            if (node.type === "text") {
+                const tag = node.props.tag || "p";
+                return `${pad}<${tag}${alias}>${htmlEscape(node.props.label || "Text")}</${tag}>`;
+            }
+            if (node.type === "button") {
+                const w = node.props.weight || "primary";
+                const disabled = w === "disabled" ? " disabled" : "";
+                return `${pad}<button${alias} class="btn btn--${w}"${disabled}>${htmlEscape(node.props.label || "Button")}</button>`;
+            }
+            if (node.type === "input") {
+                const itype = node.props.inputType || "text";
+                const ph = node.props.label ? ` placeholder="${htmlEscape(node.props.label)}"` : "";
+                return `${pad}<input${alias} type="${itype}"${ph} />`;
+            }
+            if (node.type === "divider") {
+                return `${pad}<hr${alias} />`;
+            }
+            return `${pad}<!-- unknown: ${node.type} -->`;
+        }
+
+        function generateHTML(tree, frame) {
+            const width = FRAME_PRESETS[frame] || FRAME_PRESETS.desktop;
+            const body = tree.map(n => nodeToHTML(n, 2)).join("\n");
+            return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; padding: 20px; max-width: ${width}px; margin: 0 auto; }
+  .btn { padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; border: 1px solid #888; }
+  .btn--primary { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+  .btn--secondary { background: transparent; color: #1a1a1a; border: 2px solid #888; }
+  .btn--disabled { opacity: 0.4; cursor: not-allowed; }
+  input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; }
+  hr { border: none; border-top: 1px solid #ddd; }
+</style>
+</head>
+<body>
+${body}
+</body>
+</html>`;
+        }
+
+        // ── Markdown spec generator ─────────────────────────
+        function generateSpec(tree) {
+            let md = "# Logic Specification\n\n";
+            const walk = (nodes, depth) => {
+                nodes.forEach(n => {
+                    const indent = "  ".repeat(depth);
+                    const name = n.props.alias ? `${n.props.alias} (${n.type})` : n.type.toUpperCase();
+                    md += `${indent}- **${name}**: ${n.props.notes || "No documentation."}\n`;
+                    if (n.children) walk(n.children, depth + 1);
+                });
+            };
+            walk(tree, 0);
+            return md;
+        }
+
+        // ── Core Engine ─────────────────────────────────────
+        class StateStore {
+            constructor() {
+                this.tree = [];
+                this.history = [];
+                this.currentIndex = -1;
+                this.activeNodeId = null;
+                this.frame = "desktop";
+                this.designId = null;
+                this.designName = "";
+                this.codeView = "yaml";
+            }
+
+            init(initialTree) {
+                this.tree = initialTree || [];
+                this.saveSnapshot();
+                this.render();
+                this.wireEvents();
+            }
+
+            saveSnapshot() {
+                try {
+                    const snapshot = JSON.stringify(this.tree);
+                    if (this.currentIndex > -1 && this.history[this.currentIndex] === snapshot) return;
+                    if (this.currentIndex < this.history.length - 1) {
+                        this.history = this.history.slice(0, this.currentIndex + 1);
+                    }
+                    this.history.push(snapshot);
+                    this.currentIndex++;
+                } catch (error) { console.error("State stringification failed.", error); }
+            }
+
+            update(newTree, triggerRender = true) {
+                this.tree = newTree;
+                this.saveSnapshot();
+                if (triggerRender) this.render();
+            }
+
+            undo() {
+                if (this.currentIndex > 0) {
+                    this.currentIndex--;
+                    this.tree = JSON.parse(this.history[this.currentIndex]);
+                    this.render();
+                }
+            }
+            redo() {
+                if (this.currentIndex < this.history.length - 1) {
+                    this.currentIndex++;
+                    this.tree = JSON.parse(this.history[this.currentIndex]);
+                    this.render();
+                }
+            }
+
+            deepCloneWithNewIds(node) {
+                const clone = structuredClone(node);
+                const refreshIds = (n) => { n.id = generateUUID(); if (n.children) n.children.forEach(refreshIds); };
+                refreshIds(clone);
+                return clone;
+            }
+
+            newDesign() {
+                this.activeNodeId = null;
+                this.designId = null;
+                this.designName = "";
+                document.getElementById("design-name").value = "";
+                this.update([{
+                    id: generateUUID(), type: 'container',
+                    props: { alias: 'Root Frame', notes: '', spacing: 'lg', sizing: 'hug', direction: 'column', justify: 'flex-start', align: 'stretch', wrap: 'nowrap', gap: 'md', overflow: 'visible' },
+                    children: []
+                }]);
+                this.buildInspector();
+            }
+
+            findNodeInfo(id, currentNodes = this.tree) {
+                for (let i = 0; i < currentNodes.length; i++) {
+                    if (currentNodes[i].id === id) return { node: currentNodes[i], parentArray: currentNodes, index: i };
+                    if (currentNodes[i].children) {
+                        const found = this.findNodeInfo(id, currentNodes[i].children);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            }
+
+            isDescendant(parentId, childId, tree) {
+                if (parentId === childId) return true;
+                const parentInfo = this.findNodeInfo(parentId, tree);
+                if (!parentInfo || !parentInfo.node.children) return false;
+                const check = (children) => {
+                    if (!children) return false;
+                    for (let child of children) {
+                        if (child.id === childId) return true;
+                        if (check(child.children)) return true;
+                    }
+                    return false;
+                };
+                return check(parentInfo.node.children);
+            }
+
+            handleDrop(e, targetId) {
+                e.preventDefault();
+                e.stopPropagation();
+                document.querySelectorAll('.drop-target').forEach(tgt => tgt.classList.remove('drop-target'));
+                const dataStr = e.dataTransfer.getData('text/plain');
+                if (!dataStr) return;
+                let data;
+                try { data = JSON.parse(dataStr); } catch { return; }
+
+                let newTree = structuredClone(this.tree);
+                let targetArray = newTree;
+                if (targetId !== 'root') {
+                    const targetInfo = this.findNodeInfo(targetId, newTree);
+                    if (!targetInfo || targetInfo.node.type !== 'container') return;
+                    targetArray = targetInfo.node.children;
+                }
+
+                if (data.action === 'create') {
+                    targetArray.push(this.makeNode(data.type));
+                    this.activeNodeId = targetArray[targetArray.length - 1].id;
+                } else if (data.action === 'move') {
+                    const sourceId = data.id;
+                    if (targetId !== 'root' && this.isDescendant(sourceId, targetId, newTree)) { console.warn("Circular dependency blocked."); return; }
+                    const sourceInfo = this.findNodeInfo(sourceId, newTree);
+                    if (!sourceInfo) return;
+                    sourceInfo.parentArray.splice(sourceInfo.index, 1);
+                    targetArray.push(sourceInfo.node);
+                }
+                this.update(newTree);
+                this.buildInspector();
+            }
+
+            makeNode(type) {
+                const base = { id: generateUUID(), type, props: { alias: '', notes: '', spacing: 'md', sizing: 'hug' } };
+                if (type === 'container') {
+                    Object.assign(base.props, { direction: 'column', justify: 'flex-start', align: 'stretch', wrap: 'nowrap', gap: 'md', overflow: 'visible' });
+                    base.children = [];
+                } else if (type === 'text') {
+                    Object.assign(base.props, { label: 'Text', tag: 'p' });
+                } else if (type === 'button') {
+                    Object.assign(base.props, { label: 'Button', weight: 'primary' });
+                } else if (type === 'input') {
+                    Object.assign(base.props, { label: 'Placeholder', inputType: 'text' });
+                } else if (type === 'divider') {
+                    /* no extra props */
+                }
+                return base;
+            }
+
+            render() {
+                const canvas = document.getElementById('canvas');
+                canvas.innerHTML = '';
+                if (this.tree.length === 0) {
+                    canvas.innerHTML = '<div style="color:#555; padding:20px; pointer-events:none; text-align:center;">Drag elements here.</div>';
+                } else {
+                    this.tree.forEach(node => canvas.appendChild(this.buildDOMNode(node)));
+                }
+                this.syncCode();
+            }
+
+            buildDOMNode(node) {
+                const el = document.createElement('div');
+                el.dataset.id = node.id;
+                el.dataset.type = node.type;
+                el.draggable = true;
+                if (this.activeNodeId === node.id) el.classList.add('active-node');
+
+                el.style.flexGrow = node.props.sizing === 'fill' ? '1' : '0';
+                el.style.flexShrink = node.props.sizing === 'fill' ? '1' : '0';
+                el.style.flexBasis = node.props.sizing === 'fill' ? '0%' : 'auto';
+                el.style.padding = padPx(node.props.spacing);
+                el.style.margin = node.type === 'container' ? '0' : '5px 0';
+                el.style.position = 'relative';
+                el.style.borderRadius = '4px';
+
+                if (node.type === 'container') {
+                    el.style.display = 'flex';
+                    el.style.flexDirection = node.props.direction || 'column';
+                    el.style.justifyContent = node.props.justify || 'flex-start';
+                    el.style.alignItems = node.props.align || 'stretch';
+                    el.style.flexWrap = node.props.wrap || 'nowrap';
+                    el.style.gap = gapPx(node.props.gap);
+                    el.style.overflow = node.props.overflow || 'visible';
+                    el.style.minHeight = '60px';
+                    el.style.border = '1px dashed #555';
+                    el.style.backgroundColor = 'transparent';
+                } else if (node.type === 'divider') {
+                    el.style.borderTop = '2px solid #555';
+                    el.style.minHeight = '2px';
+                } else {
+                    const weight = node.props.weight || 'primary';
+                    if (node.type === 'button' && weight === 'secondary') {
+                        el.style.backgroundColor = 'transparent'; el.style.border = '2px solid #555';
+                    } else if (node.type === 'button' && weight === 'disabled') {
+                        el.style.backgroundColor = '#1a1a1a'; el.style.border = '1px dashed #444'; el.style.opacity = '0.4';
+                    } else if (node.type === 'input') {
+                        el.style.backgroundColor = '#222'; el.style.border = '1px solid #3a6ea5';
+                    } else {
+                        el.style.backgroundColor = '#2a2a2a'; el.style.border = '1px solid #444';
+                    }
+                }
+
+                const label = document.createElement('div');
+                let displayString;
+                if (node.type === 'divider') displayString = node.props.alias ? `${node.props.alias} (divider)` : 'DIVIDER';
+                else displayString = node.props.label ? node.props.label : (node.props.alias ? `${node.props.alias} (${node.type})` : node.type.toUpperCase());
+                label.textContent = displayString;
+                label.style.fontSize = node.props.label ? '0.85rem' : '0.65rem';
+                label.style.fontWeight = 'bold';
+                label.style.color = node.props.label ? '#eee' : '#777';
+                label.style.pointerEvents = 'none';
+                label.style.marginBottom = node.type === 'container' ? '10px' : '0';
+                el.appendChild(label);
+
+                if (node.children && node.children.length > 0) {
+                    node.children.forEach(child => el.appendChild(this.buildDOMNode(child)));
+                }
+
+                el.addEventListener('dragstart', (e) => {
+                    e.stopPropagation();
+                    e.dataTransfer.setData('text/plain', JSON.stringify({ action: 'move', id: node.id }));
+                    setTimeout(() => el.classList.add('dragging'), 0);
+                });
+                el.addEventListener('dragend', (e) => {
+                    e.stopPropagation(); el.classList.remove('dragging');
+                    document.querySelectorAll('.drop-target').forEach(tgt => tgt.classList.remove('drop-target'));
+                });
+                if (node.type === 'container') {
+                    el.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); el.classList.add('drop-target'); });
+                    el.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); el.classList.remove('drop-target'); });
+                    el.addEventListener('drop', (e) => this.handleDrop(e, node.id));
+                }
+                return el;
+            }
+
+            buildInspector() {
+                const panel = document.getElementById('inspector');
+                if (!this.activeNodeId) { panel.innerHTML = '<div style="color:#888;">Select a node.</div>'; return; }
+                const info = this.findNodeInfo(this.activeNodeId);
+                if (!info) { panel.innerHTML = '<div style="color:#888;">Select a node.</div>'; return; }
+                const type = info.node.type;
+                const isContainer = type === 'container';
+
+                let html = `
+                    <div style="margin-bottom:15px; color:#fff;">Type: <strong>${type.toUpperCase()}</strong><br><span style="font-size:0.7rem; color:#666;">ID: ${info.node.id.substring(0,8)}</span></div>
+                    <div class="insp-group" style="border-top:none; padding-top:0;">
+                        <strong>Semantics</strong>
+                        <label class="insp-label">Semantic Name (Alias)</label>
+                        <input type="text" id="prop-alias" spellcheck="false" placeholder="e.g. login-btn" class="insp-input" style="color:var(--accent); font-family:monospace;">
+                        <label class="insp-label">Documentation Notes</label>
+                        <textarea id="prop-notes" spellcheck="false" class="insp-input" style="height:70px; resize:vertical;"></textarea>
+                    </div>`;
+
+                // Type-specific visual group
+                if (type === 'text') {
+                    html += `<div class="insp-group"><strong>Text</strong>
+                        <label class="insp-label">Content</label>
+                        <input type="text" id="prop-label" class="insp-input">
+                        <label class="insp-label">Tag (semantic)</label>
+                        <select id="prop-tag" class="insp-select">
+                            <option value="h1">Heading 1</option><option value="h2">Heading 2</option>
+                            <option value="h3">Heading 3</option><option value="p">Paragraph</option>
+                            <option value="span">Span</option><option value="label">Label</option>
+                        </select></div>`;
+                } else if (type === 'button') {
+                    html += `<div class="insp-group"><strong>Button</strong>
+                        <label class="insp-label">Label</label>
+                        <input type="text" id="prop-label" class="insp-input">
+                        <label class="insp-label">Visual Weight</label>
+                        <select id="prop-weight" class="insp-select">
+                            <option value="primary">Primary (Filled)</option>
+                            <option value="secondary">Secondary (Outline)</option>
+                            <option value="disabled">Disabled (Faded)</option>
+                        </select></div>`;
+                } else if (type === 'input') {
+                    html += `<div class="insp-group"><strong>Input</strong>
+                        <label class="insp-label">Placeholder</label>
+                        <input type="text" id="prop-label" class="insp-input">
+                        <label class="insp-label">Input Type</label>
+                        <select id="prop-inputType" class="insp-select">
+                            <option value="text">Text</option><option value="email">Email</option>
+                            <option value="password">Password</option><option value="number">Number</option>
+                            <option value="search">Search</option><option value="tel">Tel</option>
+                        </select></div>`;
+                }
+
+                // Item properties (all nodes)
+                html += `<div class="insp-group"><strong>Item Properties</strong>
+                    <label class="insp-label">Sizing Behavior</label>
+                    <select id="prop-sizing" class="insp-select">
+                        <option value="hug">Hug Content (Auto)</option>
+                        <option value="fill">Fill Available Space (Grow)</option>
+                    </select>
+                    <label class="insp-label">Internal Padding</label>
+                    <select id="prop-spacing" class="insp-select">
+                        <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option>
+                    </select></div>`;
+
+                if (isContainer) {
+                    html += `<div class="insp-group"><strong>Flex Layout Engine</strong>
+                        <label class="insp-label">Direction</label>
+                        <select id="prop-direction" class="insp-select"><option value="column">Column (Stack)</option><option value="row">Row (Horizontal)</option></select>
+                        <label class="insp-label">Justify (Main Axis)</label>
+                        <select id="prop-justify" class="insp-select"><option value="flex-start">Start</option><option value="center">Center</option><option value="space-between">Space Between</option></select>
+                        <label class="insp-label">Align (Cross Axis)</label>
+                        <select id="prop-align" class="insp-select"><option value="stretch">Stretch</option><option value="flex-start">Start</option><option value="center">Center</option></select>
+                        <label class="insp-label">Wrap & Gap</label>
+                        <div style="display:flex; gap:5px;">
+                            <select id="prop-wrap" class="insp-select" style="flex:1;"><option value="nowrap">No Wrap</option><option value="wrap">Wrap</option></select>
+                            <select id="prop-gap" class="insp-select" style="flex:1;"><option value="sm">Gap: Sm</option><option value="md">Gap: Md</option><option value="lg">Gap: Lg</option></select>
+                        </div>
+                        <label class="insp-label">Overflow Content</label>
+                        <select id="prop-overflow" class="insp-select"><option value="visible">Visible (Spill Out)</option><option value="hidden">Hidden (Clip)</option><option value="auto">Scroll (Auto)</option></select></div>`;
+                }
+
+                html += `<div style="display:flex; gap:5px; margin-bottom:15px;">
+                        <button id="btn-up" style="flex:1; padding:6px; background:#333; color:#fff; border:none; border-radius:3px; cursor:pointer;">↑ Up</button>
+                        <button id="btn-down" style="flex:1; padding:6px; background:#333; color:#fff; border:none; border-radius:3px; cursor:pointer;">↓ Down</button>
+                        <button id="btn-duplicate" style="flex:1; padding:6px; background:#2b4a6f; color:#fff; border:none; border-radius:3px; cursor:pointer;">Copy</button>
+                    </div>
+                    <button id="btn-delete" style="width:100%; background:#6b2a2a; color:#fff; border:none; padding:12px; cursor:pointer; border-radius:3px;">Destroy Node</button>`;
+
+                panel.innerHTML = html;
+
+                // Data binding
+                document.getElementById('prop-alias').value = info.node.props.alias || '';
+                document.getElementById('prop-notes').value = info.node.props.notes || '';
+                document.getElementById('prop-spacing').value = info.node.props.spacing || 'md';
+                document.getElementById('prop-sizing').value = info.node.props.sizing || 'hug';
+                if (type === 'text') {
+                    document.getElementById('prop-label').value = info.node.props.label || '';
+                    document.getElementById('prop-tag').value = info.node.props.tag || 'p';
+                } else if (type === 'button') {
+                    document.getElementById('prop-label').value = info.node.props.label || '';
+                    document.getElementById('prop-weight').value = info.node.props.weight || 'primary';
+                } else if (type === 'input') {
+                    document.getElementById('prop-label').value = info.node.props.label || '';
+                    document.getElementById('prop-inputType').value = info.node.props.inputType || 'text';
+                }
+                if (isContainer) {
+                    document.getElementById('prop-direction').value = info.node.props.direction || 'column';
+                    document.getElementById('prop-justify').value = info.node.props.justify || 'flex-start';
+                    document.getElementById('prop-align').value = info.node.props.align || 'stretch';
+                    document.getElementById('prop-wrap').value = info.node.props.wrap || 'nowrap';
+                    document.getElementById('prop-gap').value = info.node.props.gap || 'md';
+                    document.getElementById('prop-overflow').value = info.node.props.overflow || 'visible';
+                }
+
+                const bindProp = (id, propName, requiresRender = true) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    el.addEventListener('input', (e) => {
+                        const newTree = structuredClone(this.tree);
+                        const nodeInfo = this.findNodeInfo(this.activeNodeId, newTree);
+                        if (nodeInfo) {
+                            nodeInfo.node.props[propName] = e.target.value;
+                            this.update(newTree, requiresRender);
+                            if (!requiresRender) this.syncCode();
+                        }
+                    });
+                };
+
+                bindProp('prop-alias', 'alias');
+                bindProp('prop-notes', 'notes', false);
+                bindProp('prop-spacing', 'spacing');
+                bindProp('prop-sizing', 'sizing');
+                if (type === 'text') { bindProp('prop-label', 'label'); bindProp('prop-tag', 'tag'); }
+                else if (type === 'button') { bindProp('prop-label', 'label'); bindProp('prop-weight', 'weight'); }
+                else if (type === 'input') { bindProp('prop-label', 'label'); bindProp('prop-inputType', 'inputType'); }
+                if (isContainer) ['direction', 'justify', 'align', 'wrap', 'gap', 'overflow'].forEach(p => bindProp(`prop-${p}`, p));
+
+                document.getElementById('btn-up').addEventListener('click', () => {
+                    if (info.index > 0) {
+                        const newTree = structuredClone(this.tree);
+                        const ni = this.findNodeInfo(this.activeNodeId, newTree);
+                        [ni.parentArray[ni.index - 1], ni.parentArray[ni.index]] = [ni.parentArray[ni.index], ni.parentArray[ni.index - 1]];
+                        this.update(newTree); this.buildInspector();
+                    }
+                });
+                document.getElementById('btn-down').addEventListener('click', () => {
+                    if (info.index < info.parentArray.length - 1) {
+                        const newTree = structuredClone(this.tree);
+                        const ni = this.findNodeInfo(this.activeNodeId, newTree);
+                        [ni.parentArray[ni.index], ni.parentArray[ni.index + 1]] = [ni.parentArray[ni.index + 1], ni.parentArray[ni.index]];
+                        this.update(newTree); this.buildInspector();
+                    }
+                });
+                document.getElementById('btn-duplicate').addEventListener('click', () => {
+                    const newTree = structuredClone(this.tree);
+                    const ni = this.findNodeInfo(this.activeNodeId, newTree);
+                    const cloned = this.deepCloneWithNewIds(ni.node);
+                    ni.parentArray.splice(ni.index + 1, 0, cloned);
+                    this.activeNodeId = cloned.id;
+                    this.update(newTree); this.buildInspector();
+                });
+                document.getElementById('btn-delete').addEventListener('click', () => {
+                    const newTree = structuredClone(this.tree);
+                    const ni = this.findNodeInfo(this.activeNodeId, newTree);
+                    if (ni) { ni.parentArray.splice(ni.index, 1); this.activeNodeId = null; this.update(newTree); this.buildInspector(); }
+                });
+            }
+
+            syncCode() {
+                // YAML
+                try {
+                    const yamlString = jsyaml.dump(this.tree, { indent: 2 });
+                    const input = document.getElementById('yaml-input');
+                    const codeBlock = document.getElementById('yaml-code');
+                    if (document.activeElement !== input) {
+                        input.value = yamlString;
+                        codeBlock.textContent = yamlString;
+                    } else {
+                        codeBlock.textContent = input.value;
+                    }
+                    Prism.highlightElement(codeBlock);
+                } catch { console.error("YAML parser failed."); }
+                // HTML preview
+                if (this.codeView === 'html') {
+                    const htmlBlock = document.getElementById('html-code');
+                    htmlBlock.textContent = generateHTML(this.tree, this.frame);
+                    Prism.highlightElement(htmlBlock);
+                }
+            }
+
+            setFrame(frame) {
+                this.frame = frame;
+                document.getElementById('canvas').style.maxWidth = FRAME_PRESETS[frame] + 'px';
+                ['mobile', 'tablet', 'desktop'].forEach(f => document.getElementById('btn-' + f).classList.toggle('frame-active', f === frame));
+                if (this.codeView === 'html') this.syncCode();
+            }
+
+            setCodeView(view) {
+                this.codeView = view;
+                document.getElementById('code-engine').classList.toggle('show-html', view === 'html');
+                document.getElementById('tab-yaml').classList.toggle('active', view === 'yaml');
+                document.getElementById('tab-html').classList.toggle('active', view === 'html');
+                this.syncCode();
+            }
+
+            // ── Persistence (Phase 1 KV adapter) ────────────
+            async loadDrafts() {
+                const wrap = document.getElementById('drafts');
+                try {
+                    const r = await fetch(API + "/api/designs");
+                    const d = await r.json();
+                    const designs = d.designs || [];
+                    if (designs.length === 0) { wrap.innerHTML = '<div class="draft-empty">No saved designs yet.</div>'; return; }
+                    wrap.innerHTML = '';
+                    designs.forEach(des => {
+                        const item = document.createElement('div');
+                        item.className = 'draft-item';
+                        item.innerHTML = `<span class="name">${htmlEscape(des.name)}</span><span class="meta">${des.frame || ''}</span>`;
+                        item.querySelector('.name').addEventListener('click', () => this.loadDesign(des.id));
+                        const del = document.createElement('span');
+                        del.className = 'del'; del.textContent = '✕'; del.title = 'Delete';
+                        del.addEventListener('click', (e) => { e.stopPropagation(); this.deleteDesign(des.id, des.name); });
+                        item.appendChild(del);
+                        wrap.appendChild(item);
+                    });
+                } catch (e) { wrap.innerHTML = '<div class="draft-empty">Offline — can\'t load designs.</div>'; }
+            }
+
+            async loadDesign(id) {
+                try {
+                    const r = await fetch(API + "/api/design/" + encodeURIComponent(id));
+                    const d = await r.json();
+                    if (!r.ok) throw new Error(d.error || "Load failed");
+                    this.designId = d.id;
+                    this.designName = d.name;
+                    this.frame = d.frame || "desktop";
+                    document.getElementById('design-name').value = d.name;
+                    this.activeNodeId = null;
+                    this.history = []; this.currentIndex = -1;
+                    this.update(Array.isArray(d.tree) ? d.tree : []);
+                    this.setFrame(this.frame);
+                    this.buildInspector();
+                    toast("Loaded: " + d.name);
+                } catch (e) { toast(e.message, false); }
+            }
+
+            async saveDesign() {
+                if (!requireUnlock()) return;
+                const name = document.getElementById('design-name').value.trim() || "Untitled Design";
+                const id = this.designId || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || generateUUID();
+                try {
+                    const r = await fetch(API + "/api/design/" + encodeURIComponent(id), {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name, frame: this.frame, tree: this.tree })
+                    });
+                    const d = await r.json();
+                    if (!r.ok) throw new Error(d.error || "Save failed");
+                    this.designId = id;
+                    this.designName = name;
+                    toast("Saved: " + name);
+                    this.loadDrafts();
+                } catch (e) { toast(e.message, false); }
+            }
+
+            async deleteDesign(id, name) {
+                if (!requireUnlock()) return;
+                if (!confirm(`Delete design "${name}"? This cannot be undone.`)) return;
+                try {
+                    const r = await fetch(API + "/api/design/" + encodeURIComponent(id), { method: "DELETE" });
+                    const d = await r.json();
+                    if (!r.ok) throw new Error(d.error || "Delete failed");
+                    if (this.designId === id) this.newDesign();
+                    toast("Deleted: " + name);
+                    this.loadDrafts();
+                } catch (e) { toast(e.message, false); }
+            }
+
+            // ── Push to Fragment (Phase 3) ──────────────────
+            async pushToFragment() {
+                if (!requireUnlock()) return;
+                const name = document.getElementById('frag-name').value.trim();
+                if (!name) { toast("Name required", false); return; }
+                const category = document.getElementById('frag-category').value;
+                const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || generateUUID();
+                const htmlContent = generateHTML(this.tree, this.frame);
+                try {
+                    const r = await fetch(API + "/api/snippet/" + encodeURIComponent(id), {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            name, category, htmlContent,
+                            description: "Generated by Sovereign Designer",
+                            tags: ["html", "wireframe", "generated"]
+                        })
+                    });
+                    const d = await r.json();
+                    if (!r.ok) throw new Error(d.error || "Push failed");
+                    closeModal("fragment-modal");
+                    toast("Pushed to Fragment: " + name);
+                } catch (e) { toast(e.message, false); }
+            }
+
+            wireEvents() {
+                const canvas = document.getElementById('canvas');
+                canvas.addEventListener('dragover', (e) => { e.preventDefault(); if (e.target === canvas || e.target.id === 'canvas-container') canvas.classList.add('drop-target'); });
+                canvas.addEventListener('dragleave', (e) => { if (e.target === canvas || e.target.id === 'canvas-container') canvas.classList.remove('drop-target'); });
+                canvas.addEventListener('drop', (e) => { if (e.target === canvas || e.target.id === 'canvas-container') this.handleDrop(e, 'root'); });
+
+                document.querySelectorAll('.primitive').forEach(prim => {
+                    prim.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', JSON.stringify({ action: 'create', type: e.currentTarget.dataset.type })));
+                });
+
+                canvas.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const el = e.target.closest('[data-id]');
+                    this.activeNodeId = el ? el.dataset.id : null;
+                    this.render();
+                    this.buildInspector();
+                });
+
+                document.addEventListener('keydown', (e) => {
+                    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'd' && this.activeNodeId && !typing) {
+                        e.preventDefault(); document.getElementById('btn-duplicate')?.click();
+                    }
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !typing) {
+                        e.preventDefault(); e.shiftKey ? this.redo() : this.undo(); this.buildInspector();
+                    }
+                    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                        e.preventDefault(); this.saveDesign();
+                    }
+                });
+
+                document.getElementById('btn-undo').addEventListener('click', () => { this.undo(); this.buildInspector(); });
+                document.getElementById('btn-redo').addEventListener('click', () => { this.redo(); this.buildInspector(); });
+                document.getElementById('btn-new').addEventListener('click', () => this.newDesign());
+                document.getElementById('btn-save').addEventListener('click', () => this.saveDesign());
+
+                document.getElementById('btn-mobile').addEventListener('click', () => this.setFrame('mobile'));
+                document.getElementById('btn-tablet').addEventListener('click', () => this.setFrame('tablet'));
+                document.getElementById('btn-desktop').addEventListener('click', () => this.setFrame('desktop'));
+                document.getElementById('btn-xray').addEventListener('click', () => document.getElementById('canvas-container').classList.toggle('x-ray'));
+
+                document.getElementById('tab-yaml').addEventListener('click', () => this.setCodeView('yaml'));
+                document.getElementById('tab-html').addEventListener('click', () => this.setCodeView('html'));
+
+                document.getElementById('design-name').addEventListener('input', (e) => { this.designName = e.target.value; });
+
+                document.getElementById('btn-export-yaml').addEventListener('click', () => {
+                    const blob = new Blob([jsyaml.dump(this.tree)], { type: 'text/yaml' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = (this.designName || 'sovereign-layout').replace(/[^a-z0-9]+/gi, '-') + '.yaml';
+                    a.click();
+                });
+                document.getElementById('btn-export-html').addEventListener('click', () => {
+                    const blob = new Blob([generateHTML(this.tree, this.frame)], { type: 'text/html' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = (this.designName || 'sovereign-export').replace(/[^a-z0-9]+/gi, '-') + '.html';
+                    a.click();
+                });
+                document.getElementById('btn-to-fragment').addEventListener('click', () => {
+                    if (!requireUnlock()) return;
+                    document.getElementById('frag-name').value = this.designName || '';
+                    openModal('fragment-modal');
+                });
+
+                // Modal wiring
+                document.getElementById('lock-pill').addEventListener('click', () => { if (lockState.locked) { openModal('pin-modal'); setTimeout(() => document.getElementById('pin-input').focus(), 100); } });
+                document.getElementById('pin-cancel').addEventListener('click', () => closeModal('pin-modal'));
+                document.getElementById('pin-submit').addEventListener('click', submitPin);
+                document.getElementById('pin-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitPin(); });
+                document.getElementById('frag-cancel').addEventListener('click', () => closeModal('fragment-modal'));
+                document.getElementById('frag-submit').addEventListener('click', () => this.pushToFragment());
+
+                // Code editor (YAML → tree)
+                const debounce = (fn, wait) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), wait); }; };
+                const yamlInput = document.getElementById('yaml-input');
+                const yamlHighlight = document.getElementById('yaml-highlight');
+                const yamlCodeBlock = document.getElementById('yaml-code');
+                yamlInput.addEventListener('scroll', () => { yamlHighlight.scrollTop = yamlInput.scrollTop; yamlHighlight.scrollLeft = yamlInput.scrollLeft; });
+                yamlInput.addEventListener('input', debounce((e) => {
+                    const rawYAML = e.target.value;
+                    const container = document.getElementById('code-editor-container');
+                    yamlCodeBlock.textContent = rawYAML;
+                    Prism.highlightElement(yamlCodeBlock);
+                    try {
+                        if (rawYAML.trim() === '') return this.update([]);
+                        const parsed = jsyaml.load(rawYAML);
+                        if (!Array.isArray(parsed)) throw new Error("Root must be array.");
+                        container.style.borderLeft = 'none';
+                        this.update(parsed);
+                    } catch { container.style.borderLeft = '4px solid #ff4444'; }
+                }, 500));
+            }
+        }
+
+        // ── Boot ────────────────────────────────────────────
+        const appState = new StateStore();
+        appState.init([{
+            id: generateUUID(), type: 'container',
+            props: { alias: 'Root Frame', notes: 'Main application wrapper', spacing: 'lg', sizing: 'hug', direction: 'column', justify: 'flex-start', align: 'stretch', wrap: 'nowrap', gap: 'md', overflow: 'visible' },
+            children: []
+        }]);
+        appState.setFrame('desktop');
+        refreshLock();
+        appState.loadDrafts();
+        setInterval(refreshLock, 30000);
+    </script>
+</body>
+</html>
