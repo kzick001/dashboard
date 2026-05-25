@@ -68,14 +68,14 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
 .section-count{font-size:13px;color:var(--t3);font-family:var(--mono);}
 
 /* Cards grid */
-.card-list{display:grid;grid-template-columns:1fr;gap:12px;padding:0 16px;}
-@media(min-width:768px){.card-list{grid-template-columns:repeat(2,1fr);}}
-@media(min-width:1200px){.card-list{grid-template-columns:repeat(3,1fr);}}
+.card-list{display:grid;grid-template-columns:1fr;gap:16px;padding:0 16px;}
+@media(min-width:768px){.card-list{grid-template-columns:repeat(3,1fr);}}
+@media(min-width:1400px){.card-list{grid-template-columns:repeat(4,1fr);}}
 .card{background:var(--glass);border:1px solid var(--glass-b);border-radius:var(--r20);overflow:hidden;animation:fadeUp .3s ease both;transition:transform .18s,box-shadow .18s;}
 .card.archived-card{opacity:.72;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .card-preview{height:140px;position:relative;background:#0a0c14;overflow:hidden;border-bottom:1px solid var(--glass-b);cursor:pointer;}
-.card-preview iframe{width:200%;height:200%;transform:scale(.5);transform-origin:top left;border:none;pointer-events:none;}
+.card-preview iframe{width:200%;height:200%;transform:translate(-50%,-50%) scale(.5);transform-origin:center;border:none;pointer-events:none;position:absolute;top:50%;left:50%;}
 .card-preview-grad{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(10,12,20,.85));pointer-events:none;}
 .archived-badge{position:absolute;top:10px;left:10px;height:20px;padding:0 8px;border-radius:6px;font-size:10px;font-family:var(--mono);background:rgba(255,138,101,.18);border:1px solid rgba(255,138,101,.35);color:var(--ember);display:flex;align-items:center;}
 .card-body{padding:12px 14px 13px;}
@@ -200,7 +200,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
   <!-- Top bar -->
   <div class="topbar">
     <div class="wordmark">
-      <span class="wm-icon"><svg viewBox="0 0 100 100"><path d="M 30 25 L 70 25 L 70 75 L 30 75 Z" fill="none" stroke="white" stroke-width="6" stroke-linejoin="round"/><circle cx="40" cy="45" r="5" fill="white"/><circle cx="60" cy="55" r="5" fill="white"/></svg></span>
+      <span class="wm-icon" style="width:40px;height:40px;"><svg viewBox="0 0 100 100"><path d="M 30 25 L 70 25 L 70 75 L 30 75 Z" fill="none" stroke="white" stroke-width="6" stroke-linejoin="round"/><circle cx="40" cy="45" r="5" fill="white"/><circle cx="60" cy="55" r="5" fill="white"/></svg></span>
       Fragment
     </div>
     <div class="topbar-actions">
@@ -267,7 +267,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
           <div class="settings-group-label">About</div>
           <div class="settings-row">
             <div class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
-            <div class="settings-text"><div class="settings-label">Fragment</div><div class="settings-sub">v1.0.0 · KV-backed · sovereign</div></div>
+            <div class="settings-text"><div class="settings-label">Fragment</div><div class="settings-sub">v1.0.1 · KV-backed · sovereign</div></div>
           </div>
         </div>
       </div>
