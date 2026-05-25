@@ -231,6 +231,12 @@
     @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
 
     .empty-state { color: #555; text-align: center; padding: 2rem 1rem; font-size: 0.9rem; font-style: italic; }
+
+    /* SVG icon alignment inside buttons (emoji → SVG swap) */
+    .btn-icon svg { vertical-align: -3px; }
+    .btn-action svg { vertical-align: -2px; margin-right: 4px; }
+    .slot-btn svg { display: block; }
+    .btn svg { vertical-align: -3px; margin-right: 5px; }
   </style>
 </head>
 <body>
@@ -249,16 +255,17 @@
 
   <div class="global-controls">
     <div class="gc-left">
-      <button id="toggle-left" class="btn-icon active" onclick="toggleColumn('left')" title="Toggle Tables panel">☰ TABLES</button>
+      <button id="toggle-left" class="btn-icon active" onclick="toggleColumn('left')" title="Toggle Tables panel"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg> TABLES</button>
+      <button class="btn-icon" onclick="openImportModal()" title="Bulk import items from Data Forge"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> IMPORT</button>
     </div>
     <div class="gc-right">
-      <button class="btn-icon" onclick="undo()" title="Undo">⟲ UNDO</button>
-      <button class="btn-icon" onclick="redo()" title="Redo">⟳ REDO</button>
+      <button class="btn-icon" onclick="undo()" title="Undo"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> UNDO</button>
+      <button class="btn-icon" onclick="redo()" title="Redo"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg> REDO</button>
       <div style="display:flex; align-items:center; gap:6px; margin-left:6px;">
         <span id="sync-dot" class="sync-dot idle" title="Sync status"></span>
         <span id="sync-label" style="font-size:0.72rem; color:#666; letter-spacing:0.05em;">SYNCED</span>
       </div>
-      <button id="toggle-right" class="btn-icon active" onclick="toggleColumn('right')" title="Toggle Items panel" style="margin-left:6px;">ITEMS ☰</button>
+      <button id="toggle-right" class="btn-icon active" onclick="toggleColumn('right')" title="Toggle Items panel" style="margin-left:6px;">ITEMS <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
     </div>
   </div>
 
@@ -406,6 +413,41 @@
       <div class="modal-actions">
         <button class="btn btn-primary" onclick="createCustomTable()">Create Table</button>
         <button class="btn" onclick="closeTableModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPORT MODAL -->
+  <div id="import-modal" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width:580px;">
+      <h2>Bulk Import Items</h2>
+      <p class="sub">Paste a JSON array of loot items (from Data Forge → Loot Items → Copy JSON). Items are assigned roll ranges automatically in even chunks across the table.</p>
+      <div class="form-grid" style="grid-template-columns:1fr;">
+        <div class="form-field full">
+          <label>Target Tier / Table</label>
+          <select id="imp-table"><!-- populated on open --></select>
+        </div>
+        <div class="form-field full">
+          <label>Range Distribution</label>
+          <select id="imp-dist">
+            <option value="even">Even split across full table (recommended)</option>
+            <option value="chunk5">Fixed 5-wide chunks (1-5, 6-10, …)</option>
+            <option value="single">Single roll each (1, 2, 3, …)</option>
+          </select>
+        </div>
+        <div class="form-field full">
+          <label>Items JSON</label>
+          <textarea id="imp-json" placeholder='[{"name":"Gold Coins","type":"currency","rarity":"common", ...}]' style="min-height:160px; font-family:ui-monospace,Menlo,monospace; font-size:0.82rem;"></textarea>
+        </div>
+        <div class="form-field full checkbox">
+          <input type="checkbox" id="imp-clear" checked>
+          <label for="imp-clear">Clear existing items in this table first</label>
+        </div>
+        <div id="imp-preview" class="form-field full" style="font-size:0.8rem; color:#888;"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="importItems()">Import &amp; Bulk-Add</button>
+        <button class="btn" onclick="closeImportModal()">Cancel</button>
       </div>
     </div>
   </div>
@@ -781,7 +823,7 @@
     const count = filledCount(view);
     const max = getMaxRoll(view);
     const delBtn = deletable
-      ? `<span class="slot-btn del" style="width:22px;height:22px;" title="Delete table" onclick="event.stopPropagation(); deleteCustomTable('${escAttr(view.id)}')">✕</span>`
+      ? `<span class="slot-btn del" style="width:22px;height:22px;" title="Delete table" onclick="event.stopPropagation(); deleteCustomTable('${escAttr(view.id)}')"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>`
       : '';
     return `
       <div class="nav-item ${isActive ? 'active' : ''}" onclick="selectView('${view.category}','${escAttr(view.id)}')">
@@ -923,7 +965,7 @@
         ${chargesHtml}
 
         <div class="action-row">
-          <button class="btn-action copy" onclick="copyToClipboard()">⧉ Copy Stats &amp; Description</button>
+          <button class="btn-action copy" onclick="copyToClipboard()"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy Stats &amp; Description</button>
           <div class="award-label">Transfer to Player</div>
           <div class="award-buttons">${awardBtns}</div>
         </div>
@@ -995,7 +1037,7 @@
         <h2 class="result-title" style="color:var(--success)">Payload Delivered</h2>
         <p class="result-text"><b>${escHtml(item.name)}</b> (range ${rangeStr(range)}) sent to <b>${escHtml(charName)}</b>. Slot is now empty.</p>
         <div class="action-row">
-          <button class="btn-action undo" onclick="undo()">⟲ Undo Award</button>
+          <button class="btn-action undo" onclick="undo()"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>Undo Award</button>
         </div>
       </div>`;
     stagedRoll = null;
@@ -1035,8 +1077,8 @@
             <span class="roll-tag">${rng}</span>
             <span class="item-name">[ EMPTY ]</span>
             <span class="slot-actions">
-              <button class="slot-btn" title="Edit / fill" onclick="openItemModal(${idx})">✎</button>
-              <button class="slot-btn del" title="Delete entry" onclick="deleteEntry(${idx})">✕</button>
+              <button class="slot-btn" title="Edit / fill" onclick="openItemModal(${idx})"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+              <button class="slot-btn del" title="Delete entry" onclick="deleteEntry(${idx})"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </span>
           </div>`;
       }
@@ -1048,8 +1090,8 @@
           <span class="rarity-pip" style="background:${rarColor}" title="${escAttr(it.rarity)}"></span>
           <span class="item-name" title="${escAttr(it.name)}">${escHtml(it.name)}</span>
           <span class="slot-actions">
-            <button class="slot-btn" title="Edit" onclick="openItemModal(${idx})">✎</button>
-            <button class="slot-btn del" title="Delete" onclick="deleteEntry(${idx})">✕</button>
+            <button class="slot-btn" title="Edit" onclick="openItemModal(${idx})"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></button>
+            <button class="slot-btn del" title="Delete" onclick="deleteEntry(${idx})"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           </span>
         </div>`;
     }).join('');
@@ -1263,6 +1305,157 @@
       delete state.lootTables.custom[name];
     }, `Deleted "${name}".`);
     if (wasSelected) selectView('tiers', 'bronze');
+  }
+
+  /* ══════════════════════════════════════════════════
+     BULK IMPORT
+     Accepts a JSON array of items (Data Forge export),
+     auto-assigns roll ranges per the chosen distribution,
+     and writes them into the selected tier/custom table.
+  ══════════════════════════════════════════════════ */
+  function buildTargetOptions() {
+    const lt = appState.lootTables;
+    let html = '<option value="">-- Select --</option>';
+    html += '<optgroup label="Tiers">';
+    ['bronze','silver','gold','platinum'].forEach(t => {
+      html += `<option value="tiers:${t}">${cap(t)} (1–${DEFAULT_TIER_MAX})</option>`;
+    });
+    html += '</optgroup>';
+    const pers = Object.keys(lt.personal || {});
+    if (pers.length) {
+      html += '<optgroup label="Personal">';
+      pers.forEach(n => { html += `<option value="personal:${escAttr(n)}">${escHtml(n)} (1–${DEFAULT_PERSONAL_MAX})</option>`; });
+      html += '</optgroup>';
+    }
+    const cust = Object.keys(lt.custom || {});
+    if (cust.length) {
+      html += '<optgroup label="Custom">';
+      cust.forEach(n => {
+        const mx = (lt.custom[n] && lt.custom[n].maxRoll) ? lt.custom[n].maxRoll : DEFAULT_TIER_MAX;
+        html += `<option value="custom:${escAttr(n)}">${escHtml(n)} (1–${mx})</option>`;
+      });
+      html += '</optgroup>';
+    }
+    return html;
+  }
+
+  function openImportModal() {
+    document.getElementById('imp-table').innerHTML = buildTargetOptions();
+    // Pre-select current view if any.
+    if (currentView) {
+      const key = `${currentView.category}:${currentView.id}`;
+      const sel = document.getElementById('imp-table');
+      if ([...sel.options].some(o => o.value === key)) sel.value = key;
+    }
+    setVal('imp-dist', 'even');
+    setVal('imp-json', '');
+    document.getElementById('imp-clear').checked = true;
+    document.getElementById('imp-preview').textContent = '';
+    document.getElementById('import-modal').classList.remove('hidden');
+  }
+
+  function closeImportModal() {
+    document.getElementById('import-modal').classList.add('hidden');
+  }
+
+  // Compute [min,max] ranges for n items across a table of size maxRoll.
+  function computeRanges(n, maxRoll, dist) {
+    const ranges = [];
+    if (n <= 0) return ranges;
+
+    if (dist === 'single') {
+      for (let i = 0; i < n && i < maxRoll; i++) ranges.push([i + 1, i + 1]);
+      return ranges;
+    }
+    if (dist === 'chunk5') {
+      let cur = 1;
+      for (let i = 0; i < n; i++) {
+        if (cur > maxRoll) break;
+        ranges.push([cur, Math.min(cur + 4, maxRoll)]);
+        cur += 5;
+      }
+      return ranges;
+    }
+    // 'even' — distribute the full 1..maxRoll span as evenly as possible.
+    const capped = Math.min(n, maxRoll); // can't have more ranges than slots
+    const base = Math.floor(maxRoll / capped);
+    let rem = maxRoll % capped;
+    let cur = 1;
+    for (let i = 0; i < capped; i++) {
+      let width = base + (rem > 0 ? 1 : 0);
+      if (rem > 0) rem--;
+      const min = cur;
+      const max = cur + width - 1;
+      ranges.push([min, max]);
+      cur = max + 1;
+    }
+    return ranges;
+  }
+
+  function importItems() {
+    const tableKey = document.getElementById('imp-table').value;
+    const dist = document.getElementById('imp-dist').value;
+    const jsonStr = document.getElementById('imp-json').value.trim();
+    const clearFirst = document.getElementById('imp-clear').checked;
+
+    if (!tableKey) return showToast('Select a target tier or table.');
+    if (!jsonStr) return showToast('Paste items JSON.');
+
+    let items;
+    try {
+      items = JSON.parse(jsonStr);
+    } catch (e) {
+      return showToast(`Invalid JSON: ${e.message}`);
+    }
+    if (!Array.isArray(items)) return showToast('JSON must be an array of items.');
+    if (items.length === 0) return showToast('No items in JSON.');
+
+    // Basic per-item validation.
+    for (let it of items) {
+      if (!it || typeof it !== 'object') return showToast('Array contains a non-object entry.');
+      if (!it.name) return showToast(`An item is missing "name".`);
+    }
+
+    const [category, tableId] = tableKey.split(':');
+    if (!category || !tableId) return showToast('Invalid table selection.');
+    const view = { category, id: tableId };
+    const maxRoll = getMaxRoll(view);
+
+    const ranges = computeRanges(items.length, maxRoll, dist);
+    if (ranges.length === 0) return showToast('Could not compute ranges.');
+
+    let importCount = ranges.length;
+    let dropped = items.length - importCount;
+
+    pushHistory();
+    mutateAndPush((state) => {
+      const table = getTableFrom(state, view);
+      if (clearFirst) table.length = 0;
+      for (let i = 0; i < ranges.length; i++) {
+        const raw = items[i];
+        const item = blankItem();
+        // Copy known fields; deep-merge mechanics/charges if present.
+        item.name = raw.name;
+        if (raw.type) item.type = raw.type;
+        if (raw.rarity) item.rarity = raw.rarity;
+        if (raw.quantity != null) item.quantity = raw.quantity;
+        if (raw.description) item.description = raw.description;
+        if (raw.mechanics && typeof raw.mechanics === 'object') {
+          item.mechanics = Object.assign({ toHitBonus: null, damageBonus: null, acBase: null, acMod: null, text: '' }, raw.mechanics);
+        }
+        item.charges = (raw.charges && typeof raw.charges === 'object') ? raw.charges : null;
+        item.requiresAttunement = !!raw.requiresAttunement;
+        item.isAttuned = !!raw.isAttuned;
+        if (raw.id) item.id = raw.id;
+        table.push({ rollRange: ranges[i], item });
+      }
+    }, dropped > 0
+        ? `Imported ${importCount} items into ${tableId} (${dropped} dropped — table full).`
+        : `Imported ${importCount} items into ${tableId}.`);
+
+    closeImportModal();
+    // Jump to the table we just filled.
+    selectView(category, tableId);
   }
 
   /* ══════════════════════════════════════════════════
