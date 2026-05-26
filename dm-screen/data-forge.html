@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner // Data Forge V4.0</title>
+  <title>Showrunner // Data Forge V4.1</title>
 
   <script>
     /* ──────────────────────────────────────────────
@@ -75,10 +75,10 @@
     .nav-link.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(187,134,252,0.2); }
 
     /* ── TABS ── */
-    .tab-container { padding: 1rem 2rem 0 2rem; flex-shrink: 0; }
-    .tabs { display: flex; gap: 10px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); }
+    .tab-container { padding: 1rem 2rem 0 2rem; flex-shrink: 0; overflow: hidden; }
+    .tabs { display: flex; gap: 10px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); overflow-x: auto; overflow-y: hidden; min-width: 0; }
     .tab-btn {
-      flex: 1; background: transparent; color: var(--text-muted); border: 1px solid transparent; padding: 10px;
+      flex: 0 0 auto; min-width: 90px; white-space: nowrap; background: transparent; color: var(--text-muted); border: 1px solid transparent; padding: 10px;
       border-radius: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; transition: 0.3s; font-size: 0.8rem;
     }
     .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
@@ -265,7 +265,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-      SHOWRUNNER // DATA FORGE V4.0
+      SHOWRUNNER // DATA FORGE V4.1
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">Dashboard</a>
@@ -587,27 +587,22 @@ ${raw}
     btn.innerHTML = '<span class="loader"></span> Forging…';
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch(WORKER_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          action: "forge_entities",
+          entityType: activeType,
           model: MODEL,
-          max_tokens: 8000,
-          messages: [{ role: "user", content: buildPrompt(activeType, raw) }]
+          prompt: buildPrompt(activeType, raw)
         })
       });
 
-      if (!res.ok) throw new Error(`API ${res.status}`);
       const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || `Worker ${res.status}`);
 
-      const text = (data.content || [])
-        .filter(b => b.type === "text")
-        .map(b => b.text)
-        .join("\n")
-        .trim();
-
-      const parsed = extractJsonArray(text);
-      if (!Array.isArray(parsed)) throw new Error("Model did not return an array");
+      const parsed = data.entities;
+      if (!Array.isArray(parsed)) throw new Error("Worker did not return an entities array");
 
       mergeParsedIntoReview(activeType, parsed);
       const n = parsed.length;
@@ -619,18 +614,6 @@ ${raw}
       btn.disabled = false;
       btn.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Forge Entities';
     }
-  }
-
-  // Strip fences / preamble and pull the first JSON array out of a string.
-  function extractJsonArray(text) {
-    let t = text.replace(/```json/gi, "").replace(/```/g, "").trim();
-    try { return JSON.parse(t); } catch (e) { /* fall through */ }
-    const start = t.indexOf("[");
-    const end = t.lastIndexOf("]");
-    if (start !== -1 && end !== -1 && end > start) {
-      try { return JSON.parse(t.slice(start, end + 1)); } catch (e) { /* fall through */ }
-    }
-    throw new Error("Could not parse JSON from model output");
   }
 
   // Normalize a parsed object against the schema blank so all expected
