@@ -84,10 +84,14 @@
       if (!campaignState.campaign || typeof campaignState.campaign !== 'object') campaignState.campaign = {};
       const c = campaignState.campaign;
       if (!Array.isArray(c.rooms)) c.rooms = [];
+      if (!Array.isArray(c.npcs)) c.npcs = [];
+      if (!Array.isArray(c.rules)) c.rules = [];
+      if (!Array.isArray(c.timeline)) c.timeline = [];
       if (typeof c.currentRoom !== 'string' && c.rooms[0]) c.currentRoom = c.rooms[0].id;
       if (typeof c.sessionNumber !== 'number') c.sessionNumber = 1;
       if (typeof c.sessionNotes !== 'string') c.sessionNotes = "";
       if (!campaignState.loot || typeof campaignState.loot !== 'object') campaignState.loot = { active: [], archived: [] };
+      if (!campaignState.lootTables || typeof campaignState.lootTables !== 'object') campaignState.lootTables = { tiers: { bronze: [], silver: [], gold: [], platinum: [] }, personal: {}, custom: {}, allItems: [] };
     }
 
     initAuth().catch(e => {
