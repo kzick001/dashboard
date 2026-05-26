@@ -559,6 +559,7 @@
     ['bronze','silver','gold','platinum'].forEach(t => { if (!state.lootTables.tiers[t]) state.lootTables.tiers[t] = []; });
     if (!state.lootTables.personal) state.lootTables.personal = {};
     if (!state.lootTables.custom) state.lootTables.custom = {};
+    if (!Array.isArray(state.lootTables.allItems)) state.lootTables.allItems = [];
   }
 
   // Personal tables are keyed by character name. Seed from characters in KV.
