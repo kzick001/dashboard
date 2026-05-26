@@ -3,211 +3,801 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LiveForge HTML Preview</title>
-    
-    <!-- SVG Favicon: Dark square with green brackets -->
+    <title>LiveForge v3.0 — HTML Editor & Preview</title>
+
+    <!-- Favicon: monospace brackets in emerald -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111827'/><text x='50' y='65' font-family='monospace' font-size='50' fill='%2310b981' font-weight='bold' text-anchor='middle'>&lt;/&gt;</text></svg>">
-    
+
+    <!-- CodeMirror 5 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/material-darker.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closetag.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/selection/active-line.min.js"></script>
+
+    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = { darkMode: 'class' }
-    </script>
-    <script>
-        const savedTheme = localStorage.getItem('liveforge-theme');
-        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        }
-    </script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
 
     <style>
-        /* Custom scrollbars for editor */
+        :root {
+            --accent: #10b981;
+            --cm-bg-dark: #1e1e1e;
+            --cm-text-dark: #e0e0e0;
+        }
+
+        body { font-family: ui-sans-serif, system-ui, sans-serif; }
+
+        /* ---- Icon sizing ---- */
+        .icon { width: 16px; height: 16px; stroke-width: 2; flex: none; }
+        .icon-sm { width: 14px; height: 14px; stroke-width: 2; flex: none; }
+        .icon-lg { width: 20px; height: 20px; stroke-width: 2; flex: none; }
+
+        /* ---- CodeMirror dark theme ---- */
+        .CodeMirror {
+            height: 100% !important;
+            font-family: 'IBM Plex Mono', ui-monospace, monospace !important;
+            font-size: 14px !important;
+        }
+        .CodeMirror-linenumber { font-family: ui-monospace, monospace !important; }
+        .dark .CodeMirror { background-color: var(--cm-bg-dark) !important; color: var(--cm-text-dark) !important; }
+        .dark .CodeMirror-gutters { background-color: #111827 !important; border-right: 1px solid #333; }
+        .dark .CodeMirror-linenumber { color: #666 !important; }
+        .dark .CodeMirror-cursor { border-left-color: var(--accent) !important; }
+        .dark .CodeMirror-selected { background-color: rgba(16, 185, 129, 0.15) !important; }
+        .dark .CodeMirror-activeline-background { background-color: rgba(255,255,255,0.03) !important; }
+
+        /* ---- Scrollbars ---- */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
         .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
         .dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
-        
-        textarea {
-            tab-size: 4;
+
+        /* ---- Console entries ---- */
+        .console-entry {
+            padding: 6px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            font-family: ui-monospace, monospace;
+            font-size: 12.5px;
+            line-height: 1.5;
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
         }
+        .dark .console-entry { border-bottom-color: #2a2a2a; }
+        .console-entry .ce-icon { margin-top: 2px; }
+        .console-entry.error { background-color: #fee2e2; color: #991b1b; }
+        .dark .console-entry.error { background-color: rgba(239,68,68,0.1); color: #fca5a5; }
+        .console-entry.warn { background-color: #fef3c7; color: #92400e; }
+        .dark .console-entry.warn { background-color: rgba(217,119,6,0.1); color: #fcd34d; }
+        .console-entry.log { color: #374151; }
+        .dark .console-entry.log { color: var(--cm-text-dark); }
+
+        /* ---- Modals ---- */
+        .modal-backdrop { animation: fadeIn 150ms ease-out; }
+        .modal-content { animation: slideUp 200ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ---- Viewport preview widths ---- */
+        #previewContainer { transition: width 200ms ease-out; }
+        #previewContainer.viewport-mobile { width: 375px; }
+        #previewContainer.viewport-tablet { width: 768px; }
+        #previewContainer.viewport-desktop { width: 100%; }
+
+        /* ---- Viewport toggle buttons ---- */
+        .viewport-toggle {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 28px; height: 26px; border-radius: 5px;
+            color: #6b7280; transition: all 150ms;
+        }
+        .viewport-toggle:hover { color: #111827; background-color: #e5e7eb; }
+        .dark .viewport-toggle { color: #9ca3af; }
+        .dark .viewport-toggle:hover { color: #f3f4f6; background-color: #374151; }
+        .viewport-toggle.active { color: #fff; background-color: var(--accent); }
+        .dark .viewport-toggle.active { color: #fff; background-color: var(--accent); }
+
+        /* ---- Snippet cards ---- */
+        .snippet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+        .snippet-card {
+            padding: 14px; border: 1px solid #e5e7eb; border-radius: 8px;
+            cursor: pointer; transition: all 150ms; display: flex; align-items: center; gap: 10px;
+        }
+        .dark .snippet-card { border-color: #333; }
+        .snippet-card:hover {
+            background-color: #f3f4f6; border-color: var(--accent);
+            transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16,185,129,0.15);
+        }
+        .dark .snippet-card:hover { background-color: #222; }
+        .snippet-card .sc-icon { color: var(--accent); }
+
+        /* ---- Collapsible panes ---- */
+        .pane.collapsed { flex: 0 0 0 !important; width: 0 !important; min-width: 0 !important; overflow: hidden; border: none !important; }
+        .pane.collapsed > * { display: none; }
+
+        .expand-rail {
+            display: none; flex: 0 0 34px; flex-direction: column;
+            align-items: center; gap: 10px; padding-top: 12px; cursor: pointer;
+            background-color: #f3f4f6; color: #6b7280;
+            transition: background-color 150ms, color 150ms;
+        }
+        .expand-rail:hover { background-color: #e5e7eb; color: #111827; }
+        .dark .expand-rail { background-color: #1f2937; color: #9ca3af; }
+        .dark .expand-rail:hover { background-color: #374151; color: #f3f4f6; }
+        .expand-rail.visible { display: flex; }
+        .expand-rail .rail-label {
+            writing-mode: vertical-rl; text-orientation: mixed;
+            letter-spacing: 2px; text-transform: uppercase;
+            font-family: ui-monospace, monospace; font-weight: 700; font-size: 11px;
+        }
+        #editorRail { border-right: 1px solid #e5e7eb; }
+        #rightRail { border-left: 1px solid #e5e7eb; }
+        .dark #editorRail { border-right-color: #374151; }
+        .dark #rightRail { border-left-color: #374151; }
+
+        /* ---- Toast ---- */
+        .toast {
+            position: fixed; bottom: 16px; right: 16px; z-index: 60;
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 16px; border-radius: 8px; color: #fff;
+            font-size: 13px; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            animation: slideUp 200ms ease-out;
+        }
+        .toast.success { background-color: var(--accent); }
+        .toast.error { background-color: #ef4444; }
+
+        .hidden-input { display: none; }
+
+        /* ---- Header pill buttons ---- */
+        .pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 13px; font-weight: 500; padding: 8px 14px;
+            border-radius: 6px; transition: all 150ms; cursor: pointer;
+        }
+        .pill-ghost { background-color: #e5e7eb; color: #374151; }
+        .pill-ghost:hover { background-color: #d1d5db; }
+        .dark .pill-ghost { background-color: #1f2937; color: #d1d5db; }
+        .dark .pill-ghost:hover { background-color: #374151; }
+        .pill-accent { background-color: var(--accent); color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+        .pill-accent:hover { background-color: #0d9f6e; }
+
+        /* ---- Icon button (header chevrons, console controls) ---- */
+        .icon-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 4px; border-radius: 5px; color: #6b7280; transition: all 150ms; cursor: pointer;
+        }
+        .icon-btn:hover { color: #111827; background-color: #e5e7eb; }
+        .dark .icon-btn { color: #9ca3af; }
+        .dark .icon-btn:hover { color: #f3f4f6; background-color: #374151; }
+
+        .pane-label { font-size: 11px; font-family: ui-monospace, monospace; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; }
+        .dark .pane-label { color: #9ca3af; }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 h-screen flex flex-col overflow-hidden font-sans transition-colors duration-300">
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 h-screen flex flex-col overflow-hidden transition-colors duration-300">
 
-    <!-- Dashboard Top Bar -->
+    <!-- Top bar -->
     <div class="w-full px-4 py-2 flex justify-between items-center bg-gray-100 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 flex-none z-20 transition-colors duration-300">
-        <a href="../index.html" class="flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors text-sm font-medium">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            Back to Dashboard
+        <a href="../index.html" class="flex items-center gap-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors text-sm font-medium">
+            <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            Back
         </a>
-        
         <label class="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" id="theme-toggle" class="sr-only peer">
             <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
-            <span class="ml-2 text-xs font-medium text-gray-500 dark:text-gray-400">Dark Mode</span>
+            <span class="ml-2 text-xs font-medium text-gray-500 dark:text-gray-400">Dark</span>
         </label>
     </div>
 
     <!-- Header -->
-    <header class="flex-none bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 flex justify-between items-center z-10 shadow-sm transition-colors duration-300">
+    <header class="flex-none bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex justify-between items-center z-10 shadow-sm transition-colors duration-300 flex-wrap gap-3">
         <div class="flex items-center gap-3">
-            <div class="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg text-emerald-600 dark:text-emerald-500 font-mono font-bold border border-gray-200 dark:border-gray-700">
-                &lt;/&gt;
-            </div>
-            <h1 class="text-xl font-bold tracking-tight text-gray-800 dark:text-gray-100">LiveForge</h1>
-            <span class="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded uppercase tracking-wider ml-2 border border-emerald-200 dark:border-emerald-800/50">Active</span>
+            <div class="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg text-emerald-600 dark:text-emerald-500 font-mono font-bold border border-gray-200 dark:border-gray-700 text-sm">&lt;/&gt;</div>
+            <h1 class="text-xl font-bold tracking-tight">LiveForge</h1>
+            <span class="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded uppercase tracking-wider border border-emerald-200 dark:border-emerald-800/50">v3.0.0</span>
         </div>
-        <div class="flex items-center gap-4">
-            <button id="clearBtn" class="text-sm px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded border border-gray-200 dark:border-gray-700 transition-colors font-medium">
-                Clear Editor
-            </button>
-            <button id="copyBtn" class="text-sm px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded shadow transition-colors">
-                Copy Code
-            </button>
+        <div class="flex items-center gap-2">
+            <button id="importBtn" class="pill pill-ghost" title="Import an HTML file"><span class="ib-icon"></span>Import</button>
+            <button id="exportBtn" class="pill pill-ghost" title="Download as HTML"><span class="ib-icon"></span>Export</button>
+            <button id="snippetsBtn" class="pill pill-ghost" title="Insert a starter snippet"><span class="ib-icon"></span>Snippets</button>
+            <button id="clearBtn" class="pill pill-ghost" title="Clear the editor"><span class="ib-icon"></span>Clear</button>
+            <button id="copyBtn" class="pill pill-accent" title="Copy code to clipboard"><span class="ib-icon"></span>Copy</button>
         </div>
     </header>
 
-    <!-- Main Workspace -->
+    <!-- Main workspace -->
     <main class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
-        
-        <!-- Editor Pane -->
-        <div class="w-full md:w-1/2 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1e1e1e] relative transition-colors duration-300">
-            <div class="flex-none bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2 flex items-center justify-between transition-colors duration-300">
-                <span class="text-xs font-mono text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold">Editor.html</span>
-                <span id="statusIndicator" class="text-xs text-gray-500 font-medium">Ready</span>
-            </div>
-            <textarea 
-                id="htmlEditor" 
-                class="flex-1 w-full bg-gray-50 dark:bg-[#1e1e1e] text-gray-800 dark:text-gray-300 font-mono text-sm p-4 focus:outline-none resize-none transition-colors duration-300"
-                spellcheck="false"
-                placeholder="Paste your HTML, CSS, and JS here..."
-            ></textarea>
+
+        <!-- Editor expand rail (shown when editor collapsed) -->
+        <div id="editorRail" class="expand-rail" data-pane="editorPane" title="Expand editor">
+            <span class="er-icon"></span>
+            <span class="rail-label">Editor</span>
         </div>
 
-        <!-- Preview Pane -->
-        <div class="w-full md:w-1/2 flex flex-col bg-white relative">
-            <div class="flex-none bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2 flex items-center gap-2 transition-colors duration-300">
-                <span class="text-xs font-mono text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold">Live Render</span>
+        <!-- Editor pane -->
+        <div id="editorPane" class="pane w-full md:w-1/2 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#1e1e1e] relative transition-all duration-300">
+            <div class="flex-none bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 py-2 flex items-center justify-between transition-colors duration-300">
+                <div class="flex items-center gap-2">
+                    <button class="icon-btn pane-collapse-btn" data-pane="editorPane" title="Collapse editor"><span class="cl-icon"></span></button>
+                    <span class="pane-label">Editor</span>
+                </div>
+                <span id="editorStatus" class="text-xs text-gray-500 dark:text-gray-400 font-medium">Ready</span>
             </div>
-            <!-- The sandbox attribute restricts popups and malicious scripts, but allows normal execution -->
-            <iframe 
-                id="previewFrame" 
-                class="flex-1 w-full h-full bg-white border-none"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-            ></iframe>
+            <div id="editor" class="flex-1 w-full"></div>
+        </div>
+
+        <!-- Right pane: preview + console -->
+        <div id="rightPane" class="pane w-full md:w-1/2 flex flex-col bg-white dark:bg-gray-900 relative transition-all duration-300">
+
+            <!-- Preview -->
+            <div class="flex-1 flex flex-col border-b border-gray-200 dark:border-gray-800 relative overflow-hidden">
+                <div class="flex-none bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 py-2 flex items-center justify-between transition-colors duration-300">
+                    <div class="flex items-center gap-2">
+                        <button class="icon-btn pane-collapse-btn" data-pane="rightPane" title="Collapse preview"><span class="cr-icon"></span></button>
+                        <span class="pane-label">Preview</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button class="viewport-toggle" data-viewport="mobile" title="Mobile (375px)"><span class="vp-icon"></span></button>
+                        <button class="viewport-toggle" data-viewport="tablet" title="Tablet (768px)"><span class="vp-icon"></span></button>
+                        <button class="viewport-toggle active" data-viewport="desktop" title="Desktop (full)"><span class="vp-icon"></span></button>
+                        <button id="darkModePreviewBtn" class="viewport-toggle" title="Toggle dark background in preview"><span class="dm-icon"></span></button>
+                    </div>
+                </div>
+                <div class="flex-1 flex items-center justify-center p-4 bg-gray-100 dark:bg-gray-950 overflow-auto">
+                    <div id="previewContainer" class="viewport-desktop h-full bg-white border border-gray-200 dark:border-gray-700 rounded shadow-sm overflow-hidden">
+                        <iframe id="previewFrame" class="w-full h-full border-none" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Console -->
+            <div id="consolePane" class="flex-none border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 transition-all duration-300 h-40 overflow-hidden flex flex-col">
+                <div class="flex-none bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 py-2 flex items-center justify-between transition-colors duration-300">
+                    <div class="flex items-center gap-2">
+                        <span class="cs-icon text-gray-500 dark:text-gray-400"></span>
+                        <span class="pane-label">Console</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="consoleCount" class="text-xs text-gray-500 dark:text-gray-400 font-mono">0 messages</span>
+                        <button id="consoleClearBtn" class="icon-btn" title="Clear console"><span class="cc-icon"></span></button>
+                        <button id="consoleToggleBtn" class="icon-btn" title="Minimize / expand console"><span class="ct-icon"></span></button>
+                    </div>
+                </div>
+                <div id="consoleOutput" class="flex-1 overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- Preview expand rail (shown when right pane collapsed) -->
+        <div id="rightRail" class="expand-rail" data-pane="rightPane" title="Expand preview">
+            <span class="er-icon"></span>
+            <span class="rail-label">Preview</span>
         </div>
 
     </main>
 
+    <!-- File input (hidden) -->
+    <input type="file" id="fileInput" class="hidden-input" accept=".html,.htm,text/html">
+
+    <!-- Snippets modal -->
+    <div id="snippetsModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white dark:bg-gray-900 rounded-lg shadow-2xl p-6 max-w-2xl w-full modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold">Snippet Library</h2>
+                <button id="snippetsCloseBtn" class="icon-btn"><span class="x-icon"></span></button>
+            </div>
+            <div class="flex gap-2 mb-4">
+                <button class="snippet-tab pill pill-accent" data-category="tailwind">Tailwind</button>
+                <button class="snippet-tab pill pill-ghost" data-category="bootstrap">Bootstrap</button>
+                <button class="snippet-tab pill pill-ghost" data-category="vanilla">Vanilla</button>
+            </div>
+            <div id="snippetCards" class="snippet-grid"></div>
+            <div class="text-xs text-gray-500 dark:text-gray-400 text-center mt-6">Click a snippet to insert. Current editor content will be replaced.</div>
+        </div>
+    </div>
+
+    <!-- Confirm modal -->
+    <div id="confirmModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 modal-backdrop">
+        <div class="bg-white dark:bg-gray-900 rounded-lg shadow-2xl p-6 max-w-sm w-full modal-content">
+            <h2 class="text-lg font-bold mb-2" id="confirmTitle">Are you sure?</h2>
+            <p class="text-gray-600 dark:text-gray-400 mb-6 text-sm" id="confirmMessage"></p>
+            <div class="flex gap-3 justify-end">
+                <button id="confirmCancelBtn" class="pill pill-ghost">Cancel</button>
+                <button id="confirmActionBtn" class="pill pill-accent">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // --- Core UI Logic ---
-        const themeToggle = document.getElementById('theme-toggle');
-        const htmlClass = document.documentElement.classList;
+        // ============================================
+        // SVG ICON SYSTEM (Feather-style, stroke-based)
+        // ============================================
+        const ICON = {
+            import:   '<svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="3" x2="12" y2="15" stroke-linecap="round"/></svg>',
+            export:   '<svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="15" x2="12" y2="3" stroke-linecap="round"/></svg>',
+            snippets: '<svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2" stroke-linejoin="round"/><polyline points="2 17 12 22 22 17" stroke-linecap="round" stroke-linejoin="round"/><polyline points="2 12 12 17 22 12" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+            clear:    '<svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" stroke-linecap="round" stroke-linejoin="round"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+            copy:     '<svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+            check:    '<svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+            chevL:    '<svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+            chevR:    '<svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+            mobile:   '<svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18" stroke-linecap="round"/></svg>',
+            tablet:   '<svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18" stroke-linecap="round"/></svg>',
+            desktop:  '<svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke-linecap="round"/></svg>',
+            moon:     '<svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+            console:  '<svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="19" x2="20" y2="19" stroke-linecap="round"/></svg>',
+            minus:    '<svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12" stroke-linecap="round"/></svg>',
+            plus:     '<svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke-linecap="round"/></svg>',
+            x:        '<svg class="icon-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke-linecap="round"/></svg>',
+            code:     '<svg class="icon-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6" stroke-linecap="round" stroke-linejoin="round"/><polyline points="8 6 2 12 8 18" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+            alertErr: '<svg class="icon-sm ce-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12" stroke-linecap="round"/><line x1="12" y1="16" x2="12.01" y2="16" stroke-linecap="round"/></svg>',
+            alertWarn:'<svg class="icon-sm ce-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13" stroke-linecap="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke-linecap="round"/></svg>',
+            chevRight:'<svg class="icon-sm ce-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        };
 
-        if (htmlClass.contains('dark')) themeToggle.checked = true;
+        // Inject icons into placeholder spans
+        function paintIcons() {
+            const map = [
+                ['#importBtn .ib-icon', ICON.import],
+                ['#exportBtn .ib-icon', ICON.export],
+                ['#snippetsBtn .ib-icon', ICON.snippets],
+                ['#clearBtn .ib-icon', ICON.clear],
+                ['#copyBtn .ib-icon', ICON.copy],
+                ['#editorRail .er-icon', ICON.chevR],
+                ['#rightRail .er-icon', ICON.chevL],
+                ['#snippetsCloseBtn .x-icon', ICON.x],
+                ['#consoleClearBtn .cc-icon', ICON.clear],
+                ['#consoleToggleBtn .ct-icon', ICON.minus],
+                ['#darkModePreviewBtn .dm-icon', ICON.moon],
+                ['.cs-icon', ICON.console],
+            ];
+            map.forEach(([sel, svg]) => {
+                document.querySelectorAll(sel).forEach(el => el.innerHTML = svg);
+            });
+            // Collapse chevrons (editor=left, preview=right)
+            document.querySelector('.pane-collapse-btn[data-pane="editorPane"] .cl-icon').innerHTML = ICON.chevL;
+            document.querySelector('.pane-collapse-btn[data-pane="rightPane"] .cr-icon').innerHTML = ICON.chevR;
+            // Viewport icons
+            const vpIcons = { mobile: ICON.mobile, tablet: ICON.tablet, desktop: ICON.desktop };
+            document.querySelectorAll('.viewport-toggle[data-viewport]').forEach(btn => {
+                btn.querySelector('.vp-icon').innerHTML = vpIcons[btn.dataset.viewport];
+            });
+        }
 
-        themeToggle.addEventListener('change', () => {
-            if (themeToggle.checked) {
-                htmlClass.add('dark');
-                localStorage.setItem('liveforge-theme', 'dark');
-            } else {
-                htmlClass.remove('dark');
-                localStorage.setItem('liveforge-theme', 'light');
-            }
-        });
+        // ============================================
+        // STATE & CONFIG
+        // ============================================
+        const state = {
+            code: localStorage.getItem('liveforgeCode') || '',
+            viewportMode: 'desktop',
+            previewDarkMode: false,
+            consoleExpanded: true,
+            consoleMessages: [],
+            currentSnippetCategory: 'tailwind',
+        };
 
-        // --- Editor Logic ---
-        const editor = document.getElementById('htmlEditor');
-        const preview = document.getElementById('previewFrame');
-        const clearBtn = document.getElementById('clearBtn');
-        const copyBtn = document.getElementById('copyBtn');
-        const statusIndicator = document.getElementById('statusIndicator');
+        const config = { debounceMs: 200, maxConsoleMessages: 100 };
 
-        // Boilerplate starter code
-        const defaultCode = `<!DOCTYPE html>
+        const snippetLibrary = {
+            tailwind: [
+                { id: 'tw-card', name: 'Card', code: `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Preview</title>
     <script src="https://cdn.tailwindcss.com"><\/script>
 </head>
 <body class="bg-gray-50 flex items-center justify-center min-h-screen">
-    <div class="text-center p-8 bg-white rounded-2xl shadow-xl border border-gray-100 max-w-md w-full">
-        <h1 class="text-3xl font-bold text-gray-800 mb-4">Transmission Received</h1>
-        <p class="text-gray-500 mb-6">Drop your code in the left pane to forge it live.</p>
-        <button class="bg-emerald-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-emerald-600 transition-colors shadow-md shadow-emerald-500/20">
-            Initialize
-        </button>
+    <div class="bg-white rounded-lg shadow-lg p-8 max-w-md">
+        <h2 class="text-2xl font-bold mb-2 text-gray-800">Card Title</h2>
+        <p class="text-gray-600 mb-6">A clean card component built with Tailwind CSS.</p>
+        <button class="w-full bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-500 transition-colors font-medium">Click Me</button>
     </div>
 </body>
-</html>`;
+</html>` },
+                { id: 'tw-form', name: 'Login Form', code: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"><\/script>
+</head>
+<body class="bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center min-h-screen">
+    <form class="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full" onsubmit="return false">
+        <h1 class="text-3xl font-bold mb-6 text-gray-800">Sign In</h1>
+        <input type="email" placeholder="Email" class="w-full px-4 py-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500">
+        <input type="password" placeholder="Password" class="w-full px-4 py-2 mb-6 border border-gray-300 rounded-lg focus:outline-none focus:border-emerald-500">
+        <button type="submit" class="w-full bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-500 transition-colors font-medium">Sign In</button>
+    </form>
+</body>
+</html>` },
+            ],
+            bootstrap: [
+                { id: 'bs-card', name: 'Card', code: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center" style="min-height:100vh;">
+    <div class="card" style="max-width:400px;">
+        <div class="card-body">
+            <h5 class="card-title">Card Title</h5>
+            <p class="card-text">A Bootstrap card component.</p>
+            <a href="#" class="btn btn-primary">Click Me</a>
+        </div>
+    </div>
+</body>
+</html>` },
+            ],
+            vanilla: [
+                { id: 'v-hello', name: 'Hello World', code: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World</title>
+    <style>
+        body { margin:0; display:flex; align-items:center; justify-content:center; min-height:100vh; background:linear-gradient(135deg,#667eea,#764ba2); font-family:sans-serif; }
+        .box { text-align:center; background:#fff; padding:40px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.2); }
+        h1 { color:#333; margin:0; }
+        p { color:#666; margin:10px 0 0; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>Hello, World!</h1>
+        <p>Built with vanilla HTML, CSS, and JavaScript.</p>
+    </div>
+</body>
+</html>` },
+                { id: 'v-counter', name: 'Click Counter', code: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counter</title>
+    <style>
+        body { margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; background:#0f172a; color:#e2e8f0; font-family:sans-serif; }
+        #count { font-size:64px; font-weight:bold; margin:0 0 20px; }
+        button { font-size:18px; padding:10px 24px; border:none; border-radius:8px; background:#10b981; color:#fff; cursor:pointer; }
+        button:hover { background:#0d9f6e; }
+    </style>
+</head>
+<body>
+    <div id="count">0</div>
+    <button onclick="bump()">Increment</button>
+    <script>
+        let n = 0;
+        function bump() { n++; document.getElementById('count').textContent = n; console.log('Count is now', n); }
+    <\/script>
+</body>
+</html>` },
+            ],
+        };
 
-        // Load saved code from local storage or use default
-        const savedCode = localStorage.getItem('liveForgeCode');
-        editor.value = savedCode !== null ? savedCode : defaultCode;
-
-        let debounceTimer;
-
-        // Core rendering logic
-        function updatePreview() {
-            const code = editor.value;
-            localStorage.setItem('liveForgeCode', code);
-            
-            const iframeDoc = preview.contentWindow.document;
-            iframeDoc.open();
-            iframeDoc.write(code);
-            iframeDoc.close();
-            
-            statusIndicator.textContent = 'Saved';
-            statusIndicator.classList.remove('text-emerald-600', 'dark:text-emerald-500');
-            statusIndicator.classList.add('text-gray-500');
+        // ============================================
+        // UTILITIES
+        // ============================================
+        function debounce(fn, ms) {
+            let timer;
+            return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
         }
 
-        // Trigger initial render
-        updatePreview();
+        function showToast(message, type = 'success') {
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            t.innerHTML = `${type === 'success' ? ICON.check : ICON.alertErr}<span>${message}</span>`;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2800);
+        }
 
-        // Listen for input and debounce the render to prevent browser lockup
-        editor.addEventListener('input', () => {
-            statusIndicator.textContent = 'Typing...';
-            statusIndicator.classList.add('text-emerald-600', 'dark:text-emerald-500');
-            statusIndicator.classList.remove('text-gray-500');
-            
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(updatePreview, 300);
+        function downloadFile(content, filename) {
+            const blob = new Blob([content], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        // ============================================
+        // THEME
+        // ============================================
+        const themeToggle = document.getElementById('theme-toggle');
+        const htmlClass = document.documentElement.classList;
+
+        if (localStorage.getItem('liveforgeTheme') === 'dark' ||
+            (!localStorage.getItem('liveforgeTheme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            htmlClass.add('dark');
+            themeToggle.checked = true;
+        }
+
+        themeToggle.addEventListener('change', () => {
+            if (themeToggle.checked) { htmlClass.add('dark'); localStorage.setItem('liveforgeTheme', 'dark'); }
+            else { htmlClass.remove('dark'); localStorage.setItem('liveforgeTheme', 'light'); }
+            setTimeout(syncEditorTheme, 50);
         });
 
-        // Allow Tab key to indent rather than leaving the textarea
-        editor.addEventListener('keydown', (e) => {
-            if (e.key === 'Tab') {
-                e.preventDefault();
-                const start = editor.selectionStart;
-                const end = editor.selectionEnd;
-                editor.value = editor.value.substring(0, start) + '\t' + editor.value.substring(end);
-                editor.selectionStart = editor.selectionEnd = start + 1;
-                updatePreview();
+        // ============================================
+        // CODEMIRROR
+        // ============================================
+        const editor = CodeMirror(document.getElementById('editor'), {
+            value: state.code,
+            mode: 'htmlmixed',
+            theme: 'material-darker',
+            lineNumbers: true,
+            autoCloseTags: true,
+            matchBrackets: true,
+            indentUnit: 4,
+            indentWithTabs: false,
+            lineWrapping: true,
+            styleActiveLine: true,
+            viewportMargin: Infinity,
+        });
+
+        function syncEditorTheme() {
+            editor.setOption('theme', htmlClass.contains('dark') ? 'material-darker' : 'default');
+        }
+        syncEditorTheme();
+
+        // ============================================
+        // PREVIEW & RENDER
+        // ============================================
+        const previewFrame = document.getElementById('previewFrame');
+        const consoleOutput = document.getElementById('consoleOutput');
+        const editorStatus = document.getElementById('editorStatus');
+
+        function renderPreview() {
+            const code = editor.getValue();
+            state.code = code;
+            localStorage.setItem('liveforgeCode', code);
+            try {
+                const doc = previewFrame.contentWindow.document;
+                doc.open(); doc.write(code); doc.close();
+                setupConsoleBridge();
+                editorStatus.textContent = 'Saved';
+            } catch (err) {
+                addConsoleMessage('error', 'Render error: ' + err.message);
+                editorStatus.textContent = 'Error';
+            }
+        }
+
+        const debouncedRender = debounce(renderPreview, config.debounceMs);
+        editor.on('change', () => { editorStatus.textContent = 'Typing...'; debouncedRender(); });
+        renderPreview();
+
+        // ============================================
+        // CONSOLE BRIDGE
+        // ============================================
+        function setupConsoleBridge() {
+            try {
+                const win = previewFrame.contentWindow;
+                if (!win) return;
+                const orig = { log: win.console.log, error: win.console.error, warn: win.console.warn };
+                win.console.log = (...a) => { orig.log.apply(win.console, a); addConsoleMessage('log', a.map(String).join(' ')); };
+                win.console.error = (...a) => { orig.error.apply(win.console, a); addConsoleMessage('error', a.map(String).join(' ')); };
+                win.console.warn = (...a) => { orig.warn.apply(win.console, a); addConsoleMessage('warn', a.map(String).join(' ')); };
+                win.addEventListener('error', e => addConsoleMessage('error', e.message));
+            } catch (err) { /* iframe not accessible */ }
+        }
+
+        function addConsoleMessage(type, message) {
+            state.consoleMessages.push({ type, message, ts: Date.now() });
+            if (state.consoleMessages.length > config.maxConsoleMessages) state.consoleMessages.shift();
+            const iconMap = { error: ICON.alertErr, warn: ICON.alertWarn, log: ICON.chevRight };
+            const entry = document.createElement('div');
+            entry.className = `console-entry ${type}`;
+            entry.innerHTML = `${iconMap[type]}<span>${escapeHtml(message)}</span>`;
+            consoleOutput.appendChild(entry);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            document.getElementById('consoleCount').textContent = `${state.consoleMessages.length} messages`;
+        }
+
+        // ============================================
+        // VIEWPORT MODES
+        // ============================================
+        const viewportToggles = document.querySelectorAll('.viewport-toggle[data-viewport]');
+        const previewContainer = document.getElementById('previewContainer');
+
+        viewportToggles.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.viewport;
+                state.viewportMode = mode;
+                viewportToggles.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                previewContainer.classList.remove('viewport-mobile', 'viewport-tablet', 'viewport-desktop');
+                previewContainer.classList.add(`viewport-${mode}`);
+            });
+        });
+
+        // ============================================
+        // DARK PREVIEW BACKGROUND
+        // ============================================
+        const darkModePreviewBtn = document.getElementById('darkModePreviewBtn');
+        darkModePreviewBtn.addEventListener('click', () => {
+            state.previewDarkMode = !state.previewDarkMode;
+            previewContainer.style.backgroundColor = state.previewDarkMode ? '#0f172a' : '#ffffff';
+            darkModePreviewBtn.classList.toggle('active', state.previewDarkMode);
+        });
+
+        // ============================================
+        // FILE I/O
+        // ============================================
+        const fileInput = document.getElementById('fileInput');
+        document.getElementById('importBtn').addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                editor.setValue(ev.target.result);
+                renderPreview();
+                showToast('Loaded: ' + file.name);
+            };
+            reader.readAsText(file);
+            fileInput.value = '';
+        });
+
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+            downloadFile(editor.getValue(), `liveforge-${stamp}.html`);
+            showToast('Exported');
+        });
+
+        // ============================================
+        // SNIPPETS
+        // ============================================
+        const snippetsModal = document.getElementById('snippetsModal');
+        const snippetCards = document.getElementById('snippetCards');
+        const snippetTabs = document.querySelectorAll('.snippet-tab');
+
+        function renderSnippets(category) {
+            snippetCards.innerHTML = '';
+            (snippetLibrary[category] || []).forEach(snip => {
+                const card = document.createElement('div');
+                card.className = 'snippet-card';
+                card.innerHTML = `<span class="sc-icon">${ICON.code}</span><h3 class="font-bold text-sm">${snip.name}</h3>`;
+                card.addEventListener('click', () => {
+                    insertSnippet(snip);
+                });
+                snippetCards.appendChild(card);
+            });
+        }
+
+        function insertSnippet(snip) {
+            const apply = () => {
+                editor.setValue(snip.code);
+                renderPreview();
+                snippetsModal.classList.add('hidden');
+                showToast('Inserted: ' + snip.name);
+            };
+            if (editor.getValue().trim()) {
+                openConfirm('Replace editor content?', `Inserting "${snip.name}" will overwrite your current code.`, apply);
+            } else {
+                apply();
+            }
+        }
+
+        document.getElementById('snippetsBtn').addEventListener('click', () => {
+            snippetsModal.classList.remove('hidden');
+            renderSnippets(state.currentSnippetCategory);
+        });
+        document.getElementById('snippetsCloseBtn').addEventListener('click', () => snippetsModal.classList.add('hidden'));
+        snippetsModal.addEventListener('click', e => { if (e.target === snippetsModal) snippetsModal.classList.add('hidden'); });
+
+        snippetTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                state.currentSnippetCategory = tab.dataset.category;
+                snippetTabs.forEach(t => { t.classList.remove('pill-accent'); t.classList.add('pill-ghost'); });
+                tab.classList.remove('pill-ghost'); tab.classList.add('pill-accent');
+                renderSnippets(tab.dataset.category);
+            });
+        });
+
+        // ============================================
+        // CONFIRM MODAL
+        // ============================================
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmActionBtn = document.getElementById('confirmActionBtn');
+
+        function openConfirm(title, message, onConfirm) {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+            confirmModal.classList.remove('hidden');
+            confirmActionBtn.onclick = () => { confirmModal.classList.add('hidden'); onConfirm(); };
+        }
+        document.getElementById('confirmCancelBtn').addEventListener('click', () => confirmModal.classList.add('hidden'));
+        confirmModal.addEventListener('click', e => { if (e.target === confirmModal) confirmModal.classList.add('hidden'); });
+
+        // ============================================
+        // COPY & CLEAR
+        // ============================================
+        const copyBtn = document.getElementById('copyBtn');
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(editor.getValue()).then(() => {
+                copyBtn.innerHTML = `${ICON.check}Copied`;
+                setTimeout(() => { copyBtn.innerHTML = `${ICON.copy}Copy`; }, 2000);
+            }).catch(() => showToast('Copy failed', 'error'));
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            if (!editor.getValue().trim()) return;
+            openConfirm('Clear editor?', 'This deletes all code in the editor.', () => {
+                editor.setValue('');
+                renderPreview();
+                showToast('Editor cleared');
+            });
+        });
+
+        // ============================================
+        // CONSOLE CONTROLS
+        // ============================================
+        document.getElementById('consoleClearBtn').addEventListener('click', () => {
+            state.consoleMessages = [];
+            consoleOutput.innerHTML = '';
+            document.getElementById('consoleCount').textContent = '0 messages';
+        });
+
+        const consolePane = document.getElementById('consolePane');
+        const consoleToggleBtn = document.getElementById('consoleToggleBtn');
+        consoleToggleBtn.addEventListener('click', () => {
+            state.consoleExpanded = !state.consoleExpanded;
+            if (state.consoleExpanded) {
+                consolePane.classList.remove('h-9'); consolePane.classList.add('h-40');
+                consoleToggleBtn.querySelector('.ct-icon').innerHTML = ICON.minus;
+            } else {
+                consolePane.classList.remove('h-40'); consolePane.classList.add('h-9');
+                consoleToggleBtn.querySelector('.ct-icon').innerHTML = ICON.plus;
             }
         });
 
-        // Controls
-        clearBtn.addEventListener('click', () => {
-            editor.value = '';
-            editor.focus();
-            updatePreview();
+        // ============================================
+        // COLLAPSIBLE PANES
+        // ============================================
+        const editorPane = document.getElementById('editorPane');
+        const rightPane = document.getElementById('rightPane');
+        const editorRail = document.getElementById('editorRail');
+        const rightRail = document.getElementById('rightRail');
+
+        function setPaneCollapsed(paneId, collapsed) {
+            const pane = document.getElementById(paneId);
+            const rail = paneId === 'editorPane' ? editorRail : rightRail;
+            const other = paneId === 'editorPane' ? rightPane : editorPane;
+            // Never both collapsed
+            if (collapsed && other.classList.contains('collapsed')) {
+                setPaneCollapsed(other.id, false);
+            }
+            pane.classList.toggle('collapsed', collapsed);
+            rail.classList.toggle('visible', collapsed);
+            if (!editorPane.classList.contains('collapsed')) {
+                setTimeout(() => editor.refresh(), 320);
+            }
+        }
+
+        document.querySelectorAll('.pane-collapse-btn').forEach(btn => {
+            btn.addEventListener('click', () => setPaneCollapsed(btn.dataset.pane, true));
+        });
+        [editorRail, rightRail].forEach(rail => {
+            rail.addEventListener('click', () => setPaneCollapsed(rail.dataset.pane, false));
         });
 
-        copyBtn.addEventListener('click', () => {
-            navigator.clipboard.writeText(editor.value).then(() => {
-                const originalText = copyBtn.textContent;
-                copyBtn.textContent = 'Copied!';
-                copyBtn.classList.replace('bg-emerald-600', 'bg-emerald-800');
-                setTimeout(() => {
-                    copyBtn.textContent = originalText;
-                    copyBtn.classList.replace('bg-emerald-800', 'bg-emerald-600');
-                }, 2000);
-            });
-        });
+        // ============================================
+        // INIT
+        // ============================================
+        paintIcons();
     </script>
 </body>
 </html>
