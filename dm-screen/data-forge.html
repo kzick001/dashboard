@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner // Data Forge V4.1.2</title>
+  <title>Showrunner // Data Forge V4.1.5</title>
 
   <script>
     /* ──────────────────────────────────────────────
@@ -78,7 +78,7 @@
     .tab-container { padding: 1rem 2rem 0 2rem; flex-shrink: 0; overflow: hidden; }
     .tabs { display: flex; gap: 10px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); overflow-x: auto; overflow-y: hidden; min-width: 0; }
     .tab-btn {
-      flex: 0 0 auto; min-width: 90px; white-space: nowrap; background: transparent; color: var(--text-muted); border: 1px solid transparent; padding: 10px;
+      flex: 0 0 auto; min-width: 90px; white-space: nowrap; background: transparent; color: #aaa; border: 1px solid transparent; padding: 10px;
       border-radius: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; transition: 0.3s; font-size: 0.8rem;
     }
     .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
@@ -265,7 +265,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-      SHOWRUNNER // DATA FORGE V4.1.2
+      SHOWRUNNER // DATA FORGE V4.1.5
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">Dashboard</a>
@@ -294,13 +294,15 @@
           <span class="pane-header-title" id="input-title">1 · Raw Notes</span>
           <span class="pane-header-badge" id="input-char-count">0 chars</span>
         </div>
-        <div class="pane-content">
-          <div style="display: flex; gap: 6px; margin-bottom: 0.75rem; border-bottom: 1px solid #333; padding-bottom: 0.75rem;">
-            <button id="btn-mode-raw" class="btn-mode active" onclick="setInputMode('raw')" style="flex: 1; padding: 6px 12px; background: transparent; border: 1px solid rgba(187,134,252,0.3); color: #e0e0e0; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s;">Raw Notes</button>
-            <button id="btn-mode-json" class="btn-mode" onclick="setInputMode('json')" style="flex: 1; padding: 6px 12px; background: transparent; border: 1px solid #333; color: #888; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.2s;">Parsed JSON</button>
+        <div class="pane-content" style="padding: 0.75rem 0.75rem 0 0.75rem;">
+          <!-- Mode toggle -->
+          <div style="display: flex; gap: 6px; margin-bottom: 0.6rem; flex-shrink: 0;">
+            <button id="btn-mode-raw" onclick="setInputMode('raw')" style="flex: 1; padding: 6px 12px; background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.05em;">Raw Notes</button>
+            <button id="btn-mode-json" onclick="setInputMode('json')" style="flex: 1; padding: 6px 12px; background: transparent; border: 1px solid var(--glass-border); color: #aaa; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.05em;">Parsed JSON</button>
           </div>
-          <textarea id="raw-input" class="raw" placeholder="Paste raw notes here.&#10;&#10;The Forge sends them to Claude, which extracts structured entities matching the KV schema. You then review and edit every field before syncing.&#10;&#10;Formatting is forgiving — paste straight from your RTF/Doc dumps."></textarea>
-          <textarea id="json-input" class="raw" placeholder="Paste pre-parsed JSON array here.&#10;&#10;Expected format: [ { id: &quot;...&quot;, name: &quot;...&quot;, ... }, ... ]&#10;&#10;Useful for testing or when you already have Claude's output." style="display: none;"></textarea>
+          <!-- Textareas — only one visible at a time -->
+          <textarea id="raw-input" class="raw" style="flex: 1; display: block;" placeholder="Paste raw notes here.&#10;&#10;The Forge sends them to Claude, which extracts structured entities matching the KV schema. You then review and edit every field before syncing.&#10;&#10;Formatting is forgiving — paste straight from your RTF/Doc dumps."></textarea>
+          <textarea id="json-input" class="raw" style="flex: 1; display: none;" placeholder="Paste pre-parsed JSON array here.&#10;&#10;Expected format: [ { &quot;id&quot;: &quot;...&quot;, &quot;name&quot;: &quot;...&quot; }, ... ]&#10;&#10;Useful for testing or when you already have Claude's output."></textarea>
         </div>
         <div class="pane-footer">
           <div>
@@ -310,23 +312,22 @@
               <button data-model="claude-sonnet-4-20250514" onclick="setModel(this)">Sonnet 4</button>
             </div>
           </div>
-          <div id="loot-target-selector" style="display:none; margin: 0.75rem 0; padding: 0.75rem; background: rgba(187,134,252,0.08); border-radius: 6px; border: 1px solid rgba(187,134,252,0.2);">
+          <div id="loot-target-selector" style="display:none; padding: 0.6rem; background: rgba(187,134,252,0.08); border-radius: 6px; border: 1px solid rgba(187,134,252,0.2);">
             <span class="control-label">Sync Loot Items To</span>
-            <select id="loot-target-select" style="width:100%; padding:6px; margin-top:6px; background:#1e1e1e; color:#e0e0e0; border:1px solid #333; border-radius:4px; font-size:0.85rem;" onchange="setLootTarget(this.value)">
+            <select id="loot-target-select" style="width:100%; margin-top:4px; padding:6px; background:var(--field-bg); color:var(--text); border:1px solid var(--glass-border); border-radius:4px; font-size:0.8rem;" onchange="setLootTarget(this.value)">
               <optgroup label="Standard Tiers">
                 <option value="bronze">Bronze Tier</option>
                 <option value="silver">Silver Tier</option>
                 <option value="gold">Gold Tier</option>
                 <option value="platinum">Platinum Tier</option>
               </optgroup>
-              <optgroup label="Custom Tables" id="custom-tables-group">
-              </optgroup>
+              <optgroup label="Custom Tables" id="custom-tables-group"></optgroup>
             </select>
-            <p class="hint" style="margin-top:6px;">Items will be added to this table when you sync.</p>
+            <p class="hint" style="margin-top:4px;">Items sync to this tier table.</p>
           </div>
           <p class="hint">Haiku is fast/cheap for clean dumps. Switch to Sonnet for dense or ambiguous notes.</p>
           <button id="btn-parse" class="btn-action btn-primary" onclick="runParse()"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Forge Entities</button>
-          <button id="btn-view-output" class="btn-action btn-ghost" onclick="showClaudeOutputModal()" style="margin-top: 0.5rem;">View Claude Output</button>
+          <button id="btn-view-output" class="btn-action btn-ghost" onclick="showClaudeOutputModal()">View Claude Output</button>
         </div>
       </div>
 
@@ -499,7 +500,7 @@
     lootItems: {
       label: "Loot Item",
       idKey: "id",
-      kvPath: ["lootTables", "tiers", "bronze"],
+      kvPath: ["lootTables", "allItems"],
       blank: () => ({
         id: genId("loot-item"),
         name: "",
@@ -730,56 +731,55 @@ ${raw}
     const btn = document.getElementById("btn-parse");
     btn.disabled = true;
 
+    const label = SCHEMA[activeType].label.toLowerCase();
+
     try {
-      let parsed = [];
-      const label = SCHEMA[activeType].label.toLowerCase();
-
       if (inputMode === "json") {
-        // JSON mode: parse pre-parsed input directly
-        const jsonInput = document.getElementById("json-input").value.trim();
-        if (!jsonInput) return toast("Paste JSON array first.", "err");
-
+        // ── JSON mode: parse pre-parsed input directly, skip Claude ──
+        const jsonVal = document.getElementById("json-input").value.trim();
+        if (!jsonVal) { toast("Paste a JSON array first.", "err"); return; }
+        let parsed;
         try {
-          const jsonData = JSON.parse(jsonInput);
-          if (!Array.isArray(jsonData)) throw new Error("Expected an array of entities");
-          parsed = jsonData;
+          parsed = JSON.parse(jsonVal);
+        } catch (e) {
+          toast(`JSON parse error: ${e.message}`, "err"); return;
+        }
+        if (!Array.isArray(parsed)) { toast("Expected a JSON array at the top level.", "err"); return; }
+        mergeParsedIntoReview(activeType, parsed);
+        toast(`Loaded ${parsed.length} ${label}${parsed.length === 1 ? "" : "s"} from JSON. Review before syncing.`, "ok");
+        return;
+      }
+
+      // ── Raw mode: chunk + forge through Claude ──
+      const raw = document.getElementById("raw-input").value.trim();
+      if (!raw) { toast("Paste some notes first.", "err"); return; }
+
+      const chunks = chunkRawInput(activeType, raw);
+      let totalForged = 0;
+      let failedBatches = 0;
+
+      for (let i = 0; i < chunks.length; i++) {
+        btn.innerHTML = `<span class="loader"></span> Forging batch ${i + 1}/${chunks.length}…`;
+        try {
+          const parsed = await forgeBatch(activeType, chunks[i]);
           mergeParsedIntoReview(activeType, parsed);
-          toast(`Loaded ${parsed.length} ${label}${parsed.length === 1 ? "" : "s"} from JSON. Review before syncing.`, "ok");
-        } catch (jsonErr) {
-          console.error("JSON parse error:", jsonErr);
-          toast(`JSON parse error: ${jsonErr.message}`, "err");
-        }
-      } else {
-        // Raw mode: chunk and forge through Claude
-        const raw = document.getElementById("raw-input").value.trim();
-        if (!raw) return toast("Paste some notes first.", "err");
-
-        const chunks = chunkRawInput(activeType, raw);
-        let totalForged = 0;
-        let failedBatches = 0;
-
-        for (let i = 0; i < chunks.length; i++) {
-          btn.innerHTML = `<span class="loader"></span> Forging batch ${i + 1}/${chunks.length}…`;
-          try {
-            const batchParsed = await forgeBatch(activeType, chunks[i]);
-            mergeParsedIntoReview(activeType, batchParsed);
-            totalForged += batchParsed.length;
-          } catch (batchErr) {
-            failedBatches++;
-            console.error(`Batch ${i + 1}/${chunks.length} failed:`, batchErr.message);
-            const detail = batchErr.truncated ? " (response truncated — batch too large)" : "";
-            toast(`Batch ${i + 1}/${chunks.length} failed: ${batchErr.message}${detail}`, "err");
-          }
-        }
-
-        if (totalForged > 0) {
-          const batchNote = chunks.length > 1 ? ` across ${chunks.length} batches` : "";
-          const failNote = failedBatches ? ` (${failedBatches} batch${failedBatches === 1 ? "" : "es"} failed)` : "";
-          toast(`Forged ${totalForged} ${label}${totalForged === 1 ? "" : "s"}${batchNote}. Review before syncing.${failNote}`, failedBatches ? "err" : "ok");
-        } else {
-          toast(`No ${label}s forged.${failedBatches ? " All batches failed — check console." : " Nothing of this type was found in the notes."}`, "err");
+          totalForged += parsed.length;
+        } catch (batchErr) {
+          failedBatches++;
+          console.error(`Batch ${i + 1}/${chunks.length} failed:`, batchErr.message);
+          const detail = batchErr.truncated ? " (response truncated — batch too large)" : "";
+          toast(`Batch ${i + 1}/${chunks.length} failed: ${batchErr.message}${detail}`, "err");
         }
       }
+
+      if (totalForged > 0) {
+        const batchNote = chunks.length > 1 ? ` across ${chunks.length} batches` : "";
+        const failNote = failedBatches ? ` (${failedBatches} batch${failedBatches === 1 ? "" : "es"} failed)` : "";
+        toast(`Forged ${totalForged} ${label}${totalForged === 1 ? "" : "s"}${batchNote}. Review before syncing.${failNote}`, failedBatches ? "err" : "ok");
+      } else {
+        toast(`No ${label}s forged.${failedBatches ? " All batches failed — check console." : " Nothing of this type was found in the notes."}`, "err");
+      }
+
     } catch (err) {
       console.error("Parse failed:", err);
       toast(`Parse failed: ${err.message}`, "err");
@@ -787,6 +787,7 @@ ${raw}
       btn.disabled = false;
       btn.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Forge Entities';
     }
+  }
 
   // Normalize a parsed object against the schema blank so all expected
   // fields exist (the model may omit some). Then push/replace into review.
@@ -1327,12 +1328,11 @@ ${raw}
       if (!Array.isArray(state.lootTables.allItems)) state.lootTables.allItems = [];
 
       // Merge our entities into the correct KV array by identity.
-      // For lootItems, use the dynamically selected target table instead of hard-coded allItems.
+      // For lootItems, use the dynamically selected target tier/custom table.
       let kvPath = SCHEMA[type].kvPath;
       if (type === "lootItems") {
-        // Determine if target is a tier or a custom table
         const isTier = ["bronze", "silver", "gold", "platinum"].includes(lootTargetTable);
-        kvPath = isTier 
+        kvPath = isTier
           ? ["lootTables", "tiers", lootTargetTable]
           : ["lootTables", "custom", lootTargetTable];
       }
@@ -1382,7 +1382,7 @@ ${raw}
   function switchTab(type) {
     activeType = type;
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.type === type));
-    // Show loot target selector only when lootItems tab is active
+    // Show loot tier selector only on lootItems tab
     const selector = document.getElementById("loot-target-selector");
     if (type === "lootItems") {
       selector.style.display = "block";
@@ -1392,28 +1392,6 @@ ${raw}
     }
     renderReview(); renderJson();
     setKvStatus("idle");
-  }
-
-  function setLootTarget(tableName) {
-    lootTargetTable = tableName;
-  }
-
-  function populateLootTargets() {
-    const optgroup = document.getElementById("custom-tables-group");
-    optgroup.innerHTML = "";
-    // Fetch KV to get list of custom tables
-    fetch(WORKER_URL, { method: "GET", mode: "cors" })
-      .then(res => res.json())
-      .then(data => {
-        const customTables = (data.lootTables && data.lootTables.custom) ? Object.keys(data.lootTables.custom) : [];
-        customTables.forEach(tableName => {
-          const opt = document.createElement("option");
-          opt.value = tableName;
-          opt.textContent = tableName;
-          optgroup.appendChild(opt);
-        });
-      })
-      .catch(err => console.warn("Could not fetch custom tables:", err));
   }
 
   function setModel(btn) {
@@ -1430,42 +1408,68 @@ ${raw}
     setTimeout(() => t.remove(), 4600);
   }
 
-  // Input mode switcher
+  /* ── INPUT MODE TOGGLE ── */
   function setInputMode(mode) {
     inputMode = mode;
-    const rawArea = document.getElementById("raw-input");
+    const rawArea  = document.getElementById("raw-input");
     const jsonArea = document.getElementById("json-input");
-    const btnRaw = document.getElementById("btn-mode-raw");
-    const btnJson = document.getElementById("btn-mode-json");
-    const title = document.getElementById("input-title");
+    const btnRaw   = document.getElementById("btn-mode-raw");
+    const btnJson  = document.getElementById("btn-mode-json");
+    const titleEl  = document.getElementById("input-title");
 
     if (mode === "raw") {
-      rawArea.style.display = "block";
+      rawArea.style.display  = "block";
       jsonArea.style.display = "none";
-      btnRaw.style.borderColor = "rgba(187,134,252,0.5)";
-      btnRaw.style.color = "#fff";
-      btnJson.style.borderColor = "#333";
-      btnJson.style.color = "#888";
-      title.textContent = "1 · Raw Notes";
-      updateCharCount();
+      btnRaw.style.background   = "var(--accent-dim)";
+      btnRaw.style.borderColor  = "var(--accent)";
+      btnRaw.style.color        = "var(--accent)";
+      btnJson.style.background  = "transparent";
+      btnJson.style.borderColor = "var(--glass-border)";
+      btnJson.style.color       = "#aaa";
+      titleEl.textContent = "1 · Raw Notes";
     } else {
-      rawArea.style.display = "none";
+      rawArea.style.display  = "none";
       jsonArea.style.display = "block";
-      btnRaw.style.borderColor = "#333";
-      btnRaw.style.color = "#888";
-      btnJson.style.borderColor = "rgba(187,134,252,0.5)";
-      btnJson.style.color = "#fff";
-      title.textContent = "1 · Parsed JSON";
-      updateCharCount();
+      btnRaw.style.background   = "transparent";
+      btnRaw.style.borderColor  = "var(--glass-border)";
+      btnRaw.style.color        = "#aaa";
+      btnJson.style.background  = "var(--accent-dim)";
+      btnJson.style.borderColor = "var(--accent)";
+      btnJson.style.color       = "var(--accent)";
+      titleEl.textContent = "1 · Parsed JSON";
     }
+    updateCharCount();
   }
 
   function updateCharCount() {
-    const area = inputMode === "raw" ? document.getElementById("raw-input") : document.getElementById("json-input");
-    document.getElementById("input-char-count").textContent = `${area.value.length.toLocaleString()} chars`;
+    const area = inputMode === "raw"
+      ? document.getElementById("raw-input")
+      : document.getElementById("json-input");
+    document.getElementById("input-char-count").textContent =
+      `${area.value.length.toLocaleString()} chars`;
   }
 
-  // Live char counter for both inputs
+  function setLootTarget(tableName) {
+    lootTargetTable = tableName;
+  }
+
+  function populateLootTargets() {
+    const optgroup = document.getElementById("custom-tables-group");
+    optgroup.innerHTML = "";
+    fetch(WORKER_URL, { method: "GET", mode: "cors" })
+      .then(res => res.json())
+      .then(data => {
+        const custom = (data.lootTables && data.lootTables.custom) ? Object.keys(data.lootTables.custom) : [];
+        custom.forEach(name => {
+          const opt = document.createElement("option");
+          opt.value = name; opt.textContent = name;
+          optgroup.appendChild(opt);
+        });
+      })
+      .catch(err => console.warn("Could not fetch custom tables:", err));
+  }
+
+  // Live char counters for both inputs
   document.getElementById("raw-input").addEventListener("input", updateCharCount);
   document.getElementById("json-input").addEventListener("input", updateCharCount);
 
