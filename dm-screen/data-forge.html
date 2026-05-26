@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner // Data Forge V4.1.1</title>
+  <title>Showrunner // Data Forge V4.1.2</title>
 
   <script>
     /* ──────────────────────────────────────────────
@@ -265,7 +265,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-      SHOWRUNNER // DATA FORGE V4.1.1
+      SHOWRUNNER // DATA FORGE V4.1.2
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">Dashboard</a>
@@ -596,43 +596,150 @@ ${raw}
   /* ══════════════════════════════════════════════════
      PARSE — call the Anthropic API (Claude-in-Claude).
   ══════════════════════════════════════════════════ */
+  /* ══════════════════════════════════════════════════
+     AUTO-BATCHING — Haiku 4.5 caps output at ~8,192 tokens.
+     Large inputs are split into chunks on entity boundaries
+     so no single forge call ever truncates. Each chunk is
+     forged sequentially and merged into the review pane.
+  ══════════════════════════════════════════════════ */
+
+  // Target chars of RAW INPUT per batch. Output JSON is ~2-3x the input size,
+  // and we must stay under Haiku's 8k output-token ceiling (~28k chars).
+  // ~6000 input chars -> ~15-18k output chars -> safely under the limit.
+  const BATCH_CHAR_TARGET = 6000;
+
+  // Split raw text into chunks without cutting an entity in half.
+  // Strategy depends on the entity type's natural delimiter:
+  //  - lootItems: each "[Roll ...]" or "ITEM:" line is one entity.
+  //  - timeline/prose types: split on blank lines (paragraph/section breaks).
+  function chunkRawInput(type, raw) {
+    // Determine the line-grouping boundary.
+    const lines = raw.split("\n");
+    const chunks = [];
+    let current = [];
+    let currentLen = 0;
+
+    // A line that starts a NEW entity (so we can break BEFORE it, never mid-entity).
+    const isBoundary = (line) => {
+      const l = line.trim();
+      if (!l) return false;
+      if (type === "lootItems") {
+        // New item markers in the user's loot format.
+        return /^\[?\s*roll\b/i.test(l) || /^item\s*:/i.test(l);
+      }
+      // Prose types (rooms, npcs, rules, timeline, characters):
+      // treat ALL-CAPS headers or numbered/bulleted leads as soft boundaries.
+      return /^[A-Z0-9][A-Z0-9 \-&'/]{4,}$/.test(l)   // ALL-CAPS header line
+          || /^(room|npc|rule|session|achievement|part|quest)\b/i.test(l);
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const lineLen = line.length + 1;
+
+      // If adding this line would blow the target AND we're at a clean
+      // boundary with content already buffered, cut here.
+      if (currentLen + lineLen > BATCH_CHAR_TARGET && current.length && isBoundary(line)) {
+        chunks.push(current.join("\n"));
+        current = [];
+        currentLen = 0;
+      }
+      current.push(line);
+      currentLen += lineLen;
+    }
+    if (current.length) chunks.push(current.join("\n"));
+
+    // Fallback: if a single chunk is STILL way over target (e.g. no boundaries
+    // detected), hard-split it on blank lines, then on raw size as last resort.
+    const finalChunks = [];
+    for (const c of chunks) {
+      if (c.length <= BATCH_CHAR_TARGET * 1.6) { finalChunks.push(c); continue; }
+      const paras = c.split(/\n\s*\n/);
+      let buf = "", bufLen = 0;
+      for (const p of paras) {
+        if (bufLen + p.length > BATCH_CHAR_TARGET && buf) {
+          finalChunks.push(buf);
+          buf = ""; bufLen = 0;
+        }
+        buf += (buf ? "\n\n" : "") + p;
+        bufLen += p.length;
+      }
+      if (buf) finalChunks.push(buf);
+    }
+    return finalChunks.filter(c => c.trim().length);
+  }
+
+  // Forge a single batch through the worker. Returns parsed entity array.
+  // Throws on error (caller handles per-batch failures).
+  async function forgeBatch(type, chunk) {
+    const res = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "forge_entities",
+        entityType: type,
+        model: MODEL,
+        maxTokens: 8000,
+        prompt: buildPrompt(type, chunk)
+      })
+    });
+
+    const data = await res.json();
+    if (data.rawOutput) lastClaudeOutput = data.rawOutput;
+
+    if (!res.ok || data.error) {
+      console.error("Forge batch error:", {
+        error: data.error,
+        truncated: data.truncated,
+        stopReason: data.stopReason,
+        preview: data.preview,
+        tail: data.tail,
+        diagnostics: { rawLength: data.rawLength, startsWithBracket: data.startsWithBracket, endsWithBracket: data.endsWithBracket }
+      });
+      const err = new Error(data.error || `Worker ${res.status}`);
+      err.truncated = !!data.truncated;
+      throw err;
+    }
+
+    if (!Array.isArray(data.entities)) throw new Error("Worker did not return an entities array");
+    return data.entities;
+  }
+
   async function runParse() {
     const raw = document.getElementById("raw-input").value.trim();
     if (!raw) return toast("Paste some notes first.", "err");
 
     const btn = document.getElementById("btn-parse");
     btn.disabled = true;
-    btn.innerHTML = '<span class="loader"></span> Forging…';
+
+    const chunks = chunkRawInput(activeType, raw);
+    const label = SCHEMA[activeType].label.toLowerCase();
+    let totalForged = 0;
+    let failedBatches = 0;
 
     try {
-      const res = await fetch(WORKER_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "forge_entities",
-          entityType: activeType,
-          model: MODEL,
-          prompt: buildPrompt(activeType, raw)
-        })
-      });
-
-      const data = await res.json();
-      
-      // Store the raw Claude output for debugging (even if there's an error)
-      if (data.rawOutput) lastClaudeOutput = data.rawOutput;
-      
-      if (!res.ok || data.error) {
-        const msg = data.error || `Worker ${res.status}`;
-        console.error("Forge error response:", data);
-        throw new Error(msg);
+      for (let i = 0; i < chunks.length; i++) {
+        btn.innerHTML = `<span class="loader"></span> Forging batch ${i + 1}/${chunks.length}…`;
+        try {
+          const parsed = await forgeBatch(activeType, chunks[i]);
+          mergeParsedIntoReview(activeType, parsed);
+          totalForged += parsed.length;
+        } catch (batchErr) {
+          failedBatches++;
+          console.error(`Batch ${i + 1}/${chunks.length} failed:`, batchErr.message);
+          const detail = batchErr.truncated ? " (response truncated — batch too large)" : "";
+          toast(`Batch ${i + 1}/${chunks.length} failed: ${batchErr.message}${detail}`, "err");
+          // Keep going — partial success is better than aborting the whole run.
+        }
       }
 
-      const parsed = data.entities;
-      if (!Array.isArray(parsed)) throw new Error("Worker did not return an entities array");
-
-      mergeParsedIntoReview(activeType, parsed);
-      const n = parsed.length;
-      toast(n ? `Forged ${n} ${SCHEMA[activeType].label.toLowerCase()}${n === 1 ? "" : "s"}. Review before syncing.` : "No entities found in those notes.", n ? "ok" : "err");
+      if (totalForged > 0) {
+        const batchNote = chunks.length > 1 ? ` across ${chunks.length} batches` : "";
+        const failNote = failedBatches ? ` (${failedBatches} batch${failedBatches === 1 ? "" : "es"} failed)` : "";
+        toast(`Forged ${totalForged} ${label}${totalForged === 1 ? "" : "s"}${batchNote}. Review before syncing.${failNote}`, failedBatches ? "err" : "ok");
+      } else {
+        toast(`No ${label}s forged.${failedBatches ? " All batches failed — check console." : " Nothing of this type was found in the notes."}`, "err");
+      }
     } catch (err) {
       console.error("Parse failed:", err);
       toast(`Parse failed: ${err.message}`, "err");
