@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner // Data Forge V4.1.6</title>
+  <title>Showrunner // Data Forge V4.1.7</title>
 
   <script>
     /* ──────────────────────────────────────────────
@@ -265,7 +265,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-      SHOWRUNNER // DATA FORGE V4.1.6
+      SHOWRUNNER // DATA FORGE V4.1.7
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">Dashboard</a>
@@ -509,6 +509,7 @@
         rarity: "common",
         quantity: 1,
         description: "",
+        rollRange: { min: null, max: null },
         mechanics: { toHitBonus: null, damageBonus: null, acBase: null, acMod: null, text: "" },
         charges: null,
         requiresAttunement: false,
@@ -585,6 +586,7 @@ Only include fields you can determine; omit unknown numeric fields rather than g
   "rarity": one of "common"|"uncommon"|"rare"|"very rare"|"legendary"  (if not specified, default to "common"),
   "quantity": number  (default 1),
   "description": string  (the full DESCRIPTION: text, preserved faithfully and completely),
+  "rollRange": { "min": number|null, "max": number|null }  (parse from the [Roll XX-YY] prefix at the start of the line; e.g. "[Roll 01-03]" -> {"min":1,"max":3}, "[Roll 47-50]" -> {"min":47,"max":50}. Strip leading zeros. If no roll prefix is present, use {"min":null,"max":null}),
   "mechanics": {
     "toHitBonus": number|null  (e.g. +1/+2/+3 to attack on weapons),
     "damageBonus": string|null  (e.g. "1d8+1", or extra damage dice like "2d6 lightning"),
@@ -597,8 +599,9 @@ Only include fields you can determine; omit unknown numeric fields rather than g
   "isAttuned": false,
   "isDeleted": false
 }
-Each line has format: [Roll XX-XX] ITEM: <name> TYPE: <type> DESCRIPTION: <full text>
-Extract EVERY item. Do NOT invent mechanics or rarity—use only what is explicitly stated. Preserve the full flavor + mechanical description verbatim in "description"; additionally distill any mechanics (bonuses, damage, effects) into "mechanics". For weapons/armor map numeric bonuses to toHitBonus or acMod.`
+Each line has format: [Roll XX-YY] ITEM: <name> TYPE: <type> DESCRIPTION: <full text>
+Roll ranges are ALWAYS present at the start of each entry — parse them strictly. Strip leading zeros from the numbers (e.g. "01" -> 1, "03" -> 3).
+Extract EVERY item. Do NOT invent mechanics or rarity — use only what is explicitly stated. Preserve the full flavor + mechanical description verbatim in "description"; additionally distill any mechanics (bonuses, damage, effects) into "mechanics". For weapons/armor map numeric bonuses to toHitBonus or acMod.`
     };
 
     return `You are a data extraction engine for a D&D 5e campaign manager. Extract every ${SCHEMA[type].label} from the raw notes below into a JSON array.
@@ -1168,8 +1171,9 @@ ${raw}
   function lootItemFields(it, idx) {
     const c = document.createElement("div");
 
-    // Ensure nested shape exists (parsed objects may omit it).
+    // Ensure nested shapes exist (parsed objects may omit them).
     if (!it.mechanics) it.mechanics = { toHitBonus: null, damageBonus: null, acBase: null, acMod: null, text: "" };
+    if (!it.rollRange) it.rollRange = { min: null, max: null };
 
     c.appendChild(row(
       txt("ID", it.id, v => { it.id = v; reRenderJsonAndStatus(); }),
@@ -1180,6 +1184,15 @@ ${raw}
       sel("Type", it.type, LOOT_TYPES, v => { it.type = v; renderJson(); }),
       sel("Rarity", it.rarity, LOOT_RARITIES, v => { it.rarity = v; renderJson(); })
     ));
+
+    // Roll Range subsection
+    const rs = document.createElement("div"); rs.className = "subsection";
+    rs.innerHTML = `<div class="subsection-title">Roll Range</div>`;
+    rs.appendChild(row(
+      num("Min Roll", it.rollRange.min, v => { it.rollRange.min = v; renderJson(); }),
+      num("Max Roll", it.rollRange.max, v => { it.rollRange.max = v; renderJson(); })
+    ));
+    c.appendChild(rs);
     c.appendChild(txt("Description (flavor + full text)", it.description, v => { it.description = v; renderJson(); }, true));
 
     // Mechanics subsection
@@ -1225,7 +1238,7 @@ ${raw}
     ));
 
     const note = document.createElement("p"); note.className = "hint"; note.style.marginTop = "0.6rem";
-    note.textContent = "Roll ranges are assigned later in the Loot Manager import. Sync these to lootTables.allItems, then bulk-import into a tier.";
+    note.textContent = "Roll ranges are parsed from [Roll XX-YY] prefixes in raw notes and synced directly into the target tier table.";
     c.appendChild(note);
     return c;
   }
