@@ -509,7 +509,7 @@
         rarity: "common",
         quantity: 1,
         description: "",
-        rollRange: { min: null, max: null },
+        rollRange: [null, null],
         mechanics: { toHitBonus: null, damageBonus: null, acBase: null, acMod: null, text: "" },
         charges: null,
         requiresAttunement: false,
@@ -586,7 +586,7 @@ Only include fields you can determine; omit unknown numeric fields rather than g
   "rarity": one of "common"|"uncommon"|"rare"|"very rare"|"legendary"  (if not specified, default to "common"),
   "quantity": number  (default 1),
   "description": string  (the full DESCRIPTION: text, preserved faithfully and completely),
-  "rollRange": { "min": number|null, "max": number|null }  (parse from the [Roll XX-YY] prefix at the start of the line; e.g. "[Roll 01-03]" -> {"min":1,"max":3}, "[Roll 47-50]" -> {"min":47,"max":50}. Strip leading zeros. If no roll prefix is present, use {"min":null,"max":null}),
+  "rollRange": [min, max]  (parse from the [Roll XX-YY] prefix at the start of the line; e.g. "[Roll 01-03]" -> [1, 3], "[Roll 47-50]" -> [47, 50]. Strip leading zeros. If no roll prefix is present, use [null, null]),
   "mechanics": {
     "toHitBonus": number|null  (e.g. +1/+2/+3 to attack on weapons),
     "damageBonus": string|null  (e.g. "1d8+1", or extra damage dice like "2d6 lightning"),
@@ -1173,7 +1173,7 @@ ${raw}
 
     // Ensure nested shapes exist (parsed objects may omit them).
     if (!it.mechanics) it.mechanics = { toHitBonus: null, damageBonus: null, acBase: null, acMod: null, text: "" };
-    if (!it.rollRange) it.rollRange = { min: null, max: null };
+    if (!Array.isArray(it.rollRange)) it.rollRange = [null, null];
 
     c.appendChild(row(
       txt("ID", it.id, v => { it.id = v; reRenderJsonAndStatus(); }),
@@ -1189,8 +1189,8 @@ ${raw}
     const rs = document.createElement("div"); rs.className = "subsection";
     rs.innerHTML = `<div class="subsection-title">Roll Range</div>`;
     rs.appendChild(row(
-      num("Min Roll", it.rollRange.min, v => { it.rollRange.min = v; renderJson(); }),
-      num("Max Roll", it.rollRange.max, v => { it.rollRange.max = v; renderJson(); })
+      num("Min Roll", it.rollRange[0], v => { it.rollRange[0] = v; renderJson(); }),
+      num("Max Roll", it.rollRange[1], v => { it.rollRange[1] = v; renderJson(); })
     ));
     c.appendChild(rs);
     c.appendChild(txt("Description (flavor + full text)", it.description, v => { it.description = v; renderJson(); }, true));
