@@ -557,11 +557,11 @@
 Only include fields you can determine; omit unknown numeric fields rather than guessing wildly.`,
       lootItems: `Each object: {
   "id": "loot-item_<slug>"  (lowercase, derive from item name; stable),
-  "name": string  (required; the ITEM: line),
-  "type": one of "weapon"|"armor"|"wand"|"ring"|"potion"|"wondrous"|"instrument"|"consumable"|"trinket"|"currency"|"arcane focus"  (map the TYPE: line; "Wondrous Item" -> "wondrous", "Armor (Shield)" -> "armor", "Weapon (Longsword)" -> "weapon"),
-  "rarity": one of "common"|"uncommon"|"rare"|"very rare"|"legendary"  (infer from tier: Bronze/Wooden -> common, Silver -> uncommon, Gold -> rare, Platinum -> "very rare"),
+  "name": string  (required; extract from the ITEM: field),
+  "type": one of "weapon"|"armor"|"wand"|"ring"|"potion"|"wondrous"|"instrument"|"consumable"|"trinket"|"currency"|"arcane focus"  (parse the TYPE: field; "Consumable" -> "consumable", "Wondrous Item" -> "wondrous", "Armor (Shield)" -> "armor", "Weapon (Longsword)" -> "weapon"),
+  "rarity": one of "common"|"uncommon"|"rare"|"very rare"|"legendary"  (if not specified, default to "common"),
   "quantity": number  (default 1),
-  "description": string  (the full DESCRIPTION: flavor + mechanics text, preserved faithfully and completely),
+  "description": string  (the full DESCRIPTION: text, preserved faithfully and completely),
   "mechanics": {
     "toHitBonus": number|null  (e.g. +1/+2/+3 to attack on weapons),
     "damageBonus": string|null  (e.g. "1d8+1", or extra damage dice like "2d6 lightning"),
@@ -574,7 +574,8 @@ Only include fields you can determine; omit unknown numeric fields rather than g
   "isAttuned": false,
   "isDeleted": false
 }
-Extract EVERY item in the notes (there may be dozens). Do NOT assign roll ranges — those are set later in the Loot Manager. Preserve the full flavor + mechanical description verbatim in "description"; additionally distill the hard numbers into "mechanics". For weapons map the +X to toHitBonus; for armor/shields map +X to acMod.`
+Each line has format: [Roll XX-XX] ITEM: <name> TYPE: <type> DESCRIPTION: <full text>
+Extract EVERY item. Do NOT invent mechanics or rarity—use only what is explicitly stated. Preserve the full flavor + mechanical description verbatim in "description"; additionally distill any mechanics (bonuses, damage, effects) into "mechanics". For weapons/armor map numeric bonuses to toHitBonus or acMod.`
     };
 
     return `You are a data extraction engine for a D&D 5e campaign manager. Extract every ${SCHEMA[type].label} from the raw notes below into a JSON array.
