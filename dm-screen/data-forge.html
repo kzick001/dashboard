@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner // Data Forge V4.1</title>
+  <title>Showrunner // Data Forge V4.1.1</title>
 
   <script>
     /* ──────────────────────────────────────────────
@@ -265,7 +265,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-      SHOWRUNNER // DATA FORGE V4.1
+      SHOWRUNNER // DATA FORGE V4.1.1
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">Dashboard</a>
@@ -307,6 +307,7 @@
           </div>
           <p class="hint">Haiku is fast/cheap for clean dumps. Switch to Sonnet for dense or ambiguous notes.</p>
           <button id="btn-parse" class="btn-action btn-primary" onclick="runParse()"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Forge Entities</button>
+          <button id="btn-view-output" class="btn-action btn-ghost" onclick="showClaudeOutputModal()" style="margin-top: 0.5rem;">View Claude Output</button>
         </div>
       </div>
 
@@ -355,6 +356,21 @@
 
   <div id="toast-container"></div>
 
+  <!-- Claude Output Modal -->
+  <div id="claude-output-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 5000; overflow: auto;">
+    <div style="background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px; margin: 2rem auto; padding: 1.5rem; max-width: 800px; max-height: 80vh; overflow: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0; color: #fff;">Claude Raw Output</h3>
+        <button onclick="closeClaudeOutputModal()" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.5rem; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold;">✕</button>
+      </div>
+      <pre id="claude-output-text" style="background: #050505; color: #a6e22e; padding: 1rem; border-radius: 4px; overflow: auto; max-height: 60vh; font-size: 0.8rem; margin: 0 0 1rem 0; font-family: ui-monospace, monospace;"></pre>
+      <div style="display: flex; gap: 0.5rem;">
+        <button onclick="copyClaudeOutput()" class="btn-action btn-ghost" style="flex: 1;">Copy to Clipboard</button>
+        <button onclick="closeClaudeOutputModal()" class="btn-action btn-ghost" style="flex: 1;">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script>
   /* ══════════════════════════════════════════════════
      CONFIG
@@ -363,6 +379,7 @@
 
   let MODEL = "claude-haiku-4-5-20251001";
   let activeType = "rooms";
+  let lastClaudeOutput = null; // Store full Claude response for debugging
 
   // entities[type] = array of entity objects (schema-shaped)
   const entities = { rooms: [], npcs: [], rules: [], timeline: [], characters: [], lootItems: [] };
@@ -599,7 +616,15 @@ ${raw}
       });
 
       const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || `Worker ${res.status}`);
+      
+      // Store the raw Claude output for debugging (even if there's an error)
+      if (data.rawOutput) lastClaudeOutput = data.rawOutput;
+      
+      if (!res.ok || data.error) {
+        const msg = data.error || `Worker ${res.status}`;
+        console.error("Forge error response:", data);
+        throw new Error(msg);
+      }
 
       const parsed = data.entities;
       if (!Array.isArray(parsed)) throw new Error("Worker did not return an entities array");
@@ -608,7 +633,7 @@ ${raw}
       const n = parsed.length;
       toast(n ? `Forged ${n} ${SCHEMA[activeType].label.toLowerCase()}${n === 1 ? "" : "s"}. Review before syncing.` : "No entities found in those notes.", n ? "ok" : "err");
     } catch (err) {
-      console.error(err);
+      console.error("Parse failed:", err);
       toast(`Parse failed: ${err.message}`, "err");
     } finally {
       btn.disabled = false;
@@ -1223,6 +1248,28 @@ ${raw}
   document.getElementById("raw-input").addEventListener("input", e => {
     document.getElementById("input-char-count").textContent = `${e.target.value.length.toLocaleString()} chars`;
   });
+
+  // Claude output modal controls
+  function showClaudeOutputModal() {
+    if (!lastClaudeOutput) {
+      toast("No Claude output captured yet. Run Forge Entities first.", "err");
+      return;
+    }
+    document.getElementById("claude-output-text").textContent = lastClaudeOutput;
+    document.getElementById("claude-output-modal").style.display = "block";
+  }
+
+  function closeClaudeOutputModal() {
+    document.getElementById("claude-output-modal").style.display = "none";
+  }
+
+  function copyClaudeOutput() {
+    if (!lastClaudeOutput) return;
+    navigator.clipboard?.writeText(lastClaudeOutput).then(
+      () => toast("Claude output copied to clipboard.", "ok"),
+      () => toast("Clipboard blocked — select manually.", "err")
+    );
+  }
 
   // Initial paint
   renderReview();
