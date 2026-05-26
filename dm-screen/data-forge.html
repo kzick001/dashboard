@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner // Data Forge V4.1.5</title>
+  <title>Showrunner // Data Forge V4.1.6</title>
 
   <script>
     /* ──────────────────────────────────────────────
@@ -265,7 +265,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-      SHOWRUNNER // DATA FORGE V4.1.5
+      SHOWRUNNER // DATA FORGE V4.1.6
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link">Dashboard</a>
@@ -321,9 +321,10 @@
                 <option value="gold">Gold Tier</option>
                 <option value="platinum">Platinum Tier</option>
               </optgroup>
+              <optgroup label="Player Tables" id="personal-tables-group"></optgroup>
               <optgroup label="Custom Tables" id="custom-tables-group"></optgroup>
             </select>
-            <p class="hint" style="margin-top:4px;">Items sync to this tier table.</p>
+            <p class="hint" style="margin-top:4px;">Items sync to this table. Player tables target <code>lootTables.personal.&lt;name&gt;</code>.</p>
           </div>
           <p class="hint">Haiku is fast/cheap for clean dumps. Switch to Sonnet for dense or ambiguous notes.</p>
           <button id="btn-parse" class="btn-action btn-primary" onclick="runParse()"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Forge Entities</button>
@@ -1315,28 +1316,53 @@ ${raw}
       let state = await res.json();
       kvCache = state;
 
-      // Ensure containers exist.
+      // Ensure loot containers exist (idempotent).
       state.version = state.version || 0;
       if (!state.campaign) state.campaign = { rooms: [], npcs: [], rules: [], timeline: [] };
       if (!Array.isArray(state.characters)) state.characters = [];
       ["rooms", "npcs", "rules", "timeline"].forEach(k => { if (!Array.isArray(state.campaign[k])) state.campaign[k] = []; });
-      // Loot containers (for lootItems sync target lootTables.allItems).
       if (!state.lootTables) state.lootTables = {};
-      if (!state.lootTables.tiers) state.lootTables.tiers = { bronze: [], silver: [], gold: [], platinum: [] };
+      if (!state.lootTables.tiers) state.lootTables.tiers = {};
+      ["bronze", "silver", "gold", "platinum"].forEach(t => {
+        if (!Array.isArray(state.lootTables.tiers[t])) state.lootTables.tiers[t] = [];
+      });
       if (!state.lootTables.personal) state.lootTables.personal = {};
       if (!state.lootTables.custom) state.lootTables.custom = {};
       if (!Array.isArray(state.lootTables.allItems)) state.lootTables.allItems = [];
 
-      // Merge our entities into the correct KV array by identity.
-      // For lootItems, use the dynamically selected target tier/custom table.
+      // Resolve the target KV path for this sync.
+      // For lootItems, use the dynamically selected table rather than the schema default.
       let kvPath = SCHEMA[type].kvPath;
+      let resolvedPathLabel = kvPath.join(".");
       if (type === "lootItems") {
-        const isTier = ["bronze", "silver", "gold", "platinum"].includes(lootTargetTable);
-        kvPath = isTier
-          ? ["lootTables", "tiers", lootTargetTable]
-          : ["lootTables", "custom", lootTargetTable];
+        const TIERS = ["bronze", "silver", "gold", "platinum"];
+        if (TIERS.includes(lootTargetTable)) {
+          kvPath = ["lootTables", "tiers", lootTargetTable];
+        } else {
+          // Determine if it's a personal or custom table by checking both buckets.
+          // Personal tables: lootTables.personal.<name>
+          // Custom tables:   lootTables.custom.<name>
+          const isPersonal = Object.prototype.hasOwnProperty.call(state.lootTables.personal, lootTargetTable);
+          kvPath = isPersonal
+            ? ["lootTables", "personal", lootTargetTable]
+            : ["lootTables", "custom", lootTargetTable];
+        }
+        resolvedPathLabel = kvPath.join(".");
+
+        // Ensure the target array exists at the resolved path before merging.
+        // This handles new custom/personal tables that haven't been written to KV yet.
+        let bucket = readKvPath(state, kvPath.slice(0, -1)); // parent object
+        const leafKey = kvPath[kvPath.length - 1];
+        if (!Array.isArray(bucket[leafKey])) {
+          bucket[leafKey] = [];
+        }
       }
+
+      // Merge entities into the target array by identity key.
       const targetArr = readKvPath(state, kvPath);
+      if (!Array.isArray(targetArr)) {
+        throw new Error(`Target path "${resolvedPathLabel}" is not an array. Sync aborted.`);
+      }
       list.forEach(ent => {
         const key = entityKey(type, ent);
         const i = targetArr.findIndex(e => entityKey(type, e) === key);
@@ -1362,7 +1388,7 @@ ${raw}
       recomputeStatus(type);
       renderReview();
       setKvStatus(`synced · v${result.new_version ?? state.version}`);
-      toast(`Synced ${list.length} ${SCHEMA[type].label.toLowerCase()}(s) to ${SCHEMA[type].kvPath.join(".")}.`, "ok");
+      toast(`Synced ${list.length} ${SCHEMA[type].label.toLowerCase()}(s) → ${resolvedPathLabel ?? SCHEMA[type].kvPath.join(".")}.`, "ok");
 
       btn.textContent = "Synced ✓";
       setTimeout(() => { btn.textContent = "Sync to KV"; btn.disabled = list.length === 0; }, 2200);
@@ -1454,19 +1480,49 @@ ${raw}
   }
 
   function populateLootTargets() {
-    const optgroup = document.getElementById("custom-tables-group");
-    optgroup.innerHTML = "";
+    const personalGroup = document.getElementById("personal-tables-group");
+    const customGroup   = document.getElementById("custom-tables-group");
+    personalGroup.innerHTML = "";
+    customGroup.innerHTML   = "";
+
     fetch(WORKER_URL, { method: "GET", mode: "cors" })
       .then(res => res.json())
       .then(data => {
-        const custom = (data.lootTables && data.lootTables.custom) ? Object.keys(data.lootTables.custom) : [];
+        // Personal tables — lootTables.personal keys
+        const personal = (data.lootTables && data.lootTables.personal)
+          ? Object.keys(data.lootTables.personal) : [];
+        personal.forEach(name => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name + " (player)";
+          personalGroup.appendChild(opt);
+        });
+
+        // Custom tables — lootTables.custom keys
+        const custom = (data.lootTables && data.lootTables.custom)
+          ? Object.keys(data.lootTables.custom) : [];
         custom.forEach(name => {
           const opt = document.createElement("option");
-          opt.value = name; opt.textContent = name;
-          optgroup.appendChild(opt);
+          opt.value = name;
+          opt.textContent = name;
+          customGroup.appendChild(opt);
         });
+
+        // Sync the DOM select value to the current lootTargetTable var.
+        // If the saved target no longer exists in the list, fall back to bronze.
+        const sel = document.getElementById("loot-target-select");
+        const allValues = ["bronze", "silver", "gold", "platinum", ...personal, ...custom];
+        if (!allValues.includes(lootTargetTable)) {
+          lootTargetTable = "bronze";
+        }
+        sel.value = lootTargetTable;
       })
-      .catch(err => console.warn("Could not fetch custom tables:", err));
+      .catch(err => {
+        console.warn("Could not fetch loot table list:", err);
+        // Still sync the selector to whatever we have locally.
+        const sel = document.getElementById("loot-target-select");
+        sel.value = lootTargetTable;
+      });
   }
 
   // Live char counters for both inputs
