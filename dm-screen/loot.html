@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Loot Tables V4.0</title>
+  <title>Showrunner | Loot Tables V4.1</title>
 
   <script>
     const SECURE_PIN = "goddammit_doughnut";
@@ -60,6 +60,8 @@
     }
     .nav-link:hover { background: rgba(255,255,255,0.05); border-color: var(--glass-border); color: #fff; }
     .nav-link.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(187,134,252,0.2); }
+    .debug-hint { font-size: 0.65rem; color: var(--text-muted); letter-spacing: 0.08em; margin-left: auto; padding-right: 1rem; cursor: help; }
+    .debug-hint:hover { color: var(--accent); }
 
     /* --- Global Controls Bar --- */
     .global-controls {
@@ -244,6 +246,7 @@
       <a href="index.html" class="nav-link">Dashboard</a>
       <a href="loot.html" class="nav-link active">Loot</a>
       <a href="data-forge.html" class="nav-link">Data Forge</a>
+      <div class="debug-hint" title="Add ?debug=1 to URL to enable debug logging in DevTools console">DEBUG: ?debug=1</div>
     </div>
   </nav>
 
@@ -457,6 +460,27 @@
      CONFIG & STATE
   ══════════════════════════════════════════════════ */
   const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
+  const DEBUG = new URLSearchParams(window.location.search).has('debug');
+
+  // Convert flat items (from Data Forge) to wrapped entries (expected by Loot Manager).
+  // Flat format: { id, name, type, rarity, rollRange: [min,max], ... }
+  // Entry format: { rollRange: [min,max], item: { id, name, type, rarity, ... } }
+  function normalizeFlatItems(items) {
+    if (!Array.isArray(items)) return [];
+    return items.map(it => {
+      if (it.item !== undefined) {
+        // Already wrapped — pass through
+        if (DEBUG) console.log('[LOOT-DEBUG] Item already wrapped:', it.item.name || '(unnamed)');
+        return it;
+      }
+      // Flat item — wrap it and preserve rollRange
+      const rollRange = Array.isArray(it.rollRange) ? it.rollRange : [null, null];
+      const wrappedItem = { ...it };
+      delete wrappedItem.rollRange; // Strip rollRange from item
+      if (DEBUG) console.log('[LOOT-DEBUG] Wrapping flat item:', wrappedItem.name || '(unnamed)', '→ range', rollRange);
+      return { rollRange, item: wrappedItem };
+    });
+  }
 
   // appState holds the full KV doc. lootTables is our domain.
   let appState = {
@@ -519,13 +543,20 @@
   function getTable(view) {
     if (!view) return [];
     const lt = appState.lootTables;
-    if (view.category === 'tiers') return lt.tiers[view.id] || [];
-    if (view.category === 'personal') return lt.personal[view.id] || [];
-    if (view.category === 'custom') {
+    let table = [];
+    if (view.category === 'tiers') table = lt.tiers[view.id] || [];
+    else if (view.category === 'personal') table = lt.personal[view.id] || [];
+    else if (view.category === 'custom') {
       const t = lt.custom[view.id];
-      return (t && Array.isArray(t.entries)) ? t.entries : [];
+      table = (t && Array.isArray(t.entries)) ? t.entries : [];
     }
-    return [];
+    // Normalize flat items to entries on load (one-time conversion in memory).
+    const normalized = normalizeFlatItems(table);
+    if (DEBUG && normalized.length > 0) {
+      const emptyCount = normalized.filter(e => isEmptyEntry(e)).length;
+      console.log(`[LOOT-DEBUG] Loaded ${view.category}/${view.id}: ${normalized.length} entries, ${normalized.length - emptyCount} filled, ${emptyCount} empty`);
+    }
+    return normalized;
   }
 
   // Mutate a table inside a given state object (for mutateAndPush).
@@ -559,7 +590,6 @@
     ['bronze','silver','gold','platinum'].forEach(t => { if (!state.lootTables.tiers[t]) state.lootTables.tiers[t] = []; });
     if (!state.lootTables.personal) state.lootTables.personal = {};
     if (!state.lootTables.custom) state.lootTables.custom = {};
-    if (!Array.isArray(state.lootTables.allItems)) state.lootTables.allItems = [];
   }
 
   // Personal tables are keyed by character name. Seed from characters in KV.
@@ -825,12 +855,24 @@
      ROLL RESOLUTION
   ══════════════════════════════════════════════════ */
   function findEntryForRoll(table, roll) {
+    if (DEBUG) console.log(`[LOOT-DEBUG] Searching for roll ${roll} in ${table.length} entries`);
     for (let i = 0; i < table.length; i++) {
       const e = table[i];
-      if (!e || !Array.isArray(e.rollRange)) continue;
+      if (!e) {
+        if (DEBUG) console.warn(`[LOOT-DEBUG] Entry ${i} is null/undefined`);
+        continue;
+      }
+      if (!Array.isArray(e.rollRange)) {
+        if (DEBUG) console.warn(`[LOOT-DEBUG] Entry ${i} has invalid rollRange:`, e.rollRange);
+        continue;
+      }
       const [min, max] = e.rollRange;
-      if (roll >= min && roll <= max) return { entry: e, index: i };
+      if (roll >= min && roll <= max) {
+        if (DEBUG) console.log(`[LOOT-DEBUG] Hit! Entry ${i} covers ${min}–${max}`);
+        return { entry: e, index: i };
+      }
     }
+    if (DEBUG) console.log(`[LOOT-DEBUG] No match found for roll ${roll}`);
     return null;
   }
 
