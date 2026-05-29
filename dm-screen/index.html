@@ -3,22 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Dashboard V4.0</title>
+  <title>Showrunner | Dashboard V5.0</title>
 
   <!-- ============================================================
-       PIN-BASED AUTH (preserved from V3.1/V4.1.1)
-       Gates page render behind Worker PIN validation.
+       PIN-BASED AUTH (preserved from V4.0)
        ============================================================ -->
   <script>
     const WORKER_URL = "https://dmscreen.askozicki.workers.dev";
     const PIN_STORAGE_KEY = "showrunner_pin_authenticated";
-
-    // Global campaign state, populated by auth, mutated by editors, synced to KV.
     let campaignState = null;
 
     async function initAuth() {
       document.documentElement.style.display = 'none';
-
       let isAuthenticated = false;
       try {
         isAuthenticated = localStorage.getItem(PIN_STORAGE_KEY) === "true";
@@ -75,7 +71,6 @@
       window.location.href = "about:blank";
     }
 
-    // Guarantee the shape the dashboard expects, so missing keys never crash render.
     function normalizeState() {
       if (!campaignState || typeof campaignState !== 'object') campaignState = {};
       if (typeof campaignState.version !== 'number') campaignState.version = 0;
@@ -104,7 +99,6 @@
 
   <style>
     :root {
-      --primary: #6366f1;
       --accent: #bb86fc;
       --danger: #f87171;
       --success: #4ade80;
@@ -116,10 +110,19 @@
       --bg-dark: #0a0e27;
       --subtle-dark: #1a1f3a;
       --card-bg: rgba(20, 24, 48, 0.85);
+
+      /* Section badge colors (Phase 2) */
+      --beat: #74b9ff;
+      --encounter: #f87171;
+      --loot: #ffd700;
+      --npc: #4ade80;
+      --quest: #bb86fc;
+      --readaloud: #facc15;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    /* Shared font stack — matches Loot & Data Forge (Phase 1) */
     html, body {
       width: 100%;
       min-height: 100%;
@@ -128,18 +131,20 @@
         radial-gradient(900px 500px at -10% 110%, rgba(187,134,252,0.08), transparent 60%),
         var(--bg-dark);
       color: var(--text);
-      font-family: 'Courier New', ui-monospace, monospace;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       font-size: 14px;
       overflow-x: hidden;
     }
 
     body { display: flex; flex-direction: column; min-height: 100vh; }
 
-    /* ---------- Navbar ---------- */
+    /* ---------- Navbar (Phase 1 — matched to Loot/Data Forge) ---------- */
     .navbar {
-      background: var(--subtle-dark);
+      height: 60px;
+      background: var(--glass);
+      backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
       border-bottom: 1px solid var(--glass-border);
-      padding: 0.85rem 1.5rem;
+      padding: 0 1.5rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -147,20 +152,22 @@
       gap: 1rem;
       position: sticky;
       top: 0;
-      z-index: 100;
+      z-index: 200;
+      flex-shrink: 0;
     }
     .brand {
-      display: flex; align-items: center; gap: 0.5rem;
-      font-weight: bold; font-size: 1.1rem; letter-spacing: 1px;
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 900; letter-spacing: 0.15em; font-size: 1.1rem;
+      color: #fff; text-shadow: 0 0 10px rgba(187,134,252,0.5);
     }
-    .nav-links { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .nav-links { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
     .nav-link {
-      color: var(--text-muted); text-decoration: none;
-      padding: 0.5rem 1rem; border-radius: 4px; transition: all 0.2s ease;
+      color: var(--text); text-decoration: none; font-size: 0.8rem; font-weight: bold;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      padding: 6px 12px; border-radius: 20px; border: 1px solid transparent; transition: 0.3s;
     }
-    .nav-link:hover, .nav-link.active {
-      color: var(--accent); background: rgba(187, 134, 252, 0.1);
-    }
+    .nav-link:hover { background: rgba(255,255,255,0.05); border-color: var(--glass-border); color: #fff; }
+    .nav-link.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(187,134,252,0.2); }
     .heartbeat {
       width: 9px; height: 9px; border-radius: 50%;
       background: var(--success); display: inline-block;
@@ -293,14 +300,11 @@
     .section-body { padding: 1.1rem; }
     .section-card.collapsed .section-body { display: none; }
 
-    /* Top row: Room + Notes side by side */
-    .content-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
-
-    /* Room selector inline */
+    /* Room selector inline (drawer) */
     .room-picker { display: flex; align-items: center; gap: 0.5rem; }
-    .room-picker select { width: auto; min-width: 160px; }
+    .room-picker select { width: auto; min-width: 140px; }
 
-    /* Rendered (display) content for room + notes */
+    /* Rendered (display) content for room editor */
     .rendered { line-height: 1.6; font-size: 0.92rem; min-height: 120px; }
     .rendered h4 {
       color: var(--accent); font-size: 0.85rem; letter-spacing: 1.5px;
@@ -320,7 +324,74 @@
     .save-state.saved { color: var(--success); }
     .save-state.error { color: var(--danger); }
 
-    /* ---------- Modals ---------- */
+    /* ========== Phase 2: Session Prep accordion ========== */
+    .prep-empty { color: var(--text-muted); font-style: italic; padding: 0.5rem 0; }
+    .prep-toolbar { display: flex; gap: 0.5rem; margin-bottom: 0.8rem; }
+    .accordion { display: flex; flex-direction: column; gap: 0.5rem; }
+    .acc-section {
+      border: 1px solid var(--glass-border); border-radius: 8px; overflow: hidden;
+      background: rgba(255,255,255,0.02);
+    }
+    .acc-head {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.7rem 0.9rem; cursor: pointer; user-select: none;
+      transition: background 0.15s ease;
+    }
+    .acc-head:hover { background: rgba(255,255,255,0.04); }
+    .acc-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .acc-caret { color: var(--text-muted); font-size: 0.7rem; transition: transform 0.2s ease; flex-shrink: 0; }
+    .acc-section.open .acc-caret { transform: rotate(90deg); }
+    .acc-title { font-weight: bold; font-size: 0.9rem; letter-spacing: 0.5px; flex: 1; min-width: 0; }
+    .acc-badge {
+      font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;
+      border-radius: 10px; padding: 0.1rem 0.55rem; flex-shrink: 0;
+      border: 1px solid currentColor;
+    }
+    .acc-badge.beat { color: var(--beat); }
+    .acc-badge.encounter { color: var(--encounter); }
+    .acc-badge.loot { color: var(--loot); }
+    .acc-badge.npc { color: var(--npc); }
+    .acc-badge.quest { color: var(--quest); }
+    .acc-badge.readaloud { color: var(--readaloud); }
+    .acc-body {
+      display: none; padding: 0 0.9rem 0.9rem 1.9rem;
+      line-height: 1.6; font-size: 0.9rem; white-space: pre-wrap;
+    }
+    .acc-section.open .acc-body { display: block; }
+
+    /* ========== Phase 3 & 4: Slide-out drawers ========== */
+    .drawer-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 900; opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+      backdrop-filter: blur(2px);
+    }
+    .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+
+    .drawer {
+      position: fixed; top: 0; bottom: 0; width: min(440px, 92vw);
+      background: var(--subtle-dark); border-left: 1px solid var(--glass-border);
+      z-index: 950; display: flex; flex-direction: column;
+      box-shadow: -12px 0 40px rgba(0,0,0,0.5);
+      transition: transform 0.28s ease;
+    }
+    .drawer.right { right: 0; transform: translateX(100%); }
+    .drawer.left { left: 0; right: auto; border-left: none; border-right: 1px solid var(--glass-border);
+      box-shadow: 12px 0 40px rgba(0,0,0,0.5); transform: translateX(-100%); }
+    .drawer.open { transform: translateX(0); }
+    .drawer-head {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 1rem 1.2rem; border-bottom: 1px solid var(--glass-border);
+      flex-shrink: 0;
+    }
+    .drawer-head h2 { font-size: 1.05rem; margin: 0; letter-spacing: 1px; flex: 1; }
+    .drawer-close {
+      background: none; border: none; color: var(--text);
+      font-size: 1.5rem; line-height: 1; padding: 0 0.2rem;
+    }
+    .drawer-close:hover { color: var(--danger); }
+    .drawer-body { padding: 1.2rem; overflow-y: auto; flex: 1; }
+
+    /* ---------- Modals (character detail only) ---------- */
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.7);
       z-index: 1000; display: flex; align-items: center; justify-content: center;
@@ -367,10 +438,12 @@
     .inv-item .inv-meta { font-size: 0.72rem; color: var(--text-muted); text-transform: capitalize; }
     .inv-item .inv-desc { font-size: 0.78rem; color: var(--text); margin-top: 0.35rem; line-height: 1.4; }
 
+    /* ---------- Achievement drawer entries (Phase 4) ---------- */
     .ach-entry {
       border: 1px solid var(--glass-border); border-radius: 6px;
       padding: 0.7rem; margin-bottom: 0.6rem;
     }
+    .ach-entry.assigned { opacity: 0.55; }
     .ach-entry .ach-name { font-weight: bold; }
     .ach-entry .ach-cat {
       font-size: 0.66rem; text-transform: uppercase; letter-spacing: 1px;
@@ -378,8 +451,22 @@
       border-radius: 10px; padding: 0.05rem 0.5rem; margin-left: 0.5rem;
     }
     .ach-entry .ach-desc { font-size: 0.8rem; color: var(--text-muted); margin: 0.35rem 0; line-height: 1.4; }
-    .ach-entry .ach-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .ach-entry .ach-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.5rem; }
     .scope-tag { font-size: 0.66rem; color: var(--text-muted); }
+    .ach-assign-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.2rem 0.5rem;
+      margin: 0.5rem 0; padding: 0.5rem; border: 1px dashed var(--glass-border); border-radius: 6px;
+    }
+    .ach-assign-grid label {
+      display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem;
+      color: var(--text); margin: 0; cursor: pointer;
+    }
+    .ach-assign-grid input { width: auto; margin: 0; accent-color: var(--accent); }
+    .drawer-divider {
+      border-top: 1px solid var(--glass-border); margin: 1.2rem 0 1rem;
+      font-size: 0.72rem; letter-spacing: 1px; color: var(--text-muted);
+      text-transform: uppercase; padding-top: 0.8rem;
+    }
 
     /* ---------- Toasts ---------- */
     #toast-container {
@@ -398,9 +485,6 @@
     @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
     /* ---------- Responsive ---------- */
-    @media (max-width: 1024px) {
-      .content-row { grid-template-columns: 1fr; }
-    }
     @media (max-width: 820px) {
       .dashboard-layout { flex-direction: column; }
       .cards-sidebar {
@@ -419,7 +503,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="22" height="22" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-      SHOWRUNNER
+      SHOWRUNNER // DASHBOARD V5.0
       <span id="sync-heartbeat" class="heartbeat" title="Live database connection"></span>
     </div>
     <div class="nav-links">
@@ -440,7 +524,7 @@
       <div id="cards-list"><!-- player cards rendered here --></div>
 
       <div class="sidebar-actions">
-        <button class="btn-ghost" onclick="openAchievementModal()">&#127942; Achievements</button>
+        <button class="btn-ghost" onclick="openAchievementDrawer()">&#127942; Achievements</button>
         <button class="btn-ghost" onclick="refreshFromKV()">&#8635; Refresh State</button>
       </div>
     </aside>
@@ -448,57 +532,89 @@
     <!-- ============ MAIN CONTENT ============ -->
     <main class="main-content">
 
-      <div class="content-row">
-
-        <!-- ROOM DESCRIPTION -->
-        <section class="section-card" id="room-card">
-          <div class="section-head">
-            <h2>ROOM</h2>
-            <div class="room-picker">
-              <select id="room-select" onchange="onRoomChange(this.value)"></select>
-            </div>
-            <span class="spacer"></span>
-            <span class="save-state" id="room-save-state"></span>
-            <button class="btn-ghost" id="room-edit-btn" onclick="toggleRoomEdit()">Edit</button>
-            <button class="btn-ghost" onclick="toggleCollapse('room-card')" title="Collapse">&#9650;</button>
+      <!-- SESSION PREP (Phase 2 — full width accordion) -->
+      <section class="section-card" id="prep-card">
+        <div class="section-head">
+          <h2>SESSION PREP</h2>
+          <span class="meta">Session #<span id="session-num-label">1</span></span>
+          <span class="spacer"></span>
+          <span class="save-state" id="notes-save-state"></span>
+          <button class="btn-ghost" onclick="openRoomDrawer()" title="Room reference">&#9776; ROOMS</button>
+          <button class="btn-ghost" id="notes-edit-btn" onclick="toggleNotesEdit()">Edit</button>
+          <button class="btn-ghost" onclick="toggleCollapse('prep-card')" title="Collapse">&#9650;</button>
+        </div>
+        <div class="section-body">
+          <div class="prep-toolbar" id="prep-toolbar">
+            <button class="btn-ghost" onclick="setAllSections(true)">Expand All</button>
+            <button class="btn-ghost" onclick="setAllSections(false)">Collapse All</button>
           </div>
-          <div class="section-body">
-            <div class="rendered" id="room-display"></div>
-            <div class="editor-area hidden" id="room-editor">
-              <textarea id="room-textarea" placeholder="Room name on first line.&#10;&#10;Use ALL-CAPS lines ending in a colon as section headers, e.g.&#10;HAZARDS:&#10;DC 12 CON save or poisoned."></textarea>
-              <div class="editor-actions">
-                <button class="btn-primary" onclick="saveRoomEdit()">Save</button>
-                <button class="btn-secondary" onclick="cancelRoomEdit()">Cancel</button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- SESSION NOTES -->
-        <section class="section-card" id="notes-card">
-          <div class="section-head">
-            <h2>SESSION NOTES</h2>
-            <span class="meta">Session #<span id="session-num-label">1</span></span>
-            <span class="spacer"></span>
-            <span class="save-state" id="notes-save-state"></span>
-            <button class="btn-ghost" id="notes-edit-btn" onclick="toggleNotesEdit()">Edit</button>
-            <button class="btn-ghost" onclick="toggleCollapse('notes-card')" title="Collapse">&#9650;</button>
-          </div>
-          <div class="section-body">
-            <div class="rendered" id="notes-display"></div>
-            <div class="editor-area hidden" id="notes-editor">
-              <textarea id="notes-textarea" placeholder="Freeform session notes. Timestamps optional.&#10;&#10;ALL-CAPS lines ending in a colon become headers."></textarea>
-              <div class="editor-actions">
-                <button class="btn-primary" onclick="saveNotesEdit()">Save</button>
-                <button class="btn-secondary" onclick="cancelNotesEdit()">Cancel</button>
-              </div>
+          <div class="accordion" id="prep-accordion"></div>
+          <div class="editor-area hidden" id="notes-editor">
+            <textarea id="notes-textarea" placeholder="Paste your full session prep here.&#10;&#10;ALL-CAPS lines become collapsible section headers, e.g.&#10;BEAT 1 — LOOTING&#10;ENCOUNTER MECHANICS&#10;WINNING LOOT"></textarea>
+            <div class="editor-actions">
+              <button class="btn-primary" onclick="saveNotesEdit()">Save</button>
+              <button class="btn-secondary" onclick="cancelNotesEdit()">Cancel</button>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-      </div>
     </main>
   </div>
+
+  <!-- ============ ROOM REFERENCE DRAWER (Phase 3) ============ -->
+  <div id="room-backdrop" class="drawer-backdrop" onclick="closeRoomDrawer()"></div>
+  <aside id="room-drawer" class="drawer right" role="dialog" aria-label="Room reference" aria-modal="true">
+    <div class="drawer-head">
+      <h2>ROOM</h2>
+      <div class="room-picker">
+        <select id="room-select" aria-label="Select room" onchange="onRoomChange(this.value)"></select>
+      </div>
+      <span class="save-state" id="room-save-state"></span>
+      <button class="btn-ghost" id="room-edit-btn" onclick="toggleRoomEdit()">Edit</button>
+      <button class="drawer-close" onclick="closeRoomDrawer()" aria-label="Close room drawer">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <div class="rendered" id="room-display"></div>
+      <div class="editor-area hidden" id="room-editor">
+        <textarea id="room-textarea" placeholder="Room name on first line.&#10;&#10;Use ALL-CAPS lines ending in a colon as section headers, e.g.&#10;HAZARDS:&#10;DC 12 CON save or poisoned."></textarea>
+        <div class="editor-actions">
+          <button class="btn-primary" onclick="saveRoomEdit()">Save</button>
+          <button class="btn-secondary" onclick="cancelRoomEdit()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ ACHIEVEMENT DRAWER (Phase 4) ============ -->
+  <div id="ach-backdrop" class="drawer-backdrop" onclick="closeAchievementDrawer()"></div>
+  <aside id="ach-drawer" class="drawer left" role="dialog" aria-label="Achievements" aria-modal="true">
+    <div class="drawer-head">
+      <h2>&#127942; ACHIEVEMENTS</h2>
+      <button class="drawer-close" onclick="closeAchievementDrawer()" aria-label="Close achievements drawer">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <div id="ach-list"></div>
+
+      <div class="drawer-divider">Create New</div>
+      <div class="form-group"><label>Name</label><input type="text" id="am-name"></div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="am-cat">
+          <option value="combat">Combat</option>
+          <option value="exploration">Exploration</option>
+          <option value="roleplay">Roleplay</option>
+          <option value="tragedy">Tragedy</option>
+          <option value="misc" selected>Misc</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Gold Reward</label><input type="number" id="am-gold" value="0"></div>
+      <div class="form-group"><label>Description</label><textarea id="am-desc" style="min-height:80px;"></textarea></div>
+      <div class="editor-actions">
+        <button class="btn-primary" onclick="createAchievement()">Create</button>
+      </div>
+    </div>
+  </aside>
 
   <!-- ============ CHARACTER DETAIL MODAL ============ -->
   <div id="char-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeCharModal()">
@@ -562,57 +678,6 @@
     </div>
   </div>
 
-  <!-- ============ ACHIEVEMENT MODAL ============ -->
-  <div id="ach-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeAchievementModal()">
-    <div class="modal-panel">
-      <div class="modal-head">
-        <h2>Achievements</h2>
-        <button class="modal-close" onclick="closeAchievementModal()">&times;</button>
-      </div>
-      <div class="modal-tabs">
-        <button class="tab-btn active" data-tab="am-view" onclick="switchModalTab('ach-modal', this)">View / Award</button>
-        <button class="tab-btn" data-tab="am-create" onclick="switchModalTab('ach-modal', this)">Create New</button>
-      </div>
-      <div class="modal-body">
-
-        <div class="tab-panel active" id="am-view">
-          <div class="form-group">
-            <label>Filter by character</label>
-            <select id="am-filter" onchange="renderAchievementList()">
-              <option value="">All / Party-Wide</option>
-            </select>
-          </div>
-          <div id="am-list"></div>
-        </div>
-
-        <div class="tab-panel" id="am-create">
-          <div class="form-group"><label>Name</label><input type="text" id="am-name"></div>
-          <div class="form-group">
-            <label>Category</label>
-            <select id="am-cat">
-              <option value="combat">Combat</option>
-              <option value="exploration">Exploration</option>
-              <option value="roleplay">Roleplay</option>
-              <option value="tragedy">Tragedy</option>
-              <option value="misc" selected>Misc</option>
-            </select>
-          </div>
-          <div class="form-group"><label>Gold Reward</label><input type="number" id="am-gold" value="0"></div>
-          <div class="form-group"><label>Description</label><textarea id="am-desc" style="min-height:80px;"></textarea></div>
-          <div class="form-group">
-            <label>Award To</label>
-            <select id="am-target"><option value="">Party-Wide</option></select>
-          </div>
-          <div class="editor-actions">
-            <button class="btn-primary" onclick="createAchievement()">Create &amp; Award</button>
-            <button class="btn-secondary" onclick="closeAchievementModal()">Cancel</button>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
   <div id="toast-container"></div>
 
   <!-- ============================================================
@@ -666,7 +731,6 @@
     _syncInFlight = true;
     setHeartbeat("syncing");
 
-    // Bump version & timestamp; worker rejects base_version < currentVersion.
     const baseVersion = campaignState.version || 0;
     campaignState.version = baseVersion + 1;
     campaignState.lastModified = Date.now();
@@ -679,7 +743,6 @@
       });
 
       if (res.status === 409) {
-        // Version collision: pull latest, re-render, warn.
         const latest = await (await fetch(WORKER_URL)).json();
         campaignState = latest; normalizeState(); renderAll();
         setHeartbeat("error");
@@ -696,7 +759,6 @@
       setHeartbeat("error");
       toast("Offline — change kept locally, will retry on next save.", "warn");
       console.error("Sync error:", e);
-      // Roll version back so the next attempt uses a valid base_version.
       campaignState.version = baseVersion;
     } finally {
       _syncInFlight = false;
@@ -704,7 +766,6 @@
     }
   }
 
-  // Debounced sync — 1s after the last edit.
   let _debounceTimer = null;
   function scheduleSync(stateEl) {
     if (stateEl) { stateEl.textContent = "unsaved\u2026"; stateEl.className = "save-state saving"; }
@@ -730,13 +791,14 @@
 
   /* ============================================================
      TEXT PARSING  (ALL-CAPS headers -> <h4>, blanks -> paragraphs)
+     Used by the ROOM editor (strict: header must end in a colon).
      ============================================================ */
   function isCapsHeader(line) {
     const t = line.trim();
     if (t.length < 2 || t.length > 48) return false;
-    if (!/:\s*$/.test(t)) return false;                 // must end with colon
-    if (!/[A-Z]/.test(t)) return false;                 // must contain a letter
-    if (/[a-z]/.test(t)) return false;                  // no lowercase letters
+    if (!/:\s*$/.test(t)) return false;
+    if (!/[A-Z]/.test(t)) return false;
+    if (/[a-z]/.test(t)) return false;
     return true;
   }
 
@@ -755,6 +817,54 @@
   }
 
   /* ============================================================
+     Phase 2: SESSION PREP parsing — more permissive than the room
+     parser. A header is an ALL-CAPS-ish line (numbers, punctuation,
+     em-dashes allowed) with at most a couple of lowercase letters.
+     Colon NOT required (e.g. "BEAT 1 — LOOTING THE GOLDEN CARRION").
+     ============================================================ */
+  function isPrepHeader(line) {
+    const t = line.trim();
+    if (t.length < 2 || t.length > 64) return false;
+    const letters = t.replace(/[^A-Za-z]/g, "");
+    if (letters.length < 2) return false;
+    const lower = (t.match(/[a-z]/g) || []).length;
+    if (lower > 2) return false;
+    return true;
+  }
+
+  function prepBadge(title) {
+    const t = title.toUpperCase();
+    if (t.includes("READ ALOUD") || t.includes("READ-ALOUD")) return "readaloud";
+    if (t.startsWith("BEAT")) return "beat";
+    if (t.includes("ENCOUNTER")) return "encounter";
+    if (t.includes("LOOT")) return "loot";
+    if (t.includes("NPC")) return "npc";
+    if (t.includes("QUEST")) return "quest";
+    return "";
+  }
+
+  function parsePrepSections(raw) {
+    if (!raw || !raw.trim()) return [];
+    const lines = raw.replace(/\r\n/g, "\n").split("\n");
+    const sections = [];
+    let cur = null;
+    const startSection = (title) => {
+      cur = { title: title, badge: prepBadge(title), body: [] };
+      sections.push(cur);
+    };
+    for (const line of lines) {
+      if (isPrepHeader(line)) {
+        startSection(line.trim());
+      } else {
+        if (!cur) startSection("OVERVIEW");
+        cur.body.push(line);
+      }
+    }
+    sections.forEach(s => { s.body = s.body.join("\n").replace(/^\n+|\n+$/g, ""); });
+    return sections;
+  }
+
+  /* ============================================================
      ROOM <-> editable text blob
      ============================================================ */
   function getCurrentRoom() {
@@ -763,7 +873,6 @@
     return rooms.find(r => r.id === id) || rooms[0] || null;
   }
 
-  // Compose a room object into a single editable text blob.
   function roomToText(room) {
     if (!room) return "";
     const parts = [];
@@ -779,9 +888,6 @@
     return parts.join("\n");
   }
 
-  // Parse the editable blob back into structured room fields.
-  // Recognized headers map to fields; everything before the first header
-  // is name (line 1) + description (rest).
   function textToRoom(text, room) {
     const lines = text.replace(/\r\n/g, "\n").split("\n");
     const out = { name: "", area: room.area || "", description: "", readaloud: "",
@@ -906,14 +1012,13 @@
     else if (!on && i !== -1) ch.conditions.splice(i, 1);
     scheduleSync(null);
   }
-  // After a re-render, re-open the card the user was working in.
   function keepExpanded(id) {
     const card = document.querySelector('.player-card[data-id="' + id + '"]');
     if (card) card.classList.add("expanded");
   }
 
   /* ============================================================
-     RENDER: Room
+     RENDER: Room (lives in the right-side drawer — Phase 3)
      ============================================================ */
   function renderRoomSelect() {
     const sel = document.getElementById("room-select");
@@ -969,32 +1074,99 @@
     scheduleSync(document.getElementById("room-save-state"));
   }
 
+  /* ---------- Room drawer open/close (Phase 3) ---------- */
+  function openRoomDrawer() {
+    document.getElementById("room-drawer").classList.add("open");
+    document.getElementById("room-backdrop").classList.add("open");
+  }
+  function closeRoomDrawer() {
+    cancelRoomEdit();
+    document.getElementById("room-drawer").classList.remove("open");
+    document.getElementById("room-backdrop").classList.remove("open");
+  }
+
   /* ============================================================
-     RENDER: Session notes
+     RENDER: Session prep accordion (Phase 2)
      ============================================================ */
+  let _prepOpen = {};
+
   function renderNotes() {
     document.getElementById("session-num-label").textContent = campaignState.campaign.sessionNumber || 1;
-    document.getElementById("notes-display").innerHTML = renderRichText(campaignState.campaign.sessionNotes || "");
+    const acc = document.getElementById("prep-accordion");
+    const sections = parsePrepSections(campaignState.campaign.sessionNotes || "");
+    const toolbar = document.getElementById("prep-toolbar");
+
+    if (!sections.length) {
+      acc.innerHTML = '<div class="prep-empty">No session prep yet. Click Edit to paste your notes.</div>';
+      toolbar.style.display = "none";
+      return;
+    }
+    toolbar.style.display = "flex";
+
+    acc.innerHTML = sections.map((s, i) => {
+      const open = _prepOpen[i] ? " open" : "";
+      const badge = s.badge ? '<span class="acc-badge ' + s.badge + '">' + s.badge + '</span>' : "";
+      const body = s.body ? esc(s.body) : '<span class="prep-empty">(empty)</span>';
+      return '<div class="acc-section' + open + '" data-idx="' + i + '">' +
+        '<div class="acc-head" role="button" tabindex="0" aria-expanded="' + (!!_prepOpen[i]) + '" ' +
+          'onclick="togglePrepSection(' + i + ')" onkeydown="prepHeadKey(event,' + i + ')">' +
+          '<span class="acc-caret">&#9654;</span>' +
+          '<span class="acc-title">' + esc(s.title) + '</span>' + badge +
+        '</div>' +
+        '<div class="acc-body">' + body + '</div>' +
+      '</div>';
+    }).join("");
   }
+
+  function togglePrepSection(i) {
+    _prepOpen[i] = !_prepOpen[i];
+    const sec = document.querySelector('.acc-section[data-idx="' + i + '"]');
+    if (sec) {
+      sec.classList.toggle("open", !!_prepOpen[i]);
+      const head = sec.querySelector(".acc-head");
+      if (head) head.setAttribute("aria-expanded", String(!!_prepOpen[i]));
+    }
+  }
+  function prepHeadKey(ev, i) {
+    if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); togglePrepSection(i); }
+  }
+  function setAllSections(open) {
+    const secs = document.querySelectorAll(".acc-section");
+    secs.forEach(sec => {
+      const i = parseInt(sec.dataset.idx, 10);
+      _prepOpen[i] = open;
+      sec.classList.toggle("open", open);
+      const head = sec.querySelector(".acc-head");
+      if (head) head.setAttribute("aria-expanded", String(open));
+    });
+  }
+
   function toggleNotesEdit() {
     const ed = document.getElementById("notes-editor");
-    const disp = document.getElementById("notes-display");
+    const acc = document.getElementById("prep-accordion");
+    const toolbar = document.getElementById("prep-toolbar");
     const btn = document.getElementById("notes-edit-btn");
     if (ed.classList.contains("hidden")) {
       document.getElementById("notes-textarea").value = campaignState.campaign.sessionNotes || "";
-      ed.classList.remove("hidden"); disp.classList.add("hidden");
+      ed.classList.remove("hidden"); acc.classList.add("hidden"); toolbar.style.display = "none";
       btn.classList.add("active"); btn.textContent = "Editing";
     } else { cancelNotesEdit(); }
   }
   function cancelNotesEdit() {
     document.getElementById("notes-editor").classList.add("hidden");
-    document.getElementById("notes-display").classList.remove("hidden");
+    document.getElementById("prep-accordion").classList.remove("hidden");
     const btn = document.getElementById("notes-edit-btn");
     btn.classList.remove("active"); btn.textContent = "Edit";
+    renderNotes();
   }
   function saveNotesEdit() {
     campaignState.campaign.sessionNotes = document.getElementById("notes-textarea").value;
-    renderNotes(); cancelNotesEdit();
+    _prepOpen = {};
+    document.getElementById("notes-editor").classList.add("hidden");
+    document.getElementById("prep-accordion").classList.remove("hidden");
+    const btn = document.getElementById("notes-edit-btn");
+    btn.classList.remove("active"); btn.textContent = "Edit";
+    renderNotes();
     scheduleSync(document.getElementById("notes-save-state"));
   }
 
@@ -1029,7 +1201,6 @@
     renderSpellsTab(ch);
     renderInventoryTab(ch);
 
-    // Reset to first tab.
     document.querySelectorAll('#char-modal .tab-btn').forEach((b, i) => b.classList.toggle("active", i === 0));
     document.querySelectorAll('#char-modal .tab-panel').forEach((p, i) => p.classList.toggle("active", i === 0));
 
@@ -1042,7 +1213,6 @@
   function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = (v == null ? "" : v); }
   function numVal(id) { const v = parseInt(document.getElementById(id).value, 10); return isNaN(v) ? 0 : v; }
 
-  // Commit all modal fields back into state, then debounce-sync.
   function commitCharModal() {
     const ch = findChar(_activeCharId); if (!ch) return;
     const st = ch.stats; const ds = ch.deathSaves;
@@ -1133,68 +1303,78 @@
   }
 
   /* ============================================================
-     ACHIEVEMENT MODAL
+     ACHIEVEMENT DRAWER (Phase 4)
      ============================================================ */
-  function openAchievementModal() {
-    populateCharSelect("am-filter", true);
-    populateCharSelect("am-target", true);
+  function openAchievementDrawer() {
     renderAchievementList();
-    document.querySelectorAll('#ach-modal .tab-btn').forEach((b, i) => b.classList.toggle("active", i === 0));
-    document.querySelectorAll('#ach-modal .tab-panel').forEach((p, i) => p.classList.toggle("active", i === 0));
-    document.getElementById("ach-modal").classList.remove("hidden");
+    document.getElementById("ach-drawer").classList.add("open");
+    document.getElementById("ach-backdrop").classList.add("open");
   }
-  function closeAchievementModal() { document.getElementById("ach-modal").classList.add("hidden"); }
+  function closeAchievementDrawer() {
+    document.getElementById("ach-drawer").classList.remove("open");
+    document.getElementById("ach-backdrop").classList.remove("open");
+  }
 
-  function populateCharSelect(selId, includeParty) {
-    const sel = document.getElementById(selId);
-    const first = includeParty ? '<option value="">' + (selId === "am-filter" ? "All / Party-Wide" : "Party-Wide") + '</option>' : "";
-    sel.innerHTML = first + campaignState.characters
-      .filter(c => !c.isArchived)
-      .map(c => '<option value="' + esc(c.id) + '">' + esc(c.name) + '</option>').join("");
+  function isUnassigned(a) {
+    return a.earnedBy == null ||
+      (typeof a.earnedBy === "object" && Object.keys(a.earnedBy).length === 0);
   }
 
   function achScope(a) {
-    if (a.earnedBy == null || (typeof a.earnedBy === "object" && Object.keys(a.earnedBy).length === 0)) return "Party-wide";
+    if (isUnassigned(a)) return "Unassigned";
     const ids = Object.keys(a.earnedBy);
     const names = ids.map(id => { const c = findChar(id); return c ? c.name : id; });
     return names.join(", ");
   }
 
   function renderAchievementList() {
-    const filter = document.getElementById("am-filter").value;
-    const list = document.getElementById("am-list");
-    let items = campaignState.achievements.filter(a => !a.isArchived);
-    if (filter) {
-      items = items.filter(a =>
-        a.earnedBy == null ||
-        (typeof a.earnedBy === "object" && Object.keys(a.earnedBy).length === 0) ||
-        (a.earnedBy && a.earnedBy[filter]));
-    }
-    if (!items.length) { list.innerHTML = '<p class="empty-hint">No achievements match.</p>'; return; }
+    const list = document.getElementById("ach-list");
+    const items = campaignState.achievements.filter(a => !a.isArchived);
+    if (!items.length) { list.innerHTML = '<p class="empty-hint">No achievements yet. Create one below.</p>'; return; }
+
+    const chars = campaignState.characters.filter(c => !c.isArchived);
+
     list.innerHTML = items.map(a => {
       const gold = (a.rewards && a.rewards.gold) || 0;
-      return '<div class="ach-entry">' +
+      const unassigned = isUnassigned(a);
+      const assignedClass = unassigned ? "" : " assigned";
+
+      const checks = chars.map(c => {
+        const on = (!unassigned && a.earnedBy[c.id]) ? "checked" : "";
+        return '<label><input type="checkbox" ' + on +
+          ' onchange="toggleAssign(\'' + esc(a.id) + '\',\'' + esc(c.id) + '\',this.checked)">' +
+          esc(c.name) + '</label>';
+      }).join("");
+
+      return '<div class="ach-entry' + assignedClass + '">' +
         '<div><span class="ach-name">' + esc(a.name) + '</span>' +
         '<span class="ach-cat">' + esc(a.category || "misc") + '</span></div>' +
         '<div class="ach-desc">' + esc(a.description || "") + '</div>' +
-        '<div class="scope-tag">Scope: ' + esc(achScope(a)) + (gold ? ' &middot; ' + gold + ' gp' : '') + '</div>' +
-        '<div class="ach-actions" style="margin-top:.5rem">' +
+        '<div class="scope-tag">Assigned to: ' + esc(achScope(a)) + (gold ? ' &middot; ' + gold + ' gp' : '') + '</div>' +
+        '<div class="ach-assign-grid">' + checks + '</div>' +
+        '<div class="ach-actions">' +
           (gold ? '<button class="btn-ghost" onclick="awardGold(\'' + esc(a.id) + '\')">Pay ' + gold + ' gp</button>' : '') +
           '<button class="btn-danger" onclick="archiveAchievement(\'' + esc(a.id) + '\')">Archive</button>' +
         '</div></div>';
     }).join("");
   }
 
+  function toggleAssign(achId, charId, on) {
+    const a = campaignState.achievements.find(x => x.id === achId);
+    if (!a) return;
+    if (!a.earnedBy || typeof a.earnedBy !== "object") a.earnedBy = {};
+    if (on) a.earnedBy[charId] = new Date().toISOString();
+    else delete a.earnedBy[charId];
+    if (Object.keys(a.earnedBy).length === 0) a.earnedBy = null;
+    renderAchievementList(); scheduleSync(null);
+  }
+
   function awardGold(achId) {
     const a = campaignState.achievements.find(x => x.id === achId);
     if (!a || !a.rewards || !a.rewards.gold) return;
     const gold = a.rewards.gold;
-    let targets;
-    if (a.earnedBy == null || (typeof a.earnedBy === "object" && Object.keys(a.earnedBy).length === 0)) {
-      targets = campaignState.characters.filter(c => !c.isArchived);
-    } else {
-      targets = Object.keys(a.earnedBy).map(findChar).filter(Boolean);
-    }
+    if (isUnassigned(a)) { toast("Assign this achievement to a player first.", "warn"); return; }
+    const targets = Object.keys(a.earnedBy).map(findChar).filter(Boolean);
     if (!targets.length) { toast("No recipients found.", "warn"); return; }
     targets.forEach(c => { c.gold = (c.gold || 0) + gold; });
     renderCards(); scheduleSync(null);
@@ -1213,14 +1393,13 @@
   function createAchievement() {
     const name = document.getElementById("am-name").value.trim();
     if (!name) { toast("Name is required.", "error"); return; }
-    const target = document.getElementById("am-target").value;
     const now = new Date().toISOString();
     const ach = {
       id: "ach_" + Date.now().toString(36),
       name: name,
       description: document.getElementById("am-desc").value.trim(),
       category: document.getElementById("am-cat").value,
-      earnedBy: target ? { [target]: now } : null,
+      earnedBy: null,
       acknowledgedBy: [],
       rewards: { gold: numVal("am-gold"), lootId: null },
       isArchived: false, glow: false, createdAt: now
@@ -1230,10 +1409,7 @@
     document.getElementById("am-desc").value = "";
     document.getElementById("am-gold").value = "0";
     renderAchievementList(); scheduleSync(null);
-    toast("Achievement created" + (target ? " & awarded." : " (party-wide)."), "success");
-    // Jump back to view tab.
-    document.querySelectorAll('#ach-modal .tab-btn').forEach((b, i) => b.classList.toggle("active", i === 0));
-    document.querySelectorAll('#ach-modal .tab-panel').forEach((p, i) => p.classList.toggle("active", i === 0));
+    toast("Achievement created (unassigned). Check players to assign.", "success");
   }
 
   /* ============================================================
@@ -1259,6 +1435,16 @@
   }
 
   /* ============================================================
+     Global ESC closes any open drawer / modal
+     ============================================================ */
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (document.getElementById("room-drawer").classList.contains("open")) closeRoomDrawer();
+    if (document.getElementById("ach-drawer").classList.contains("open")) closeAchievementDrawer();
+    if (!document.getElementById("char-modal").classList.contains("hidden")) closeCharModal();
+  });
+
+  /* ============================================================
      RENDER ALL + INIT
      ============================================================ */
   function renderAll() {
@@ -1269,7 +1455,6 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    // campaignState is populated by initAuth before render; guard if not ready.
     if (!campaignState) { normalizeState(); }
     wireCharModalInputs();
     renderAll();
