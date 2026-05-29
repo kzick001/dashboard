@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Dashboard V5.1.1</title>
+  <title>Showrunner | Dashboard V5.1.2</title>
 
   <script>
     const WORKER_URL = "https://dmscreen.askozicki.workers.dev";
@@ -54,7 +54,9 @@
       if (!Array.isArray(c.timeline)) c.timeline = [];
       if (typeof c.currentRoom !== 'string' && c.rooms[0]) c.currentRoom = c.rooms[0].id;
       if (typeof c.sessionNumber !== 'number') c.sessionNumber = 1;
+      if (typeof c.sessionTitle !== 'string') c.sessionTitle = "";
       if (typeof c.sessionNotes !== 'string') c.sessionNotes = "";
+      if (typeof c.isArchived !== 'boolean') c.isArchived = false;
       if (!campaignState.loot || typeof campaignState.loot !== 'object') campaignState.loot = { active: [], archived: [] };
       if (!campaignState.lootTables || typeof campaignState.lootTables !== 'object') campaignState.lootTables = { tiers: { bronze: [], silver: [], gold: [], platinum: [] }, personal: {}, custom: {}, allItems: [] };
     }
@@ -230,11 +232,21 @@
 
     /* Inline section editor */
     #inline-editor-container { border: 1px solid var(--glass-border); border-radius: 8px; background: rgba(255,255,255,0.02); padding: 0.9rem; }
-    .inline-editor-header { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.7rem; background: rgba(255,255,255,0.04); border-radius: 6px; margin-bottom: 0.7rem; }
+    .inline-editor-header { display: flex; align-items: flex-start; gap: 0.6rem; margin-bottom: 0.7rem; }
+    .inline-editor-header .form-group { flex: 1; margin-bottom: 0; }
     .inline-editor-title { font-weight: bold; flex: 1; color: var(--accent); font-size: 0.92rem; }
-    .inline-editor-close { background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; padding: 0.2rem; }
+    .inline-editor-close { background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; padding: 0.2rem; margin-top: 1.6rem; flex-shrink: 0; }
     .inline-editor-close:hover { color: var(--danger); }
     #inline-body-ta { min-height: 200px; resize: vertical; line-height: 1.55; }
+    .acc-body-text strong { font-weight: bold; color: #fff; }
+    /* Session title row */
+    .session-title-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--glass-border); flex-wrap: wrap; }
+    .session-title-row input { flex: 1; min-width: 160px; font-size: 0.9rem; }
+    .session-title-badge { font-size: 0.68rem; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; white-space: nowrap; }
+    /* Archived session banner */
+    .archived-banner { background: rgba(250,204,21,0.08); border: 1px solid rgba(250,204,21,0.25); border-radius: 6px; padding: 0.5rem 0.9rem; font-size: 0.82rem; color: var(--warning); display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.85rem; }
+    .archived-banner button { background: none; border: 1px solid rgba(250,204,21,0.4); color: var(--warning); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.78rem; cursor: pointer; }
+    .archived-banner button:hover { background: rgba(250,204,21,0.1); }
 
     /* Outline panel */
     .outline-panel {
@@ -402,7 +414,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="22" height="22" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-      SHOWRUNNER // DASHBOARD V5.1.1
+      SHOWRUNNER // DASHBOARD V5.1.2
       <span id="sync-heartbeat" class="heartbeat" title="Live database connection"></span>
     </div>
     <div class="nav-links">
@@ -480,10 +492,30 @@
 
         <div class="section-body">
 
+          <!-- Session title row -->
+          <div class="session-title-row" id="session-title-row">
+            <span class="session-title-badge">Session Title</span>
+            <input type="text" id="session-title-input" placeholder="e.g., The Collapse Begins"
+              onchange="commitSessionTitle()" style="flex:1;min-width:160px;" />
+          </div>
+          <!-- Archived session banner (hidden by default) -->
+          <div class="archived-banner hidden" id="archived-banner">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+            This session is archived.
+            <button onclick="unarchiveCurrentSession()">Unarchive</button>
+          </div>
+
           <!-- View-mode toolbar -->
           <div class="prep-toolbar" id="prep-toolbar">
             <button class="btn-ghost" onclick="setAllSections(true)">Expand All</button>
             <button class="btn-ghost" onclick="setAllSections(false)">Collapse All</button>
+            <button class="btn-ghost" id="show-headers-btn" onclick="toggleShowAllHeaders()" title="Show all headers, collapse body text">
+              Headers Only
+            </button>
+            <div class="prep-toolbar-sep"></div>
+            <button class="btn-ghost" id="archive-session-btn" onclick="archiveCurrentSession()" title="Archive this session">
+              Archive Session
+            </button>
             <div class="prep-toolbar-sep"></div>
             <!-- Outline eye toggle -->
             <button class="btn-icon" id="outline-toggle-btn" onclick="toggleOutlineView()" title="Show/hide structure outline">
@@ -692,6 +724,15 @@
   const SVG_PENCIL    = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
   const SVG_X         = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
   const SVG_CARET_DOWN = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+  const SVG_CHECK      = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const SVG_LIST       = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>';
+  const SVG_ARCHIVE    = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>';
+
+  /* Whitelist-sanitize HTML: permits only <strong> tags */
+  function sanitizeBodyHTML(str) {
+    if (!str) return "";
+    return str.replace(/<(?!\/?strong\b)[^>]+>/gi, "");
+  }
 
   function toast(msg, kind) {
     const c = document.getElementById("toast-container");
@@ -919,7 +960,7 @@
       const badge = s.badge ? '<span class="acc-badge '+s.badge+'">'+s.badge+'</span>' : "";
       const levelChip = '<span class="acc-level-chip">L'+s.level+'</span>';
       const childrenHtml = s.children.length ? '<div class="acc-children">'+renderAccordionNodes(s.children)+'</div>' : "";
-      const bodyText = s.body ? '<div class="acc-body-text">'+esc(s.body)+'</div>' : "";
+      const bodyText = s.body ? '<div class="acc-body-text">'+s.body+'</div>' : "";
       const hasContent = s.body || s.children.length;
 
       /* PHASE 1: always-active outdent/indent buttons, left of title */
@@ -946,6 +987,18 @@
 
   function renderNotes() {
     document.getElementById("session-num-label").textContent = campaignState.campaign.sessionNumber || 1;
+    const sessionTitleEl = document.getElementById("session-title-input");
+    if (sessionTitleEl) sessionTitleEl.value = campaignState.campaign.sessionTitle || "";
+    // Archive banner
+    const banner = document.getElementById("archived-banner");
+    const archBtn = document.getElementById("archive-session-btn");
+    if (campaignState.campaign.isArchived) {
+      if (banner) banner.classList.remove("hidden");
+      if (archBtn) { archBtn.textContent = "Unarchive"; archBtn.onclick = unarchiveCurrentSession; }
+    } else {
+      if (banner) banner.classList.add("hidden");
+      if (archBtn) { archBtn.textContent = "Archive Session"; archBtn.onclick = archiveCurrentSession; }
+    }
     const acc = document.getElementById("prep-accordion");
     const toolbar = document.getElementById("prep-toolbar");
     _currentTree = buildSectionTree(campaignState.campaign.sessionNotes || "");
@@ -956,7 +1009,11 @@
       return;
     }
     toolbar.style.display = "flex";
-    acc.innerHTML = renderAccordionNodes(_currentTree);
+    if (_showAllHeaders) {
+      acc.innerHTML = renderHeadersOnlyNodes(_currentTree);
+    } else {
+      acc.innerHTML = renderAccordionNodes(_currentTree);
+    }
     if (_outlineVisible) renderOutline(_currentTree);
   }
 
@@ -1024,12 +1081,18 @@
     const container = document.getElementById("inline-editor-section");
     container.innerHTML =
       '<div class="inline-editor-header">' +
-        '<span class="inline-editor-title">[L'+node.level+'] '+esc(node.title)+'</span>' +
+        '<div class="form-group">' +
+          '<label>Section Title</label>' +
+          '<input type="text" id="inline-title-input" value="'+esc(node.title)+'" placeholder="Section title..." />' +
+        '</div>' +
         '<button class="inline-editor-close" onclick="cancelInlineEdit()" title="Cancel">'+SVG_X+'</button>' +
       '</div>' +
-      '<textarea id="inline-body-ta">'+esc(node.body||"")+'</textarea>' +
+      '<div class="form-group">' +
+        '<label>Content — wrap text in &lt;strong&gt;...&lt;/strong&gt; for bold</label>' +
+        '<textarea id="inline-body-ta">'+esc(node.body||"")+'</textarea>' +
+      '</div>' +
       '<div class="editor-actions">' +
-        '<button class="btn-primary" onclick="saveInlineEdit()">Save</button>' +
+        '<button class="btn-primary" onclick="saveInlineEdit()">'+SVG_CHECK+' Save</button>' +
         '<button class="btn-secondary" onclick="cancelInlineEdit()">Cancel</button>' +
       '</div>';
     document.getElementById("inline-editor-container").classList.remove("hidden");
@@ -1039,12 +1102,17 @@
     if (!_inlineEditId) return;
     const node = findNodeInTree(_inlineEditId, _currentTree);
     if (!node) { cancelInlineEdit(); return; }
-    node.body = document.getElementById("inline-body-ta").value;
+    const newTitle = document.getElementById("inline-title-input").value.trim();
+    if (!newTitle) { toast("Title cannot be empty.", "warn"); return; }
+    node.title = newTitle;
+    const rawBody = document.getElementById("inline-body-ta").value;
+    node.body = sanitizeBodyHTML(rawBody);
     campaignState.campaign.sessionNotes = treeToRaw(_currentTree);
     _inlineEditId = null;
     _sectionIdCounter = 0;
     document.getElementById("inline-editor-container").classList.add("hidden");
     document.getElementById("prep-view-container").classList.remove("hidden");
+    document.getElementById("prep-toolbar").style.display = "flex";
     renderNotes();
     scheduleSync(document.getElementById("notes-save-state"));
     toast("Section saved.", "success");
@@ -1183,6 +1251,7 @@
   let _currentTree = [];
   let _outlineCollapsed = {};
   let _activeOutlineId = null;
+  let _showAllHeaders = false;
 
   function toggleOutlineView() {
     _outlineVisible = !_outlineVisible;
@@ -1246,6 +1315,59 @@
     ta.focus(); ta.selectionStart = ta.selectionEnd = pos;
     const lh = parseInt(getComputedStyle(ta).lineHeight,10) || 20;
     ta.scrollTop = idx * lh - ta.clientHeight / 2;
+  }
+
+  /* ============================================================
+     SHOW ALL HEADERS (outline-only view)
+     ============================================================ */
+  function toggleShowAllHeaders() {
+    _showAllHeaders = !_showAllHeaders;
+    const btn = document.getElementById("show-headers-btn");
+    if (btn) btn.classList.toggle("active", _showAllHeaders);
+    renderNotes();
+  }
+
+  function renderHeadersOnlyNodes(nodes) {
+    return nodes.map(s => {
+      const levelChip = '<span class="acc-level-chip">L'+s.level+'</span>';
+      const badge = s.badge ? '<span class="acc-badge '+s.badge+'">'+s.badge+'</span>' : "";
+      const childrenHtml = s.children.length ? '<div class="acc-children">'+renderHeadersOnlyNodes(s.children)+'</div>' : "";
+      return '<div class="acc-section open" data-level="'+s.level+'" data-id="'+s.id+'">' +
+        '<div class="acc-head" style="cursor:default;">' +
+          levelChip +
+          '<span class="acc-title-text">'+esc(s.title)+'</span>' +
+          badge +
+        '</div>' +
+        (childrenHtml ? '<div class="acc-body">'+childrenHtml+'</div>' : '') +
+      '</div>';
+    }).join("");
+  }
+
+  /* ============================================================
+     SESSION TITLE
+     ============================================================ */
+  function commitSessionTitle() {
+    const val = document.getElementById("session-title-input").value.trim();
+    campaignState.campaign.sessionTitle = val;
+    scheduleSync(document.getElementById("notes-save-state"));
+  }
+
+  /* ============================================================
+     ARCHIVE SESSION
+     ============================================================ */
+  function archiveCurrentSession() {
+    if (!confirm("Archive this session? It will be flagged as archived and hidden from active view.")) return;
+    campaignState.campaign.isArchived = true;
+    scheduleSync(document.getElementById("notes-save-state"));
+    renderNotes();
+    toast("Session archived.", "success");
+  }
+
+  function unarchiveCurrentSession() {
+    campaignState.campaign.isArchived = false;
+    scheduleSync(document.getElementById("notes-save-state"));
+    renderNotes();
+    toast("Session unarchived.", "success");
   }
 
   /* ============================================================
@@ -1676,8 +1798,17 @@
      RENDER ALL + INIT
      ============================================================ */
   function renderAll(){renderCards();renderRoomSelect();renderRoom();renderNotes();}
-  document.addEventListener("DOMContentLoaded",()=>{
-    if(!campaignState)normalizeState();
+  document.addEventListener("DOMContentLoaded", async () => {
+    // Auto-fetch latest state from KV on load
+    if (campaignState) {
+      // Already loaded during auth flow — just render
+    } else {
+      try {
+        const r = await fetch(WORKER_URL);
+        if (r.ok) { campaignState = await r.json(); normalizeState(); }
+      } catch (e) { console.error("Auto-fetch on load failed:", e); }
+      if (!campaignState) normalizeState();
+    }
     wireCharModalInputs();
     renderAll();
     setHeartbeat("ok");
