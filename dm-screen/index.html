@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Dashboard V5.0</title>
+  <title>Showrunner | Dashboard V5.1</title>
 
   <!-- ============================================================
        PIN-BASED AUTH (preserved from V4.0)
@@ -111,49 +111,43 @@
       --subtle-dark: #1a1f3a;
       --card-bg: rgba(20, 24, 48, 0.85);
 
-      /* Section badge colors (Phase 2) */
+      /* Badge colors */
       --beat: #74b9ff;
       --encounter: #f87171;
       --loot: #ffd700;
       --npc: #4ade80;
       --quest: #bb86fc;
       --readaloud: #facc15;
+
+      /* Nesting indent guides — one per level */
+      --indent-l1: #bb86fc44;
+      --indent-l2: #74b9ff44;
+      --indent-l3: #4ade8044;
+      --indent-l4: #facc1544;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    /* Shared font stack — matches Loot & Data Forge (Phase 1) */
     html, body {
-      width: 100%;
-      min-height: 100%;
+      width: 100%; min-height: 100%;
       background:
         radial-gradient(1200px 600px at 80% -10%, rgba(99,102,241,0.10), transparent 60%),
         radial-gradient(900px 500px at -10% 110%, rgba(187,134,252,0.08), transparent 60%),
         var(--bg-dark);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      font-size: 14px;
-      overflow-x: hidden;
+      font-size: 14px; overflow-x: hidden;
     }
-
     body { display: flex; flex-direction: column; min-height: 100vh; }
 
-    /* ---------- Navbar (Phase 1 — matched to Loot/Data Forge) ---------- */
+    /* ---------- Navbar ---------- */
     .navbar {
-      height: 60px;
-      background: var(--glass);
+      height: 60px; background: var(--glass);
       backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
       border-bottom: 1px solid var(--glass-border);
-      padding: 0 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-      position: sticky;
-      top: 0;
-      z-index: 200;
-      flex-shrink: 0;
+      padding: 0 1.5rem; display: flex; justify-content: space-between;
+      align-items: center; flex-wrap: wrap; gap: 1rem;
+      position: sticky; top: 0; z-index: 200; flex-shrink: 0;
     }
     .brand {
       display: flex; align-items: center; gap: 10px;
@@ -181,8 +175,7 @@
     button { cursor: pointer; font-family: inherit; }
     .btn-primary {
       background: var(--accent); color: #100; border: none;
-      padding: 0.6rem 1.2rem; border-radius: 4px; font-weight: bold;
-      transition: all 0.2s ease;
+      padding: 0.6rem 1.2rem; border-radius: 4px; font-weight: bold; transition: all 0.2s ease;
     }
     .btn-primary:hover { box-shadow: 0 0 16px rgba(187,134,252,0.4); transform: translateY(-1px); }
     .btn-secondary {
@@ -204,6 +197,22 @@
     }
     .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
     .btn-ghost.active { border-color: var(--accent); color: var(--accent); background: rgba(187,134,252,0.08); }
+    /* Icon-only ghost button — smaller padding, square-ish */
+    .btn-icon {
+      background: transparent; color: var(--text-muted);
+      border: 1px solid var(--glass-border); padding: 0.4rem 0.5rem;
+      border-radius: 4px; font-size: 0.8rem; transition: all 0.2s ease;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-icon.active { border-color: var(--accent); color: var(--accent); background: rgba(187,134,252,0.08); }
+    .btn-icon-danger {
+      background: transparent; color: var(--danger);
+      border: 1px solid rgba(248,113,113,0.3); padding: 0.3rem 0.4rem;
+      border-radius: 4px; transition: all 0.2s ease;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .btn-icon-danger:hover { background: rgba(248,113,113,0.12); border-color: var(--danger); }
 
     /* ---------- Inputs ---------- */
     textarea, input[type="number"], input[type="text"], input[type="url"], select {
@@ -232,8 +241,7 @@
     }
     .sidebar-title {
       display: flex; justify-content: space-between; align-items: center;
-      font-size: 0.8rem; letter-spacing: 1px; color: var(--text-muted);
-      padding: 0 0.2rem;
+      font-size: 0.8rem; letter-spacing: 1px; color: var(--text-muted); padding: 0 0.2rem;
     }
     .player-card {
       background: var(--card-bg); border: 1px solid var(--glass-border);
@@ -241,24 +249,18 @@
     }
     .player-card:hover { border-color: rgba(187,134,252,0.4); }
     .pc-head { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
-    .pc-portrait {
-      width: 42px; height: 42px; border-radius: 6px; object-fit: cover;
-      background: #222; flex-shrink: 0;
-    }
+    .pc-portrait { width: 42px; height: 42px; border-radius: 6px; object-fit: cover; background: #222; flex-shrink: 0; }
     .pc-id { flex: 1; min-width: 0; }
     .pc-name { font-weight: bold; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .pc-stats { font-size: 0.72rem; color: var(--text-muted); }
     .pc-caret { color: var(--text-muted); font-size: 0.7rem; transition: transform 0.2s ease; }
     .player-card.expanded .pc-caret { transform: rotate(180deg); }
-
     .hp-pill { color: var(--success); }
     .hp-pill.warn { color: var(--warning); }
     .hp-pill.crit { color: var(--danger); }
-
     .pc-body { display: none; margin-top: 0.6rem; border-top: 1px solid var(--glass-border); padding-top: 0.6rem; }
     .player-card.expanded .pc-body { display: block; }
     .pc-class { font-size: 0.74rem; color: var(--text-muted); margin-bottom: 0.5rem; }
-
     .pc-hp-row { display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0.5rem; }
     .pc-hp-row input[type="number"] { width: 48px; padding: 0.25rem; text-align: center; }
     .hp-step {
@@ -267,28 +269,18 @@
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .hp-step:hover { border-color: var(--accent); color: var(--accent); }
-
     .cond-title { font-size: 0.7rem; letter-spacing: 1px; color: var(--text-muted); margin: 0.3rem 0; }
     .cond-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.15rem 0.4rem; }
-    .cond-grid label {
-      display: flex; align-items: center; gap: 0.3rem; font-size: 0.72rem;
-      color: var(--text); margin: 0; cursor: pointer;
-    }
+    .cond-grid label { display: flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; color: var(--text); margin: 0; cursor: pointer; }
     .cond-grid input { width: auto; margin: 0; accent-color: var(--accent); }
-
     .pc-actions { display: flex; gap: 0.4rem; margin-top: 0.6rem; }
     .pc-actions button { flex: 1; }
-
     .sidebar-actions { margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.4rem; }
     .sidebar-actions .btn-ghost { text-align: left; }
 
     /* ---------- Main Content ---------- */
     .main-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1rem; }
-
-    .section-card {
-      background: var(--glass); border: 1px solid var(--glass-border);
-      border-radius: 10px; overflow: hidden;
-    }
+    .section-card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 10px; overflow: hidden; }
     .section-head {
       display: flex; align-items: center; gap: 0.75rem;
       padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--glass-border);
@@ -300,98 +292,163 @@
     .section-body { padding: 1.1rem; }
     .section-card.collapsed .section-body { display: none; }
 
-    /* Room selector inline (drawer) */
+    /* Room drawer */
     .room-picker { display: flex; align-items: center; gap: 0.5rem; }
     .room-picker select { width: auto; min-width: 140px; }
-
-    /* Rendered (display) content for room editor */
     .rendered { line-height: 1.6; font-size: 0.92rem; min-height: 120px; }
-    .rendered h4 {
-      color: var(--accent); font-size: 0.85rem; letter-spacing: 1.5px;
-      margin: 1rem 0 0.35rem; padding-bottom: 0.2rem;
-      border-bottom: 1px solid var(--glass-border);
-    }
+    .rendered h4 { color: var(--accent); font-size: 0.85rem; letter-spacing: 1.5px; margin: 1rem 0 0.35rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--glass-border); }
     .rendered h4:first-child { margin-top: 0; }
     .rendered p { margin: 0 0 0.6rem; white-space: pre-wrap; }
     .rendered .empty-hint { color: var(--text-muted); font-style: italic; }
-
     .editor-area textarea { min-height: 240px; resize: vertical; line-height: 1.5; }
     .editor-actions { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
     .hidden { display: none !important; }
-
     .save-state { font-size: 0.75rem; color: var(--text-muted); }
     .save-state.saving { color: var(--warning); }
     .save-state.saved { color: var(--success); }
     .save-state.error { color: var(--danger); }
 
-    /* ========== Phase 2: Session Prep accordion ========== */
-    .prep-empty { color: var(--text-muted); font-style: italic; padding: 0.5rem 0; }
-    .prep-toolbar { display: flex; gap: 0.5rem; margin-bottom: 0.8rem; }
-    .accordion { display: flex; flex-direction: column; gap: 0.5rem; }
-    .acc-section {
-      border: 1px solid var(--glass-border); border-radius: 8px; overflow: hidden;
-      background: rgba(255,255,255,0.02);
+    /* ================================================================
+       SESSION PREP — Phase 2.1
+       ================================================================ */
+
+    /* Prep layout: toolbar row + split [outline | accordion/editor] */
+    .prep-toolbar {
+      display: flex; align-items: center; gap: 0.4rem;
+      margin-bottom: 0.8rem; flex-wrap: wrap;
     }
+    .prep-toolbar-sep { width: 1px; height: 20px; background: var(--glass-border); margin: 0 0.2rem; }
+    .prep-empty { color: var(--text-muted); font-style: italic; padding: 0.5rem 0; }
+
+    /* --- Accordion (nested) --- */
+    .accordion { display: flex; flex-direction: column; gap: 0.4rem; }
+
+    /* Level-based left-border color for nesting depth */
+    .acc-section { border-radius: 8px; overflow: hidden; background: rgba(255,255,255,0.02); }
+    .acc-section[data-level="1"] { border: 1px solid var(--glass-border); }
+    .acc-section[data-level="2"] { border: 1px solid rgba(116,185,255,0.25); margin-left: 1.4rem; }
+    .acc-section[data-level="3"] { border: 1px solid rgba(74,222,128,0.25); margin-left: 2.8rem; }
+    .acc-section[data-level="4"] { border: 1px solid rgba(250,204,21,0.25); margin-left: 4.2rem; }
+
     .acc-head {
       display: flex; align-items: center; gap: 0.6rem;
-      padding: 0.7rem 0.9rem; cursor: pointer; user-select: none;
+      padding: 0.65rem 0.9rem; cursor: pointer; user-select: none;
       transition: background 0.15s ease;
     }
     .acc-head:hover { background: rgba(255,255,255,0.04); }
     .acc-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-    .acc-caret { color: var(--text-muted); font-size: 0.7rem; transition: transform 0.2s ease; flex-shrink: 0; }
-    .acc-section.open .acc-caret { transform: rotate(90deg); }
-    .acc-title { font-weight: bold; font-size: 0.9rem; letter-spacing: 0.5px; flex: 1; min-width: 0; }
+    .acc-caret { color: var(--text-muted); transition: transform 0.2s ease; flex-shrink: 0; }
+    .acc-section.open > .acc-head .acc-caret { transform: rotate(90deg); }
+    .acc-title { font-weight: bold; font-size: 0.88rem; letter-spacing: 0.5px; flex: 1; min-width: 0; }
+    .acc-title-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Level size hint in header */
+    .acc-level-chip {
+      font-size: 0.58rem; letter-spacing: 1px; font-weight: bold;
+      border-radius: 3px; padding: 0.05rem 0.35rem; flex-shrink: 0;
+      opacity: 0.5;
+    }
+    .acc-section[data-level="1"] .acc-level-chip { color: var(--accent); border: 1px solid var(--accent); }
+    .acc-section[data-level="2"] .acc-level-chip { color: var(--beat); border: 1px solid var(--beat); }
+    .acc-section[data-level="3"] .acc-level-chip { color: var(--npc); border: 1px solid var(--npc); }
+    .acc-section[data-level="4"] .acc-level-chip { color: var(--readaloud); border: 1px solid var(--readaloud); }
+
     .acc-badge {
       font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;
-      border-radius: 10px; padding: 0.1rem 0.55rem; flex-shrink: 0;
-      border: 1px solid currentColor;
+      border-radius: 10px; padding: 0.1rem 0.55rem; flex-shrink: 0; border: 1px solid currentColor;
     }
-    .acc-badge.beat { color: var(--beat); }
-    .acc-badge.encounter { color: var(--encounter); }
-    .acc-badge.loot { color: var(--loot); }
-    .acc-badge.npc { color: var(--npc); }
-    .acc-badge.quest { color: var(--quest); }
-    .acc-badge.readaloud { color: var(--readaloud); }
-    .acc-body {
-      display: none; padding: 0 0.9rem 0.9rem 1.9rem;
-      line-height: 1.6; font-size: 0.9rem; white-space: pre-wrap;
-    }
-    .acc-section.open .acc-body { display: block; }
+    .acc-badge.beat     { color: var(--beat); }
+    .acc-badge.encounter{ color: var(--encounter); }
+    .acc-badge.loot     { color: var(--loot); }
+    .acc-badge.npc      { color: var(--npc); }
+    .acc-badge.quest    { color: var(--quest); }
+    .acc-badge.readaloud{ color: var(--readaloud); }
 
-    /* ========== Phase 3 & 4: Slide-out drawers ========== */
+    /* Children of a section are nested INSIDE its .acc-body */
+    .acc-body {
+      display: none; padding: 0.5rem 0.9rem 0.7rem 1rem;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+    .acc-body-text {
+      line-height: 1.6; font-size: 0.9rem; white-space: pre-wrap;
+      color: rgba(224,224,224,0.88); padding: 0 0 0.5rem 0;
+    }
+    .acc-children { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.4rem; }
+    .acc-section.open > .acc-body { display: block; }
+
+    /* --- Outline panel (floating, left-anchored) --- */
+    .outline-panel {
+      position: fixed; top: 72px; left: 1rem;
+      width: 260px; max-height: calc(100vh - 100px);
+      background: rgba(10,14,39,0.97); border: 1px solid var(--glass-border);
+      border-radius: 10px; padding: 0; overflow: hidden;
+      z-index: 150; box-shadow: 4px 4px 24px rgba(0,0,0,0.5);
+      display: flex; flex-direction: column;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .outline-panel.hidden { opacity: 0; pointer-events: none; transform: translateX(-8px); }
+    .outline-hd {
+      font-size: 0.68rem; letter-spacing: 1.5px; color: var(--text-muted); text-transform: uppercase;
+      padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--glass-border);
+      flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+    }
+    .outline-scroll { overflow-y: auto; flex: 1; padding: 0.5rem 0; }
+    .outline-node {
+      display: flex; align-items: center; gap: 0.4rem;
+      padding: 0.35rem 0.7rem; cursor: pointer; font-size: 0.82rem;
+      border-left: 3px solid transparent; transition: all 0.12s ease;
+      user-select: none;
+    }
+    .outline-node:hover { background: rgba(255,255,255,0.05); }
+    .outline-node.active { background: rgba(187,134,252,0.12); border-left-color: var(--accent); }
+    /* Indentation per level */
+    .outline-node[data-level="1"] { padding-left: 0.7rem; }
+    .outline-node[data-level="2"] { padding-left: 1.6rem; }
+    .outline-node[data-level="3"] { padding-left: 2.5rem; }
+    .outline-node[data-level="4"] { padding-left: 3.4rem; }
+    .outline-node-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .outline-node[data-level="1"] .outline-node-dot { background: var(--accent); }
+    .outline-node[data-level="2"] .outline-node-dot { background: var(--beat); }
+    .outline-node[data-level="3"] .outline-node-dot { background: var(--npc); }
+    .outline-node[data-level="4"] .outline-node-dot { background: var(--readaloud); }
+    .outline-node-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .outline-node-toggle { color: var(--text-muted); font-size: 0.6rem; flex-shrink: 0; transition: transform 0.15s ease; }
+    .outline-node.has-children .outline-node-toggle { display: inline-block; }
+    .outline-node.collapsed-in-outline .outline-node-toggle { transform: rotate(-90deg); }
+
+    /* --- Edit-mode toolbar extras --- */
+    .edit-toolbar {
+      display: none; align-items: center; gap: 0.4rem;
+      padding: 0.5rem 0.7rem; margin-bottom: 0.6rem;
+      background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);
+      border-radius: 6px; flex-wrap: wrap;
+    }
+    .edit-toolbar.visible { display: flex; }
+    .edit-toolbar-label { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.5px; margin-right: 0.2rem; }
+
+    /* --- Drawers (unchanged) --- */
     .drawer-backdrop {
       position: fixed; inset: 0; background: rgba(0,0,0,0.5);
       z-index: 900; opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
       backdrop-filter: blur(2px);
     }
     .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
-
     .drawer {
       position: fixed; top: 0; bottom: 0; width: min(440px, 92vw);
       background: var(--subtle-dark); border-left: 1px solid var(--glass-border);
       z-index: 950; display: flex; flex-direction: column;
-      box-shadow: -12px 0 40px rgba(0,0,0,0.5);
-      transition: transform 0.28s ease;
+      box-shadow: -12px 0 40px rgba(0,0,0,0.5); transition: transform 0.28s ease;
     }
     .drawer.right { right: 0; transform: translateX(100%); }
-    .drawer.left { left: 0; right: auto; border-left: none; border-right: 1px solid var(--glass-border);
-      box-shadow: 12px 0 40px rgba(0,0,0,0.5); transform: translateX(-100%); }
+    .drawer.left { left: 0; right: auto; border-left: none; border-right: 1px solid var(--glass-border); box-shadow: 12px 0 40px rgba(0,0,0,0.5); transform: translateX(-100%); }
     .drawer.open { transform: translateX(0); }
-    .drawer-head {
-      display: flex; align-items: center; gap: 0.6rem;
-      padding: 1rem 1.2rem; border-bottom: 1px solid var(--glass-border);
-      flex-shrink: 0;
-    }
+    .drawer-head { display: flex; align-items: center; gap: 0.6rem; padding: 1rem 1.2rem; border-bottom: 1px solid var(--glass-border); flex-shrink: 0; }
     .drawer-head h2 { font-size: 1.05rem; margin: 0; letter-spacing: 1px; flex: 1; }
-    .drawer-close {
-      background: none; border: none; color: var(--text);
-      font-size: 1.5rem; line-height: 1; padding: 0 0.2rem;
-    }
+    .drawer-close { background: none; border: none; color: var(--text); font-size: 1.5rem; line-height: 1; padding: 0 0.2rem; }
     .drawer-close:hover { color: var(--danger); }
     .drawer-body { padding: 1.2rem; overflow-y: auto; flex: 1; }
 
-    /* ---------- Modals (character detail only) ---------- */
+    /* --- Modal (character) --- */
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.7);
       z-index: 1000; display: flex; align-items: center; justify-content: center;
@@ -409,92 +466,54 @@
       position: sticky; top: 0; background: var(--subtle-dark); z-index: 2;
     }
     .modal-head h2 { font-size: 1.1rem; margin: 0; }
-    .modal-close {
-      background: none; border: none; color: var(--text);
-      font-size: 1.4rem; line-height: 1; padding: 0 0.2rem;
-    }
+    .modal-close { background: none; border: none; color: var(--text); font-size: 1.4rem; line-height: 1; padding: 0 0.2rem; }
     .modal-close:hover { color: var(--danger); }
     .modal-body { padding: 1.2rem; }
     .modal-tabs { display: flex; gap: 0.25rem; padding: 0 1.2rem; border-bottom: 1px solid var(--glass-border); flex-wrap: wrap; }
-    .tab-btn {
-      background: none; border: none; color: var(--text-muted);
-      padding: 0.6rem 0.9rem; border-bottom: 2px solid transparent; transition: all 0.2s ease;
-    }
+    .tab-btn { background: none; border: none; color: var(--text-muted); padding: 0.6rem 0.9rem; border-bottom: 2px solid transparent; transition: all 0.2s ease; }
     .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
-
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
     .stat-line { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.3rem 0; }
     .stat-line span.k { color: var(--text-muted); font-size: 0.85rem; }
     .stat-line input { width: 90px; text-align: center; }
-
-    .inv-item {
-      border: 1px solid var(--glass-border); border-radius: 6px;
-      padding: 0.6rem; margin-bottom: 0.5rem;
-    }
+    .inv-item { border: 1px solid var(--glass-border); border-radius: 6px; padding: 0.6rem; margin-bottom: 0.5rem; }
     .inv-item .inv-top { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
     .inv-item .inv-name { font-weight: bold; font-size: 0.9rem; }
     .inv-item .inv-meta { font-size: 0.72rem; color: var(--text-muted); text-transform: capitalize; }
     .inv-item .inv-desc { font-size: 0.78rem; color: var(--text); margin-top: 0.35rem; line-height: 1.4; }
 
-    /* ---------- Achievement drawer entries (Phase 4) ---------- */
-    .ach-entry {
-      border: 1px solid var(--glass-border); border-radius: 6px;
-      padding: 0.7rem; margin-bottom: 0.6rem;
-    }
+    /* --- Achievement drawer --- */
+    .ach-entry { border: 1px solid var(--glass-border); border-radius: 6px; padding: 0.7rem; margin-bottom: 0.6rem; }
     .ach-entry.assigned { opacity: 0.55; }
     .ach-entry .ach-name { font-weight: bold; }
-    .ach-entry .ach-cat {
-      font-size: 0.66rem; text-transform: uppercase; letter-spacing: 1px;
-      color: var(--accent); border: 1px solid rgba(187,134,252,0.3);
-      border-radius: 10px; padding: 0.05rem 0.5rem; margin-left: 0.5rem;
-    }
+    .ach-entry .ach-cat { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); border: 1px solid rgba(187,134,252,0.3); border-radius: 10px; padding: 0.05rem 0.5rem; margin-left: 0.5rem; }
     .ach-entry .ach-desc { font-size: 0.8rem; color: var(--text-muted); margin: 0.35rem 0; line-height: 1.4; }
     .ach-entry .ach-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.5rem; }
     .scope-tag { font-size: 0.66rem; color: var(--text-muted); }
-    .ach-assign-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 0.2rem 0.5rem;
-      margin: 0.5rem 0; padding: 0.5rem; border: 1px dashed var(--glass-border); border-radius: 6px;
-    }
-    .ach-assign-grid label {
-      display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem;
-      color: var(--text); margin: 0; cursor: pointer;
-    }
+    .ach-assign-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.2rem 0.5rem; margin: 0.5rem 0; padding: 0.5rem; border: 1px dashed var(--glass-border); border-radius: 6px; }
+    .ach-assign-grid label { display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; color: var(--text); margin: 0; cursor: pointer; }
     .ach-assign-grid input { width: auto; margin: 0; accent-color: var(--accent); }
-    .drawer-divider {
-      border-top: 1px solid var(--glass-border); margin: 1.2rem 0 1rem;
-      font-size: 0.72rem; letter-spacing: 1px; color: var(--text-muted);
-      text-transform: uppercase; padding-top: 0.8rem;
-    }
+    .drawer-divider { border-top: 1px solid var(--glass-border); margin: 1.2rem 0 1rem; font-size: 0.72rem; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; padding-top: 0.8rem; }
 
-    /* ---------- Toasts ---------- */
-    #toast-container {
-      position: fixed; bottom: 1rem; right: 1rem; z-index: 2000;
-      display: flex; flex-direction: column; gap: 0.5rem;
-    }
-    .toast {
-      background: var(--subtle-dark); border: 1px solid var(--glass-border);
-      border-left: 3px solid var(--accent); color: var(--text);
-      padding: 0.7rem 1rem; border-radius: 4px; font-size: 0.85rem;
-      animation: slideIn 0.25s ease; max-width: 320px;
-    }
+    /* --- Toasts --- */
+    #toast-container { position: fixed; bottom: 1rem; right: 1rem; z-index: 2000; display: flex; flex-direction: column; gap: 0.5rem; }
+    .toast { background: var(--subtle-dark); border: 1px solid var(--glass-border); border-left: 3px solid var(--accent); color: var(--text); padding: 0.7rem 1rem; border-radius: 4px; font-size: 0.85rem; animation: slideIn 0.25s ease; max-width: 320px; }
     .toast.success { border-left-color: var(--success); }
     .toast.error { border-left-color: var(--danger); }
     .toast.warn { border-left-color: var(--warning); }
     @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-    /* ---------- Responsive ---------- */
+    /* --- Responsive --- */
     @media (max-width: 820px) {
       .dashboard-layout { flex-direction: column; }
-      .cards-sidebar {
-        width: 100%; position: static; max-height: none;
-        flex-direction: row; flex-wrap: wrap;
-      }
+      .cards-sidebar { width: 100%; position: static; max-height: none; flex-direction: row; flex-wrap: wrap; }
       .cards-sidebar .player-card { flex: 1 1 160px; }
       .sidebar-title, .sidebar-actions { width: 100%; }
       .sidebar-actions { flex-direction: row; flex-wrap: wrap; }
       .sidebar-actions .btn-ghost { flex: 1 1 auto; }
+      .outline-panel { left: 0.5rem; width: 220px; }
     }
   </style>
 </head>
@@ -503,7 +522,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="22" height="22" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-      SHOWRUNNER // DASHBOARD V5.0
+      SHOWRUNNER // DASHBOARD V5.1
       <span id="sync-heartbeat" class="heartbeat" title="Live database connection"></span>
     </div>
     <div class="nav-links">
@@ -521,8 +540,7 @@
         <span>PARTY</span>
         <span class="meta" id="party-count"></span>
       </div>
-      <div id="cards-list"><!-- player cards rendered here --></div>
-
+      <div id="cards-list"></div>
       <div class="sidebar-actions">
         <button class="btn-ghost" onclick="openAchievementDrawer()">&#127942; Achievements</button>
         <button class="btn-ghost" onclick="refreshFromKV()">&#8635; Refresh State</button>
@@ -532,7 +550,7 @@
     <!-- ============ MAIN CONTENT ============ -->
     <main class="main-content">
 
-      <!-- SESSION PREP (Phase 2 — full width accordion) -->
+      <!-- SESSION PREP -->
       <section class="section-card" id="prep-card">
         <div class="section-head">
           <h2>SESSION PREP</h2>
@@ -544,25 +562,81 @@
           <button class="btn-ghost" onclick="toggleCollapse('prep-card')" title="Collapse">&#9650;</button>
         </div>
         <div class="section-body">
+
+          <!-- View-mode toolbar -->
           <div class="prep-toolbar" id="prep-toolbar">
             <button class="btn-ghost" onclick="setAllSections(true)">Expand All</button>
             <button class="btn-ghost" onclick="setAllSections(false)">Collapse All</button>
+            <div class="prep-toolbar-sep"></div>
+            <!-- Eye / eye-slash toggle -->
+            <button class="btn-icon" id="outline-toggle-btn" onclick="toggleOutlineView()" title="Show/hide structure">
+              <!-- eye icon (shown when outline hidden) -->
+              <svg id="outline-icon-show" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <!-- eye-slash icon (shown when outline visible) -->
+              <svg id="outline-icon-hide" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                <path d="M10.73 5.08A11 11 0 0 1 12 5c7 0 11 7 11 7a13.2 13.2 0 0 1-1.67 2.27"/>
+                <path d="M6.61 6.61A13.5 13.5 0 0 0 1 12s4 7 11 7a10.9 10.9 0 0 0 5.38-1.38"/>
+                <line x1="2" y1="2" x2="22" y2="22"/>
+              </svg>
+            </button>
           </div>
+
+          <!-- Edit-mode toolbar (indent/outdent + add/remove header) -->
+          <div class="edit-toolbar" id="edit-toolbar">
+            <span class="edit-toolbar-label">HEADER</span>
+            <!-- Outdent: left chevron -->
+            <button class="btn-icon" onclick="shiftHeaderLevel(-1)" title="Outdent / promote (decrease level)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+            <!-- Indent: right chevron -->
+            <button class="btn-icon" onclick="shiftHeaderLevel(1)" title="Indent / demote (increase level)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+            <div class="prep-toolbar-sep"></div>
+            <!-- Add header from selection -->
+            <button class="btn-icon" onclick="applyHeaderFormatting()" title="Make selected text a header">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 6h16M4 12h8m-8 6h16"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Accordion (read mode) -->
           <div class="accordion" id="prep-accordion"></div>
+
+          <!-- Textarea (edit mode) -->
           <div class="editor-area hidden" id="notes-editor">
-            <textarea id="notes-textarea" placeholder="Paste your full session prep here.&#10;&#10;ALL-CAPS lines become collapsible section headers, e.g.&#10;BEAT 1 — LOOTING&#10;ENCOUNTER MECHANICS&#10;WINNING LOOT"></textarea>
+            <textarea id="notes-textarea" placeholder="Paste your full session prep here.&#10;&#10;Use ALL-CAPS lines as section headers. They become [1] level by default.&#10;Use the indent/outdent arrows to nest them.&#10;&#10;Example:&#10;[1] BEAT 1 — LOOTING THE GOLDEN CARRION&#10;[2] ENCOUNTER MECHANICS&#10;[3] HAZARDS&#10;DC 12 CON save or poisoned.&#10;[2] WINNING LOOT"></textarea>
             <div class="editor-actions">
               <button class="btn-primary" onclick="saveNotesEdit()">Save</button>
               <button class="btn-secondary" onclick="cancelNotesEdit()">Cancel</button>
             </div>
           </div>
+
         </div>
       </section>
 
     </main>
   </div>
 
-  <!-- ============ ROOM REFERENCE DRAWER (Phase 3) ============ -->
+  <!-- ============ OUTLINE PANEL (floating, toggled) ============ -->
+  <div id="outline-panel" class="outline-panel hidden" role="navigation" aria-label="Session prep structure">
+    <div class="outline-hd">
+      <span>STRUCTURE</span>
+      <span id="outline-count" style="font-size:0.65rem;"></span>
+    </div>
+    <div class="outline-scroll" id="outline-tree"></div>
+  </div>
+
+  <!-- ============ ROOM REFERENCE DRAWER ============ -->
   <div id="room-backdrop" class="drawer-backdrop" onclick="closeRoomDrawer()"></div>
   <aside id="room-drawer" class="drawer right" role="dialog" aria-label="Room reference" aria-modal="true">
     <div class="drawer-head">
@@ -577,7 +651,7 @@
     <div class="drawer-body">
       <div class="rendered" id="room-display"></div>
       <div class="editor-area hidden" id="room-editor">
-        <textarea id="room-textarea" placeholder="Room name on first line.&#10;&#10;Use ALL-CAPS lines ending in a colon as section headers, e.g.&#10;HAZARDS:&#10;DC 12 CON save or poisoned."></textarea>
+        <textarea id="room-textarea" placeholder="Room name on first line.&#10;&#10;Use ALL-CAPS lines ending in a colon as section headers."></textarea>
         <div class="editor-actions">
           <button class="btn-primary" onclick="saveRoomEdit()">Save</button>
           <button class="btn-secondary" onclick="cancelRoomEdit()">Cancel</button>
@@ -586,7 +660,7 @@
     </div>
   </aside>
 
-  <!-- ============ ACHIEVEMENT DRAWER (Phase 4) ============ -->
+  <!-- ============ ACHIEVEMENT DRAWER ============ -->
   <div id="ach-backdrop" class="drawer-backdrop" onclick="closeAchievementDrawer()"></div>
   <aside id="ach-drawer" class="drawer left" role="dialog" aria-label="Achievements" aria-modal="true">
     <div class="drawer-head">
@@ -595,7 +669,6 @@
     </div>
     <div class="drawer-body">
       <div id="ach-list"></div>
-
       <div class="drawer-divider">Create New</div>
       <div class="form-group"><label>Name</label><input type="text" id="am-name"></div>
       <div class="form-group">
@@ -630,7 +703,6 @@
         <button class="tab-btn" data-tab="cm-notes" onclick="switchModalTab('char-modal', this)">Notes</button>
       </div>
       <div class="modal-body">
-
         <div class="tab-panel active" id="cm-vitals">
           <div class="grid-2">
             <div class="form-group"><label>Current HP</label><input type="number" id="cm-hp-current"></div>
@@ -654,35 +726,18 @@
             <div class="form-group"><label>Gold</label><input type="number" id="cm-gold"></div>
           </div>
         </div>
-
-        <div class="tab-panel" id="cm-spells">
-          <div id="cm-spells-body"></div>
-        </div>
-
-        <div class="tab-panel" id="cm-inv">
-          <div id="cm-inv-body"></div>
-        </div>
-
+        <div class="tab-panel" id="cm-spells"><div id="cm-spells-body"></div></div>
+        <div class="tab-panel" id="cm-inv"><div id="cm-inv-body"></div></div>
         <div class="tab-panel" id="cm-notes">
-          <div class="form-group">
-            <label>Profile Image URL</label>
-            <input type="url" id="cm-img" placeholder="https://...">
-          </div>
-          <div class="form-group">
-            <label>Conditions (comma-separated)</label>
-            <input type="text" id="cm-conditions">
-          </div>
+          <div class="form-group"><label>Profile Image URL</label><input type="url" id="cm-img" placeholder="https://..."></div>
+          <div class="form-group"><label>Conditions (comma-separated)</label><input type="text" id="cm-conditions"></div>
         </div>
-
       </div>
     </div>
   </div>
 
   <div id="toast-container"></div>
 
-  <!-- ============================================================
-       APPLICATION LOGIC
-       ============================================================ -->
   <script>
   "use strict";
 
@@ -720,45 +775,33 @@
   }
 
   /* ============================================================
-     KV SYNC  (matches worker contract: { base_version, data })
+     KV SYNC
      ============================================================ */
-  let _syncInFlight = false;
-  let _syncQueued = false;
+  let _syncInFlight = false, _syncQueued = false;
 
   async function syncToKV() {
     if (!campaignState) return;
     if (_syncInFlight) { _syncQueued = true; return; }
-    _syncInFlight = true;
-    setHeartbeat("syncing");
-
+    _syncInFlight = true; setHeartbeat("syncing");
     const baseVersion = campaignState.version || 0;
     campaignState.version = baseVersion + 1;
     campaignState.lastModified = Date.now();
-
     try {
       const res = await fetch(WORKER_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ base_version: baseVersion, data: campaignState })
       });
-
       if (res.status === 409) {
         const latest = await (await fetch(WORKER_URL)).json();
         campaignState = latest; normalizeState(); renderAll();
-        setHeartbeat("error");
-        toast("Sync conflict — reloaded latest state.", "warn");
+        setHeartbeat("error"); toast("Sync conflict — reloaded latest state.", "warn");
       } else if (res.ok) {
         const data = await res.json();
         if (typeof data.new_version === "number") campaignState.version = data.new_version;
         setHeartbeat("ok");
-      } else {
-        setHeartbeat("error");
-        toast("Save failed (" + res.status + ").", "error");
-      }
+      } else { setHeartbeat("error"); toast("Save failed (" + res.status + ").", "error"); }
     } catch (e) {
-      setHeartbeat("error");
-      toast("Offline — change kept locally, will retry on next save.", "warn");
-      console.error("Sync error:", e);
+      setHeartbeat("error"); toast("Offline — change kept locally.", "warn");
       campaignState.version = baseVersion;
     } finally {
       _syncInFlight = false;
@@ -781,17 +824,12 @@
     try {
       const latest = await (await fetch(WORKER_URL)).json();
       campaignState = latest; normalizeState(); renderAll();
-      setHeartbeat("ok");
-      toast("State refreshed.", "success");
-    } catch (e) {
-      setHeartbeat("error");
-      toast("Refresh failed — still offline.", "error");
-    }
+      setHeartbeat("ok"); toast("State refreshed.", "success");
+    } catch (e) { setHeartbeat("error"); toast("Refresh failed — still offline.", "error"); }
   }
 
   /* ============================================================
-     TEXT PARSING  (ALL-CAPS headers -> <h4>, blanks -> paragraphs)
-     Used by the ROOM editor (strict: header must end in a colon).
+     ROOM TEXT PARSING (strict — headers must end in colon)
      ============================================================ */
   function isCapsHeader(line) {
     const t = line.trim();
@@ -801,7 +839,6 @@
     if (/[a-z]/.test(t)) return false;
     return true;
   }
-
   function renderRichText(raw) {
     if (!raw || !raw.trim()) return '<p class="empty-hint">Nothing here yet. Click Edit to add content.</p>';
     const lines = raw.replace(/\r\n/g, "\n").split("\n");
@@ -817,25 +854,35 @@
   }
 
   /* ============================================================
-     Phase 2: SESSION PREP parsing — more permissive than the room
-     parser. A header is an ALL-CAPS-ish line (numbers, punctuation,
-     em-dashes allowed) with at most a couple of lowercase letters.
-     Colon NOT required (e.g. "BEAT 1 — LOOTING THE GOLDEN CARRION").
+     SESSION PREP — Path C: [N] marker parsing & tree building
      ============================================================ */
+
+  // Detect a header line: [1]–[4] marker optionally followed by a title
+  const HEADER_RE = /^\[([1-4])\]\s*(.*)$/;
+
+  // When no [N] marker, fall back to ALL-CAPS detection (backwards compat)
   function isPrepHeader(line) {
     const t = line.trim();
-    if (t.length < 2 || t.length > 64) return false;
+    if (HEADER_RE.test(t)) return true;
+    // legacy: ALL-CAPS-ish line, ≤2 lowercase chars, ≥2 letter chars
     const letters = t.replace(/[^A-Za-z]/g, "");
     if (letters.length < 2) return false;
-    const lower = (t.match(/[a-z]/g) || []).length;
-    if (lower > 2) return false;
-    return true;
+    if ((t.match(/[a-z]/g) || []).length > 2) return false;
+    return t.length >= 2 && t.length <= 64;
+  }
+
+  function parseHeaderLine(line) {
+    const t = line.trim();
+    const m = t.match(HEADER_RE);
+    if (m) return { level: parseInt(m[1], 10), title: m[2].trim() || "(untitled)" };
+    // Legacy ALL-CAPS: treat as level 1
+    return { level: 1, title: t };
   }
 
   function prepBadge(title) {
     const t = title.toUpperCase();
     if (t.includes("READ ALOUD") || t.includes("READ-ALOUD")) return "readaloud";
-    if (t.startsWith("BEAT")) return "beat";
+    if (/^BEAT\b/.test(t)) return "beat";
     if (t.includes("ENCOUNTER")) return "encounter";
     if (t.includes("LOOT")) return "loot";
     if (t.includes("NPC")) return "npc";
@@ -843,36 +890,543 @@
     return "";
   }
 
-  function parsePrepSections(raw) {
+  let _sectionIdCounter = 0;
+  function genSectionId() { return "sec_" + (++_sectionIdCounter); }
+
+  /*
+   * buildSectionTree(raw)
+   * Returns a flat list of root sections, each with .children[] for nesting.
+   * Uses a stack to track open parents at each depth level.
+   */
+  function buildSectionTree(raw) {
     if (!raw || !raw.trim()) return [];
     const lines = raw.replace(/\r\n/g, "\n").split("\n");
-    const sections = [];
-    let cur = null;
-    const startSection = (title) => {
-      cur = { title: title, badge: prepBadge(title), body: [] };
-      sections.push(cur);
-    };
-    for (const line of lines) {
+    const root = { level: 0, children: [] };       // sentinel
+    const stack = [root];                           // stack[top] = current parent
+
+    let cur = null;   // current open section receiving body lines
+
+    for (let li = 0; li < lines.length; li++) {
+      const line = lines[li];
       if (isPrepHeader(line)) {
-        startSection(line.trim());
+        const { level, title } = parseHeaderLine(line);
+        const sec = {
+          id: genSectionId(), level, title,
+          badge: prepBadge(title),
+          body: "",
+          children: [],
+          lineIndex: li   // for cursor navigation
+        };
+        // Pop stack until top is the correct parent (level < sec.level)
+        while (stack.length > 1 && stack[stack.length - 1].level >= level) {
+          stack.pop();
+        }
+        stack[stack.length - 1].children.push(sec);
+        stack.push(sec);
+        cur = sec;
       } else {
-        if (!cur) startSection("OVERVIEW");
-        cur.body.push(line);
+        if (cur) cur.body += line + "\n";
+        // If no section exists yet, create implicit OVERVIEW
+        else {
+          const overview = {
+            id: genSectionId(), level: 1, title: "OVERVIEW",
+            badge: "", body: line + "\n", children: [], lineIndex: li
+          };
+          root.children.push(overview);
+          stack.push(overview);
+          cur = overview;
+        }
       }
     }
-    sections.forEach(s => { s.body = s.body.join("\n").replace(/^\n+|\n+$/g, ""); });
-    return sections;
+    // Trim trailing newlines from all bodies
+    const trim = (nodes) => nodes.forEach(n => {
+      n.body = n.body.replace(/\n+$/, "");
+      trim(n.children);
+    });
+    trim(root.children);
+    return root.children;
+  }
+
+  /*
+   * treeToRaw(nodes)
+   * Reconstruct raw text from the section tree (with [N] markers).
+   */
+  function treeToRaw(nodes) {
+    const lines = [];
+    function walk(secs) {
+      secs.forEach(s => {
+        lines.push("[" + s.level + "] " + s.title);
+        if (s.body) lines.push(s.body);
+        walk(s.children);
+      });
+    }
+    walk(nodes);
+    return lines.join("\n");
   }
 
   /* ============================================================
-     ROOM <-> editable text blob
+     RENDER: Nested accordion
+     ============================================================ */
+  let _prepOpen = {};    // sectionId -> bool
+
+  function renderAccordionNodes(nodes) {
+    return nodes.map(s => {
+      const open = _prepOpen[s.id] ? " open" : "";
+      const badge = s.badge ? '<span class="acc-badge ' + s.badge + '">' + s.badge + '</span>' : "";
+      const levelChip = '<span class="acc-level-chip">L' + s.level + '</span>';
+      const childrenHtml = s.children.length ? '<div class="acc-children">' + renderAccordionNodes(s.children) + '</div>' : "";
+      const bodyText = s.body ? '<div class="acc-body-text">' + esc(s.body) + '</div>' : "";
+      const hasContent = s.body || s.children.length;
+
+      // Red X remove-header button (far right of head)
+      const removeBtn =
+        '<button class="btn-icon-danger" onclick="event.stopPropagation();removeHeaderFormatting(\'' + s.id + '\')" title="Remove header (demote to plain text)" style="margin-left:auto;">' +
+          '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+        '</button>';
+
+      return '<div class="acc-section' + open + '" data-level="' + s.level + '" data-id="' + s.id + '">' +
+        '<div class="acc-head" role="button" tabindex="0" aria-expanded="' + (!!_prepOpen[s.id]) + '" ' +
+          'onclick="togglePrepSection(\'' + s.id + '\')" onkeydown="prepHeadKey(event,\'' + s.id + '\')">' +
+          '<svg class="acc-caret" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
+          levelChip +
+          '<span class="acc-title-text">' + esc(s.title) + '</span>' +
+          badge +
+          removeBtn +
+        '</div>' +
+        (hasContent ?
+          '<div class="acc-body">' + bodyText + childrenHtml + '</div>' : "") +
+      '</div>';
+    }).join("");
+  }
+
+  function renderNotes() {
+    document.getElementById("session-num-label").textContent = campaignState.campaign.sessionNumber || 1;
+    const acc = document.getElementById("prep-accordion");
+    const toolbar = document.getElementById("prep-toolbar");
+
+    _currentTree = buildSectionTree(campaignState.campaign.sessionNotes || "");
+
+    if (!_currentTree.length) {
+      acc.innerHTML = '<div class="prep-empty">No session prep yet. Click Edit to paste your notes.</div>';
+      toolbar.style.display = "none";
+      if (_outlineVisible) renderOutline(_currentTree);
+      return;
+    }
+    toolbar.style.display = "flex";
+    acc.innerHTML = renderAccordionNodes(_currentTree);
+    if (_outlineVisible) renderOutline(_currentTree);
+  }
+
+  function togglePrepSection(id) {
+    _prepOpen[id] = !_prepOpen[id];
+    const sec = document.querySelector('.acc-section[data-id="' + id + '"]');
+    if (sec) {
+      sec.classList.toggle("open", !!_prepOpen[id]);
+      const head = sec.querySelector(":scope > .acc-head");
+      if (head) head.setAttribute("aria-expanded", String(!!_prepOpen[id]));
+    }
+    if (_outlineVisible) renderOutline(_currentTree);
+  }
+  function prepHeadKey(ev, id) {
+    if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); togglePrepSection(id); }
+  }
+  function setAllSections(open) {
+    const walk = (nodes) => nodes.forEach(n => { _prepOpen[n.id] = open; walk(n.children); });
+    walk(_currentTree || []);
+    const secs = document.querySelectorAll(".acc-section");
+    secs.forEach(sec => {
+      sec.classList.toggle("open", open);
+      const head = sec.querySelector(":scope > .acc-head");
+      if (head) head.setAttribute("aria-expanded", String(open));
+    });
+    if (_outlineVisible) renderOutline(_currentTree);
+  }
+
+  /* ============================================================
+     OUTLINE PANEL
+     ============================================================ */
+  let _outlineVisible = false;
+  let _currentTree = [];
+  let _outlineCollapsed = {};   // sectionId -> bool (collapsed in outline)
+  let _activeOutlineId = null;
+
+  function toggleOutlineView() {
+    _outlineVisible = !_outlineVisible;
+    const panel = document.getElementById("outline-panel");
+    panel.classList.toggle("hidden", !_outlineVisible);
+    document.getElementById("outline-icon-show").style.display = _outlineVisible ? "none" : "";
+    document.getElementById("outline-icon-hide").style.display = _outlineVisible ? "" : "none";
+    document.getElementById("outline-toggle-btn").classList.toggle("active", _outlineVisible);
+    if (_outlineVisible) renderOutline(_currentTree);
+  }
+
+  function renderOutline(nodes) {
+    const tree = document.getElementById("outline-tree");
+    const count = document.getElementById("outline-count");
+    if (!nodes || !nodes.length) {
+      tree.innerHTML = '<div style="padding:0.6rem 0.9rem;color:var(--text-muted);font-size:0.8rem;font-style:italic;">No sections</div>';
+      count.textContent = "";
+      return;
+    }
+    let total = 0;
+    function countAll(ns) { ns.forEach(n => { total++; countAll(n.children); }); }
+    countAll(nodes);
+    count.textContent = total + " sections";
+
+    function buildNodes(secs) {
+      return secs.map(s => {
+        const collapsed = _outlineCollapsed[s.id];
+        const hasChildren = s.children.length > 0;
+        const isActive = s.id === _activeOutlineId;
+        const toggleCls = hasChildren ? " has-children" + (collapsed ? " collapsed-in-outline" : "") : "";
+        const activeCls = isActive ? " active" : "";
+        const truncTitle = s.title.length > 28 ? s.title.slice(0, 27) + "…" : s.title;
+
+        let html = '<div class="outline-node' + toggleCls + activeCls + '" data-level="' + s.level + '" data-id="' + s.id + '" onclick="outlineNodeClick(\'' + s.id + '\')">' +
+          '<span class="outline-node-dot"></span>' +
+          '<span class="outline-node-label">' + esc(truncTitle) + '</span>';
+
+        if (hasChildren) {
+          html += '<svg class="outline-node-toggle" viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+        }
+        html += '</div>';
+
+        // Render children unless this node is collapsed in outline
+        if (hasChildren && !collapsed) {
+          html += buildNodes(s.children);
+        }
+        return html;
+      }).join("");
+    }
+
+    tree.innerHTML = buildNodes(nodes);
+  }
+
+  function outlineNodeClick(id) {
+    const hasChildren = (() => {
+      function find(nodes) {
+        for (const n of nodes) {
+          if (n.id === id) return n.children.length > 0;
+          const r = find(n.children);
+          if (r !== null) return r;
+        }
+        return null;
+      }
+      return find(_currentTree);
+    })();
+
+    if (hasChildren) {
+      // Toggle collapse of this node's children in outline
+      _outlineCollapsed[id] = !_outlineCollapsed[id];
+    }
+
+    // Set active
+    _activeOutlineId = id;
+
+    // File-explorer behavior: expand this section, collapse siblings at same level
+    _collapseOutlineSiblings(id, _currentTree);
+
+    // In read mode: expand the accordion section
+    if (!_prepOpen[id]) {
+      _prepOpen[id] = true;
+      const sec = document.querySelector('.acc-section[data-id="' + id + '"]');
+      if (sec) {
+        sec.classList.add("open");
+        const head = sec.querySelector(":scope > .acc-head");
+        if (head) head.setAttribute("aria-expanded", "true");
+        sec.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+
+    // In edit mode: move textarea cursor to that section's line
+    const ed = document.getElementById("notes-editor");
+    if (!ed.classList.contains("hidden")) {
+      _jumpTextareaToCursor(id);
+    }
+
+    renderOutline(_currentTree);
+  }
+
+  // Collapse siblings of the target section at the same parent level
+  function _collapseOutlineSiblings(targetId, nodes, depth) {
+    for (const n of nodes) {
+      if (n.id === targetId) return true;  // found at this level
+      const foundInChild = _collapseOutlineSiblings(targetId, n.children, depth + 1);
+      if (foundInChild) return true;
+    }
+    return false;
+  }
+
+  /* ============================================================
+     EDIT MODE — indent/outdent, add/remove header
+     ============================================================ */
+  let _outlineUpdateTimer = null;
+
+  function toggleNotesEdit() {
+    const ed = document.getElementById("notes-editor");
+    const acc = document.getElementById("prep-accordion");
+    const toolbar = document.getElementById("prep-toolbar");
+    const editToolbar = document.getElementById("edit-toolbar");
+    const btn = document.getElementById("notes-edit-btn");
+
+    if (ed.classList.contains("hidden")) {
+      document.getElementById("notes-textarea").value = campaignState.campaign.sessionNotes || "";
+      ed.classList.remove("hidden");
+      acc.classList.add("hidden");
+      toolbar.style.display = "none";
+      editToolbar.classList.add("visible");
+      btn.classList.add("active"); btn.textContent = "Editing";
+      // Show outline in edit mode too
+      if (_outlineVisible) renderOutline(_currentTree);
+      // Wire live update
+      document.getElementById("notes-textarea").addEventListener("input", _onTextareaInput);
+    } else {
+      cancelNotesEdit();
+    }
+  }
+
+  function _onTextareaInput() {
+    clearTimeout(_outlineUpdateTimer);
+    _outlineUpdateTimer = setTimeout(() => {
+      const raw = document.getElementById("notes-textarea").value;
+      _currentTree = buildSectionTree(raw);
+      if (_outlineVisible) renderOutline(_currentTree);
+    }, 280);
+  }
+
+  function cancelNotesEdit() {
+    const ed = document.getElementById("notes-editor");
+    const acc = document.getElementById("prep-accordion");
+    const editToolbar = document.getElementById("edit-toolbar");
+    const btn = document.getElementById("notes-edit-btn");
+    ed.classList.add("hidden");
+    acc.classList.remove("hidden");
+    editToolbar.classList.remove("visible");
+    btn.classList.remove("active"); btn.textContent = "Edit";
+    document.getElementById("notes-textarea").removeEventListener("input", _onTextareaInput);
+    renderNotes();
+  }
+
+  function saveNotesEdit() {
+    campaignState.campaign.sessionNotes = document.getElementById("notes-textarea").value;
+    _prepOpen = {};
+    _sectionIdCounter = 0;
+    const ed = document.getElementById("notes-editor");
+    const acc = document.getElementById("prep-accordion");
+    const editToolbar = document.getElementById("edit-toolbar");
+    const btn = document.getElementById("notes-edit-btn");
+    ed.classList.add("hidden");
+    acc.classList.remove("hidden");
+    editToolbar.classList.remove("visible");
+    btn.classList.remove("active"); btn.textContent = "Edit";
+    document.getElementById("notes-textarea").removeEventListener("input", _onTextareaInput);
+    renderNotes();
+    scheduleSync(document.getElementById("notes-save-state"));
+  }
+
+  /* --- Utility: cursor line detection in textarea --- */
+  function _getCursorLineIndex(ta) {
+    const text = ta.value;
+    const pos = ta.selectionStart;
+    return text.substring(0, pos).split("\n").length - 1;
+  }
+
+  function _getLineAt(ta, idx) {
+    return ta.value.split("\n")[idx] || "";
+  }
+
+  function _setLineAt(ta, idx, newLine) {
+    const lines = ta.value.split("\n");
+    lines[idx] = newLine;
+    const curPos = ta.selectionStart;
+    ta.value = lines.join("\n");
+    // Restore cursor to same approximate position
+    ta.selectionStart = ta.selectionEnd = curPos;
+  }
+
+  /* Find the header line for the section containing the cursor.
+     Returns { headerLineIdx, currentLevel } or null if on a header itself. */
+  function _getSectionContext(ta) {
+    const li = _getCursorLineIndex(ta);
+    const lines = ta.value.split("\n");
+    const line = lines[li] || "";
+
+    // If cursor is on a header line
+    if (HEADER_RE.test(line.trim())) {
+      const m = line.trim().match(HEADER_RE);
+      return { headerLineIdx: li, currentLevel: parseInt(m[1], 10), onHeader: true };
+    }
+    // Scan backwards to find the owning header
+    for (let i = li - 1; i >= 0; i--) {
+      if (HEADER_RE.test(lines[i].trim())) {
+        const m = lines[i].trim().match(HEADER_RE);
+        return { headerLineIdx: i, currentLevel: parseInt(m[1], 10), onHeader: false };
+      }
+    }
+    return null;   // before any header
+  }
+
+  /*
+   * shiftHeaderLevel(delta)
+   * delta = -1 (outdent/promote) or +1 (indent/demote)
+   * If cursor is ON a header line: shift that line only.
+   * If cursor is IN a section body: shift the entire section
+   * (its header + all consecutive child headers until the next sibling/parent).
+   */
+  function shiftHeaderLevel(delta) {
+    const ta = document.getElementById("notes-textarea");
+    const ctx = _getSectionContext(ta);
+    if (!ctx) { toast("Place cursor in a section to adjust level.", "warn"); return; }
+
+    const lines = ta.value.split("\n");
+    const { headerLineIdx, currentLevel, onHeader } = ctx;
+    const newLevel = currentLevel + delta;
+
+    if (newLevel < 1) { toast("Already at the top level (L1).", "warn"); return; }
+    if (newLevel > 4) { toast("Maximum nesting depth is L4.", "warn"); return; }
+
+    if (onHeader) {
+      // Shift just this header line
+      lines[headerLineIdx] = lines[headerLineIdx].replace(
+        /^\[([1-4])\]/, "[" + newLevel + "]"
+      );
+    } else {
+      // Shift the entire section: the header + all descendent header lines
+      // that are deeper than currentLevel (they belong to this section)
+      lines[headerLineIdx] = lines[headerLineIdx].replace(
+        /^\[([1-4])\]/, "[" + newLevel + "]"
+      );
+      for (let i = headerLineIdx + 1; i < lines.length; i++) {
+        const m = lines[i].trim().match(HEADER_RE);
+        if (!m) continue;   // body line
+        const childLevel = parseInt(m[1], 10);
+        if (childLevel <= currentLevel) break;  // sibling or parent — stop
+        const childNew = Math.min(4, Math.max(1, childLevel + delta));
+        lines[i] = lines[i].replace(/^\[([1-4])\]/, "[" + childNew + "]");
+      }
+    }
+
+    const saved = ta.selectionStart;
+    ta.value = lines.join("\n");
+    ta.selectionStart = ta.selectionEnd = saved;
+
+    // Refresh live outline
+    _currentTree = buildSectionTree(ta.value);
+    if (_outlineVisible) renderOutline(_currentTree);
+  }
+
+  /*
+   * applyHeaderFormatting()
+   * Takes selected text and wraps the first selected line as a [1] header.
+   * If nothing is selected, promotes the current line to a [1] header (if it's not already).
+   */
+  function applyHeaderFormatting() {
+    const ta = document.getElementById("notes-textarea");
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const lines = ta.value.split("\n");
+
+    // Find which line start and end positions fall on
+    let charCount = 0, startLine = 0, endLine = 0;
+    for (let i = 0; i < lines.length; i++) {
+      const len = lines[i].length + 1; // +1 for \n
+      if (charCount + len > start && startLine === 0 && i > 0) startLine = i;
+      if (charCount <= start) startLine = i;
+      if (charCount <= end) endLine = i;
+      charCount += len;
+    }
+
+    // Apply to the first selected line only (sensible default)
+    const targetLine = lines[startLine];
+    if (HEADER_RE.test(targetLine.trim())) {
+      toast("Line is already a header. Use indent/outdent to adjust level.", "warn");
+      return;
+    }
+    // Make it a [1] header — keep the text, convert to uppercase
+    lines[startLine] = "[1] " + targetLine.trim().toUpperCase();
+    ta.value = lines.join("\n");
+    ta.selectionStart = ta.selectionEnd = start;
+
+    _currentTree = buildSectionTree(ta.value);
+    if (_outlineVisible) renderOutline(_currentTree);
+    toast("Header applied at L1. Use indent arrow to nest.", "success");
+  }
+
+  /*
+   * removeHeaderFormatting(sectionId)
+   * Finds the section in the RAW textarea text by scanning for its [N] title,
+   * removes the [N] marker, and lowercases the title text.
+   * Called from the red X button on each accordion header in READ mode.
+   */
+  function removeHeaderFormatting(sectionId) {
+    // Find the section in the current tree by id
+    function findNode(nodes, id) {
+      for (const n of nodes) {
+        if (n.id === id) return n;
+        const r = findNode(n.children, id);
+        if (r) return r;
+      }
+      return null;
+    }
+    const node = findNode(_currentTree, sectionId);
+    if (!node) { toast("Section not found.", "error"); return; }
+
+    // Reconstruct raw, modify the header line, write back
+    const raw = campaignState.campaign.sessionNotes || "";
+    const lines = raw.replace(/\r\n/g, "\n").split("\n");
+    const marker = "[" + node.level + "] " + node.title;
+    const idx = lines.findIndex(l => l.trim() === marker);
+    if (idx === -1) { toast("Could not locate header in text.", "warn"); return; }
+
+    lines[idx] = node.title.toLowerCase();
+    campaignState.campaign.sessionNotes = lines.join("\n");
+    _prepOpen = {};
+    _sectionIdCounter = 0;
+    renderNotes();
+    scheduleSync(document.getElementById("notes-save-state"));
+    toast("Header removed.", "success");
+  }
+
+  /* Jump textarea cursor to the line of the given section id */
+  function _jumpTextareaToCursor(sectionId) {
+    function find(nodes) {
+      for (const n of nodes) {
+        if (n.id === sectionId) return n;
+        const r = find(n.children);
+        if (r) return r;
+      }
+      return null;
+    }
+    const node = find(_currentTree);
+    if (!node) return;
+    const ta = document.getElementById("notes-textarea");
+    const lines = ta.value.split("\n");
+    // Find line matching [level] title
+    const marker = "[" + node.level + "] " + node.title;
+    const idx = lines.findIndex(l => l.trim() === marker);
+    if (idx === -1) return;
+    let pos = 0;
+    for (let i = 0; i < idx; i++) pos += lines[i].length + 1;
+    ta.focus();
+    ta.selectionStart = ta.selectionEnd = pos;
+    // Scroll textarea to cursor
+    const lineHeight = parseInt(getComputedStyle(ta).lineHeight, 10) || 20;
+    ta.scrollTop = idx * lineHeight - ta.clientHeight / 2;
+  }
+
+  /* ============================================================
+     Collapse helper
+     ============================================================ */
+  function toggleCollapse(cardId) { document.getElementById(cardId).classList.toggle("collapsed"); }
+
+  /* ============================================================
+     ROOM
      ============================================================ */
   function getCurrentRoom() {
     const rooms = campaignState.campaign.rooms;
     const id = campaignState.campaign.currentRoom;
     return rooms.find(r => r.id === id) || rooms[0] || null;
   }
-
   function roomToText(room) {
     if (!room) return "";
     const parts = [];
@@ -887,122 +1441,105 @@
     if (room.notes) parts.push("\nNOTES:\n" + room.notes);
     return parts.join("\n");
   }
-
   function textToRoom(text, room) {
     const lines = text.replace(/\r\n/g, "\n").split("\n");
-    const out = { name: "", area: room.area || "", description: "", readaloud: "",
-                  mechanics: { terrain: "", hazards: [], interactables: [] }, notes: "" };
+    const out = { name: "", area: room.area || "", description: "", readaloud: "", mechanics: { terrain: "", hazards: [], interactables: [] }, notes: "" };
     let section = "head", bucket = [];
-    const known = { "AREA:": "area", "READ ALOUD:": "readaloud", "TERRAIN:": "terrain",
-                    "HAZARDS:": "hazards", "INTERACTABLES:": "interactables", "NOTES:": "notes" };
-
+    const known = { "AREA:": "area", "READ ALOUD:": "readaloud", "TERRAIN:": "terrain", "HAZARDS:": "hazards", "INTERACTABLES:": "interactables", "NOTES:": "notes" };
     const commit = () => {
       const txt = bucket.join("\n").trim();
-      if (section === "head") {
-        const hl = bucket.map(l => l).filter(l => l.trim() !== "");
-        out.name = (hl[0] || "").trim();
-        out.description = hl.slice(1).join("\n").trim();
-      } else if (section === "area") out.area = txt;
+      if (section === "head") { const hl = bucket.filter(l => l.trim()); out.name = (hl[0] || "").trim(); out.description = hl.slice(1).join("\n").trim(); }
+      else if (section === "area") out.area = txt;
       else if (section === "readaloud") out.readaloud = txt;
       else if (section === "terrain") out.mechanics.terrain = txt;
-      else if (section === "hazards") out.mechanics.hazards = txt ? txt.split("\n").map(s=>s.trim()).filter(Boolean) : [];
-      else if (section === "interactables") out.mechanics.interactables = txt ? txt.split("\n").map(s=>s.trim()).filter(Boolean) : [];
+      else if (section === "hazards") out.mechanics.hazards = txt ? txt.split("\n").map(s => s.trim()).filter(Boolean) : [];
+      else if (section === "interactables") out.mechanics.interactables = txt ? txt.split("\n").map(s => s.trim()).filter(Boolean) : [];
       else if (section === "notes") out.notes = txt;
       bucket = [];
     };
-
     for (const line of lines) {
       const key = line.trim().toUpperCase();
-      if (known[key]) { commit(); section = known[key]; }
-      else bucket.push(line);
+      if (known[key]) { commit(); section = known[key]; } else bucket.push(line);
     }
     commit();
     return Object.assign(room, out);
   }
+  function renderRoomSelect() {
+    const sel = document.getElementById("room-select");
+    const rooms = campaignState.campaign.rooms;
+    sel.innerHTML = "";
+    if (!rooms.length) { const o = document.createElement("option"); o.value = ""; o.textContent = "(no rooms)"; sel.appendChild(o); return; }
+    rooms.forEach(r => { const o = document.createElement("option"); o.value = r.id; o.textContent = r.name || r.id; if (r.id === campaignState.campaign.currentRoom) o.selected = true; sel.appendChild(o); });
+  }
+  function renderRoom() { document.getElementById("room-display").innerHTML = renderRichText(roomToText(getCurrentRoom())); }
+  function onRoomChange(id) { campaignState.campaign.currentRoom = id; renderRoom(); cancelRoomEdit(); scheduleSync(document.getElementById("room-save-state")); }
+  function toggleRoomEdit() {
+    const ed = document.getElementById("room-editor"), disp = document.getElementById("room-display"), btn = document.getElementById("room-edit-btn");
+    if (ed.classList.contains("hidden")) { document.getElementById("room-textarea").value = roomToText(getCurrentRoom()); ed.classList.remove("hidden"); disp.classList.add("hidden"); btn.classList.add("active"); btn.textContent = "Editing"; }
+    else { cancelRoomEdit(); }
+  }
+  function cancelRoomEdit() { document.getElementById("room-editor").classList.add("hidden"); document.getElementById("room-display").classList.remove("hidden"); const btn = document.getElementById("room-edit-btn"); btn.classList.remove("active"); btn.textContent = "Edit"; }
+  function saveRoomEdit() {
+    const room = getCurrentRoom(); if (!room) { toast("No room to save.", "error"); return; }
+    textToRoom(document.getElementById("room-textarea").value, room);
+    renderRoom(); renderRoomSelect(); cancelRoomEdit();
+    scheduleSync(document.getElementById("room-save-state"));
+  }
+  function openRoomDrawer() { document.getElementById("room-drawer").classList.add("open"); document.getElementById("room-backdrop").classList.add("open"); }
+  function closeRoomDrawer() { cancelRoomEdit(); document.getElementById("room-drawer").classList.remove("open"); document.getElementById("room-backdrop").classList.remove("open"); }
 
   /* ============================================================
-     RENDER: Player cards sidebar
+     PLAYER CARDS
      ============================================================ */
   function hpClass(cur, max) {
     if (max <= 0) return "";
     const r = cur / max;
-    if (r <= 0.25) return "crit";
-    if (r <= 0.5) return "warn";
-    return "";
+    return r <= 0.25 ? "crit" : r <= 0.5 ? "warn" : "";
   }
-
   function renderCards() {
     const list = document.getElementById("cards-list");
     const chars = campaignState.characters.filter(c => !c.isArchived);
     document.getElementById("party-count").textContent = chars.length + " active";
     list.innerHTML = "";
-
     chars.forEach(ch => {
       const hp = (ch.stats && ch.stats.hp) ? ch.stats.hp : { current: 0, max: 1 };
       const ac = (ch.stats && ch.stats.ac != null) ? ch.stats.ac : "-";
       const conds = Array.isArray(ch.conditions) ? ch.conditions : [];
       const card = document.createElement("div");
-      card.className = "player-card";
-      card.dataset.id = ch.id;
-
+      card.className = "player-card"; card.dataset.id = ch.id;
       const condChecks = CONDITIONS.map(name => {
-        const key = name.toLowerCase();
-        const checked = conds.includes(key) ? "checked" : "";
-        return '<label><input type="checkbox" ' + checked +
-               ' onchange="toggleCondition(\'' + ch.id + '\',\'' + key + '\',this.checked)">' + name + '</label>';
+        const key = name.toLowerCase(), checked = conds.includes(key) ? "checked" : "";
+        return '<label><input type="checkbox" ' + checked + ' onchange="toggleCondition(\'' + ch.id + '\',\'' + key + '\',this.checked)">' + name + '</label>';
       }).join("");
-
       card.innerHTML =
         '<div class="pc-head" onclick="toggleCardExpand(this)">' +
-          '<img class="pc-portrait" src="' + esc(ch.profileImage || DEFAULT_PORTRAIT) + '" ' +
-            'onerror="this.src=\'' + DEFAULT_PORTRAIT + '\'" alt="">' +
-          '<div class="pc-id">' +
-            '<div class="pc-name">' + esc(ch.name) + '</div>' +
-            '<div class="pc-stats"><span class="hp-pill ' + hpClass(hp.current, hp.max) + '">&#10084; ' +
-              hp.current + '/' + hp.max + '</span> &nbsp;&#9876; ' + ac + '</div>' +
-          '</div>' +
-          '<span class="pc-caret">&#9660;</span>' +
-        '</div>' +
+          '<img class="pc-portrait" src="' + esc(ch.profileImage || DEFAULT_PORTRAIT) + '" onerror="this.src=\'' + DEFAULT_PORTRAIT + '\'" alt="">' +
+          '<div class="pc-id"><div class="pc-name">' + esc(ch.name) + '</div>' +
+            '<div class="pc-stats"><span class="hp-pill ' + hpClass(hp.current, hp.max) + '">&#10084; ' + hp.current + '/' + hp.max + '</span> &nbsp;&#9876; ' + ac + '</div>' +
+          '</div><span class="pc-caret">&#9660;</span></div>' +
         '<div class="pc-body">' +
           '<div class="pc-class">' + esc(ch.class || "") + (ch.level ? ", LV " + ch.level : "") + '</div>' +
-          '<div class="pc-hp-row">' +
-            '<button class="hp-step" onclick="adjustHP(\'' + ch.id + '\',-1)">&minus;</button>' +
-            '<input type="number" value="' + hp.current + '" onchange="setHP(\'' + ch.id + '\',this.value)">' +
-            '<span class="pc-stats">/ ' + hp.max + '</span>' +
-            '<button class="hp-step" onclick="adjustHP(\'' + ch.id + '\',1)">+</button>' +
-          '</div>' +
-          '<div class="cond-title">CONDITIONS</div>' +
-          '<div class="cond-grid">' + condChecks + '</div>' +
-          '<div class="pc-actions">' +
-            '<button class="btn-ghost" onclick="openCharModal(\'' + ch.id + '\')">Details</button>' +
-          '</div>' +
+          '<div class="pc-hp-row"><button class="hp-step" onclick="adjustHP(\'' + ch.id + '\',-1)">&minus;</button>' +
+            '<input type="number" value="' + hp.current + '" onchange="setHP(\'' + ch.id + '\',this.value)"><span class="pc-stats">/ ' + hp.max + '</span>' +
+            '<button class="hp-step" onclick="adjustHP(\'' + ch.id + '\',1)">+</button></div>' +
+          '<div class="cond-title">CONDITIONS</div><div class="cond-grid">' + condChecks + '</div>' +
+          '<div class="pc-actions"><button class="btn-ghost" onclick="openCharModal(\'' + ch.id + '\')">Details</button></div>' +
         '</div>';
-
       list.appendChild(card);
     });
   }
-
-  function toggleCardExpand(headEl) {
-    headEl.parentElement.classList.toggle("expanded");
-  }
-
+  function toggleCardExpand(headEl) { headEl.parentElement.classList.toggle("expanded"); }
   function findChar(id) { return campaignState.characters.find(c => c.id === id); }
-
   function adjustHP(id, delta) {
     const ch = findChar(id); if (!ch || !ch.stats || !ch.stats.hp) return;
-    let v = (ch.stats.hp.current || 0) + delta;
-    v = Math.max(0, Math.min(v, ch.stats.hp.max || v));
-    ch.stats.hp.current = v;
-    renderCards(); keepExpanded(id);
-    scheduleSync(null);
+    let v = Math.max(0, Math.min((ch.stats.hp.current || 0) + delta, ch.stats.hp.max || 0));
+    ch.stats.hp.current = v; renderCards(); keepExpanded(id); scheduleSync(null);
   }
   function setHP(id, val) {
     const ch = findChar(id); if (!ch || !ch.stats || !ch.stats.hp) return;
     let v = parseInt(val, 10); if (isNaN(v)) v = 0;
-    v = Math.max(0, Math.min(v, ch.stats.hp.max || v));
-    ch.stats.hp.current = v;
-    renderCards(); keepExpanded(id);
-    scheduleSync(null);
+    ch.stats.hp.current = Math.max(0, Math.min(v, ch.stats.hp.max || v));
+    renderCards(); keepExpanded(id); scheduleSync(null);
   }
   function toggleCondition(id, cond, on) {
     const ch = findChar(id); if (!ch) return;
@@ -1012,183 +1549,19 @@
     else if (!on && i !== -1) ch.conditions.splice(i, 1);
     scheduleSync(null);
   }
-  function keepExpanded(id) {
-    const card = document.querySelector('.player-card[data-id="' + id + '"]');
-    if (card) card.classList.add("expanded");
-  }
-
-  /* ============================================================
-     RENDER: Room (lives in the right-side drawer — Phase 3)
-     ============================================================ */
-  function renderRoomSelect() {
-    const sel = document.getElementById("room-select");
-    const rooms = campaignState.campaign.rooms;
-    sel.innerHTML = "";
-    if (!rooms.length) {
-      const o = document.createElement("option");
-      o.value = ""; o.textContent = "(no rooms)";
-      sel.appendChild(o);
-      return;
-    }
-    rooms.forEach(r => {
-      const o = document.createElement("option");
-      o.value = r.id; o.textContent = r.name || r.id;
-      if (r.id === campaignState.campaign.currentRoom) o.selected = true;
-      sel.appendChild(o);
-    });
-  }
-
-  function renderRoom() {
-    const room = getCurrentRoom();
-    document.getElementById("room-display").innerHTML = renderRichText(roomToText(room));
-  }
-
-  function onRoomChange(id) {
-    campaignState.campaign.currentRoom = id;
-    renderRoom();
-    cancelRoomEdit();
-    scheduleSync(document.getElementById("room-save-state"));
-  }
-
-  function toggleRoomEdit() {
-    const ed = document.getElementById("room-editor");
-    const disp = document.getElementById("room-display");
-    const btn = document.getElementById("room-edit-btn");
-    if (ed.classList.contains("hidden")) {
-      document.getElementById("room-textarea").value = roomToText(getCurrentRoom());
-      ed.classList.remove("hidden"); disp.classList.add("hidden");
-      btn.classList.add("active"); btn.textContent = "Editing";
-    } else { cancelRoomEdit(); }
-  }
-  function cancelRoomEdit() {
-    document.getElementById("room-editor").classList.add("hidden");
-    document.getElementById("room-display").classList.remove("hidden");
-    const btn = document.getElementById("room-edit-btn");
-    btn.classList.remove("active"); btn.textContent = "Edit";
-  }
-  function saveRoomEdit() {
-    const room = getCurrentRoom();
-    if (!room) { toast("No room to save.", "error"); return; }
-    textToRoom(document.getElementById("room-textarea").value, room);
-    renderRoom(); renderRoomSelect(); cancelRoomEdit();
-    scheduleSync(document.getElementById("room-save-state"));
-  }
-
-  /* ---------- Room drawer open/close (Phase 3) ---------- */
-  function openRoomDrawer() {
-    document.getElementById("room-drawer").classList.add("open");
-    document.getElementById("room-backdrop").classList.add("open");
-  }
-  function closeRoomDrawer() {
-    cancelRoomEdit();
-    document.getElementById("room-drawer").classList.remove("open");
-    document.getElementById("room-backdrop").classList.remove("open");
-  }
-
-  /* ============================================================
-     RENDER: Session prep accordion (Phase 2)
-     ============================================================ */
-  let _prepOpen = {};
-
-  function renderNotes() {
-    document.getElementById("session-num-label").textContent = campaignState.campaign.sessionNumber || 1;
-    const acc = document.getElementById("prep-accordion");
-    const sections = parsePrepSections(campaignState.campaign.sessionNotes || "");
-    const toolbar = document.getElementById("prep-toolbar");
-
-    if (!sections.length) {
-      acc.innerHTML = '<div class="prep-empty">No session prep yet. Click Edit to paste your notes.</div>';
-      toolbar.style.display = "none";
-      return;
-    }
-    toolbar.style.display = "flex";
-
-    acc.innerHTML = sections.map((s, i) => {
-      const open = _prepOpen[i] ? " open" : "";
-      const badge = s.badge ? '<span class="acc-badge ' + s.badge + '">' + s.badge + '</span>' : "";
-      const body = s.body ? esc(s.body) : '<span class="prep-empty">(empty)</span>';
-      return '<div class="acc-section' + open + '" data-idx="' + i + '">' +
-        '<div class="acc-head" role="button" tabindex="0" aria-expanded="' + (!!_prepOpen[i]) + '" ' +
-          'onclick="togglePrepSection(' + i + ')" onkeydown="prepHeadKey(event,' + i + ')">' +
-          '<span class="acc-caret">&#9654;</span>' +
-          '<span class="acc-title">' + esc(s.title) + '</span>' + badge +
-        '</div>' +
-        '<div class="acc-body">' + body + '</div>' +
-      '</div>';
-    }).join("");
-  }
-
-  function togglePrepSection(i) {
-    _prepOpen[i] = !_prepOpen[i];
-    const sec = document.querySelector('.acc-section[data-idx="' + i + '"]');
-    if (sec) {
-      sec.classList.toggle("open", !!_prepOpen[i]);
-      const head = sec.querySelector(".acc-head");
-      if (head) head.setAttribute("aria-expanded", String(!!_prepOpen[i]));
-    }
-  }
-  function prepHeadKey(ev, i) {
-    if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); togglePrepSection(i); }
-  }
-  function setAllSections(open) {
-    const secs = document.querySelectorAll(".acc-section");
-    secs.forEach(sec => {
-      const i = parseInt(sec.dataset.idx, 10);
-      _prepOpen[i] = open;
-      sec.classList.toggle("open", open);
-      const head = sec.querySelector(".acc-head");
-      if (head) head.setAttribute("aria-expanded", String(open));
-    });
-  }
-
-  function toggleNotesEdit() {
-    const ed = document.getElementById("notes-editor");
-    const acc = document.getElementById("prep-accordion");
-    const toolbar = document.getElementById("prep-toolbar");
-    const btn = document.getElementById("notes-edit-btn");
-    if (ed.classList.contains("hidden")) {
-      document.getElementById("notes-textarea").value = campaignState.campaign.sessionNotes || "";
-      ed.classList.remove("hidden"); acc.classList.add("hidden"); toolbar.style.display = "none";
-      btn.classList.add("active"); btn.textContent = "Editing";
-    } else { cancelNotesEdit(); }
-  }
-  function cancelNotesEdit() {
-    document.getElementById("notes-editor").classList.add("hidden");
-    document.getElementById("prep-accordion").classList.remove("hidden");
-    const btn = document.getElementById("notes-edit-btn");
-    btn.classList.remove("active"); btn.textContent = "Edit";
-    renderNotes();
-  }
-  function saveNotesEdit() {
-    campaignState.campaign.sessionNotes = document.getElementById("notes-textarea").value;
-    _prepOpen = {};
-    document.getElementById("notes-editor").classList.add("hidden");
-    document.getElementById("prep-accordion").classList.remove("hidden");
-    const btn = document.getElementById("notes-edit-btn");
-    btn.classList.remove("active"); btn.textContent = "Edit";
-    renderNotes();
-    scheduleSync(document.getElementById("notes-save-state"));
-  }
-
-  /* ============================================================
-     Collapse helper
-     ============================================================ */
-  function toggleCollapse(cardId) { document.getElementById(cardId).classList.toggle("collapsed"); }
+  function keepExpanded(id) { const c = document.querySelector('.player-card[data-id="' + id + '"]'); if (c) c.classList.add("expanded"); }
 
   /* ============================================================
      CHARACTER DETAIL MODAL
      ============================================================ */
   let _activeCharId = null;
-
   function openCharModal(id) {
     const ch = findChar(id); if (!ch) return;
     _activeCharId = id;
     document.getElementById("cm-name").textContent = ch.name;
-
     const st = ch.stats || (ch.stats = { hp: { current: 0, max: 1 } });
     if (!st.hp) st.hp = { current: 0, max: 1 };
     const ds = ch.deathSaves || (ch.deathSaves = { successes: 0, failures: 0 });
-
     setVal("cm-hp-current", st.hp.current); setVal("cm-hp-max", st.hp.max);
     setVal("cm-ac", st.ac); setVal("cm-speed", st.speed);
     setVal("cm-pp", st.passivePerception); setVal("cm-pi", st.passiveInsight);
@@ -1197,25 +1570,17 @@
     setVal("cm-level", ch.level); setVal("cm-gold", ch.gold);
     setVal("cm-img", ch.profileImage || "");
     setVal("cm-conditions", (ch.conditions || []).join(", "));
-
-    renderSpellsTab(ch);
-    renderInventoryTab(ch);
-
+    renderSpellsTab(ch); renderInventoryTab(ch);
     document.querySelectorAll('#char-modal .tab-btn').forEach((b, i) => b.classList.toggle("active", i === 0));
     document.querySelectorAll('#char-modal .tab-panel').forEach((p, i) => p.classList.toggle("active", i === 0));
-
     document.getElementById("char-modal").classList.remove("hidden");
   }
-  function closeCharModal() {
-    document.getElementById("char-modal").classList.add("hidden");
-    _activeCharId = null;
-  }
+  function closeCharModal() { document.getElementById("char-modal").classList.add("hidden"); _activeCharId = null; }
   function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = (v == null ? "" : v); }
   function numVal(id) { const v = parseInt(document.getElementById(id).value, 10); return isNaN(v) ? 0 : v; }
-
   function commitCharModal() {
     const ch = findChar(_activeCharId); if (!ch) return;
-    const st = ch.stats; const ds = ch.deathSaves;
+    const st = ch.stats, ds = ch.deathSaves;
     st.hp.max = Math.max(1, numVal("cm-hp-max"));
     st.hp.current = Math.max(0, Math.min(numVal("cm-hp-current"), st.hp.max));
     st.ac = numVal("cm-ac"); st.speed = numVal("cm-speed");
@@ -1225,15 +1590,11 @@
     ch.race = document.getElementById("cm-race").value;
     ch.class = document.getElementById("cm-class").value;
     ch.level = numVal("cm-level"); ch.gold = numVal("cm-gold");
-    const img = document.getElementById("cm-img").value.trim();
-    ch.profileImage = img || null;
-    ch.conditions = document.getElementById("cm-conditions").value
-      .split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+    ch.profileImage = document.getElementById("cm-img").value.trim() || null;
+    ch.conditions = document.getElementById("cm-conditions").value.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
     ch.updatedAt = new Date().toISOString();
-    renderCards();
-    scheduleSync(null);
+    renderCards(); scheduleSync(null);
   }
-
   function renderSpellsTab(ch) {
     const body = document.getElementById("cm-spells-body");
     const ss = ch.spellSlots;
@@ -1242,9 +1603,7 @@
     for (let lvl = 1; lvl <= 9; lvl++) {
       const slot = ss["level" + lvl];
       if (!slot || (slot.max || 0) === 0) continue;
-      html += '<div class="stat-line"><span class="k">Level ' + lvl + '</span>' +
-        '<span><input type="number" min="0" max="' + slot.max + '" value="' + (slot.current || 0) +
-        '" style="width:60px" onchange="setSpellSlot(' + lvl + ',this.value)"> / ' + slot.max + '</span></div>';
+      html += '<div class="stat-line"><span class="k">Level ' + lvl + '</span><span><input type="number" min="0" max="' + slot.max + '" value="' + (slot.current || 0) + '" style="width:60px" onchange="setSpellSlot(' + lvl + ',this.value)"> / ' + slot.max + '</span></div>';
     }
     if (!html) html = '<p class="empty-hint">No spell slots configured.</p>';
     else html += '<div style="margin-top:.8rem"><button class="btn-secondary" onclick="resetSpellSlots()">Reset All Slots</button></div>';
@@ -1259,15 +1618,10 @@
   }
   function resetSpellSlots() {
     const ch = findChar(_activeCharId); if (!ch || !ch.spellSlots) return;
-    for (let lvl = 1; lvl <= 9; lvl++) {
-      const slot = ch.spellSlots["level" + lvl];
-      if (slot) slot.current = slot.max;
-    }
+    for (let lvl = 1; lvl <= 9; lvl++) { const s = ch.spellSlots["level" + lvl]; if (s) s.current = s.max; }
     ch.spellSlots.lastLongRest = new Date().toISOString();
-    renderSpellsTab(ch); scheduleSync(null);
-    toast("Spell slots reset.", "success");
+    renderSpellsTab(ch); scheduleSync(null); toast("Spell slots reset.", "success");
   }
-
   function renderInventoryTab(ch) {
     const body = document.getElementById("cm-inv-body");
     const inv = (ch.inventory || []).filter(it => !it.isDeleted);
@@ -1275,12 +1629,7 @@
     if (!inv.length) { html += '<p class="empty-hint">No items.</p>'; body.innerHTML = html; return; }
     inv.forEach(it => {
       const mech = it.mechanics && it.mechanics.text ? it.mechanics.text : (it.description || "");
-      html += '<div class="inv-item"><div class="inv-top">' +
-        '<div><span class="inv-name">' + esc(it.name) + '</span> ' +
-        '<span class="inv-meta">' + esc(it.type || "") + (it.rarity ? " &middot; " + esc(it.rarity) : "") +
-        (it.quantity > 1 ? " &middot; x" + it.quantity : "") + '</span></div>' +
-        '<button class="btn-danger" onclick="deleteItem(\'' + esc(it.id) + '\')">Delete</button>' +
-        '</div>' + (mech ? '<div class="inv-desc">' + esc(mech) + '</div>' : '') + '</div>';
+      html += '<div class="inv-item"><div class="inv-top"><div><span class="inv-name">' + esc(it.name) + '</span> <span class="inv-meta">' + esc(it.type || "") + (it.rarity ? " &middot; " + esc(it.rarity) : "") + (it.quantity > 1 ? " &middot; x" + it.quantity : "") + '</span></div><button class="btn-danger" onclick="deleteItem(\'' + esc(it.id) + '\')">Delete</button></div>' + (mech ? '<div class="inv-desc">' + esc(mech) + '</div>' : '') + '</div>';
     });
     body.innerHTML = html;
   }
@@ -1288,12 +1637,7 @@
     const ch = findChar(_activeCharId); if (!ch) return;
     const name = prompt("Item name?"); if (!name) return;
     if (!Array.isArray(ch.inventory)) ch.inventory = [];
-    ch.inventory.push({
-      id: "item_" + Date.now().toString(36),
-      name: name, type: "misc", rarity: "common",
-      description: "", quantity: 1, mechanics: null, charges: null,
-      requiresAttunement: false, isAttuned: false, isDeleted: false
-    });
+    ch.inventory.push({ id: "item_" + Date.now().toString(36), name, type: "misc", rarity: "common", description: "", quantity: 1, mechanics: null, charges: null, requiresAttunement: false, isAttuned: false, isDeleted: false });
     renderInventoryTab(ch); scheduleSync(null);
   }
   function deleteItem(itemId) {
@@ -1303,108 +1647,71 @@
   }
 
   /* ============================================================
-     ACHIEVEMENT DRAWER (Phase 4)
+     ACHIEVEMENT DRAWER
      ============================================================ */
-  function openAchievementDrawer() {
-    renderAchievementList();
-    document.getElementById("ach-drawer").classList.add("open");
-    document.getElementById("ach-backdrop").classList.add("open");
-  }
-  function closeAchievementDrawer() {
-    document.getElementById("ach-drawer").classList.remove("open");
-    document.getElementById("ach-backdrop").classList.remove("open");
-  }
-
-  function isUnassigned(a) {
-    return a.earnedBy == null ||
-      (typeof a.earnedBy === "object" && Object.keys(a.earnedBy).length === 0);
-  }
-
+  function openAchievementDrawer() { renderAchievementList(); document.getElementById("ach-drawer").classList.add("open"); document.getElementById("ach-backdrop").classList.add("open"); }
+  function closeAchievementDrawer() { document.getElementById("ach-drawer").classList.remove("open"); document.getElementById("ach-backdrop").classList.remove("open"); }
+  function isUnassigned(a) { return a.earnedBy == null || (typeof a.earnedBy === "object" && Object.keys(a.earnedBy).length === 0); }
   function achScope(a) {
     if (isUnassigned(a)) return "Unassigned";
-    const ids = Object.keys(a.earnedBy);
-    const names = ids.map(id => { const c = findChar(id); return c ? c.name : id; });
-    return names.join(", ");
+    return Object.keys(a.earnedBy).map(id => { const c = findChar(id); return c ? c.name : id; }).join(", ");
   }
-
   function renderAchievementList() {
     const list = document.getElementById("ach-list");
     const items = campaignState.achievements.filter(a => !a.isArchived);
-    if (!items.length) { list.innerHTML = '<p class="empty-hint">No achievements yet. Create one below.</p>'; return; }
-
+    if (!items.length) { list.innerHTML = '<p class="empty-hint">No achievements yet.</p>'; return; }
     const chars = campaignState.characters.filter(c => !c.isArchived);
-
     list.innerHTML = items.map(a => {
       const gold = (a.rewards && a.rewards.gold) || 0;
       const unassigned = isUnassigned(a);
-      const assignedClass = unassigned ? "" : " assigned";
-
       const checks = chars.map(c => {
         const on = (!unassigned && a.earnedBy[c.id]) ? "checked" : "";
-        return '<label><input type="checkbox" ' + on +
-          ' onchange="toggleAssign(\'' + esc(a.id) + '\',\'' + esc(c.id) + '\',this.checked)">' +
-          esc(c.name) + '</label>';
+        return '<label><input type="checkbox" ' + on + ' onchange="toggleAssign(\'' + esc(a.id) + '\',\'' + esc(c.id) + '\',this.checked)">' + esc(c.name) + '</label>';
       }).join("");
-
-      return '<div class="ach-entry' + assignedClass + '">' +
-        '<div><span class="ach-name">' + esc(a.name) + '</span>' +
-        '<span class="ach-cat">' + esc(a.category || "misc") + '</span></div>' +
+      return '<div class="ach-entry' + (unassigned ? "" : " assigned") + '">' +
+        '<div><span class="ach-name">' + esc(a.name) + '</span><span class="ach-cat">' + esc(a.category || "misc") + '</span></div>' +
         '<div class="ach-desc">' + esc(a.description || "") + '</div>' +
         '<div class="scope-tag">Assigned to: ' + esc(achScope(a)) + (gold ? ' &middot; ' + gold + ' gp' : '') + '</div>' +
         '<div class="ach-assign-grid">' + checks + '</div>' +
-        '<div class="ach-actions">' +
-          (gold ? '<button class="btn-ghost" onclick="awardGold(\'' + esc(a.id) + '\')">Pay ' + gold + ' gp</button>' : '') +
-          '<button class="btn-danger" onclick="archiveAchievement(\'' + esc(a.id) + '\')">Archive</button>' +
-        '</div></div>';
+        '<div class="ach-actions">' + (gold ? '<button class="btn-ghost" onclick="awardGold(\'' + esc(a.id) + '\')">Pay ' + gold + ' gp</button>' : '') +
+        '<button class="btn-danger" onclick="archiveAchievement(\'' + esc(a.id) + '\')">Archive</button></div></div>';
     }).join("");
   }
-
   function toggleAssign(achId, charId, on) {
-    const a = campaignState.achievements.find(x => x.id === achId);
-    if (!a) return;
+    const a = campaignState.achievements.find(x => x.id === achId); if (!a) return;
     if (!a.earnedBy || typeof a.earnedBy !== "object") a.earnedBy = {};
-    if (on) a.earnedBy[charId] = new Date().toISOString();
-    else delete a.earnedBy[charId];
+    if (on) a.earnedBy[charId] = new Date().toISOString(); else delete a.earnedBy[charId];
     if (Object.keys(a.earnedBy).length === 0) a.earnedBy = null;
     renderAchievementList(); scheduleSync(null);
   }
-
   function awardGold(achId) {
     const a = campaignState.achievements.find(x => x.id === achId);
     if (!a || !a.rewards || !a.rewards.gold) return;
-    const gold = a.rewards.gold;
     if (isUnassigned(a)) { toast("Assign this achievement to a player first.", "warn"); return; }
     const targets = Object.keys(a.earnedBy).map(findChar).filter(Boolean);
     if (!targets.length) { toast("No recipients found.", "warn"); return; }
-    targets.forEach(c => { c.gold = (c.gold || 0) + gold; });
+    targets.forEach(c => { c.gold = (c.gold || 0) + a.rewards.gold; });
     renderCards(); scheduleSync(null);
-    toast("Awarded " + gold + " gp to " + targets.length + " character(s).", "success");
+    toast("Awarded " + a.rewards.gold + " gp to " + targets.length + " character(s).", "success");
   }
-
   function archiveAchievement(achId) {
-    const a = campaignState.achievements.find(x => x.id === achId);
-    if (!a) return;
-    if (!confirm("Archive \"" + a.name + "\"? It disappears from all player tabs.")) return;
-    a.isArchived = true;
-    renderAchievementList(); scheduleSync(null);
+    const a = campaignState.achievements.find(x => x.id === achId); if (!a) return;
+    if (!confirm("Archive \"" + a.name + "\"?")) return;
+    a.isArchived = true; renderAchievementList(); scheduleSync(null);
     toast("Achievement archived.", "success");
   }
-
   function createAchievement() {
     const name = document.getElementById("am-name").value.trim();
     if (!name) { toast("Name is required.", "error"); return; }
     const now = new Date().toISOString();
-    const ach = {
-      id: "ach_" + Date.now().toString(36),
-      name: name,
+    campaignState.achievements.push({
+      id: "ach_" + Date.now().toString(36), name,
       description: document.getElementById("am-desc").value.trim(),
       category: document.getElementById("am-cat").value,
-      earnedBy: null,
-      acknowledgedBy: [],
+      earnedBy: null, acknowledgedBy: [],
       rewards: { gold: numVal("am-gold"), lootId: null },
       isArchived: false, glow: false, createdAt: now
-    };
-    campaignState.achievements.push(ach);
+    });
     document.getElementById("am-name").value = "";
     document.getElementById("am-desc").value = "";
     document.getElementById("am-gold").value = "0";
@@ -1413,7 +1720,7 @@
   }
 
   /* ============================================================
-     Modal tab switcher (generic)
+     Modal tab switcher
      ============================================================ */
   function switchModalTab(modalId, btn) {
     const target = btn.dataset.tab;
@@ -1421,10 +1728,6 @@
     modal.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b === btn));
     modal.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("active", p.id === target));
   }
-
-  /* ============================================================
-     Wire up modal field auto-commit (debounced via scheduleSync)
-     ============================================================ */
   function wireCharModalInputs() {
     ["cm-hp-current","cm-hp-max","cm-ac","cm-speed","cm-pp","cm-pi",
      "cm-ds-succ","cm-ds-fail","cm-race","cm-class","cm-level","cm-gold",
@@ -1435,7 +1738,7 @@
   }
 
   /* ============================================================
-     Global ESC closes any open drawer / modal
+     Global ESC handler
      ============================================================ */
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
@@ -1455,7 +1758,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    if (!campaignState) { normalizeState(); }
+    if (!campaignState) normalizeState();
     wireCharModalInputs();
     renderAll();
     setHeartbeat("ok");
