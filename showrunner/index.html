@@ -1,0 +1,2264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Showrunner | Dashboard V5.2</title>
+
+  <script>
+    const WORKER_URL = "https://dmscreen.askozicki.workers.dev";
+    const PIN_STORAGE_KEY = "showrunner_pin_authenticated";
+    let campaignState = null;
+
+    async function initAuth() {
+      document.documentElement.style.display = 'none';
+      let isAuthenticated = false;
+      try { isAuthenticated = localStorage.getItem(PIN_STORAGE_KEY) === "true"; } catch (e) {}
+
+      if (isAuthenticated) {
+        try {
+          const r = await fetch(WORKER_URL);
+          if (r.ok) { campaignState = await r.json(); normalizeState(); document.documentElement.style.display = ''; return; }
+        } catch (e) {}
+      }
+
+      const pin = prompt("ACCESS RESTRICTED: Enter Showrunner PIN.");
+      if (!pin) { window.location.href = "about:blank"; return; }
+
+      try {
+        const r = await fetch(WORKER_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "validate_pin", pin }) });
+        if (r.ok) {
+          const d = await r.json();
+          if (d.valid === true) {
+            try { localStorage.setItem(PIN_STORAGE_KEY, "true"); } catch (e) { try { sessionStorage.setItem(PIN_STORAGE_KEY, "true"); } catch (_) {} }
+            const sr = await fetch(WORKER_URL);
+            if (sr.ok) { campaignState = await sr.json(); normalizeState(); document.documentElement.style.display = ''; return; }
+          }
+        }
+      } catch (e) { console.error("PIN validation failed:", e); }
+
+      alert("Authentication failed. Access denied.");
+      window.location.href = "about:blank";
+    }
+
+    function normalizeState() {
+      if (!campaignState || typeof campaignState !== 'object') campaignState = {};
+      if (typeof campaignState.version !== 'number') campaignState.version = 0;
+      if (!Array.isArray(campaignState.characters)) campaignState.characters = [];
+      if (!Array.isArray(campaignState.achievements)) campaignState.achievements = [];
+      if (!campaignState.campaign || typeof campaignState.campaign !== 'object') campaignState.campaign = {};
+      const c = campaignState.campaign;
+      if (!Array.isArray(c.rooms)) c.rooms = [];
+      if (!Array.isArray(c.npcs)) c.npcs = [];
+      if (!Array.isArray(c.rules)) c.rules = [];
+      if (!Array.isArray(c.timeline)) c.timeline = [];
+      if (typeof c.currentRoom !== 'string' && c.rooms[0]) c.currentRoom = c.rooms[0].id;
+      if (typeof c.sessionNumber !== 'number') c.sessionNumber = 1;
+      if (typeof c.sessionTitle !== 'string') c.sessionTitle = "";
+      if (typeof c.sessionNotes !== 'string') c.sessionNotes = "";
+      if (typeof c.isArchived !== 'boolean') c.isArchived = false;
+      if (!campaignState.loot || typeof campaignState.loot !== 'object') campaignState.loot = { active: [], archived: [] };
+      if (!campaignState.lootTables || typeof campaignState.lootTables !== 'object') campaignState.lootTables = { tiers: { bronze: [], silver: [], gold: [], platinum: [] }, personal: {}, custom: {}, allItems: [] };
+    }
+
+    initAuth().catch(e => { console.error("Auth init error:", e); window.location.href = "about:blank"; });
+  </script>
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='none' stroke='white' stroke-width='4' stroke-linejoin='round' d='M50 5 L90 30 L90 70 L50 95 L10 70 L10 30 Z M50 5 L50 45 M10 30 L50 45 L90 30 M10 70 L50 45 L90 70 M50 95 L50 45'/></svg>">
+
+  <style>
+    :root {
+      --accent: #bb86fc; --danger: #f87171; --success: #4ade80; --warning: #facc15;
+      --glass: rgba(30,30,40,0.7); --glass-border: rgba(255,255,255,0.1);
+      --text: #e0e0e0; --text-muted: #888888; --bg-dark: #0a0e27;
+      --subtle-dark: #1a1f3a; --card-bg: rgba(20,24,48,0.85);
+      --beat: #74b9ff; --encounter: #f87171; --loot: #ffd700;
+      --npc: #4ade80; --quest: #bb86fc; --readaloud: #facc15;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; min-height: 100%;
+      background: radial-gradient(1200px 600px at 80% -10%, rgba(99,102,241,0.10), transparent 60%),
+                  radial-gradient(900px 500px at -10% 110%, rgba(187,134,252,0.08), transparent 60%),
+                  var(--bg-dark);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 14px; overflow-x: hidden;
+    }
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ---- Navbar ---- */
+    .navbar {
+      height: 60px; background: var(--glass);
+      backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 0 1.5rem; display: flex; justify-content: space-between;
+      align-items: center; flex-wrap: wrap; gap: 1rem;
+      position: sticky; top: 0; z-index: 200; flex-shrink: 0;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; letter-spacing: 0.15em; font-size: 1.1rem; color: #fff; text-shadow: 0 0 10px rgba(187,134,252,0.5); }
+    .nav-links { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    .nav-link { color: var(--text); text-decoration: none; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; padding: 6px 12px; border-radius: 20px; border: 1px solid transparent; transition: 0.3s; }
+    .nav-link:hover { background: rgba(255,255,255,0.05); border-color: var(--glass-border); color: #fff; }
+    .nav-link.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(187,134,252,0.2); }
+    .heartbeat { width: 9px; height: 9px; border-radius: 50%; background: var(--success); display: inline-block; box-shadow: 0 0 8px var(--success); transition: all 0.3s ease; }
+    .heartbeat.syncing { background: var(--warning); box-shadow: 0 0 8px var(--warning); animation: pulse 1s infinite; }
+    .heartbeat.error   { background: var(--danger);  box-shadow: 0 0 8px var(--danger); }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.35; } }
+
+    /* ---- Buttons ---- */
+    button { cursor: pointer; font-family: inherit; }
+    .btn-primary { background: var(--accent); color: #100; border: none; padding: 0.6rem 1.2rem; border-radius: 4px; font-weight: bold; transition: all 0.2s ease; }
+    .btn-primary:hover { box-shadow: 0 0 16px rgba(187,134,252,0.4); transform: translateY(-1px); }
+    .btn-secondary { background: var(--glass); color: var(--text); border: 1px solid var(--glass-border); padding: 0.6rem 1.2rem; border-radius: 4px; transition: all 0.2s ease; }
+    .btn-secondary:hover { border-color: var(--text-muted); }
+    .btn-danger { background: transparent; color: var(--danger); border: 1px solid rgba(248,113,113,0.4); padding: 0.4rem 0.8rem; border-radius: 4px; transition: all 0.2s ease; font-size: 0.8rem; }
+    .btn-danger:hover { background: rgba(248,113,113,0.12); }
+    .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--glass-border); padding: 0.45rem 0.7rem; border-radius: 4px; font-size: 0.8rem; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.35rem; }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-ghost.active { border-color: var(--accent); color: var(--accent); background: rgba(187,134,252,0.08); }
+    .btn-icon { background: transparent; color: var(--text-muted); border: 1px solid var(--glass-border); padding: 0.35rem 0.4rem; border-radius: 4px; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; min-width: 28px; min-height: 28px; }
+    .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-icon.active { border-color: var(--accent); color: var(--accent); background: rgba(187,134,252,0.08); }
+    .btn-icon-danger { background: transparent; color: var(--danger); border: 1px solid rgba(248,113,113,0.3); padding: 0.3rem 0.35rem; border-radius: 4px; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; min-width: 26px; min-height: 26px; }
+    .btn-icon-danger:hover { background: rgba(248,113,113,0.12); border-color: var(--danger); }
+
+    /* ---- Inputs ---- */
+    textarea, input[type="number"], input[type="text"], input[type="url"], select {
+      width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.05);
+      border: 1px solid var(--glass-border); color: var(--text);
+      border-radius: 4px; font-family: inherit; font-size: 0.9rem;
+    }
+    textarea:focus, input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(187,134,252,0.18); }
+    label { display: block; font-size: 0.8rem; margin-bottom: 0.25rem; color: var(--text-muted); }
+    .form-group { margin-bottom: 0.9rem; }
+
+    /* ---- Layout ---- */
+    .dashboard-layout { flex: 1; display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; max-width: 1600px; width: 100%; margin: 0 auto; }
+
+    /* ---- Sidebar ---- */
+    .cards-sidebar { width: 230px; flex-shrink: 0; position: sticky; top: 72px; max-height: calc(100vh - 88px); overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; }
+    .sidebar-title { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; letter-spacing: 1px; color: var(--text-muted); padding: 0 0.2rem; }
+    .player-card { background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem; transition: border-color 0.2s ease; }
+    .player-card:hover { border-color: rgba(187,134,252,0.4); }
+    .pc-head { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+    .pc-portrait { width: 42px; height: 42px; border-radius: 6px; object-fit: cover; background: #222; flex-shrink: 0; }
+    .pc-id { flex: 1; min-width: 0; }
+    .pc-name { font-weight: bold; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pc-stats { font-size: 0.72rem; color: var(--text-muted); }
+    .pc-caret { color: var(--text-muted); transition: transform 0.2s ease; display: flex; }
+    .player-card.expanded .pc-caret { transform: rotate(180deg); }
+    .hp-pill { color: var(--success); } .hp-pill.warn { color: var(--warning); } .hp-pill.crit { color: var(--danger); }
+    .pc-body { display: none; margin-top: 0.6rem; border-top: 1px solid var(--glass-border); padding-top: 0.6rem; }
+    .player-card.expanded .pc-body { display: block; }
+    .pc-class { font-size: 0.74rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+    .pc-hp-row { display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0.5rem; }
+    .pc-hp-row input[type="number"] { width: 48px; padding: 0.25rem; text-align: center; }
+    .hp-step { width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--glass-border); background: transparent; color: var(--text); font-size: 0.9rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .hp-step:hover { border-color: var(--accent); color: var(--accent); }
+    .cond-title { font-size: 0.7rem; letter-spacing: 1px; color: var(--text-muted); margin: 0.3rem 0; }
+    .cond-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.15rem 0.4rem; }
+    .cond-grid label { display: flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; color: var(--text); margin: 0; cursor: pointer; }
+    .cond-grid input { width: auto; margin: 0; accent-color: var(--accent); }
+    .pc-actions { display: flex; gap: 0.4rem; margin-top: 0.6rem; }
+    .pc-actions button { flex: 1; }
+    .sidebar-actions { margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.4rem; }
+    .sidebar-actions .btn-ghost { text-align: left; }
+
+    /* ---- Main ---- */
+    .main-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1rem; }
+    .section-card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 10px; overflow: hidden; }
+    .section-head { display: flex; align-items: center; gap: 0.6rem; padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--glass-border); background: rgba(255,255,255,0.02); position: relative; }
+    .section-head h2 { font-size: 1.05rem; letter-spacing: 1px; margin: 0; }
+    .section-head .meta { color: var(--text-muted); font-size: 0.8rem; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 0.3rem; }
+    .section-head .meta:hover { color: var(--accent); }
+    .session-num-input { width: 52px !important; padding: 0.2rem 0.3rem !important; font-size: 0.85rem !important; text-align: center; }
+    .section-head .spacer { flex: 1; }
+    .section-body { padding: 1.1rem; }
+    .section-card.collapsed .section-body { display: none; }
+
+    .room-picker { display: flex; align-items: center; gap: 0.5rem; }
+    .room-picker select { width: auto; min-width: 140px; }
+    .rendered { line-height: 1.6; font-size: 0.92rem; min-height: 120px; }
+    .rendered h4 { color: var(--accent); font-size: 0.85rem; letter-spacing: 1.5px; margin: 1rem 0 0.35rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--glass-border); }
+    .rendered h4:first-child { margin-top: 0; }
+    .rendered p { margin: 0 0 0.6rem; white-space: pre-wrap; }
+    .rendered .empty-hint { color: var(--text-muted); font-style: italic; }
+    .editor-area textarea { min-height: 240px; resize: vertical; line-height: 1.5; }
+    .editor-actions { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
+    .hidden { display: none !important; }
+    .save-state { font-size: 0.75rem; color: var(--text-muted); }
+    .save-state.saving { color: var(--warning); }
+    .save-state.saved  { color: var(--success); }
+    .save-state.error  { color: var(--danger); }
+    .empty-hint { color: var(--text-muted); font-style: italic; padding: 0.5rem 0; }
+
+    /* ================================================================
+       SESSION PREP
+       ================================================================ */
+    .prep-toolbar { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.8rem; flex-wrap: wrap; }
+    .prep-toolbar-sep { width: 1px; height: 20px; background: var(--glass-border); margin: 0 0.15rem; flex-shrink: 0; }
+    .prep-empty { color: var(--text-muted); font-style: italic; padding: 0.5rem 0; }
+
+    /* Accordion */
+    .accordion { display: flex; flex-direction: column; gap: 0.4rem; }
+    .acc-section { border-radius: 8px; overflow: hidden; background: rgba(255,255,255,0.02); }
+    .acc-section[data-level="1"] { border: 1px solid var(--glass-border); }
+    .acc-section[data-level="2"] { border: 1px solid rgba(116,185,255,0.25); margin-left: 1.4rem; }
+    .acc-section[data-level="3"] { border: 1px solid rgba(74,222,128,0.25);  margin-left: 2.8rem; }
+    .acc-section[data-level="4"] { border: 1px solid rgba(250,204,21,0.25);  margin-left: 4.2rem; }
+    .acc-head { display: flex; align-items: center; gap: 0.4rem; padding: 0.6rem 0.75rem; cursor: pointer; user-select: none; transition: background 0.15s ease; }
+    .acc-head:hover { background: rgba(255,255,255,0.04); }
+    .acc-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .acc-caret { color: var(--text-muted); transition: transform 0.2s ease; flex-shrink: 0; }
+    .acc-section.open > .acc-head .acc-caret { transform: rotate(90deg); }
+    .acc-title-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold; font-size: 0.88rem; letter-spacing: 0.3px; }
+    .acc-level-chip { font-size: 0.56rem; letter-spacing: 1px; font-weight: bold; border-radius: 3px; padding: 0.05rem 0.3rem; flex-shrink: 0; opacity: 0.55; }
+    .acc-section[data-level="1"] .acc-level-chip { color: var(--accent);    border: 1px solid var(--accent); }
+    .acc-section[data-level="2"] .acc-level-chip { color: var(--beat);      border: 1px solid var(--beat); }
+    .acc-section[data-level="3"] .acc-level-chip { color: var(--npc);       border: 1px solid var(--npc); }
+    .acc-section[data-level="4"] .acc-level-chip { color: var(--readaloud); border: 1px solid var(--readaloud); }
+    .acc-badge { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; border-radius: 10px; padding: 0.1rem 0.55rem; flex-shrink: 0; border: 1px solid currentColor; }
+    .acc-badge.beat      { color: var(--beat); }
+    .acc-badge.encounter { color: var(--encounter); }
+    .acc-badge.loot      { color: var(--loot); }
+    .acc-badge.npc       { color: var(--npc); }
+    .acc-badge.quest     { color: var(--quest); }
+    .acc-badge.readaloud { color: var(--readaloud); }
+    .acc-body { display: none; padding: 0.5rem 0.9rem 0.7rem 1rem; border-top: 1px solid rgba(255,255,255,0.04); }
+    .acc-body-text { line-height: 1.6; font-size: 0.9rem; white-space: pre-wrap; color: rgba(224,224,224,0.88); padding-bottom: 0.5rem; }
+    .acc-children { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.4rem; }
+    .acc-section.open > .acc-body { display: block; }
+
+    /* Inline section editor */
+    #inline-editor-container { border: 1px solid var(--glass-border); border-radius: 8px; background: rgba(255,255,255,0.02); padding: 0.9rem; }
+    .inline-editor-header { display: flex; align-items: flex-start; gap: 0.6rem; margin-bottom: 0.7rem; }
+    .inline-editor-header .form-group { flex: 1; margin-bottom: 0; }
+    .inline-editor-title { font-weight: bold; flex: 1; color: var(--accent); font-size: 0.92rem; }
+    .inline-editor-close { background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; padding: 0.2rem; margin-top: 1.6rem; flex-shrink: 0; }
+    .inline-editor-close:hover { color: var(--danger); }
+    #inline-body-ta { min-height: 200px; resize: vertical; line-height: 1.55; font-family: 'Courier New', Courier, monospace; font-size: 0.88rem; }
+    .acc-body-text strong { font-weight: bold; color: #fff; }
+    .acc-body-text mark { background: rgba(250,204,21,0.28); color: var(--warning); padding: 0 0.2rem; border-radius: 2px; }
+    .acc-body-text ul { margin: 0.4rem 0 0.4rem 1.2rem; }
+    .acc-body-text li { margin-bottom: 0.2rem; line-height: 1.5; }
+    .acc-body-text em { font-style: italic; color: var(--text-muted); }
+    /* Format toolbar */
+    #format-toolbar { display: flex; gap: 0.4rem; margin-bottom: 0.55rem; flex-wrap: wrap; }
+    .fmt-btn { padding: 0.3rem 0.65rem; font-size: 0.82rem; min-width: 36px; }
+    .fmt-btn:active { transform: scale(0.95); }
+    /* Loot edit panel */
+    #ach-loot-panel { z-index: 960; width: min(380px, 94vw); overflow-y: auto; }
+    /* Session title row */
+    .session-title-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--glass-border); flex-wrap: wrap; }
+    .session-title-row input { flex: 1; min-width: 160px; font-size: 0.9rem; }
+    .session-title-row input[readonly] { opacity: 0.65; cursor: default; background: transparent; border-color: transparent; }
+    .session-title-row input[readonly]:hover { border-color: var(--glass-border); }
+    #session-title-actions { display: none; gap: 0.4rem; align-items: center; }
+    .session-title-badge { font-size: 0.68rem; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; white-space: nowrap; }
+    /* Archived session banner */
+    .archived-banner { background: rgba(250,204,21,0.08); border: 1px solid rgba(250,204,21,0.25); border-radius: 6px; padding: 0.5rem 0.9rem; font-size: 0.82rem; color: var(--warning); display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.85rem; }
+    .archived-banner button { background: none; border: 1px solid rgba(250,204,21,0.4); color: var(--warning); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.78rem; cursor: pointer; }
+    .archived-banner button:hover { background: rgba(250,204,21,0.1); }
+
+    /* Outline panel */
+    .outline-panel {
+      position: fixed; top: 72px; left: 1rem; width: 260px; max-height: calc(100vh - 100px);
+      background: rgba(10,14,39,0.97); border: 1px solid var(--glass-border);
+      border-radius: 10px; overflow: hidden; z-index: 150;
+      box-shadow: 4px 4px 24px rgba(0,0,0,0.5);
+      display: flex; flex-direction: column; transition: opacity 0.2s, transform 0.2s;
+    }
+    .outline-panel.hidden { opacity: 0; pointer-events: none; transform: translateX(-8px); }
+    .outline-hd { font-size: 0.68rem; letter-spacing: 1.5px; color: var(--text-muted); text-transform: uppercase; padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--glass-border); flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
+    .outline-scroll { overflow-y: auto; flex: 1; padding: 0.5rem 0; }
+    .outline-node { display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.7rem; cursor: pointer; font-size: 0.82rem; border-left: 3px solid transparent; transition: all 0.12s ease; user-select: none; }
+    .outline-node:hover { background: rgba(255,255,255,0.05); }
+    .outline-node.active { background: rgba(187,134,252,0.12); border-left-color: var(--accent); }
+    .outline-node[data-level="1"] { padding-left: 0.7rem; }
+    .outline-node[data-level="2"] { padding-left: 1.6rem; }
+    .outline-node[data-level="3"] { padding-left: 2.5rem; }
+    .outline-node[data-level="4"] { padding-left: 3.4rem; }
+    .outline-node-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .outline-node[data-level="1"] .outline-node-dot { background: var(--accent); }
+    .outline-node[data-level="2"] .outline-node-dot { background: var(--beat); }
+    .outline-node[data-level="3"] .outline-node-dot { background: var(--npc); }
+    .outline-node[data-level="4"] .outline-node-dot { background: var(--readaloud); }
+    .outline-node-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .outline-node-toggle { color: var(--text-muted); flex-shrink: 0; transition: transform 0.15s ease; display: none; }
+    .outline-node.has-children .outline-node-toggle { display: inline-flex; }
+    .outline-node.collapsed-in-outline .outline-node-toggle { transform: rotate(-90deg); }
+
+    /* Raw edit toolbar */
+    .raw-toolbar { display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.6rem; margin-bottom: 0.6rem; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 6px; flex-wrap: wrap; }
+    .raw-toolbar-label { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.5px; }
+
+    /* Section-head overflow menu */
+    .section-head-menu-btn { display: none; }
+    #section-head-menu {
+      position: absolute; top: calc(100% + 4px); right: 0.5rem; z-index: 300;
+      background: var(--subtle-dark); border: 1px solid var(--glass-border);
+      border-radius: 8px; min-width: 170px; box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      overflow: hidden;
+    }
+    .menu-item { display: flex; align-items: center; gap: 0.5rem; width: 100%; padding: 0.65rem 0.9rem; background: none; border: none; color: var(--text); font-size: 0.85rem; text-align: left; cursor: pointer; transition: background 0.15s; }
+    .menu-item:hover { background: rgba(255,255,255,0.06); }
+    .menu-item + .menu-item { border-top: 1px solid var(--glass-border); }
+
+    /* Drawers */
+    .drawer-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 900; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; backdrop-filter: blur(2px); }
+    .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+    .drawer { position: fixed; top: 0; bottom: 0; width: min(480px, 94vw); background: var(--subtle-dark); border-left: 1px solid var(--glass-border); z-index: 950; display: flex; flex-direction: column; box-shadow: -12px 0 40px rgba(0,0,0,0.5); transition: transform 0.28s ease; }
+    .drawer.right { right: 0; transform: translateX(100%); }
+    .drawer.left  { left: 0; right: auto; border-left: none; border-right: 1px solid var(--glass-border); box-shadow: 12px 0 40px rgba(0,0,0,0.5); transform: translateX(-100%); }
+    .drawer.open  { transform: translateX(0); }
+    .drawer-head  { display: flex; align-items: center; gap: 0.6rem; padding: 1rem 1.2rem; border-bottom: 1px solid var(--glass-border); flex-shrink: 0; }
+    .drawer-head h2 { font-size: 1.05rem; margin: 0; letter-spacing: 1px; flex: 1; }
+    .drawer-close { background: none; border: none; color: var(--text); font-size: 1.5rem; line-height: 1; padding: 0 0.2rem; }
+    .drawer-close:hover { color: var(--danger); }
+    .drawer-body { padding: 1.2rem; overflow-y: auto; flex: 1; }
+
+    /* Drawer tabs */
+    .drawer-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--glass-border); flex-shrink: 0; }
+    .drawer-tab { flex: 1; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); padding: 0.65rem 0.5rem; font-size: 0.82rem; letter-spacing: 0.5px; text-transform: uppercase; transition: all 0.2s ease; }
+    .drawer-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .drawer-tab-panel { display: none; padding: 1rem 1.2rem; overflow-y: auto; flex: 1; }
+    .drawer-tab-panel.active { display: block; }
+
+    /* Achievement entries */
+    .ach-entry { border: 1px solid var(--glass-border); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.7rem; transition: border-color 0.2s; }
+    .ach-entry.status-notified  { border-color: rgba(250,204,21,0.45); }
+    .ach-entry.status-awarded   { border-color: rgba(74,222,128,0.4); }
+    .ach-entry.status-archived  { border-color: rgba(255,255,255,0.08); opacity: 0.7; }
+    .ach-status-badge { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.6rem; letter-spacing: 1px; font-weight: bold; text-transform: uppercase; border-radius: 10px; padding: 0.15rem 0.55rem; border: 1px solid currentColor; margin-bottom: 0.45rem; }
+    .ach-status-badge.notified  { color: var(--warning); }
+    .ach-status-badge.awarded   { color: var(--success); }
+    .ach-status-badge.archived  { color: var(--text-muted); }
+    .ach-entry .ach-name { font-weight: bold; font-size: 0.9rem; display: block; margin-bottom: 0.2rem; }
+    .ach-entry .ach-desc { font-size: 0.8rem; color: var(--text-muted); margin: 0.3rem 0; line-height: 1.45; }
+    .ach-entry .ach-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px solid var(--glass-border); }
+    .ach-loot-tag { font-size: 0.68rem; color: var(--loot); border: 1px solid rgba(255,215,0,0.3); border-radius: 4px; padding: 0.1rem 0.45rem; display: inline-block; margin-top: 0.25rem; }
+    .scope-tag { font-size: 0.68rem; color: var(--text-muted); margin-top: 0.25rem; }
+    /* Acknowledge grid */
+    .ach-ack-grid { margin: 0.5rem 0 0; padding: 0.5rem; border: 1px dashed var(--glass-border); border-radius: 6px; display: flex; flex-direction: column; gap: 0.3rem; }
+    .ach-ack-row { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; }
+    .ach-ack-row input[type="checkbox"] { width: auto; margin: 0; accent-color: var(--success); }
+    .ach-ack-row .ack-name { flex: 1; }
+    .ach-ack-row .ack-status { font-size: 0.68rem; color: var(--text-muted); }
+    .ach-ack-row .ack-status.seen { color: var(--success); }
+    /* Loot details panel */
+    .ach-loot-panel { margin-top: 0.55rem; border: 1px solid rgba(255,215,0,0.2); border-radius: 6px; overflow: hidden; }
+    .ach-loot-toggle { width: 100%; background: rgba(255,215,0,0.05); border: none; color: var(--loot); padding: 0.45rem 0.7rem; font-size: 0.78rem; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-family: inherit; transition: background 0.15s; }
+    .ach-loot-toggle:hover { background: rgba(255,215,0,0.1); }
+    .ach-loot-toggle .loot-caret { transition: transform 0.2s; margin-left: auto; }
+    .ach-loot-toggle.open .loot-caret { transform: rotate(90deg); }
+    .ach-loot-body { display: none; padding: 0.6rem 0.7rem; background: rgba(0,0,0,0.2); }
+    .ach-loot-body.open { display: block; }
+    .ach-loot-text { font-family: monospace; font-size: 0.78rem; line-height: 1.7; color: rgba(224,224,224,0.9); white-space: pre-wrap; word-break: break-word; }
+    .ach-loot-copy-row { display: flex; gap: 0.4rem; margin-top: 0.55rem; flex-wrap: wrap; }
+    .btn-copy { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.3); color: var(--loot); padding: 0.3rem 0.65rem; border-radius: 4px; font-size: 0.76rem; cursor: pointer; font-family: inherit; transition: background 0.15s; display: inline-flex; align-items: center; gap: 0.3rem; }
+    .btn-copy:hover { background: rgba(255,215,0,0.18); }
+    /* Assign grid (re-used for assign-by-char) */
+    .ach-assign-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.2rem 0.5rem; margin: 0.5rem 0; padding: 0.5rem; border: 1px dashed var(--glass-border); border-radius: 6px; }
+    .ach-assign-grid label { display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; color: var(--text); margin: 0; cursor: pointer; }
+    .ach-assign-grid input { width: auto; margin: 0; accent-color: var(--accent); }
+    .loot-attach-box { border: 1px dashed var(--glass-border); border-radius: 6px; padding: 0.7rem; background: rgba(255,255,255,0.02); margin-bottom: 0.9rem; }
+    .loot-attach-box label.toggle-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.82rem; color: var(--text); margin: 0; }
+    .loot-attach-box input[type="checkbox"] { width: auto; margin: 0; accent-color: var(--accent); }
+
+    /* Bulk preview */
+    .bulk-preview-box { background: rgba(74,222,128,0.06); border: 1px solid rgba(74,222,128,0.2); border-radius: 6px; padding: 0.7rem; margin: 0.7rem 0; max-height: 280px; overflow-y: auto; }
+    .bulk-preview-item { padding: 0.45rem 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.82rem; }
+    .bulk-preview-item:last-child { border-bottom: none; }
+    .bulk-preview-item strong { color: var(--accent); }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(2px); }
+    .modal-overlay.hidden { display: none; }
+    .modal-panel { background: var(--subtle-dark); border: 1px solid var(--glass-border); border-radius: 10px; width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+    .modal-head { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.2rem; border-bottom: 1px solid var(--glass-border); position: sticky; top: 0; background: var(--subtle-dark); z-index: 2; }
+    .modal-head h2 { font-size: 1.1rem; margin: 0; }
+    .modal-close { background: none; border: none; color: var(--text); font-size: 1.4rem; line-height: 1; padding: 0 0.2rem; }
+    .modal-close:hover { color: var(--danger); }
+    .modal-body { padding: 1.2rem; }
+    .modal-tabs { display: flex; gap: 0.25rem; padding: 0 1.2rem; border-bottom: 1px solid var(--glass-border); flex-wrap: wrap; }
+    .tab-btn { background: none; border: none; color: var(--text-muted); padding: 0.6rem 0.9rem; border-bottom: 2px solid transparent; transition: all 0.2s ease; }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-panel { display: none; } .tab-panel.active { display: block; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .stat-line { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.3rem 0; }
+    .stat-line span.k { color: var(--text-muted); font-size: 0.85rem; }
+    .stat-line input { width: 90px; text-align: center; }
+    .inv-item { border: 1px solid var(--glass-border); border-radius: 6px; padding: 0.6rem; margin-bottom: 0.5rem; }
+    .inv-item .inv-top { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+    .inv-item .inv-name { font-weight: bold; font-size: 0.9rem; }
+    .inv-item .inv-meta { font-size: 0.72rem; color: var(--text-muted); text-transform: capitalize; }
+    .inv-item .inv-desc { font-size: 0.78rem; color: var(--text); margin-top: 0.35rem; line-height: 1.4; }
+
+    /* Toasts */
+    #toast-container { position: fixed; bottom: 1rem; right: 1rem; z-index: 2000; display: flex; flex-direction: column; gap: 0.5rem; }
+    .toast { background: var(--subtle-dark); border: 1px solid var(--glass-border); border-left: 3px solid var(--accent); color: var(--text); padding: 0.7rem 1rem; border-radius: 4px; font-size: 0.85rem; animation: slideIn 0.25s ease; max-width: 320px; }
+    .toast.success { border-left-color: var(--success); }
+    .toast.error   { border-left-color: var(--danger); }
+    .toast.warn    { border-left-color: var(--warning); }
+    @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* ================================================================
+       RESPONSIVE — 820px layout reflow
+       ================================================================ */
+    @media (max-width: 820px) {
+      .dashboard-layout { flex-direction: column; }
+      .cards-sidebar { width: 100%; position: static; max-height: none; flex-direction: row; flex-wrap: wrap; }
+      .cards-sidebar .player-card { flex: 1 1 160px; }
+      .sidebar-title, .sidebar-actions { width: 100%; }
+      .sidebar-actions { flex-direction: row; flex-wrap: wrap; }
+      .sidebar-actions .btn-ghost { flex: 1 1 auto; }
+      .outline-panel { left: 0.5rem; width: 220px; }
+    }
+
+    /* ================================================================
+       RESPONSIVE — 480px density reduction + bottom-sheet outline
+       ================================================================ */
+    @media (max-width: 480px) {
+      .section-head { padding: 0.6rem 0.75rem; gap: 0.4rem; }
+      .section-head h2 { font-size: 0.92rem; }
+      .section-head .meta { font-size: 0.7rem; }
+
+      /* Hide desktop-only section head buttons; show ••• menu */
+      .section-head-desktop { display: none !important; }
+      .section-head-menu-btn { display: inline-flex !important; }
+
+      .acc-head { padding: 0.5rem 0.6rem; gap: 0.3rem; }
+      .acc-level-chip { display: none; }
+      .acc-title-text { font-size: 0.84rem; }
+      .btn-icon { min-width: 30px; min-height: 30px; }
+
+      .raw-toolbar-label { display: none; }
+      .prep-toolbar-sep { display: none; }
+
+      /* Outline panel: bottom sheet */
+      .outline-panel {
+        position: fixed; bottom: 0; left: 0; right: 0; top: auto;
+        width: 100%; max-height: 65vh; border-radius: 16px 16px 0 0;
+        border-bottom: none; box-shadow: 0 -6px 28px rgba(0,0,0,0.5);
+        transform: translateY(0); transition: transform 0.3s ease, opacity 0.2s;
+      }
+      .outline-panel.hidden { transform: translateY(100%); opacity: 0; }
+      .outline-scroll { max-height: calc(65vh - 52px); }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" width="22" height="22" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      SHOWRUNNER // DASHBOARD V5.2
+      <span id="sync-heartbeat" class="heartbeat" title="Live database connection"></span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link active">Dashboard</a>
+      <a href="loot.html" class="nav-link">Loot</a>
+      <a href="data-forge.html" class="nav-link">Data Forge</a>
+    </div>
+  </nav>
+
+  <div class="dashboard-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="cards-sidebar">
+      <div class="sidebar-title"><span>PARTY</span><span class="meta" id="party-count"></span></div>
+      <div id="cards-list"></div>
+      <div class="sidebar-actions">
+        <!-- Achievements button — SVG trophy icon -->
+        <button class="btn-ghost" onclick="openAchievementDrawer()">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+          Achievements
+        </button>
+        <!-- Refresh button — SVG refresh icon -->
+        <button class="btn-ghost" onclick="refreshFromKV()">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Refresh State
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+      <!-- SESSION PREP -->
+      <section class="section-card" id="prep-card">
+        <div class="section-head">
+          <h2>SESSION PREP</h2>
+          <!-- Clickable session number (Phase 4) -->
+          <span class="meta" onclick="editSessionNumber()" title="Click to edit session number">
+            Session #<span id="session-num-label">1</span>
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </span>
+          <input type="number" id="session-num-input" class="hidden session-num-input" min="1" max="999"
+            onblur="saveSessionNumber()" onkeydown="if(event.key==='Enter')saveSessionNumber();if(event.key==='Escape')cancelSessionNumber()">
+          <span class="spacer"></span>
+          <span class="save-state" id="notes-save-state"></span>
+          <!-- Desktop-only buttons -->
+          <button class="btn-ghost section-head-desktop" onclick="openRoomDrawer()" title="Room reference">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            Rooms
+          </button>
+          <button class="btn-ghost section-head-desktop" id="notes-raw-btn" onclick="toggleRawEdit()">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Raw
+          </button>
+          <!-- Mobile overflow menu button -->
+          <button class="btn-icon section-head-menu-btn" onclick="toggleSectionHeadMenu()" title="More options" id="section-menu-toggle">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+          </button>
+          <!-- Collapse button -->
+          <button class="btn-icon" onclick="toggleCollapse('prep-card')" title="Collapse section">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+          </button>
+          <!-- Mobile dropdown menu -->
+          <div id="section-head-menu" class="hidden">
+            <button class="menu-item" onclick="openRoomDrawer();closeSectionHeadMenu()">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              Rooms
+            </button>
+            <button class="menu-item" onclick="toggleRawEdit();closeSectionHeadMenu()">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              Raw Edit
+            </button>
+          </div>
+        </div><!-- end section-head -->
+
+        <div class="section-body">
+
+          <!-- Session title row -->
+          <div class="session-title-row" id="session-title-row">
+            <span class="session-title-badge">Session Title</span>
+            <input type="text" id="session-title-input" placeholder="e.g., The Collapse Begins"
+              readonly style="flex:1;min-width:160px;" />
+            <button class="btn-ghost" id="session-title-edit-btn" onclick="startSessionTitleEdit()" style="white-space:nowrap;flex-shrink:0;">Edit</button>
+            <div id="session-title-actions" style="display:none;gap:0.4rem;align-items:center;flex-shrink:0;">
+              <button class="btn-primary" onclick="saveSessionTitle()" style="padding:0.4rem 0.8rem;font-size:0.8rem;">Save</button>
+              <button class="btn-secondary" onclick="cancelSessionTitleEdit()" style="padding:0.4rem 0.8rem;font-size:0.8rem;">Cancel</button>
+            </div>
+          </div>
+          <!-- Archived session banner (hidden by default) -->
+          <div class="archived-banner hidden" id="archived-banner">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+            This session is archived.
+            <button onclick="unarchiveCurrentSession()">Unarchive</button>
+          </div>
+
+          <!-- View-mode toolbar -->
+          <div class="prep-toolbar" id="prep-toolbar">
+            <button class="btn-ghost" onclick="setAllSections(true)">Expand All</button>
+            <button class="btn-ghost" onclick="setAllSections(false)">Collapse All</button>
+            <button class="btn-ghost" id="show-headers-btn" onclick="toggleShowAllHeaders()" title="Show all headers, collapse body text">
+              Headers Only
+            </button>
+            <div class="prep-toolbar-sep"></div>
+            <button class="btn-ghost" id="archive-session-btn" onclick="archiveCurrentSession()" title="Archive this session">
+              Archive Session
+            </button>
+            <div class="prep-toolbar-sep"></div>
+            <!-- Outline eye toggle -->
+            <button class="btn-icon" id="outline-toggle-btn" onclick="toggleOutlineView()" title="Show/hide structure outline">
+              <svg id="outline-icon-show" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <svg id="outline-icon-hide" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                <path d="M10.73 5.08A11 11 0 0 1 12 5c7 0 11 7 11 7a13.2 13.2 0 0 1-1.67 2.27"/>
+                <path d="M6.61 6.61A13.5 13.5 0 0 0 1 12s4 7 11 7a10.9 10.9 0 0 0 5.38-1.38"/>
+                <line x1="2" y1="2" x2="22" y2="22"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Raw-edit toolbar (shown only in raw mode) -->
+          <div class="raw-toolbar hidden" id="raw-toolbar">
+            <span class="raw-toolbar-label">HEADER</span>
+            <button class="btn-icon" onclick="shiftHeaderLevel(-1)" title="Outdent / promote">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <button class="btn-icon" onclick="shiftHeaderLevel(1)" title="Indent / demote">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <div class="prep-toolbar-sep"></div>
+            <button class="btn-icon" onclick="applyHeaderFormatting()" title="Make selection a header">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h8m-8 6h16"/></svg>
+            </button>
+          </div>
+
+          <!-- View container: accordion -->
+          <div id="prep-view-container">
+            <div class="accordion" id="prep-accordion"></div>
+          </div>
+
+          <!-- Inline section editor (Mode A) -->
+          <div id="inline-editor-container" class="hidden">
+            <div id="inline-editor-section"></div>
+          </div>
+
+          <!-- Raw full editor (Mode B) -->
+          <div id="raw-editor-container" class="hidden">
+            <textarea id="notes-textarea" placeholder="[1] BEAT 1 — LOOTING THE GOLDEN CARRION&#10;Body text here.&#10;[2] ENCOUNTER MECHANICS&#10;[3] HAZARDS&#10;DC 12 CON save or poisoned.&#10;[2] WINNING LOOT"></textarea>
+            <div class="editor-actions">
+              <button class="btn-primary" onclick="saveRawEdit()">Save</button>
+              <button class="btn-secondary" onclick="cancelRawEdit()">Cancel</button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- OUTLINE PANEL -->
+  <div id="outline-panel" class="outline-panel hidden" role="navigation" aria-label="Session prep structure">
+    <div class="outline-hd">
+      <span>STRUCTURE</span>
+      <span id="outline-count" style="font-size:0.65rem;"></span>
+    </div>
+    <div class="outline-scroll" id="outline-tree"></div>
+  </div>
+
+  <!-- ROOM DRAWER -->
+  <div id="room-backdrop" class="drawer-backdrop" onclick="closeRoomDrawer()"></div>
+  <aside id="room-drawer" class="drawer right" role="dialog" aria-label="Room reference" aria-modal="true">
+    <div class="drawer-head">
+      <h2>ROOM</h2>
+      <div class="room-picker">
+        <select id="room-select" aria-label="Select room" onchange="onRoomChange(this.value)"></select>
+      </div>
+      <span class="save-state" id="room-save-state"></span>
+      <button class="btn-ghost" id="room-edit-btn" onclick="toggleRoomEdit()">Edit</button>
+      <button class="drawer-close" onclick="closeRoomDrawer()" aria-label="Close">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <div class="rendered" id="room-display"></div>
+      <div class="editor-area hidden" id="room-editor">
+        <textarea id="room-textarea" placeholder="Room name on first line.&#10;ALL-CAPS SECTION: headers below."></textarea>
+        <div class="editor-actions">
+          <button class="btn-primary" onclick="saveRoomEdit()">Save</button>
+          <button class="btn-secondary" onclick="cancelRoomEdit()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ACHIEVEMENT DRAWER -->
+  <div id="ach-backdrop" class="drawer-backdrop" onclick="closeAchievementDrawer()"></div>
+  <aside id="ach-drawer" class="drawer left" role="dialog" aria-label="Achievements" aria-modal="true">
+    <div class="drawer-head">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+      <h2>ACHIEVEMENTS</h2>
+      <button class="drawer-close" onclick="closeAchievementDrawer()" aria-label="Close">&times;</button>
+    </div>
+    <!-- Tab bar -->
+    <div class="drawer-tabs">
+      <button class="drawer-tab active" id="ach-tab-btn-active"   onclick="switchAchTab('active')">Active</button>
+      <button class="drawer-tab"        id="ach-tab-btn-archived" onclick="switchAchTab('archived')">Archived</button>
+      <button class="drawer-tab"        id="ach-tab-btn-single"   onclick="switchAchTab('single')">Add</button>
+      <button class="drawer-tab"        id="ach-tab-btn-bulk"     onclick="switchAchTab('bulk')">Import</button>
+    </div>
+    <!-- Tab: Active -->
+    <div class="drawer-tab-panel active" id="ach-tab-active">
+      <div id="ach-list"></div>
+    </div>
+    <!-- Tab: Archived -->
+    <div class="drawer-tab-panel" id="ach-tab-archived">
+      <div id="ach-archived-list"></div>
+    </div>
+    <!-- Tab: Add Single -->
+    <div class="drawer-tab-panel" id="ach-tab-single">
+      <div class="form-group"><label>Achievement Name</label><input type="text" id="am-name" placeholder="e.g., Acoustic CC"></div>
+      <div class="form-group"><label>Description / Trigger</label><textarea id="am-desc" style="min-height:80px;" placeholder="What happened..."></textarea></div>
+      <div class="form-group">
+        <label>Assign to Character(s)</label>
+        <div id="am-char-checks" style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem 0.5rem;padding:0.4rem 0;"></div>
+      </div>
+      <div class="form-group"><label>Gold Reward</label><input type="number" id="am-gold" value="0"></div>
+      <!-- Loot attachment -->
+      <div class="loot-attach-box">
+        <label class="toggle-label"><input type="checkbox" id="am-attach-loot" onchange="toggleLootForm()">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--loot)"><path d="m12 8-9.04 9.06a2.82 2.82 0 1 0 3.98 3.98L16 12"/><path d="M20 12a2 2 0 1 0-4 0c0 1.1 1 3 2 4s2-2.9 2-4z"/></svg>
+          Attach Loot Item
+        </label>
+        <div id="am-loot-form" class="hidden" style="margin-top:0.7rem;">
+          <div class="form-group"><label>Item Name</label><input type="text" id="am-loot-name" placeholder="e.g., Pan Flute of the Power Ballad"></div>
+          <div class="form-group"><label>Description</label><textarea id="am-loot-desc" style="min-height:55px;" placeholder="A set of bamboo pipes..."></textarea></div>
+          <div class="form-group"><label>Effect / Mechanics</label><textarea id="am-loot-effect" style="min-height:55px;" placeholder="Once per day, when you cast..."></textarea></div>
+        </div>
+      </div>
+      <div class="editor-actions">
+        <button class="btn-primary" onclick="createSingleAchievement()">Create</button>
+        <button class="btn-secondary" onclick="resetAchForm()">Clear</button>
+      </div>
+    </div>
+    <!-- Tab: Bulk Import -->
+    <div class="drawer-tab-panel" id="ach-tab-bulk">
+      <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.7rem;line-height:1.5;">Paste your achievement document. Character names on their own line (ALL CAPS), then numbered achievements with Trigger:, Reward:, Description:, Effect: fields.</p>
+      <div class="form-group"><label>Paste Document</label><textarea id="bulk-paste-area" style="min-height:180px;font-family:monospace;font-size:0.82rem;" placeholder="HANK&#10;1. &quot;The Bleeding-Heart Butcher&quot;&#10;Trigger: ...&#10;Reward: Spectral Union Rep&#39;s Business Card&#10;Description: ...&#10;Effect: ..."></textarea></div>
+      <div id="bulk-preview" class="hidden">
+        <div class="bulk-preview-box" id="bulk-preview-list"></div>
+      </div>
+      <div class="editor-actions" style="flex-wrap:wrap;">
+        <button class="btn-secondary" onclick="parseBulkAchievements()">Parse &amp; Preview</button>
+        <button class="btn-primary hidden" id="bulk-import-btn" onclick="importBulkAchievements()">Import All</button>
+        <button class="btn-ghost" onclick="resetBulkForm()">Clear</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- LOOT EDIT PANEL (slides in from right, above ach-drawer) -->
+  <aside id="ach-loot-panel" class="drawer right" role="dialog" aria-label="Edit Achievement Loot" aria-modal="true">
+    <div class="drawer-head">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--loot)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 8-9.04 9.06a2.82 2.82 0 1 0 3.98 3.98L16 12"/><path d="M20 12a2 2 0 1 0-4 0c0 1.1 1 3 2 4s2-2.9 2-4z"/></svg>
+      <h2 id="ach-loot-panel-title" style="color:var(--loot);font-size:0.95rem;">EDIT LOOT</h2>
+      <button class="drawer-close" onclick="closeLootPanel()" aria-label="Close">&times;</button>
+    </div>
+    <div class="drawer-body" style="display:flex;flex-direction:column;gap:0.9rem;">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" id="loot-edit-name" placeholder="Item name..." />
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select id="loot-edit-type">
+          <option value="wondrous">Wondrous Item</option>
+          <option value="weapon">Weapon</option>
+          <option value="armor">Armor</option>
+          <option value="accessory">Accessory</option>
+          <option value="consumable">Consumable</option>
+          <option value="currency">Currency</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Rarity</label>
+        <select id="loot-edit-rarity">
+          <option value="common">Common</option>
+          <option value="uncommon">Uncommon</option>
+          <option value="rare">Rare</option>
+          <option value="very rare">Very Rare</option>
+          <option value="legendary">Legendary</option>
+          <option value="artifact">Artifact</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="loot-edit-desc" placeholder="What is this item?" style="min-height:90px;resize:vertical;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Effect / Mechanics</label>
+        <textarea id="loot-edit-effect" placeholder="How does it work?" style="min-height:80px;resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex;gap:0.6rem;padding-top:0.5rem;border-top:1px solid var(--glass-border);margin-top:auto;">
+        <button class="btn-primary" onclick="saveLootPanel()" style="flex:1;">Save</button>
+        <button class="btn-secondary" onclick="closeLootPanel()" style="flex:1;">Cancel</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CHARACTER MODAL -->
+  <div id="char-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeCharModal()">
+    <div class="modal-panel">
+      <div class="modal-head">
+        <h2 id="cm-name">Character</h2>
+        <button class="modal-close" onclick="closeCharModal()">&times;</button>
+      </div>
+      <div class="modal-tabs">
+        <button class="tab-btn active" data-tab="cm-vitals" onclick="switchModalTab('char-modal',this)">Vitals</button>
+        <button class="tab-btn" data-tab="cm-spells" onclick="switchModalTab('char-modal',this)">Spells</button>
+        <button class="tab-btn" data-tab="cm-inv" onclick="switchModalTab('char-modal',this)">Inventory</button>
+        <button class="tab-btn" data-tab="cm-notes" onclick="switchModalTab('char-modal',this)">Notes</button>
+      </div>
+      <div class="modal-body">
+        <div class="tab-panel active" id="cm-vitals">
+          <div class="grid-2">
+            <div class="form-group"><label>Current HP</label><input type="number" id="cm-hp-current"></div>
+            <div class="form-group"><label>Max HP</label><input type="number" id="cm-hp-max"></div>
+            <div class="form-group"><label>AC</label><input type="number" id="cm-ac"></div>
+            <div class="form-group"><label>Speed (ft)</label><input type="number" id="cm-speed"></div>
+            <div class="form-group"><label>Passive Perception</label><input type="number" id="cm-pp"></div>
+            <div class="form-group"><label>Passive Insight</label><input type="number" id="cm-pi"></div>
+          </div>
+          <div class="form-group"><label>Death Saves</label>
+            <div class="grid-2">
+              <div class="stat-line"><span class="k">Successes</span><input type="number" id="cm-ds-succ" min="0" max="3"></div>
+              <div class="stat-line"><span class="k">Failures</span><input type="number" id="cm-ds-fail" min="0" max="3"></div>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="form-group"><label>Race</label><input type="text" id="cm-race"></div>
+            <div class="form-group"><label>Class</label><input type="text" id="cm-class"></div>
+            <div class="form-group"><label>Level</label><input type="number" id="cm-level"></div>
+            <div class="form-group"><label>Gold</label><input type="number" id="cm-gold"></div>
+          </div>
+        </div>
+        <div class="tab-panel" id="cm-spells"><div id="cm-spells-body"></div></div>
+        <div class="tab-panel" id="cm-inv"><div id="cm-inv-body"></div></div>
+        <div class="tab-panel" id="cm-notes">
+          <div class="form-group"><label>Profile Image URL</label><input type="url" id="cm-img" placeholder="https://..."></div>
+          <div class="form-group"><label>Conditions (comma-separated)</label><input type="text" id="cm-conditions"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script>
+  "use strict";
+
+  const CONDITIONS = ["Blinded","Burning","Charmed","Concentrating","Deafened","Frightened","Grappled","Incapacitated","Invisible","Paralyzed","Petrified","Poisoned","Prone","Restrained","Stunned","Unconscious"];
+  const DEFAULT_PORTRAIT = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23222a44' width='100' height='100'/%3E%3Ctext x='50' y='54' text-anchor='middle' fill='%23667' font-size='40' font-family='monospace'%3E%3F%3C/text%3E%3C/svg%3E";
+  const AVATAR_URLS = {
+    "Chuck":        "https://cdn.jsdelivr.net/gh/kzick001/dashboard@main/dm-screen/players/chuck.png",
+    "Tilly":        "https://cdn.jsdelivr.net/gh/kzick001/dashboard@main/dm-screen/players/tilly.png",
+    "Hendrick Hill":"https://cdn.jsdelivr.net/gh/kzick001/dashboard@main/dm-screen/players/hendrick.png",
+    "Jimothy":      "https://cdn.jsdelivr.net/gh/kzick001/dashboard@main/dm-screen/players/jimothy.png",
+    "Aelar":        "https://cdn.jsdelivr.net/gh/kzick001/dashboard@main/dm-screen/players/aelar.png"
+  };
+
+  /* ---- Shared SVG strings ---- */
+  const SVG_CHEVRON_R = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+  const SVG_CHEVRON_L = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+  const SVG_PENCIL    = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+  const SVG_X         = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const SVG_CARET_DOWN = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+  const SVG_CHECK      = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const SVG_LIST       = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>';
+  const SVG_ARCHIVE    = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>';
+
+  /* Whitelist-sanitize HTML: permits strong, ul, li, em, mark */
+  function sanitizeBodyHTML(str) {
+    if (!str) return "";
+    return str.replace(/<(?!\/?(?:strong|ul|li|em|mark)\b)[^>]+>/gi, "");
+  }
+
+  function toast(msg, kind) {
+    const c = document.getElementById("toast-container");
+    const t = document.createElement("div");
+    t.className = "toast" + (kind ? " " + kind : "");
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => { t.style.opacity = "0"; t.style.transition = "opacity .3s"; setTimeout(() => t.remove(), 300); }, 3000);
+  }
+  function setHeartbeat(mode) {
+    const hb = document.getElementById("sync-heartbeat");
+    hb.classList.remove("syncing","error");
+    if (mode === "syncing") hb.classList.add("syncing");
+    else if (mode === "error") hb.classList.add("error");
+  }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  }
+
+  /* ============================================================
+     KV SYNC
+     ============================================================ */
+  let _syncInFlight = false, _syncQueued = false;
+  async function syncToKV() {
+    if (!campaignState) return;
+    if (_syncInFlight) { _syncQueued = true; return; }
+    _syncInFlight = true; setHeartbeat("syncing");
+    const base = campaignState.version || 0;
+    campaignState.version = base + 1;
+    campaignState.lastModified = Date.now();
+    try {
+      const res = await fetch(WORKER_URL, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ base_version: base, data: campaignState }) });
+      if (res.status === 409) {
+        const latest = await (await fetch(WORKER_URL)).json();
+        campaignState = latest; normalizeState(); renderAll();
+        setHeartbeat("error"); toast("Sync conflict — reloaded latest state.", "warn");
+      } else if (res.ok) {
+        const d = await res.json();
+        if (typeof d.new_version === "number") campaignState.version = d.new_version;
+        setHeartbeat("ok");
+      } else { setHeartbeat("error"); toast("Save failed (" + res.status + ").", "error"); }
+    } catch (e) {
+      setHeartbeat("error"); toast("Offline — change kept locally.", "warn");
+      campaignState.version = base;
+    } finally {
+      _syncInFlight = false;
+      if (_syncQueued) { _syncQueued = false; syncToKV(); }
+    }
+  }
+  let _debounceTimer = null;
+  function scheduleSync(stateEl) {
+    if (stateEl) { stateEl.textContent = "unsaved\u2026"; stateEl.className = "save-state saving"; }
+    clearTimeout(_debounceTimer);
+    _debounceTimer = setTimeout(async () => {
+      await syncToKV();
+      if (stateEl) { stateEl.textContent = "saved"; stateEl.className = "save-state saved"; }
+    }, 1000);
+  }
+  async function refreshFromKV() {
+    setHeartbeat("syncing");
+    try {
+      const latest = await (await fetch(WORKER_URL)).json();
+      campaignState = latest; normalizeState(); renderAll();
+      setHeartbeat("ok"); toast("State refreshed.", "success");
+    } catch (e) { setHeartbeat("error"); toast("Refresh failed.", "error"); }
+  }
+
+  /* ============================================================
+     SESSION NUMBER (Phase 4)
+     ============================================================ */
+  function editSessionNumber() {
+    const label = document.getElementById("session-num-label");
+    const input = document.getElementById("session-num-input");
+    label.parentElement.style.pointerEvents = "none";
+    input.value = campaignState.campaign.sessionNumber || 1;
+    input.classList.remove("hidden");
+    label.parentElement.classList.add("hidden");
+    input.focus(); input.select();
+  }
+  function saveSessionNumber() {
+    const input = document.getElementById("session-num-input");
+    let v = parseInt(input.value, 10);
+    if (isNaN(v) || v < 1) v = 1;
+    if (v > 999) v = 999;
+    campaignState.campaign.sessionNumber = v;
+    document.getElementById("session-num-label").textContent = v;
+    input.classList.add("hidden");
+    const meta = document.querySelector(".section-head .meta");
+    meta.classList.remove("hidden"); meta.style.pointerEvents = "";
+    scheduleSync(document.getElementById("notes-save-state"));
+  }
+  function cancelSessionNumber() {
+    document.getElementById("session-num-input").classList.add("hidden");
+    const meta = document.querySelector(".section-head .meta");
+    meta.classList.remove("hidden"); meta.style.pointerEvents = "";
+  }
+
+  /* ============================================================
+     MOBILE OVERFLOW MENU (Phase 5)
+     ============================================================ */
+  function toggleSectionHeadMenu() {
+    document.getElementById("section-head-menu").classList.toggle("hidden");
+  }
+  function closeSectionHeadMenu() {
+    document.getElementById("section-head-menu").classList.add("hidden");
+  }
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("#section-menu-toggle") && !e.target.closest("#section-head-menu")) {
+      closeSectionHeadMenu();
+    }
+  });
+
+  /* ============================================================
+     ROOM TEXT
+     ============================================================ */
+  function isCapsHeader(line) {
+    const t = line.trim();
+    if (t.length < 2 || t.length > 48) return false;
+    if (!/:\s*$/.test(t)) return false;
+    if (!/[A-Z]/.test(t) || /[a-z]/.test(t)) return false;
+    return true;
+  }
+  function renderRichText(raw) {
+    if (!raw || !raw.trim()) return '<p class="empty-hint">Nothing here yet. Click Edit to add content.</p>';
+    const lines = raw.replace(/\r\n/g,"\n").split("\n");
+    let html = "", buf = [];
+    const flush = () => { if (buf.length) { html += "<p>" + esc(buf.join("\n")) + "</p>"; buf = []; } };
+    for (const line of lines) {
+      if (isCapsHeader(line)) { flush(); html += "<h4>" + esc(line.trim()) + "</h4>"; }
+      else if (!line.trim()) flush();
+      else buf.push(line);
+    }
+    flush();
+    return html || '<p class="empty-hint">Nothing here yet.</p>';
+  }
+
+  /* ============================================================
+     SECTION TREE — [N] marker system
+     ============================================================ */
+  const HEADER_RE = /^\[([1-4])\]\s*(.*)$/;
+  function isPrepHeader(line) {
+    const t = line.trim();
+    if (HEADER_RE.test(t)) return true;
+    const letters = t.replace(/[^A-Za-z]/g,"");
+    if (letters.length < 2) return false;
+    if ((t.match(/[a-z]/g)||[]).length > 2) return false;
+    return t.length >= 2 && t.length <= 64;
+  }
+  function parseHeaderLine(line) {
+    const t = line.trim(), m = t.match(HEADER_RE);
+    if (m) return { level: parseInt(m[1],10), title: m[2].trim() || "(untitled)" };
+    return { level: 1, title: t };
+  }
+  function prepBadge(title) {
+    const t = title.toUpperCase();
+    if (t.includes("READ ALOUD")||t.includes("READ-ALOUD")) return "readaloud";
+    if (/^BEAT\b/.test(t)) return "beat";
+    if (t.includes("ENCOUNTER")) return "encounter";
+    if (t.includes("LOOT")) return "loot";
+    if (t.includes("NPC")) return "npc";
+    if (t.includes("QUEST")) return "quest";
+    return "";
+  }
+  let _sectionIdCounter = 0;
+  function genSectionId() { return "sec_" + (++_sectionIdCounter); }
+
+  function buildSectionTree(raw) {
+    if (!raw || !raw.trim()) return [];
+    const lines = raw.replace(/\r\n/g,"\n").split("\n");
+    const root = { level:0, children:[] };
+    const stack = [root];
+    let cur = null;
+    for (let li = 0; li < lines.length; li++) {
+      const line = lines[li];
+      if (isPrepHeader(line)) {
+        const { level, title } = parseHeaderLine(line);
+        const sec = { id: genSectionId(), level, title, badge: prepBadge(title), body: "", children: [], lineIndex: li };
+        while (stack.length > 1 && stack[stack.length-1].level >= level) stack.pop();
+        stack[stack.length-1].children.push(sec);
+        stack.push(sec); cur = sec;
+      } else {
+        if (cur) cur.body += line + "\n";
+        else {
+          const ov = { id: genSectionId(), level:1, title:"OVERVIEW", badge:"", body: line+"\n", children:[], lineIndex:li };
+          root.children.push(ov); stack.push(ov); cur = ov;
+        }
+      }
+    }
+    const trim = (ns) => ns.forEach(n => { n.body = n.body.replace(/\n+$/,""); trim(n.children); });
+    trim(root.children);
+    return root.children;
+  }
+
+  function treeToRaw(nodes) {
+    const lines = [];
+    function walk(secs) { secs.forEach(s => { lines.push("["+s.level+"] "+s.title); if (s.body) lines.push(s.body); walk(s.children); }); }
+    walk(nodes);
+    return lines.join("\n");
+  }
+
+  function findNodeInTree(id, nodes) {
+    for (const n of nodes) {
+      if (n.id === id) return n;
+      const r = findNodeInTree(id, n.children);
+      if (r) return r;
+    }
+    return null;
+  }
+
+  function shiftNodeLevel(node, delta) {
+    const nv = node.level + delta;
+    if (nv < 1 || nv > 4) return;
+    node.level = nv;
+    node.children.forEach(c => shiftNodeLevel(c, delta));
+  }
+
+  /* ============================================================
+     ACCORDION RENDER (Phase 1 — chevrons always active)
+     ============================================================ */
+  let _prepOpen = {};
+
+  function renderAccordionNodes(nodes) {
+    return nodes.map(s => {
+      const open = _prepOpen[s.id] ? " open" : "";
+      const badge = s.badge ? '<span class="acc-badge '+s.badge+'">'+s.badge+'</span>' : "";
+      const levelChip = '<span class="acc-level-chip">L'+s.level+'</span>';
+      const childrenHtml = s.children.length ? '<div class="acc-children">'+renderAccordionNodes(s.children)+'</div>' : "";
+      const bodyText = s.body ? '<div class="acc-body-text">'+s.body+'</div>' : "";
+      const hasContent = s.body || s.children.length;
+
+      /* PHASE 1: always-active outdent/indent buttons, left of title */
+      const outdentBtn = '<button class="btn-icon" onclick="event.stopPropagation();outdentSection(\''+s.id+'\')" title="Promote (outdent)">' + SVG_CHEVRON_L + '</button>';
+      const indentBtn  = '<button class="btn-icon" onclick="event.stopPropagation();indentSection(\''+s.id+'\')"  title="Demote (indent)">'   + SVG_CHEVRON_R + '</button>';
+      /* PHASE 2: inline pencil for Mode A */
+      const editBtn    = '<button class="btn-icon" onclick="event.stopPropagation();startInlineEdit(\''+s.id+'\')" title="Edit this section">' + SVG_PENCIL + '</button>';
+      /* Remove-header X (far right) */
+      const removeBtn  = '<button class="btn-icon-danger" onclick="event.stopPropagation();removeHeaderFormatting(\''+s.id+'\')" title="Remove header" style="margin-left:auto;">' + SVG_X + '</button>';
+
+      return '<div class="acc-section'+open+'" data-level="'+s.level+'" data-id="'+s.id+'">' +
+        '<div class="acc-head" role="button" tabindex="0" aria-expanded="'+(!!_prepOpen[s.id])+'" '+
+          'onclick="togglePrepSection(\''+s.id+'\')" onkeydown="prepHeadKey(event,\''+s.id+'\')">' +
+          SVG_CHEVRON_R.replace('class="','class="acc-caret ').replace('<svg ','<svg class="acc-caret" ') +
+          outdentBtn + indentBtn + editBtn +
+          levelChip +
+          '<span class="acc-title-text">'+esc(s.title)+'</span>' +
+          badge + removeBtn +
+        '</div>' +
+        (hasContent ? '<div class="acc-body">'+bodyText+childrenHtml+'</div>' : '') +
+      '</div>';
+    }).join("");
+  }
+
+  function renderNotes() {
+    const sessionNum   = campaignState.campaign.sessionNumber || 1;
+    const sessionTitle = campaignState.campaign.sessionTitle  || "";
+    document.getElementById("session-num-label").textContent = sessionTitle
+      ? sessionNum + " \u2014 " + sessionTitle
+      : sessionNum;
+    const sessionTitleEl = document.getElementById("session-title-input");
+    if (sessionTitleEl) sessionTitleEl.value = campaignState.campaign.sessionTitle || "";
+    // Archive banner
+    const banner = document.getElementById("archived-banner");
+    const archBtn = document.getElementById("archive-session-btn");
+    if (campaignState.campaign.isArchived) {
+      if (banner) banner.classList.remove("hidden");
+      if (archBtn) { archBtn.textContent = "Unarchive"; archBtn.onclick = unarchiveCurrentSession; }
+    } else {
+      if (banner) banner.classList.add("hidden");
+      if (archBtn) { archBtn.textContent = "Archive Session"; archBtn.onclick = archiveCurrentSession; }
+    }
+    const acc = document.getElementById("prep-accordion");
+    const toolbar = document.getElementById("prep-toolbar");
+    _currentTree = buildSectionTree(campaignState.campaign.sessionNotes || "");
+    if (!_currentTree.length) {
+      acc.innerHTML = '<div class="prep-empty">No session prep yet. Click Raw to paste your notes.</div>';
+      toolbar.style.display = "none";
+      if (_outlineVisible) renderOutline(_currentTree);
+      return;
+    }
+    toolbar.style.display = "flex";
+    if (_showAllHeaders) {
+      acc.innerHTML = renderHeadersOnlyNodes(_currentTree);
+    } else {
+      acc.innerHTML = renderAccordionNodes(_currentTree);
+    }
+    if (_outlineVisible) renderOutline(_currentTree);
+  }
+
+  /* ============================================================
+     PHASE 1: Tree-level indent/outdent from accordion
+     ============================================================ */
+  function outdentSection(id) {
+    const node = findNodeInTree(id, _currentTree);
+    if (!node) return;
+    if (node.level <= 1) { toast("Already at L1.", "warn"); return; }
+    shiftNodeLevel(node, -1);
+    campaignState.campaign.sessionNotes = treeToRaw(_currentTree);
+    _sectionIdCounter = 0;
+    renderNotes();
+    scheduleSync(document.getElementById("notes-save-state"));
+  }
+  function indentSection(id) {
+    const node = findNodeInTree(id, _currentTree);
+    if (!node) return;
+    if (node.level >= 4) { toast("Max depth L4.", "warn"); return; }
+    shiftNodeLevel(node, 1);
+    campaignState.campaign.sessionNotes = treeToRaw(_currentTree);
+    _sectionIdCounter = 0;
+    renderNotes();
+    scheduleSync(document.getElementById("notes-save-state"));
+  }
+
+  /* ============================================================
+     ACCORDION INTERACTION
+     ============================================================ */
+  function togglePrepSection(id) {
+    _prepOpen[id] = !_prepOpen[id];
+    const sec = document.querySelector('.acc-section[data-id="'+id+'"]');
+    if (sec) {
+      sec.classList.toggle("open", !!_prepOpen[id]);
+      const head = sec.querySelector(":scope > .acc-head");
+      if (head) head.setAttribute("aria-expanded", String(!!_prepOpen[id]));
+    }
+    if (_outlineVisible) renderOutline(_currentTree);
+  }
+  function prepHeadKey(ev, id) { if (ev.key==="Enter"||ev.key===" ") { ev.preventDefault(); togglePrepSection(id); } }
+  function setAllSections(open) {
+    const walk = (ns) => ns.forEach(n => { _prepOpen[n.id]=open; walk(n.children); });
+    walk(_currentTree||[]);
+    document.querySelectorAll(".acc-section").forEach(sec => {
+      sec.classList.toggle("open", open);
+      const head = sec.querySelector(":scope > .acc-head");
+      if (head) head.setAttribute("aria-expanded", String(open));
+    });
+    if (_outlineVisible) renderOutline(_currentTree);
+  }
+
+  /* ============================================================
+     PHASE 2A: INLINE SECTION EDITOR
+     ============================================================ */
+  let _inlineEditId = null;
+
+  function _getTextSelection(ta) {
+    const start = ta.selectionStart || 0;
+    const end   = ta.selectionEnd   || start;
+    return { start, end, selected: ta.value.substring(start, end), text: ta.value };
+  }
+
+  function applyFormatting(type) {
+    const ta = document.getElementById("inline-body-ta");
+    if (!ta) return;
+    const { start, end, selected, text } = _getTextSelection(ta);
+    let newText = text, cursorStart = start, cursorEnd = end;
+
+    if (type === "strong") {
+      if (selected) {
+        newText = text.slice(0, start) + "<strong>" + selected + "</strong>" + text.slice(end);
+        cursorEnd = start + 8 + selected.length + 9;
+      } else {
+        newText = text.slice(0, start) + "<strong></strong>" + text.slice(start);
+        cursorStart = cursorEnd = start + 8;
+      }
+    }
+    else if (type === "list") {
+      if (selected) {
+        const items = selected.split("\n").map(l => l.trim() ? "  <li>" + l.trim() + "</li>" : "").filter(Boolean).join("\n");
+        const wrapped = "<ul>\n" + items + "\n</ul>";
+        newText = text.slice(0, start) + wrapped + text.slice(end);
+        cursorEnd = start + wrapped.length;
+      } else {
+        const wrapped = "<ul>\n  <li></li>\n</ul>";
+        newText = text.slice(0, start) + wrapped + text.slice(start);
+        cursorStart = cursorEnd = start + 9; // inside <li>
+      }
+    }
+    else if (type === "mark") {
+      if (selected) {
+        newText = text.slice(0, start) + "<mark>" + selected + "</mark>" + text.slice(end);
+        cursorEnd = start + 6 + selected.length + 7;
+      } else {
+        newText = text.slice(0, start) + "<mark></mark>" + text.slice(start);
+        cursorStart = cursorEnd = start + 6;
+      }
+    }
+
+    ta.value = newText;
+    ta.selectionStart = cursorStart;
+    ta.selectionEnd   = cursorEnd;
+    ta.focus();
+  }
+
+  function startInlineEdit(id) {
+    if (_inlineEditId) cancelInlineEdit();
+    const node = findNodeInTree(id, _currentTree);
+    if (!node) return;
+    _inlineEditId = id;
+    document.getElementById("prep-view-container").classList.add("hidden");
+    document.getElementById("prep-toolbar").style.display = "none";
+    const container = document.getElementById("inline-editor-section");
+    container.innerHTML =
+      '<div class="inline-editor-header">' +
+        '<div class="form-group">' +
+          '<label>Section Title</label>' +
+          '<input type="text" id="inline-title-input" value="'+esc(node.title)+'" placeholder="Section title..." />' +
+        '</div>' +
+        '<button class="inline-editor-close" onclick="cancelInlineEdit()" title="Cancel">'+SVG_X+'</button>' +
+      '</div>' +
+      '<div class="form-group">' +
+        '<label>Content</label>' +
+        '<div id="format-toolbar">' +
+          '<button class="btn-ghost fmt-btn" type="button" onclick="applyFormatting(\'strong\')" title="Bold — wraps selection in &lt;strong&gt;"><strong>B</strong></button>' +
+          '<button class="btn-ghost fmt-btn" type="button" onclick="applyFormatting(\'list\')"   title="Bullet list — converts selected lines to &lt;ul&gt;&lt;li&gt;">'+SVG_LIST+'</button>' +
+          '<button class="btn-ghost fmt-btn" type="button" onclick="applyFormatting(\'mark\')"   title="Highlight — wraps selection in &lt;mark&gt;" style="color:var(--warning);">&#x2726;</button>' +
+        '</div>' +
+        '<textarea id="inline-body-ta">'+esc(node.body||"")+'</textarea>' +
+      '</div>' +
+      '<div class="editor-actions">' +
+        '<button class="btn-primary" onclick="saveInlineEdit()">'+SVG_CHECK+' Save</button>' +
+        '<button class="btn-secondary" onclick="cancelInlineEdit()">Cancel</button>' +
+      '</div>';
+    document.getElementById("inline-editor-container").classList.remove("hidden");
+    document.getElementById("inline-body-ta").focus();
+  }
+  function saveInlineEdit() {
+    if (!_inlineEditId) return;
+    const node = findNodeInTree(_inlineEditId, _currentTree);
+    if (!node) { cancelInlineEdit(); return; }
+    const newTitle = document.getElementById("inline-title-input").value.trim();
+    if (!newTitle) { toast("Title cannot be empty.", "warn"); return; }
+    node.title = newTitle;
+    const rawBody = document.getElementById("inline-body-ta").value;
+    node.body = sanitizeBodyHTML(rawBody);
+    campaignState.campaign.sessionNotes = treeToRaw(_currentTree);
+    _inlineEditId = null;
+    _sectionIdCounter = 0;
+    document.getElementById("inline-editor-container").classList.add("hidden");
+    document.getElementById("prep-view-container").classList.remove("hidden");
+    document.getElementById("prep-toolbar").style.display = "flex";
+    renderNotes();
+    scheduleSync(document.getElementById("notes-save-state"));
+    toast("Section saved.", "success");
+  }
+  function cancelInlineEdit() {
+    _inlineEditId = null;
+    document.getElementById("inline-editor-container").classList.add("hidden");
+    document.getElementById("prep-view-container").classList.remove("hidden");
+    document.getElementById("prep-toolbar").style.display = "flex";
+  }
+
+  /* ============================================================
+     PHASE 2B: RAW FULL EDITOR
+     ============================================================ */
+  let _outlineUpdateTimer = null;
+
+  function toggleRawEdit() {
+    const raw = document.getElementById("raw-editor-container");
+    if (raw.classList.contains("hidden")) {
+      document.getElementById("notes-textarea").value = campaignState.campaign.sessionNotes || "";
+      document.getElementById("prep-view-container").classList.add("hidden");
+      document.getElementById("prep-toolbar").style.display = "none";
+      document.getElementById("raw-toolbar").classList.remove("hidden");
+      raw.classList.remove("hidden");
+      document.getElementById("notes-raw-btn").classList.add("active");
+      document.getElementById("notes-raw-btn").querySelector("svg + *") && null;
+      document.getElementById("notes-textarea").addEventListener("input", _onRawInput);
+      document.getElementById("notes-textarea").focus();
+    } else {
+      cancelRawEdit();
+    }
+  }
+  function _onRawInput() {
+    clearTimeout(_outlineUpdateTimer);
+    _outlineUpdateTimer = setTimeout(() => {
+      _currentTree = buildSectionTree(document.getElementById("notes-textarea").value);
+      if (_outlineVisible) renderOutline(_currentTree);
+    }, 280);
+  }
+  function saveRawEdit() {
+    campaignState.campaign.sessionNotes = document.getElementById("notes-textarea").value;
+    _prepOpen = {}; _sectionIdCounter = 0;
+    cancelRawEdit();
+    renderNotes();
+    scheduleSync(document.getElementById("notes-save-state"));
+    toast("Session prep saved.", "success");
+  }
+  function cancelRawEdit() {
+    document.getElementById("notes-textarea").removeEventListener("input", _onRawInput);
+    document.getElementById("raw-editor-container").classList.add("hidden");
+    document.getElementById("raw-toolbar").classList.add("hidden");
+    document.getElementById("prep-view-container").classList.remove("hidden");
+    document.getElementById("prep-toolbar").style.display = "flex";
+    const btn = document.getElementById("notes-raw-btn");
+    btn.classList.remove("active");
+  }
+
+  /* Raw edit: shift header level by cursor position */
+  function shiftHeaderLevel(delta) {
+    const ta = document.getElementById("notes-textarea");
+    const lines = ta.value.split("\n");
+    const li = ta.value.substring(0, ta.selectionStart).split("\n").length - 1;
+    const line = lines[li] || "";
+    const m = line.trim().match(HEADER_RE);
+    if (!m) {
+      // Scan backwards for owning header
+      for (let i = li - 1; i >= 0; i--) {
+        const mm = lines[i].trim().match(HEADER_RE);
+        if (mm) {
+          const cur = parseInt(mm[1], 10), nv = cur + delta;
+          if (nv < 1) { toast("Already at L1.", "warn"); return; }
+          if (nv > 4) { toast("Max depth L4.", "warn"); return; }
+          lines[i] = lines[i].replace(/^\[([1-4])\]/, "["+nv+"]");
+          // Shift descendant headers
+          for (let j = i+1; j < lines.length; j++) {
+            const cm = lines[j].trim().match(HEADER_RE);
+            if (!cm) continue;
+            if (parseInt(cm[1],10) <= cur) break;
+            const cn = Math.min(4, Math.max(1, parseInt(cm[1],10) + delta));
+            lines[j] = lines[j].replace(/^\[([1-4])\]/, "["+cn+"]");
+          }
+          break;
+        }
+      }
+    } else {
+      const cur = parseInt(m[1],10), nv = cur + delta;
+      if (nv < 1) { toast("Already at L1.", "warn"); return; }
+      if (nv > 4) { toast("Max depth L4.", "warn"); return; }
+      lines[li] = lines[li].replace(/^\[([1-4])\]/, "["+nv+"]");
+    }
+    const saved = ta.selectionStart;
+    ta.value = lines.join("\n");
+    ta.selectionStart = ta.selectionEnd = saved;
+    _currentTree = buildSectionTree(ta.value);
+    if (_outlineVisible) renderOutline(_currentTree);
+  }
+
+  function applyHeaderFormatting() {
+    const ta = document.getElementById("notes-textarea");
+    const lines = ta.value.split("\n");
+    let charCount = 0, startLine = 0;
+    for (let i = 0; i < lines.length; i++) {
+      if (charCount <= ta.selectionStart) startLine = i;
+      charCount += lines[i].length + 1;
+    }
+    if (HEADER_RE.test(lines[startLine].trim())) { toast("Already a header. Use indent/outdent to adjust.", "warn"); return; }
+    lines[startLine] = "[1] " + lines[startLine].trim().toUpperCase();
+    const saved = ta.selectionStart;
+    ta.value = lines.join("\n");
+    ta.selectionStart = ta.selectionEnd = saved;
+    _currentTree = buildSectionTree(ta.value);
+    if (_outlineVisible) renderOutline(_currentTree);
+    toast("Header applied at L1.", "success");
+  }
+
+  function removeHeaderFormatting(sectionId) {
+    const node = findNodeInTree(sectionId, _currentTree);
+    if (!node) { toast("Section not found.", "error"); return; }
+    const raw = campaignState.campaign.sessionNotes || "";
+    const lines = raw.replace(/\r\n/g,"\n").split("\n");
+    const marker = "["+node.level+"] "+node.title;
+    const idx = lines.findIndex(l => l.trim() === marker);
+    if (idx === -1) { toast("Could not locate header in text.", "warn"); return; }
+    lines[idx] = node.title.toLowerCase();
+    campaignState.campaign.sessionNotes = lines.join("\n");
+    _prepOpen = {}; _sectionIdCounter = 0;
+    renderNotes();
+    scheduleSync(document.getElementById("notes-save-state"));
+    toast("Header removed.", "success");
+  }
+
+  /* ============================================================
+     OUTLINE PANEL
+     ============================================================ */
+  let _outlineVisible = false;
+  let _currentTree = [];
+  let _outlineCollapsed = {};
+  let _activeOutlineId = null;
+  let _showAllHeaders = false;
+
+  function toggleOutlineView() {
+    _outlineVisible = !_outlineVisible;
+    document.getElementById("outline-panel").classList.toggle("hidden", !_outlineVisible);
+    document.getElementById("outline-icon-show").style.display = _outlineVisible ? "none" : "";
+    document.getElementById("outline-icon-hide").style.display = _outlineVisible ? "" : "none";
+    document.getElementById("outline-toggle-btn").classList.toggle("active", _outlineVisible);
+    if (_outlineVisible) renderOutline(_currentTree);
+  }
+  function renderOutline(nodes) {
+    const tree = document.getElementById("outline-tree");
+    const count = document.getElementById("outline-count");
+    if (!nodes||!nodes.length) {
+      tree.innerHTML = '<div style="padding:0.6rem 0.9rem;color:var(--text-muted);font-size:0.8rem;font-style:italic;">No sections</div>';
+      count.textContent = ""; return;
+    }
+    let total = 0;
+    const countAll = (ns) => ns.forEach(n => { total++; countAll(n.children); });
+    countAll(nodes);
+    count.textContent = total + " sections";
+    function buildNodes(secs) {
+      return secs.map(s => {
+        const collapsed = _outlineCollapsed[s.id];
+        const hasChildren = s.children.length > 0;
+        const cls = (s.id===_activeOutlineId?" active":"") + (hasChildren?" has-children"+(collapsed?" collapsed-in-outline":""):"");
+        const trunc = s.title.length > 28 ? s.title.slice(0,27)+"…" : s.title;
+        let h = '<div class="outline-node'+cls+'" data-level="'+s.level+'" data-id="'+s.id+'" onclick="outlineNodeClick(\''+s.id+'\')">'+
+          '<span class="outline-node-dot"></span>'+
+          '<span class="outline-node-label">'+esc(trunc)+'</span>';
+        if (hasChildren) h += '<span class="outline-node-toggle">'+SVG_CHEVRON_R+'</span>';
+        h += '</div>';
+        if (hasChildren && !collapsed) h += buildNodes(s.children);
+        return h;
+      }).join("");
+    }
+    tree.innerHTML = buildNodes(nodes);
+  }
+  function outlineNodeClick(id) {
+    const node = findNodeInTree(id, _currentTree);
+    if (node && node.children.length) _outlineCollapsed[id] = !_outlineCollapsed[id];
+    _activeOutlineId = id;
+    if (!_prepOpen[id]) {
+      _prepOpen[id] = true;
+      const sec = document.querySelector('.acc-section[data-id="'+id+'"]');
+      if (sec) { sec.classList.add("open"); const head = sec.querySelector(":scope > .acc-head"); if (head) head.setAttribute("aria-expanded","true"); sec.scrollIntoView({behavior:"smooth",block:"nearest"}); }
+    }
+    const ed = document.getElementById("raw-editor-container");
+    if (!ed.classList.contains("hidden")) _jumpTextareaToCursor(id);
+    renderOutline(_currentTree);
+  }
+  function _jumpTextareaToCursor(id) {
+    const node = findNodeInTree(id, _currentTree);
+    if (!node) return;
+    const ta = document.getElementById("notes-textarea");
+    const lines = ta.value.split("\n");
+    const marker = "["+node.level+"] "+node.title;
+    const idx = lines.findIndex(l => l.trim() === marker);
+    if (idx === -1) return;
+    let pos = 0;
+    for (let i = 0; i < idx; i++) pos += lines[i].length + 1;
+    ta.focus(); ta.selectionStart = ta.selectionEnd = pos;
+    const lh = parseInt(getComputedStyle(ta).lineHeight,10) || 20;
+    ta.scrollTop = idx * lh - ta.clientHeight / 2;
+  }
+
+  /* ============================================================
+     SHOW ALL HEADERS (outline-only view)
+     ============================================================ */
+  function toggleShowAllHeaders() {
+    _showAllHeaders = !_showAllHeaders;
+    const btn = document.getElementById("show-headers-btn");
+    if (btn) btn.classList.toggle("active", _showAllHeaders);
+    renderNotes();
+  }
+
+  function renderHeadersOnlyNodes(nodes) {
+    return nodes.map(s => {
+      const levelChip = '<span class="acc-level-chip">L'+s.level+'</span>';
+      const badge = s.badge ? '<span class="acc-badge '+s.badge+'">'+s.badge+'</span>' : "";
+      const childrenHtml = s.children.length ? '<div class="acc-children">'+renderHeadersOnlyNodes(s.children)+'</div>' : "";
+      return '<div class="acc-section open" data-level="'+s.level+'" data-id="'+s.id+'">' +
+        '<div class="acc-head" style="cursor:default;">' +
+          levelChip +
+          '<span class="acc-title-text">'+esc(s.title)+'</span>' +
+          badge +
+        '</div>' +
+        (childrenHtml ? '<div class="acc-body">'+childrenHtml+'</div>' : '') +
+      '</div>';
+    }).join("");
+  }
+
+  /* ============================================================
+     SESSION TITLE
+     ============================================================ */
+  let _sessionTitleSnapshot = "";
+
+  function startSessionTitleEdit() {
+    _sessionTitleSnapshot = campaignState.campaign.sessionTitle || "";
+    const input   = document.getElementById("session-title-input");
+    const editBtn = document.getElementById("session-title-edit-btn");
+    const actions = document.getElementById("session-title-actions");
+    input.removeAttribute("readonly");
+    input.focus();
+    input.select();
+    editBtn.style.display = "none";
+    actions.style.display = "flex";
+  }
+
+  function saveSessionTitle() {
+    const val = document.getElementById("session-title-input").value.trim();
+    campaignState.campaign.sessionTitle = val;
+    _endSessionTitleEdit();
+    renderNotes();
+    scheduleSync(document.getElementById("notes-save-state"));
+    toast("Session title saved.", "success");
+  }
+
+  function cancelSessionTitleEdit() {
+    document.getElementById("session-title-input").value = _sessionTitleSnapshot;
+    _endSessionTitleEdit();
+  }
+
+  function _endSessionTitleEdit() {
+    const input   = document.getElementById("session-title-input");
+    const editBtn = document.getElementById("session-title-edit-btn");
+    const actions = document.getElementById("session-title-actions");
+    input.setAttribute("readonly", "");
+    editBtn.style.display = "";
+    actions.style.display = "none";
+  }
+
+  /* ============================================================
+     ARCHIVE SESSION
+     ============================================================ */
+  function archiveCurrentSession() {
+    if (!confirm("Archive this session? It will be flagged as archived and hidden from active view.")) return;
+    campaignState.campaign.isArchived = true;
+    scheduleSync(document.getElementById("notes-save-state"));
+    renderNotes();
+    toast("Session archived.", "success");
+  }
+
+  function unarchiveCurrentSession() {
+    campaignState.campaign.isArchived = false;
+    scheduleSync(document.getElementById("notes-save-state"));
+    renderNotes();
+    toast("Session unarchived.", "success");
+  }
+
+  /* ============================================================
+     COLLAPSE HELPER
+     ============================================================ */
+  function toggleCollapse(id) { document.getElementById(id).classList.toggle("collapsed"); }
+
+  /* ============================================================
+     ROOM
+     ============================================================ */
+  function getCurrentRoom() { const r=campaignState.campaign.rooms, id=campaignState.campaign.currentRoom; return r.find(x=>x.id===id)||r[0]||null; }
+  function roomToText(room) {
+    if (!room) return "";
+    const p=[];
+    if (room.name) p.push(room.name);
+    if (room.area) p.push("AREA: "+room.area);
+    if (room.description) p.push("\n"+room.description);
+    if (room.readaloud) p.push("\nREAD ALOUD:\n"+room.readaloud);
+    const m=room.mechanics||{};
+    if (m.terrain) p.push("\nTERRAIN:\n"+m.terrain);
+    if (Array.isArray(m.hazards)&&m.hazards.length) p.push("\nHAZARDS:\n"+m.hazards.join("\n"));
+    if (Array.isArray(m.interactables)&&m.interactables.length) p.push("\nINTERACTABLES:\n"+m.interactables.join("\n"));
+    if (room.notes) p.push("\nNOTES:\n"+room.notes);
+    return p.join("\n");
+  }
+  function textToRoom(text,room) {
+    const lines=text.replace(/\r\n/g,"\n").split("\n");
+    const out={name:"",area:room.area||"",description:"",readaloud:"",mechanics:{terrain:"",hazards:[],interactables:[]},notes:""};
+    let section="head",bucket=[];
+    const known={"AREA:":"area","READ ALOUD:":"readaloud","TERRAIN:":"terrain","HAZARDS:":"hazards","INTERACTABLES:":"interactables","NOTES:":"notes"};
+    const commit=()=>{
+      const txt=bucket.join("\n").trim();
+      if(section==="head"){const hl=bucket.filter(l=>l.trim());out.name=(hl[0]||"").trim();out.description=hl.slice(1).join("\n").trim();}
+      else if(section==="area")out.area=txt;
+      else if(section==="readaloud")out.readaloud=txt;
+      else if(section==="terrain")out.mechanics.terrain=txt;
+      else if(section==="hazards")out.mechanics.hazards=txt?txt.split("\n").map(s=>s.trim()).filter(Boolean):[];
+      else if(section==="interactables")out.mechanics.interactables=txt?txt.split("\n").map(s=>s.trim()).filter(Boolean):[];
+      else if(section==="notes")out.notes=txt;
+      bucket=[];
+    };
+    for(const line of lines){const key=line.trim().toUpperCase();if(known[key]){commit();section=known[key];}else bucket.push(line);}
+    commit();
+    return Object.assign(room,out);
+  }
+  function renderRoomSelect() {
+    const sel=document.getElementById("room-select"),rooms=campaignState.campaign.rooms;
+    sel.innerHTML="";
+    if(!rooms.length){const o=document.createElement("option");o.value="";o.textContent="(no rooms)";sel.appendChild(o);return;}
+    rooms.forEach(r=>{const o=document.createElement("option");o.value=r.id;o.textContent=r.name||r.id;if(r.id===campaignState.campaign.currentRoom)o.selected=true;sel.appendChild(o);});
+  }
+  function renderRoom(){document.getElementById("room-display").innerHTML=renderRichText(roomToText(getCurrentRoom()));}
+  function onRoomChange(id){campaignState.campaign.currentRoom=id;renderRoom();cancelRoomEdit();scheduleSync(document.getElementById("room-save-state"));}
+  function toggleRoomEdit(){
+    const ed=document.getElementById("room-editor"),disp=document.getElementById("room-display"),btn=document.getElementById("room-edit-btn");
+    if(ed.classList.contains("hidden")){document.getElementById("room-textarea").value=roomToText(getCurrentRoom());ed.classList.remove("hidden");disp.classList.add("hidden");btn.classList.add("active");btn.textContent="Editing";}
+    else cancelRoomEdit();
+  }
+  function cancelRoomEdit(){document.getElementById("room-editor").classList.add("hidden");document.getElementById("room-display").classList.remove("hidden");const btn=document.getElementById("room-edit-btn");btn.classList.remove("active");btn.textContent="Edit";}
+  function saveRoomEdit(){
+    const room=getCurrentRoom();if(!room){toast("No room to save.","error");return;}
+    textToRoom(document.getElementById("room-textarea").value,room);
+    renderRoom();renderRoomSelect();cancelRoomEdit();scheduleSync(document.getElementById("room-save-state"));
+  }
+  function openRoomDrawer(){document.getElementById("room-drawer").classList.add("open");document.getElementById("room-backdrop").classList.add("open");}
+  function closeRoomDrawer(){cancelRoomEdit();document.getElementById("room-drawer").classList.remove("open");document.getElementById("room-backdrop").classList.remove("open");}
+
+  /* ============================================================
+     PLAYER CARDS
+     ============================================================ */
+  function hpClass(cur,max){if(max<=0)return "";const r=cur/max;return r<=0.25?"crit":r<=0.5?"warn":"";}
+  function renderCards(){
+    const list=document.getElementById("cards-list"),chars=campaignState.characters.filter(c=>!c.isArchived);
+    document.getElementById("party-count").textContent=chars.length+" active";
+    list.innerHTML="";
+    chars.forEach(ch=>{
+      const hp=(ch.stats&&ch.stats.hp)?ch.stats.hp:{current:0,max:1};
+      const ac=(ch.stats&&ch.stats.ac!=null)?ch.stats.ac:"-";
+      const conds=Array.isArray(ch.conditions)?ch.conditions:[];
+      const card=document.createElement("div");
+      card.className="player-card";card.dataset.id=ch.id;
+      const condChecks=CONDITIONS.map(name=>{const key=name.toLowerCase(),checked=conds.includes(key)?"checked":"";return '<label><input type="checkbox" '+checked+' onchange="toggleCondition(\''+ch.id+'\',\''+key+'\',this.checked)">'+name+'</label>';}).join("");
+      card.innerHTML=
+        '<div class="pc-head" onclick="toggleCardExpand(this)">'+
+          '<img class="pc-portrait" src="'+(AVATAR_URLS[ch.name]||esc(ch.profileImage||DEFAULT_PORTRAIT))+'" onerror="this.src=\''+DEFAULT_PORTRAIT+'\'" alt="">'+
+          '<div class="pc-id"><div class="pc-name">'+esc(ch.name)+'</div>'+
+            '<div class="pc-stats"><span class="hp-pill '+hpClass(hp.current,hp.max)+'">'+hp.current+'/'+hp.max+'</span> &middot; AC '+ac+'</div>'+
+          '</div>'+
+          '<span class="pc-caret">'+SVG_CARET_DOWN+'</span>'+
+        '</div>'+
+        '<div class="pc-body">'+
+          '<div class="pc-class">'+esc(ch.class||"")+(ch.level?", LV "+ch.level:"")+'</div>'+
+          '<div class="pc-hp-row"><button class="hp-step" onclick="adjustHP(\''+ch.id+'\',-1)">&minus;</button>'+
+            '<input type="number" value="'+hp.current+'" onchange="setHP(\''+ch.id+'\',this.value)">'+
+            '<span class="pc-stats">/ '+hp.max+'</span>'+
+            '<button class="hp-step" onclick="adjustHP(\''+ch.id+'\',1)">+</button></div>'+
+          '<div class="cond-title">CONDITIONS</div>'+
+          '<div class="cond-grid">'+condChecks+'</div>'+
+          '<div class="pc-actions"><button class="btn-ghost" onclick="openCharModal(\''+ch.id+'\')">Details</button></div>'+
+        '</div>';
+      list.appendChild(card);
+    });
+  }
+  function toggleCardExpand(h){h.parentElement.classList.toggle("expanded");}
+  function findChar(id){return campaignState.characters.find(c=>c.id===id);}
+  function adjustHP(id,delta){
+    const ch=findChar(id);if(!ch||!ch.stats||!ch.stats.hp)return;
+    ch.stats.hp.current=Math.max(0,Math.min((ch.stats.hp.current||0)+delta,ch.stats.hp.max||0));
+    renderCards();keepExpanded(id);scheduleSync(null);
+  }
+  function setHP(id,val){
+    const ch=findChar(id);if(!ch||!ch.stats||!ch.stats.hp)return;
+    let v=parseInt(val,10);if(isNaN(v))v=0;
+    ch.stats.hp.current=Math.max(0,Math.min(v,ch.stats.hp.max||v));
+    renderCards();keepExpanded(id);scheduleSync(null);
+  }
+  function toggleCondition(id,cond,on){
+    const ch=findChar(id);if(!ch)return;
+    if(!Array.isArray(ch.conditions))ch.conditions=[];
+    const i=ch.conditions.indexOf(cond);
+    if(on&&i===-1)ch.conditions.push(cond);
+    else if(!on&&i!==-1)ch.conditions.splice(i,1);
+    scheduleSync(null);
+  }
+  function keepExpanded(id){const c=document.querySelector('.player-card[data-id="'+id+'"]');if(c)c.classList.add("expanded");}
+
+  /* ============================================================
+     CHARACTER MODAL
+     ============================================================ */
+  let _activeCharId=null;
+  function openCharModal(id){
+    const ch=findChar(id);if(!ch)return;
+    _activeCharId=id;
+    document.getElementById("cm-name").textContent=ch.name;
+    const st=ch.stats||(ch.stats={hp:{current:0,max:1}});
+    if(!st.hp)st.hp={current:0,max:1};
+    const ds=ch.deathSaves||(ch.deathSaves={successes:0,failures:0});
+    setVal("cm-hp-current",st.hp.current);setVal("cm-hp-max",st.hp.max);
+    setVal("cm-ac",st.ac);setVal("cm-speed",st.speed);
+    setVal("cm-pp",st.passivePerception);setVal("cm-pi",st.passiveInsight);
+    setVal("cm-ds-succ",ds.successes);setVal("cm-ds-fail",ds.failures);
+    setVal("cm-race",ch.race);setVal("cm-class",ch.class);
+    setVal("cm-level",ch.level);setVal("cm-gold",ch.gold);
+    setVal("cm-img",ch.profileImage||"");
+    setVal("cm-conditions",(ch.conditions||[]).join(", "));
+    renderSpellsTab(ch);renderInventoryTab(ch);
+    document.querySelectorAll('#char-modal .tab-btn').forEach((b,i)=>b.classList.toggle("active",i===0));
+    document.querySelectorAll('#char-modal .tab-panel').forEach((p,i)=>p.classList.toggle("active",i===0));
+    document.getElementById("char-modal").classList.remove("hidden");
+  }
+  function closeCharModal(){document.getElementById("char-modal").classList.add("hidden");_activeCharId=null;}
+  function setVal(id,v){const el=document.getElementById(id);if(el)el.value=(v==null?"":v);}
+  function numVal(id){const v=parseInt(document.getElementById(id).value,10);return isNaN(v)?0:v;}
+  function commitCharModal(){
+    const ch=findChar(_activeCharId);if(!ch)return;
+    const st=ch.stats,ds=ch.deathSaves;
+    st.hp.max=Math.max(1,numVal("cm-hp-max"));
+    st.hp.current=Math.max(0,Math.min(numVal("cm-hp-current"),st.hp.max));
+    st.ac=numVal("cm-ac");st.speed=numVal("cm-speed");
+    st.passivePerception=numVal("cm-pp");st.passiveInsight=numVal("cm-pi");
+    ds.successes=Math.max(0,Math.min(3,numVal("cm-ds-succ")));
+    ds.failures=Math.max(0,Math.min(3,numVal("cm-ds-fail")));
+    ch.race=document.getElementById("cm-race").value;
+    ch.class=document.getElementById("cm-class").value;
+    ch.level=numVal("cm-level");ch.gold=numVal("cm-gold");
+    ch.profileImage=document.getElementById("cm-img").value.trim()||null;
+    ch.conditions=document.getElementById("cm-conditions").value.split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
+    ch.updatedAt=new Date().toISOString();
+    renderCards();scheduleSync(null);
+  }
+  function renderSpellsTab(ch){
+    const body=document.getElementById("cm-spells-body"),ss=ch.spellSlots;
+    if(!ss){body.innerHTML='<p class="empty-hint">No spellcasting.</p>';return;}
+    let html="";
+    for(let lvl=1;lvl<=9;lvl++){const slot=ss["level"+lvl];if(!slot||(slot.max||0)===0)continue;html+='<div class="stat-line"><span class="k">Level '+lvl+'</span><span><input type="number" min="0" max="'+slot.max+'" value="'+(slot.current||0)+'" style="width:60px" onchange="setSpellSlot('+lvl+',this.value)"> / '+slot.max+'</span></div>';}
+    if(!html)html='<p class="empty-hint">No spell slots configured.</p>';
+    else html+='<div style="margin-top:.8rem"><button class="btn-secondary" onclick="resetSpellSlots()">Reset All Slots</button></div>';
+    body.innerHTML=html;
+  }
+  function setSpellSlot(lvl,val){
+    const ch=findChar(_activeCharId);if(!ch||!ch.spellSlots)return;
+    const slot=ch.spellSlots["level"+lvl];if(!slot)return;
+    let v=parseInt(val,10);if(isNaN(v))v=0;
+    slot.current=Math.max(0,Math.min(v,slot.max||v));scheduleSync(null);
+  }
+  function resetSpellSlots(){
+    const ch=findChar(_activeCharId);if(!ch||!ch.spellSlots)return;
+    for(let lvl=1;lvl<=9;lvl++){const s=ch.spellSlots["level"+lvl];if(s)s.current=s.max;}
+    ch.spellSlots.lastLongRest=new Date().toISOString();
+    renderSpellsTab(ch);scheduleSync(null);toast("Spell slots reset.","success");
+  }
+  function renderInventoryTab(ch){
+    const body=document.getElementById("cm-inv-body"),inv=(ch.inventory||[]).filter(it=>!it.isDeleted);
+    let html='<button class="btn-secondary" style="margin-bottom:.7rem" onclick="addItem()">+ Add Item</button>';
+    if(!inv.length){html+='<p class="empty-hint">No items.</p>';body.innerHTML=html;return;}
+    inv.forEach(it=>{
+      const mech=it.mechanics&&it.mechanics.text?it.mechanics.text:(it.description||"");
+      html+='<div class="inv-item"><div class="inv-top"><div><span class="inv-name">'+esc(it.name)+'</span> <span class="inv-meta">'+esc(it.type||"")+(it.rarity?" &middot; "+esc(it.rarity):"")+(it.quantity>1?" &middot; x"+it.quantity:"")+'</span></div><button class="btn-danger" onclick="deleteItem(\''+esc(it.id)+'\')">Delete</button></div>'+(mech?'<div class="inv-desc">'+esc(mech)+'</div>':'')+'</div>';
+    });
+    body.innerHTML=html;
+  }
+  function addItem(){
+    const ch=findChar(_activeCharId);if(!ch)return;
+    const name=prompt("Item name?");if(!name)return;
+    if(!Array.isArray(ch.inventory))ch.inventory=[];
+    ch.inventory.push({id:"item_"+Date.now().toString(36),name,type:"misc",rarity:"common",description:"",quantity:1,mechanics:null,charges:null,requiresAttunement:false,isAttuned:false,isDeleted:false});
+    renderInventoryTab(ch);scheduleSync(null);
+  }
+  function deleteItem(itemId){
+    const ch=findChar(_activeCharId);if(!ch)return;
+    const it=(ch.inventory||[]).find(x=>x.id===itemId);
+    if(it){it.isDeleted=true;renderInventoryTab(ch);scheduleSync(null);}
+  }
+
+  /* ============================================================
+     ACHIEVEMENT DRAWER (Phase 3)
+     ============================================================ */
+  function openAchievementDrawer(){
+    populateAchCharChecks();
+    renderAchievementList();
+    document.getElementById("ach-drawer").classList.add("open");
+    document.getElementById("ach-backdrop").classList.add("open");
+  }
+
+  /* Delegated click for loot copy buttons (data-copy-ach + data-copy-mode) */
+  document.addEventListener("click", function(e){
+    const btn = e.target.closest("[data-copy-ach]");
+    if(!btn) return;
+    const achId = btn.dataset.copyAch;
+    const mode  = btn.dataset.copyMode;
+    const a = campaignState && campaignState.achievements && campaignState.achievements.find(x=>x.id===achId);
+    if(!a||!a.loot) return;
+    if(mode==="name"){
+      copyToClipboard(a.loot.name, "Copied name");
+    } else {
+      copyToClipboard(lootFormatText(a.loot), "Copied details");
+    }
+  });
+  function closeAchievementDrawer(){
+    document.getElementById("ach-drawer").classList.remove("open");
+    document.getElementById("ach-backdrop").classList.remove("open");
+  }
+  function switchAchTab(which){
+    ["active","archived","single","bulk"].forEach(t=>{
+      const btn=document.getElementById("ach-tab-btn-"+t);
+      const panel=document.getElementById("ach-tab-"+t);
+      if(btn)  btn.classList.toggle("active",t===which);
+      if(panel)panel.classList.toggle("active",t===which);
+    });
+    if(which==="active")   renderAchievementList();
+    if(which==="archived") renderArchivedAchievements();
+  }
+
+  function isUnassigned(a){return a.earnedBy==null||(typeof a.earnedBy==="object"&&Object.keys(a.earnedBy).length===0);}
+
+  function achScope(a){
+    if(isUnassigned(a))return "Unassigned";
+    return Object.keys(a.earnedBy).map(id=>{const c=findChar(id);return c?c.name:id;}).join(", ");
+  }
+
+  function achStatus(a){
+    if(a.awardedAt)      return "awarded";
+    if(a.notifyPlayerAt) return "notified";
+    return "pending";
+  }
+
+  function lootFormatText(loot){
+    if(!loot) return "";
+    return [
+      "NAME: "+(loot.name||"").toUpperCase(),
+      "TYPE: "+(loot.type||"WONDROUS").toUpperCase(),
+      "RARITY: "+(loot.rarity||"COMMON").toUpperCase(),
+      "DESCRIPTION: "+(loot.description||""),
+      "EFFECT: "+(loot.effect||"")
+    ].join("\n");
+  }
+
+  function copyToClipboard(text,label){
+    if(!text){toast("Nothing to copy.","warn");return;}
+    navigator.clipboard.writeText(text).then(()=>{
+      toast((label||"Copied")+".","success");
+    }).catch(()=>{
+      const ta=document.createElement("textarea");
+      ta.value=text;ta.style.position="fixed";ta.style.opacity="0";
+      document.body.appendChild(ta);ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      toast((label||"Copied")+".","success");
+    });
+  }
+
+  function toggleLootPanel(achId){
+    const body=document.getElementById("loot-body-"+achId);
+    const btn =document.getElementById("loot-toggle-"+achId);
+    if(!body||!btn)return;
+    const open=body.classList.toggle("open");
+    btn.classList.toggle("open",open);
+  }
+
+  function buildAchCard(a,isArchived){
+    const status  =achStatus(a);
+    const gold    =(a.rewards&&a.rewards.gold)||0;
+    const hasLoot =!!(a.loot&&a.loot.name);
+    const assigned=!isUnassigned(a);
+    const chars   =campaignState.characters.filter(c=>!c.isArchived);
+
+    // Status badge
+    let badgeHtml="";
+    if(isArchived){
+      badgeHtml='<span class="ach-status-badge archived">&#x1F4C1; Archived</span>';
+    }else if(status==="awarded"){
+      const d=new Date(a.awardedAt).toLocaleDateString();
+      badgeHtml='<span class="ach-status-badge awarded">&#x2713; Awarded '+esc(d)+'</span>';
+    }else if(status==="notified"){
+      badgeHtml='<span class="ach-status-badge notified">&#x1F514; Notification Pending</span>';
+    }
+
+    // Assign checkboxes
+    const assignChecks=chars.map(c=>{
+      const earned=assigned&&a.earnedBy[c.id]?"checked":"";
+      return '<label><input type="checkbox" '+earned+' onchange="toggleAssign(\''+esc(a.id)+'\',\''+esc(c.id)+'\',this.checked)">'+esc(c.name)+'</label>';
+    }).join("");
+
+    // Acknowledge rows per earner
+    let ackRows="";
+    if(assigned){
+      const earnerIds=Object.keys(a.earnedBy);
+      const rows=earnerIds.map(cid=>{
+        const ch=findChar(cid);if(!ch)return "";
+        const acked=Array.isArray(a.acknowledgedBy)&&a.acknowledgedBy.includes(cid);
+        return '<div class="ach-ack-row">'+
+          '<input type="checkbox" '+(acked?"checked":"")+
+          ' onchange="setAcknowledge(\''+esc(a.id)+'\',\''+esc(cid)+'\',this.checked)"'+
+          ' title="'+(acked?"Un-acknowledge to re-notify player":"Mark acknowledged manually")+'">'+
+          '<span class="ack-name">'+esc(ch.name)+'</span>'+
+          '<span class="ack-status'+(acked?" seen":"")+'">'+( acked?"&#x2713; Seen":"Not seen")+'</span>'+
+        '</div>';
+      }).join("");
+      if(rows)ackRows='<div class="ach-ack-grid">'+rows+'</div>';
+    }
+
+    // Loot panel
+    let lootPanelHtml="";
+    if(hasLoot){
+      const safeId=esc(a.id);
+      const lootRarityColor={common:"var(--text-muted)",uncommon:"var(--success)",rare:"var(--beat)",legendary:"var(--warning)",artifact:"var(--accent)"}[a.loot.rarity]||"var(--loot)";
+      if(status==="awarded"||isArchived){
+        const lootText=lootFormatText(a.loot);
+        lootPanelHtml=
+          '<div class="ach-loot-panel">'+
+            '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem;">'+
+              '<button class="ach-loot-toggle" id="loot-toggle-'+safeId+'" onclick="toggleLootPanel(\''+safeId+'\')">'+
+                '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'+
+                ' Loot Details'+
+                '<svg class="loot-caret" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>'+
+              '</button>'+
+              '<button class="btn-icon" onclick="openLootPanel(\''+safeId+'\')" title="Edit loot" style="min-width:26px;min-height:26px;padding:0.25rem;">&#9881;</button>'+
+            '</div>'+
+            '<div class="ach-loot-body" id="loot-body-'+safeId+'">'+
+              '<pre class="ach-loot-text">'+esc(lootText)+'</pre>'+
+              '<div class="ach-loot-copy-row">'+
+                '<button class="btn-copy" data-copy-ach="'+safeId+'" data-copy-mode="name">&#x1F4CB; Copy Name</button>'+
+                '<button class="btn-copy" data-copy-ach="'+safeId+'" data-copy-mode="full">&#x1F4CB; Copy All Details</button>'+
+              '</div>'+
+            '</div>'+
+          '</div>';
+      } else {
+        lootPanelHtml=
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin:0.35rem 0;">'+
+            '<div><span class="ach-loot-tag" style="color:'+lootRarityColor+';">'+esc(a.loot.name)+'</span>'+
+            ' <span style="font-size:0.65rem;color:var(--text-muted);">(visible after award)</span></div>'+
+            '<button class="btn-icon" onclick="openLootPanel(\''+safeId+'\')" title="Edit loot" style="min-width:26px;min-height:26px;padding:0.25rem;">&#9881;</button>'+
+          '</div>';
+      }
+    }
+
+    const goldLine=gold?'<div class="scope-tag">'+gold+' gp reward</div>':"";
+
+    // Action buttons
+    let actionBtns="";
+    if(!isArchived){
+      if((status==="pending"||status==="notified")&&assigned){
+        actionBtns+='<button class="btn-ghost" onclick="showAchievementInHUD(\''+esc(a.id)+'\')" title="Queue HUD notification">&#x1F514; Show in HUD</button>';
+        actionBtns+='<button class="btn-ghost" style="color:var(--success);border-color:rgba(74,222,128,0.4);" onclick="awardAndDistribute(\''+esc(a.id)+'\')" title="Award loot + gold to assigned players">&#x2713; Award &amp; Distribute</button>';
+      }
+      if(status==="awarded"){
+        actionBtns+='<button class="btn-danger" onclick="archiveAchievement(\''+esc(a.id)+'\')">&#x1F4C1; Archive</button>';
+      }
+    }else{
+      actionBtns+='<button class="btn-ghost" onclick="restoreAchievement(\''+esc(a.id)+'\')">Restore</button>';
+    }
+
+    const statusClass=isArchived?"status-archived":(status==="awarded"?"status-awarded":status==="notified"?"status-notified":"");
+
+    return '<div class="ach-entry '+statusClass+'" id="ach-entry-'+esc(a.id)+'">'+
+      (badgeHtml?'<div>'+badgeHtml+'</div>':'')+
+      '<span class="ach-name">'+esc(a.name)+'</span>'+
+      '<div class="ach-desc">'+esc(a.description||"")+'</div>'+
+      '<div class="scope-tag">'+esc(achScope(a))+'</div>'+
+      goldLine+
+      lootPanelHtml+
+      (assignChecks?'<div class="ach-assign-grid">'+assignChecks+'</div>':'')+
+      ackRows+
+      (actionBtns?'<div class="ach-actions">'+actionBtns+'</div>':'')+
+    '</div>';
+  }
+
+  /* ============================================================
+     LOOT EDIT PANEL
+     ============================================================ */
+  let _lootEditAchId = null;
+
+  function openLootPanel(achId) {
+    const ach = campaignState.achievements.find(a => a.id === achId);
+    if (!ach) return;
+    if (!ach.loot) {
+      toast("No loot attached to this achievement.", "warn");
+      return;
+    }
+    _lootEditAchId = achId;
+    const l = ach.loot;
+    document.getElementById("ach-loot-panel-title").textContent = "EDIT LOOT";
+    document.getElementById("loot-edit-name").value    = l.name        || "";
+    document.getElementById("loot-edit-type").value    = l.type        || "wondrous";
+    document.getElementById("loot-edit-rarity").value  = l.rarity      || "uncommon";
+    document.getElementById("loot-edit-desc").value    = l.description || "";
+    document.getElementById("loot-edit-effect").value  = l.effect      || "";
+    document.getElementById("ach-loot-panel").classList.add("open");
+    document.getElementById("loot-edit-name").focus();
+  }
+
+  function saveLootPanel() {
+    if (!_lootEditAchId) return;
+    const ach = campaignState.achievements.find(a => a.id === _lootEditAchId);
+    if (!ach) { closeLootPanel(); return; }
+    const name = document.getElementById("loot-edit-name").value.trim();
+    if (!name) { toast("Loot name cannot be empty.", "warn"); return; }
+    ach.loot = {
+      id:          ach.loot?.id || ("loot_" + Date.now().toString(36)),
+      name,
+      type:        document.getElementById("loot-edit-type").value,
+      rarity:      document.getElementById("loot-edit-rarity").value,
+      description: document.getElementById("loot-edit-desc").value.trim(),
+      effect:      document.getElementById("loot-edit-effect").value.trim()
+    };
+    closeLootPanel();
+    renderAchievementList();
+    scheduleSync(null);
+    toast("Loot updated.", "success");
+  }
+
+  function closeLootPanel() {
+    _lootEditAchId = null;
+    document.getElementById("ach-loot-panel").classList.remove("open");
+  }
+
+  function renderAchievementList(){
+    const list=document.getElementById("ach-list");
+    const items=campaignState.achievements.filter(a=>!a.isArchived);
+    if(!items.length){list.innerHTML='<p class="empty-hint">No active achievements yet.</p>';return;}
+    list.innerHTML=items.map(a=>buildAchCard(a,false)).join("");
+  }
+
+  function renderArchivedAchievements(){
+    const list=document.getElementById("ach-archived-list");
+    const items=campaignState.achievements.filter(a=>a.isArchived);
+    if(!items.length){list.innerHTML='<p class="empty-hint">No archived achievements.</p>';return;}
+    list.innerHTML=items.map(a=>buildAchCard(a,true)).join("");
+  }
+
+  function toggleAssign(achId,charId,on){
+    const a=campaignState.achievements.find(x=>x.id===achId);if(!a)return;
+    if(!a.earnedBy||typeof a.earnedBy!=="object")a.earnedBy={};
+    if(on)a.earnedBy[charId]=new Date().toISOString();else delete a.earnedBy[charId];
+    if(Object.keys(a.earnedBy).length===0)a.earnedBy=null;
+    renderAchievementList();scheduleSync(null);
+  }
+
+  function setAcknowledge(achId,charId,on){
+    const a=campaignState.achievements.find(x=>x.id===achId);if(!a)return;
+    if(!Array.isArray(a.acknowledgedBy))a.acknowledgedBy=[];
+    if(on){if(!a.acknowledgedBy.includes(charId))a.acknowledgedBy.push(charId);}
+    else  {a.acknowledgedBy=a.acknowledgedBy.filter(id=>id!==charId);}
+    renderAchievementList();scheduleSync(null);
+    toast(on?"Marked acknowledged.":"Un-acknowledged. Player will see notification on next poll.","success");
+  }
+
+  function showAchievementInHUD(achId){
+    const a=campaignState.achievements.find(x=>x.id===achId);if(!a)return;
+    if(isUnassigned(a)){toast("Assign to a player first.","warn");return;}
+    a.notifyPlayerAt=new Date().toISOString();
+    const earnerIds=Object.keys(a.earnedBy||{});
+    if(!Array.isArray(a.acknowledgedBy))a.acknowledgedBy=[];
+    a.acknowledgedBy=a.acknowledgedBy.filter(id=>!earnerIds.includes(id));
+    renderAchievementList();scheduleSync(null);
+    toast("HUD notification queued. Players will see it on next poll.","success");
+  }
+
+  function awardAndDistribute(achId){
+    const a=campaignState.achievements.find(x=>x.id===achId);if(!a)return;
+    if(isUnassigned(a)){toast("Assign to a player first.","warn");return;}
+    if(a.awardedAt){toast("Already awarded.","warn");return;}
+    const earnerIds=Object.keys(a.earnedBy||{});
+    const gold=(a.rewards&&a.rewards.gold)||0;
+    const lootAddedTo=[];
+    earnerIds.forEach(cid=>{
+      const ch=findChar(cid);if(!ch)return;
+      if(gold>0)ch.gold=(ch.gold||0)+gold;
+      if(a.loot&&a.loot.name){
+        if(!Array.isArray(ch.inventory))ch.inventory=[];
+        ch.inventory.push({
+          id:"ach_loot_"+Date.now().toString(36)+"_"+cid,
+          name:a.loot.name,
+          type:(a.loot.type||"wondrous").replace("_item",""),
+          rarity:a.loot.rarity||"uncommon",
+          description:a.loot.description||"",
+          quantity:1,
+          mechanics:{toHitBonus:null,damageBonus:null,acBase:null,acMod:null,text:a.loot.effect||""},
+          charges:null,requiresAttunement:false,isAttuned:false,isDeleted:false
+        });
+        lootAddedTo.push(ch.name);
+      }
+    });
+    a.awardedAt=new Date().toISOString();
+    a.notifyPlayerAt=a.notifyPlayerAt||a.awardedAt;
+    if(!Array.isArray(a.acknowledgedBy))a.acknowledgedBy=[];
+    a.acknowledgedBy=a.acknowledgedBy.filter(id=>!earnerIds.includes(id));
+    renderCards();renderAchievementList();scheduleSync(null);
+    const msgs=[];
+    if(gold>0)msgs.push(gold+" gp awarded");
+    if(lootAddedTo.length)msgs.push(a.loot.name+" added to inventory for "+lootAddedTo.join(", "));
+    toast("Awarded! "+(msgs.join(" · ")||""),"success");
+  }
+
+  function archiveAchievement(achId){
+    const a=campaignState.achievements.find(x=>x.id===achId);if(!a)return;
+    if(!a.awardedAt){toast("Award the achievement before archiving.","warn");return;}
+    if(!confirm('Archive "'+a.name+'"?'))return;
+    a.isArchived=true;renderAchievementList();scheduleSync(null);toast("Archived.","success");
+  }
+
+  function restoreAchievement(achId){
+    const a=campaignState.achievements.find(x=>x.id===achId);if(!a)return;
+    a.isArchived=false;renderArchivedAchievements();scheduleSync(null);toast("Achievement restored to active.","success");
+  }
+
+  /* Single achievement form */
+  function populateAchCharChecks(){
+    const chars=campaignState.characters.filter(c=>!c.isArchived);
+    document.getElementById("am-char-checks").innerHTML=chars.map(c=>
+      '<label style="display:flex;align-items:center;gap:0.35rem;font-size:0.78rem;margin:0;cursor:pointer;">'+
+        '<input type="checkbox" data-char-id="'+c.id+'" style="width:auto;margin:0;accent-color:var(--accent);">'+
+        esc(c.name)+'</label>'
+    ).join("");
+  }
+  function toggleLootForm(){
+    document.getElementById("am-loot-form").classList.toggle("hidden",!document.getElementById("am-attach-loot").checked);
+  }
+  function createSingleAchievement(){
+    const name=document.getElementById("am-name").value.trim();
+    if(!name){toast("Name required.","error");return;}
+    const earnedBy={};
+    document.querySelectorAll("#am-char-checks input:checked").forEach(cb=>{earnedBy[cb.dataset.charId]=new Date().toISOString();});
+    let loot=null;
+    if(document.getElementById("am-attach-loot").checked){
+      const ln=document.getElementById("am-loot-name").value.trim();
+      if(ln){loot={id:"loot_"+Date.now().toString(36),name:ln,description:document.getElementById("am-loot-desc").value.trim(),effect:document.getElementById("am-loot-effect").value.trim(),type:"wondrous",rarity:"uncommon"};}
+    }
+    campaignState.achievements.push({
+      id:"ach_"+Date.now().toString(36),name,
+      description:document.getElementById("am-desc").value.trim(),
+      earnedBy:Object.keys(earnedBy).length?earnedBy:null,
+      acknowledgedBy:[],notifyPlayerAt:null,awardedAt:null,
+      rewards:{gold:numVal("am-gold"),lootId:loot?loot.id:null},
+      loot,isArchived:false,glow:false,createdAt:new Date().toISOString()
+    });
+    resetAchForm();renderAchievementList();scheduleSync(null);
+    toast("Achievement created.","success");
+  }
+  function resetAchForm(){
+    ["am-name","am-desc","am-loot-name","am-loot-desc","am-loot-effect"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+    document.getElementById("am-gold").value="0";
+    document.getElementById("am-attach-loot").checked=false;
+    document.getElementById("am-loot-form").classList.add("hidden");
+    document.querySelectorAll("#am-char-checks input").forEach(cb=>{cb.checked=false;});
+  }
+
+  /* Bulk parser */
+  let _bulkPreviewData=[];
+  function parseBulkAchievements(){
+    const raw=document.getElementById("bulk-paste-area").value;
+    if(!raw.trim()){toast("Paste a document first.","warn");return;}
+    _bulkPreviewData=[];
+    const lines=raw.split("\n");
+    let curChar=null,curAch=null;
+    const finalizeAch=()=>{if(curAch)_bulkPreviewData.push(curAch);curAch=null;};
+    for(let i=0;i<lines.length;i++){
+      const t=lines[i].trim();
+      if(!t)continue;
+      if(/^[A-Z]{3,12}$/.test(t)){finalizeAch();curChar=t;continue;}
+      const numM=t.match(/^(\d+)\.\s*"?(.+?)"?\s*$/);
+      if(numM){finalizeAch();curAch={character:curChar,number:parseInt(numM[1],10),name:numM[2].replace(/^"|"$/g,"").trim(),trigger:"",reward:{name:"",description:"",effect:""},aiMessage:""};continue;}
+      if(curAch){
+        if(/^Trigger:/i.test(t))curAch.trigger=t.replace(/^Trigger:\s*/i,"");
+        else if(/^Reward:/i.test(t))curAch.reward.name=t.replace(/^Reward:\s*/i,"").replace(/^"|"$/g,"").trim();
+        else if(/^Description:/i.test(t))curAch.reward.description=t.replace(/^Description:\s*/i,"");
+        else if(/^Effect:/i.test(t))curAch.reward.effect=t.replace(/^Effect:\s*/i,"");
+        else if(/^AI\s*Message:/i.test(t))curAch.aiMessage=t.replace(/^AI\s*Message:\s*/i,"");
+        else if(curAch.trigger&&!curAch.reward.name)curAch.trigger+=" "+t;
+      }
+    }
+    finalizeAch();
+    if(!_bulkPreviewData.length){toast("No achievements parsed. Check format.","warn");return;}
+    const preview=document.getElementById("bulk-preview"),list=document.getElementById("bulk-preview-list");
+    list.innerHTML=_bulkPreviewData.map(a=>
+      '<div class="bulk-preview-item">'+
+        '<strong>'+(a.character||"?")+':</strong> '+esc(a.name)+
+        (a.reward.name?' <span style="color:var(--loot);font-size:0.75rem;">&rarr; '+esc(a.reward.name)+'</span>':'')+
+      '</div>'
+    ).join("");
+    preview.classList.remove("hidden");
+    document.getElementById("bulk-import-btn").classList.remove("hidden");
+    toast(_bulkPreviewData.length+" achievements parsed.","success");
+  }
+  function importBulkAchievements(){
+    if(!_bulkPreviewData.length){toast("Parse first.","warn");return;}
+    let count=0;
+    _bulkPreviewData.forEach((a,i)=>{
+      const charId=campaignState.characters.find(c=>c.name.toUpperCase()===(a.character||"").toUpperCase())?.id;
+      let loot=null;
+      if(a.reward.name){loot={id:"loot_"+Date.now().toString(36)+"_"+i,name:a.reward.name,description:a.reward.description,effect:a.reward.effect,type:"wondrous",rarity:"rare"};}
+      campaignState.achievements.push({
+        id:"ach_"+Date.now().toString(36)+"_"+i,name:a.name,description:a.trigger,
+        earnedBy:charId?{[charId]:new Date().toISOString()}:null,
+        acknowledgedBy:[],notifyPlayerAt:null,awardedAt:null,
+        rewards:{gold:0,lootId:loot?loot.id:null},
+        loot,isArchived:false,glow:false,createdAt:new Date().toISOString()
+      });
+      count++;
+    });
+    resetBulkForm();switchAchTab("active");renderAchievementList();scheduleSync(null);
+    toast("Imported "+count+" achievement(s).","success");
+  }
+  function resetBulkForm(){
+    document.getElementById("bulk-paste-area").value="";
+    document.getElementById("bulk-preview").classList.add("hidden");
+    document.getElementById("bulk-import-btn").classList.add("hidden");
+    _bulkPreviewData=[];
+  }
+  /* ============================================================
+     MODAL TABS
+     ============================================================ */
+  function switchModalTab(modalId,btn){
+    const target=btn.dataset.tab,modal=document.getElementById(modalId);
+    modal.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active",b===btn));
+    modal.querySelectorAll(".tab-panel").forEach(p=>p.classList.toggle("active",p.id===target));
+  }
+  function wireCharModalInputs(){
+    ["cm-hp-current","cm-hp-max","cm-ac","cm-speed","cm-pp","cm-pi","cm-ds-succ","cm-ds-fail","cm-race","cm-class","cm-level","cm-gold","cm-img","cm-conditions"].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.addEventListener("change",commitCharModal);
+    });
+  }
+
+  /* ============================================================
+     GLOBAL ESC
+     ============================================================ */
+  document.addEventListener("keydown",(e)=>{
+    if(e.key!=="Escape")return;
+    if(document.getElementById("ach-loot-panel").classList.contains("open"))closeLootPanel();
+    if(document.getElementById("room-drawer").classList.contains("open"))closeRoomDrawer();
+    if(document.getElementById("ach-drawer").classList.contains("open"))closeAchievementDrawer();
+    if(!document.getElementById("char-modal").classList.contains("hidden"))closeCharModal();
+    if(_inlineEditId)cancelInlineEdit();
+    if(!document.getElementById("raw-editor-container").classList.contains("hidden"))cancelRawEdit();
+    cancelSessionNumber();
+  });
+
+  /* ============================================================
+     RENDER ALL + INIT
+     ============================================================ */
+  function renderAll(){renderCards();renderRoomSelect();renderRoom();renderNotes();}
+  document.addEventListener("DOMContentLoaded", async () => {
+    // Auto-fetch latest state from KV on load
+    if (campaignState) {
+      // Already loaded during auth flow — just render
+    } else {
+      try {
+        const r = await fetch(WORKER_URL);
+        if (r.ok) { campaignState = await r.json(); normalizeState(); }
+      } catch (e) { console.error("Auto-fetch on load failed:", e); }
+      if (!campaignState) normalizeState();
+    }
+    wireCharModalInputs();
+    renderAll();
+    setHeartbeat("ok");
+  });
+  </script>
+
+</body>
+</html>
