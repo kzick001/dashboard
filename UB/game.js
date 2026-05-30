@@ -1,6 +1,7 @@
 // ==========================================
-// UNDEAD BARRAGE - GAME ENGINE (v0.5)
-// Layers 1-5: Foundation, Combat, Shop, Mastery, Director+Polish
+// UNDEAD BARRAGE - GAME ENGINE (v1.0.0)
+// Layers 1-5 + v1.0 Polish: VFX, Flow Gating, Director Phases,
+//   Mutation/Venture hooks, Spitter/Barricade, Supply Drops, Audio scaffold
 // ==========================================
 
 import { GameConfig } from './config.js';
@@ -16,6 +17,7 @@ const GameState = {
     isPaused: false,
     inShop: false,
     inHarvest: false,
+    tutorialPending: false,
 
     // Player
     maxHp: 5,
@@ -179,6 +181,12 @@ class GameScene extends Phaser.Scene {
         this.grenadeGroup = this.physics.add.group({
             classType: GrenadeProj, maxSize: 30, runChildUpdate: true
         });
+        this.acidGroup = this.physics.add.group({
+            classType: AcidProjectile, maxSize: 60, runChildUpdate: true
+        });
+        this.crateGroup = this.physics.add.group({
+            classType: SupplyCrate, maxSize: 8, runChildUpdate: true
+        });
         this.barricadeGroup = this.physics.add.staticGroup();
 
         // ----- Player -----
@@ -192,8 +200,12 @@ class GameScene extends Phaser.Scene {
         this.physics.add.overlap(this.grenadeGroup, this.enemyGroup, this.onGrenadeHitEnemy, null, this);
         this.physics.add.overlap(this.player, this.enemyGroup, this.onPlayerHitByEnemy, null, this);
         this.physics.add.overlap(this.player, this.coinGroup, this.onPlayerCollectCoin, null, this);
+        this.physics.add.overlap(this.player, this.acidGroup, this.onPlayerHitByAcid, null, this);
+        this.physics.add.overlap(this.player, this.crateGroup, this.onPlayerCollectCrate, null, this);
+        this.physics.add.overlap(this.enemyGroup, this.barricadeGroup, this.onEnemyHitBarricade, null, this);
 
         // ----- Managers -----
+        this.audio = new AudioManager(this);
         this.director = new DirectorAI(this);
         this.hud = new HUDManager(this);
         this.shop = new ShopManager(this);
@@ -240,8 +252,10 @@ class GameScene extends Phaser.Scene {
         this.player.respawn();
         this.physics.world.resume();
         this.hud.show();
-        this.director.startWave(GameState.wave);
-        this.showTutorial(GameState.wave);
+        // Phase 2: freeze before first wave until the player acknowledges the transmission
+        this.showTutorialGate(GameState.wave, () => {
+            this.director.startWave(GameState.wave);
+        });
     }
 
     onPauseGame() {
@@ -289,8 +303,10 @@ class GameScene extends Phaser.Scene {
         GameState.wave += 1;
         eventBus.emit('WAVE_STARTED', { wave: GameState.wave });
         this.onResumeGame();
-        this.director.startWave(GameState.wave);
-        this.showTutorial(GameState.wave);
+        // Phase 2: gate the new wave behind tutorial acknowledgment
+        this.showTutorialGate(GameState.wave, () => {
+            this.director.startWave(GameState.wave);
+        });
     }
 
     onPlayerDied() {
@@ -378,6 +394,30 @@ class GameScene extends Phaser.Scene {
         coin.despawn();
     }
 
+    // onPlayerHitByAcid — Phase 5: spitter glob hits the player
+    onPlayerHitByAcid(player, acid) {
+        if (!acid.active) return;
+        acid.splash();
+        if (this.player.invulnTimer > 0) return;
+        this.player.takeDamage(GameConfig.mobs.spitter.spitDamage);
+    }
+
+    // onPlayerCollectCrate — Phase 6: pick up a supply drop mid-horde
+    onPlayerCollectCrate(player, crate) {
+        if (!crate.active) return;
+        crate.open();
+    }
+
+    // onEnemyHitBarricade — Phase 5: enemies grind down barricades on contact
+    onEnemyHitBarricade(enemy, barricade) {
+        if (!enemy.active || !barricade.active) return;
+        if (enemy.invulnerable) return;
+        barricade.takeDamage(1);
+        const ang = Phaser.Math.Angle.Between(barricade.x, barricade.y, enemy.x, enemy.y);
+        enemy.x += Math.cos(ang) * 6;
+        enemy.y += Math.sin(ang) * 6;
+    }
+
     // ---------- Helpers ----------
     spawnProjectile(x, y, vx, vy, damage, stats, dirX, dirY) {
         const proj = this.projectilePool.get();
@@ -411,11 +451,16 @@ class GameScene extends Phaser.Scene {
         const fx = this.add.circle(x, y, radius, 0xff8a00, 0.5).setDepth(20);
         this.tweens.add({ targets: fx, alpha: 0, scale: 1.3, duration: 250, onComplete: () => fx.destroy() });
         if (GameState.screenShake) this.cameras.main.shake(120, 0.012);
+        eventBus.emit('EXPLOSION', { x, y, radius });
 
         this.enemyGroup.getChildren().forEach(e => {
             if (!e.active || e.invulnerable) return;
             const d = Phaser.Math.Distance.Between(x, y, e.x, e.y);
-            if (d <= radius) e.takeDamage(dmg, false, 0, 1);
+            if (d <= radius) {
+                e.lastDeathWasExplosion = true; // Phase 4: Spare Change explosion-kill gating
+                this.floatingText(e.x, e.y - 20, Math.round(dmg), '#ff6b35');
+                e.takeDamage(dmg, false, 0, 1);
+            }
         });
     }
 
@@ -431,10 +476,73 @@ class GameScene extends Phaser.Scene {
         });
     }
 
+    // bloodSplat(x, y, dirX, dirY) — Phase 1: directional red spray at enemy center
+    bloodSplat(x, y, dirX, dirY) {
+        const fx = GameConfig.fx;
+        const count = Phaser.Math.Between(fx.bloodYieldMin, fx.bloodYieldMax) || fx.splatCount;
+        const hasDir = (dirX !== undefined && dirY !== undefined && (dirX !== 0 || dirY !== 0));
+        for (let i = 0; i < count; i++) {
+            const scale = Phaser.Math.FloatBetween(fx.splatScaleMin, fx.splatScaleMax);
+            const r = (fx.splatRadius || 3) * scale;
+            const splat = this.add.circle(x, y, r, 0xaa0000, 0.7).setDepth(19);
+            const baseAng = hasDir ? Math.atan2(dirY, dirX) : Phaser.Math.FloatBetween(0, Math.PI * 2);
+            const ang = baseAng + Phaser.Math.FloatBetween(-0.6, 0.6);
+            const spd = fx.arterialSpraySpeed * Phaser.Math.FloatBetween(0.3, 1.0) / 60;
+            const dist = spd * (fx.splatFadeDuration / 16);
+            this.tweens.add({
+                targets: splat,
+                x: x + Math.cos(ang) * dist,
+                y: y + Math.sin(ang) * dist,
+                alpha: 0, scale: 0.4,
+                duration: fx.splatFadeDuration, ease: 'Quad.easeOut',
+                onComplete: () => splat.destroy()
+            });
+        }
+    }
+
+    // ejectCasings(x, y, fireAng, dual) — Phase 1: brass to the right (both sides if dual-wield)
+    ejectCasings(x, y, fireAng, dual) {
+        const fx = GameConfig.fx;
+        const sides = dual ? [1, -1] : [1];
+        sides.forEach(side => {
+            const perp = fireAng + (Math.PI / 2) * side;
+            for (let i = 0; i < (fx.casingCount || 2); i++) {
+                const casing = this.add.rectangle(x, y, 2, 6, 0xccaa00, 0.9)
+                    .setDepth(17).setRotation(Phaser.Math.FloatBetween(0, Math.PI * 2));
+                const ejVx = Math.cos(perp) * fx.casingVelocityX * Phaser.Math.FloatBetween(0.6, 1.2);
+                const ejVy = Math.sin(perp) * fx.casingVelocityX * Phaser.Math.FloatBetween(0.6, 1.2) + fx.casingVelocityY;
+                const dur = fx.casingFadeDuration;
+                const landX = x + ejVx * (dur / 1000);
+                const landY = y + ejVy * (dur / 1000) + fx.casingGravity * (dur / 100);
+                this.tweens.add({
+                    targets: casing, x: landX, y: landY,
+                    rotation: casing.rotation + Phaser.Math.FloatBetween(-6, 6),
+                    duration: dur, ease: 'Quad.easeIn'
+                });
+                this.tweens.add({
+                    targets: casing, alpha: 0, duration: dur * 0.4, delay: dur * 0.6,
+                    onComplete: () => casing.destroy()
+                });
+            }
+        });
+    }
+
     showTutorial(wave) {
         const msg = FlavorText.tutorials[wave];
         if (!msg) return;
         this.hud.showTransmission(msg);
+    }
+
+    // showTutorialGate(wave, onDismiss) — Phase 2: freeze the wave until the player
+    // acknowledges the transmission. No tutorial for this wave => start immediately.
+    showTutorialGate(wave, onDismiss) {
+        const msg = FlavorText.tutorials[wave];
+        if (!msg) { onDismiss(); return; }
+        GameState.tutorialPending = true;
+        this.hud.showTutorialGate(msg, () => {
+            GameState.tutorialPending = false;
+            onDismiss();
+        });
     }
 
     // ---------- DOM modal handling ----------
@@ -512,6 +620,7 @@ class Player extends Phaser.GameObjects.Image {
         this.invulnTimer = 0;
         this.lastFire = 0;
         this.scavengerTimer = 0;
+        this.payItForwardTimer = 0; // Phase 4: Pay It Forward buff window
         this.moveX = 0;
         this.moveY = 0;
 
@@ -544,6 +653,7 @@ class Player extends Phaser.GameObjects.Image {
     tick(time, delta) {
         if (this.invulnTimer > 0) this.invulnTimer -= delta;
         if (this.scavengerTimer > 0) this.scavengerTimer -= delta;
+        if (this.payItForwardTimer > 0) this.payItForwardTimer -= delta;
 
         // --- Movement ---
         let speed = GameConfig.player.baseSpeed;
@@ -588,6 +698,11 @@ class Player extends Phaser.GameObjects.Image {
 
         if (GameState.ammo[wpnId] <= 0) { this.reload(); return; }
 
+        // Phase 4: Pay It Forward — flat damage bonus while the barricade-hit buff is active
+        if (GameState.mutations.includes('Pay It Forward') && this.payItForwardTimer > 0) {
+            stats.damage = stats.damage + GameConfig.mutations['Pay It Forward'].damageBonus;
+        }
+
         // Mutation: Heavy Boots — accelerated fire rate when standing still
         let rate = stats.rate;
         if (GameState.mutations.includes('Heavy Boots') && this.moveX === 0 && this.moveY === 0) {
@@ -615,6 +730,16 @@ class Player extends Phaser.GameObjects.Image {
         if (GameState.screenShake && stats.camShake) {
             this.scene.cameras.main.shake(60, stats.camShake);
         }
+
+        // Phase 1: shell casings eject to the right (both sides if dual-wield)
+        const isDual = stats.pattern === 'parallel';
+        this.scene.ejectCasings(this.x, this.y, baseAngle, isDual);
+
+        // Phase 7: audio (silent until .mp3s exist)
+        eventBus.emit('WEAPON_FIRED', {
+            audioKey: stats.audioKey, audioVol: stats.audioVol, pitchVariance: stats.pitchVariance
+        });
+
         if (GameState.ammo[wpnId] <= 0) this.reload();
     }
 
@@ -741,6 +866,47 @@ class GrenadeProj extends Phaser.GameObjects.Image {
     }
 }
 
+// ---- Acid projectile (Spitter ranged attack) ----
+class AcidProjectile extends Phaser.GameObjects.Image {
+    constructor(scene, x, y) {
+        super(scene, x, y, 'bullet'); // reuse bullet sprite, tinted green (no dedicated acid svg)
+        this.setDepth(24);
+        this.bornAt = 0;
+    }
+
+    launch(x, y, vx, vy) {
+        this.setActive(true).setVisible(true).setPosition(x, y);
+        this.setTint(0x6ee7b7).setScale(1.8);
+        this.rotation = Math.atan2(vy, vx);
+        this.bornAt = this.scene.time.now;
+        this.maxLife = 2500;
+        if (this.body) { this.body.enable = true; this.body.setVelocity(vx, vy); }
+    }
+
+    update(time) {
+        if (!this.active) return;
+        if (this.body) {
+            const decay = GameConfig.mobs.spitter.spitDecay;
+            this.body.setVelocity(this.body.velocity.x * decay, this.body.velocity.y * decay);
+        }
+        if (time - this.bornAt > this.maxLife) { this.splash(); return; }
+        const cam = this.scene.cameras.main;
+        if (this.x < -50 || this.x > cam.width + 50 || this.y < -50 || this.y > cam.height + 50) this.despawn();
+    }
+
+    splash() {
+        const fx = this.scene.add.circle(this.x, this.y, 14, 0x6ee7b7, 0.5).setDepth(16);
+        this.scene.tweens.add({ targets: fx, alpha: 0, scale: 1.6, duration: 300, onComplete: () => fx.destroy() });
+        this.despawn();
+    }
+
+    despawn() {
+        this.setActive(false).setVisible(false);
+        this.clearTint();
+        if (this.body) { this.body.enable = false; this.body.setVelocity(0, 0); }
+    }
+}
+
 // ---- Enemy ----
 class Enemy extends Phaser.GameObjects.Image {
     constructor(scene, x, y) {
@@ -756,6 +922,13 @@ class Enemy extends Phaser.GameObjects.Image {
         this.setActive(true).setVisible(true).setPosition(x, y);
         this.setTexture(this.isBoss ? 'boss' : type);
         this.invulnerable = false;
+        // Phase 4: reset pooled death-cause + bounty flags
+        this.lastHitWasCrit = false;
+        this.lastDeathWasExplosion = false;
+        this.isBounty = false;
+        this.clearTint();
+        // Phase 5: reset spitter cadence
+        this.lastSpitAt = 0;
 
         if (this.isBoss) {
             const def = GameConfig.bosses[wave] || GameConfig.bosses[50];
@@ -789,19 +962,60 @@ class Enemy extends Phaser.GameObjects.Image {
         if (!this.active) return;
         const p = this.scene.player;
         if (!p.active) { this.body.setVelocity(0, 0); return; }
+
+        // Phase 5: Spitter — ranged kiter. Hold range, back away straight, spit on cd.
+        if (this.type === 'spitter') {
+            const def = GameConfig.mobs.spitter;
+            const dist = Phaser.Math.Distance.Between(this.x, this.y, p.x, p.y);
+            const ang = Phaser.Math.Angle.Between(this.x, this.y, p.x, p.y);
+            if (dist > def.spitRange + 40) {
+                this.body.setVelocity(Math.cos(ang) * this.speed, Math.sin(ang) * this.speed);
+            } else if (dist < def.spitRange - 40) {
+                this.body.setVelocity(-Math.cos(ang) * this.speed, -Math.sin(ang) * this.speed);
+            } else {
+                this.body.setVelocity(0, 0);
+            }
+            this.rotation = ang + Math.PI / 2;
+            if (time - (this.lastSpitAt || 0) > def.spitRate && dist <= def.spitRange + 40) {
+                this.fireAcid(ang);
+                this.lastSpitAt = time;
+            }
+            return;
+        }
+
         const ang = Phaser.Math.Angle.Between(this.x, this.y, p.x, p.y);
         this.body.setVelocity(Math.cos(ang) * this.speed, Math.sin(ang) * this.speed);
         this.rotation = ang + Math.PI / 2;
     }
 
+    // fireAcid(angle) — Phase 5: launch an acid glob at the player
+    fireAcid(angle) {
+        const def = GameConfig.mobs.spitter;
+        const a = this.scene.acidGroup.get();
+        if (!a) return;
+        a.launch(this.x, this.y, Math.cos(angle) * def.spitSpeed, Math.sin(angle) * def.spitSpeed);
+        eventBus.emit('ACID_SPIT', { x: this.x, y: this.y });
+    }
+
     takeDamage(dmg, crit, dirX, dirY) {
         if (this.invulnerable || !this.active) return;
         this.hp -= dmg;
-        this.scene.floatingText(this.x, this.y - 20, Math.round(dmg), crit ? '#ffd43b' : '#ffffff');
+        this.lastHitWasCrit = !!crit; // Phase 4: Spare Change crit-kill gating
+        // Explosion path prints its own orange number in explode(); skip the white one here
+        if (!this.lastDeathWasExplosion) {
+            this.scene.floatingText(this.x, this.y - 20, Math.round(dmg), crit ? '#ffd43b' : '#ffffff');
+        }
+
+        // Phase 1: directional blood spray at enemy center
+        this.scene.bloodSplat(this.x, this.y, dirX, dirY);
 
         // hit flash
         this.setTint(0xff5555);
-        this.scene.time.delayedCall(60, () => { if (this.active) this.clearTint(); });
+        this.scene.time.delayedCall(60, () => {
+            if (!this.active) return;
+            if (this.isBounty) this.setTint(GameConfig.venture.bountyTint);
+            else this.clearTint();
+        });
 
         // knockback
         if (dirX !== undefined && this.body) {
@@ -837,12 +1051,24 @@ class Enemy extends Phaser.GameObjects.Image {
 
     dropLoot(x, y) {
         const C = GameConfig.combat;
+
+        // Phase 4: Bounty Hunter — marked grunts drop a single gold coin, nothing else
+        if (this.isBounty) {
+            this.scene.spawnCoin(x, y, GameConfig.venture.bountyAmount);
+            return;
+        }
+
         const tierValue = this.isBoss ? C.bossCoinValue : (GameConfig.mobs[this.type].cost * C.coinValuePerCost);
         let count = this.isBoss ? C.bossCoinCount : Phaser.Math.Between(C.mobCoinMin, C.mobCoinMax);
-        if (GameState.mutations.includes('Spare Change')) count += GameConfig.mutations['Spare Change'].bonusCoins;
+
+        // Phase 4: Spare Change — bonus coins ONLY on crit or explosion kills
+        const killedByCritOrBoom = this.lastHitWasCrit || this.lastDeathWasExplosion;
+        if (killedByCritOrBoom && GameState.mutations.includes('Spare Change')) {
+            count += GameConfig.mutations['Spare Change'].bonusCoins;
+        }
+
         for (let i = 0; i < count; i++) {
             let v = tierValue;
-            // Midas Touch venture: chance to upgrade coin value
             const midasLvl = GameState.ventureInvestments['midas'] || 0;
             if (midasLvl > 0 && Phaser.Math.Between(1, 100) <= GameConfig.venture.midasChance * midasLvl) v *= GameConfig.venture.midasMult;
             this.scene.spawnCoin(x + Phaser.Math.Between(-20, 20), y + Phaser.Math.Between(-20, 20), v);
@@ -890,13 +1116,93 @@ class Coin extends Phaser.GameObjects.Image {
     }
 }
 
+// ---- SupplyCrate (Phase 6) ----
+// Falls in, parks, self-despawns after a lifetime. Player walks into it to collect.
+// Reward: health or grenades, 50/50 (energy folded into the split per design call).
+class SupplyCrate extends Phaser.GameObjects.Image {
+    constructor(scene, x, y) {
+        super(scene, x, y, 'crate');
+        this.scene = scene;
+        this.setDepth(16);
+    }
+
+    spawn(x, y) {
+        this.type = (Phaser.Math.Between(1, 100) <= 50) ? 'health' : 'grenade';
+        this.setActive(true).setVisible(true).setPosition(x, y).setScale(1).setAlpha(1);
+        this.bornAt = this.scene.time.now;
+        this.parked = false;
+        this.setTint(this.type === 'health' ? 0xef4444 : 0xfb923c);
+        this.restY = this.scene.cameras.main.height - 260;
+        if (this.body) { this.body.enable = true; this.body.setVelocity(0, GameConfig.director.crateFallSpeed); }
+        eventBus.emit('CRATE_SPAWN', { x, y, type: this.type });
+    }
+
+    update(time) {
+        if (!this.active) return;
+        if (!this.parked && this.y >= this.restY) {
+            this.parked = true;
+            this.y = this.restY;
+            if (this.body) this.body.setVelocity(0, 0);
+        }
+        const age = time - this.bornAt;
+        const life = GameConfig.director.crateLifespanMs;
+        if (age > life) { this.despawn(); return; }
+        if (age > life - 1500) this.setAlpha(0.4 + 0.6 * Math.abs(Math.sin(age / 120)));
+    }
+
+    open() {
+        if (!this.active) return;
+        if (this.type === 'health') {
+            const old = GameState.hp;
+            GameState.hp = Math.min(GameState.maxHp, GameState.hp + 2);
+            eventBus.emit('PLAYER_HIT', { new: GameState.hp, old });
+            this.scene.floatingText(this.x, this.y - 20, '+2 HP', '#ef4444');
+        } else {
+            GameState.grenades += 3;
+            eventBus.emit('GRENADES_CHANGED', { grenades: GameState.grenades });
+            this.scene.floatingText(this.x, this.y - 20, '+3 NADES', '#fb923c');
+        }
+        eventBus.emit('CRATE_PICKUP', { type: this.type });
+        this.despawn();
+    }
+
+    despawn() {
+        this.setActive(false).setVisible(false);
+        this.clearTint();
+        if (this.body) { this.body.enable = false; this.body.setVelocity(0, 0); }
+    }
+}
+
 // ---- Barricade (Layer 5 defense) ----
 class Barricade extends Phaser.GameObjects.Image {
-    constructor(scene, x, y) {
+    constructor(scene, x, y, slot) {
         super(scene, x, y, 'barricade');
+        this.scene = scene;
         this.setDepth(18);
         this.hp = GameConfig.defenses.barricade.hp;
+        this.maxHp = this.hp;
+        this.slot = (slot !== undefined) ? slot : -1;
     }
+
+    // takeDamage(dmg) — Phase 5: lose HP, flash, trigger Pay It Forward, die at 0
+    takeDamage(dmg) {
+        if (this.hp <= 0) return;
+        this.hp -= dmg;
+        if (GameState.mutations.includes('Pay It Forward')) {
+            this.scene.player.payItForwardTimer = GameConfig.mutations['Pay It Forward'].durationMs;
+        }
+        this.setTint(0xff5555);
+        this.scene.time.delayedCall(100, () => { if (this.active) this.clearTint(); });
+        this.setAlpha(0.4 + 0.6 * Math.max(0, this.hp / this.maxHp));
+        if (this.hp <= 0) this.die();
+    }
+
+    die() {
+        if (this.slot >= 0) GameState.barricades[this.slot] = null;
+        if (this.scene.barricadeGroup) this.scene.barricadeGroup.remove(this, true, true);
+        else this.destroy();
+    }
+
     tick() {}
 }
 
@@ -933,6 +1239,50 @@ class Turret {
 
 // ========== MANAGER CLASSES ==========
 
+// ---- AudioManager (Phase 7) ----
+// Wired but silent: events route here, playback stays dormant until .mp3 assets
+// exist and `enabled` is flipped true. Keys map to GameConfig weapon audioKeys plus
+// the v1.0 stubs: sfx_explosion, sfx_acid_spit, sfx_crate_spawn, sfx_crate_pickup.
+class AudioManager {
+    constructor(scene) {
+        this.scene = scene;
+        this.enabled = false;            // flip true once audio files are loaded
+        this.masterVolume = GameConfig.system.masterVolume;
+        this.sfxVolume = GameConfig.system.sfxVolume;
+        this.bindEvents();
+    }
+
+    // preload() — call from scene.preload() when assets are ready (no-op for now)
+    preload() {
+        // Example wiring (left commented until files exist on GitHub Pages):
+        // this.scene.load.audio('sfx_explosion', 'assets/audio/explosion.mp3');
+        // this.scene.load.audio('sfx_acid_spit', 'assets/audio/acid.mp3');
+        // this.scene.load.audio('sfx_crate_spawn', 'assets/audio/crate_spawn.mp3');
+        // this.scene.load.audio('sfx_crate_pickup', 'assets/audio/crate_pickup.mp3');
+    }
+
+    play(key, options = {}) {
+        if (!this.enabled || !key) return;
+        const volume = (options.volume != null ? options.volume : 1.0) * this.masterVolume * this.sfxVolume;
+        const detune = (options.pitchVariance || 0) * 1200; // semitone-ish mapping
+        // Guard against missing cache entries so a partial asset set can't throw
+        if (this.scene.cache && this.scene.cache.audio && !this.scene.cache.audio.has(key)) return;
+        try { this.scene.sound.play(key, { volume, detune }); } catch (e) { /* dormant */ }
+    }
+
+    setMasterVolume(vol) { this.masterVolume = Math.max(0, Math.min(1, vol)); }
+    setEnabled(b) { this.enabled = !!b; }
+
+    bindEvents() {
+        eventBus.on('WEAPON_FIRED', (d) => this.play(d.audioKey, { volume: d.audioVol, pitchVariance: d.pitchVariance }));
+        eventBus.on('EXPLOSION', () => this.play('sfx_explosion', { volume: 0.8 }));
+        eventBus.on('ACID_SPIT', () => this.play('sfx_acid_spit', { volume: 0.5 }));
+        eventBus.on('CRATE_SPAWN', () => this.play('sfx_crate_spawn', { volume: 0.6 }));
+        eventBus.on('CRATE_PICKUP', () => this.play('sfx_crate_pickup', { volume: 0.7 }));
+        eventBus.on('ENEMY_DIED', () => this.play('sfx_enemy_die', { volume: 0.4 }));
+    }
+}
+
 // ---- DirectorAI ----
 class DirectorAI {
     constructor(scene) {
@@ -942,6 +1292,7 @@ class DirectorAI {
         this.alive = 0;
         this.nextSpawnAt = 0;
         this.waveActive = false;
+        this.nextSupplyDropAt = 0; // Phase 6: supply-crate cadence
     }
 
     // mobBudget(wave) — exponential budget from config
@@ -960,22 +1311,70 @@ class DirectorAI {
         return pool;
     }
 
-    // startWave(wave) — Layer 2 used hardcoded 3 grunts; Layer 5 uses budget.
+    // startWave(wave) — Phase 3: budget split into sequential phases.
     startWave(wave) {
         this.waveActive = true;
         this.alive = 0;
+        this.lastPhaseType = null;
         eventBus.emit('WAVE_STARTED', { wave });
 
-        // Boss waves spawn one boss plus a reduced budget of mobs
+        let totalBudget = this.mobBudget(wave);
         if (wave % 10 === 0) {
             this.spawnBoss(wave);
-            this.queue = this.buildQueue(wave, Math.floor(this.mobBudget(wave) * 0.5));
-        } else {
-            this.queue = this.buildQueue(wave, this.mobBudget(wave));
+            totalBudget = Math.floor(totalBudget * 0.5);
         }
-        this.toSpawn = this.queue.length;
+
+        const phaseCount = Math.max(1, GameConfig.director.phaseCount);
+        this.budgetPerPhase = Math.floor(totalBudget / phaseCount);
+        this.phases = [];
+        for (let i = 0; i < phaseCount; i++) {
+            const pBudget = (i === phaseCount - 1)
+                ? totalBudget - this.budgetPerPhase * (phaseCount - 1)
+                : this.budgetPerPhase;
+            this.phases.push(this.buildPhaseQueue(wave, pBudget));
+        }
+
+        this.currentPhase = 0;
+        this.queue = this.phases[0].slice();
+        this.toSpawn = this.phases.reduce((n, p) => n + p.length, 0);
         this.spawning = true;
         this.nextSpawnAt = this.scene.time.now + 500;
+        this.nextPhaseAt = this.scene.time.now + this.phasePauseMs();
+        // Phase 6: first crate window opens partway into the wave
+        this.nextSupplyDropAt = this.scene.time.now + Phaser.Math.Between(
+            GameConfig.director.supplyDropMin, GameConfig.director.supplyDropMax);
+    }
+
+    // phasePauseMs() — Phase 3: harder waves wait longer between phases
+    phasePauseMs() {
+        const d = GameConfig.director;
+        const scaled = Math.min(d.phaseScaleCap, (this.budgetPerPhase / d.phaseScalePerBudget) * 1000);
+        return d.phaseBasePause + scaled;
+    }
+
+    // buildPhaseQueue(wave, budget) — Phase 3: biased away from previous phase's dominant type
+    buildPhaseQueue(wave, budget) {
+        const pool = this.availableMobs(wave);
+        const queue = [];
+        const typeCounts = {};
+        let spent = 0;
+        let guard = 0;
+        while (spent < budget && guard < 1000) {
+            guard++;
+            let type = Phaser.Utils.Array.GetRandom(pool);
+            if (this.lastPhaseType && type === this.lastPhaseType && pool.length > 1) {
+                type = Phaser.Utils.Array.GetRandom(pool);
+            }
+            const cost = GameConfig.mobs[type].cost;
+            if (spent + cost > budget && queue.length > 0) break;
+            queue.push(type);
+            spent += cost;
+            typeCounts[type] = (typeCounts[type] || 0) + 1;
+        }
+        let dom = null, domN = -1;
+        Object.keys(typeCounts).forEach(t => { if (typeCounts[t] > domN) { domN = typeCounts[t]; dom = t; } });
+        this.lastPhaseType = dom;
+        return queue;
     }
 
     buildQueue(wave, budget) {
@@ -1003,8 +1402,29 @@ class DirectorAI {
     }
 
     tick(time) {
+        // Phase 2: director freezes entirely while paused or while a tutorial gate is up
+        if (GameState.isPaused || GameState.tutorialPending) return;
         if (!this.spawning) return;
-        if (this.queue.length === 0) { this.spawning = false; return; }
+
+        // Phase 6: supply crate on cadence (independent of mob spawning)
+        if (time >= this.nextSupplyDropAt) {
+            this.spawnSupplyCrate();
+            this.nextSupplyDropAt = time + Phaser.Math.Between(
+                GameConfig.director.supplyDropMin, GameConfig.director.supplyDropMax);
+        }
+
+        // Phase 3: advance to next phase when its timer elapses
+        if (this.currentPhase < this.phases.length - 1 && time >= this.nextPhaseAt) {
+            this.currentPhase++;
+            this.queue = this.queue.concat(this.phases[this.currentPhase].slice());
+            this.nextPhaseAt = time + this.phasePauseMs();
+        }
+
+        // Queue drained but phases remain => idle until next phase
+        if (this.queue.length === 0) {
+            if (this.currentPhase >= this.phases.length - 1) { this.spawning = false; }
+            return;
+        }
         if (time < this.nextSpawnAt) return;
 
         const clump = Phaser.Math.Between(GameConfig.director.burstClumpMin, GameConfig.director.burstClumpMax);
@@ -1016,6 +1436,16 @@ class DirectorAI {
             GameConfig.director.spawnPauseMin, GameConfig.director.spawnPauseMax);
     }
 
+    // spawnSupplyCrate() — Phase 6: drop a stationary crate at a random road X
+    spawnSupplyCrate() {
+        const cam = this.scene.cameras.main;
+        const roadWidth = 500;
+        const x = cam.centerX + Phaser.Math.Between(-roadWidth / 2 + 40, roadWidth / 2 - 40);
+        const crate = this.scene.crateGroup.get();
+        if (!crate) return;
+        crate.spawn(x, -40);
+    }
+
     spawnMob(type) {
         const cam = this.scene.cameras.main;
         const roadWidth = 500;
@@ -1024,6 +1454,14 @@ class DirectorAI {
         const e = this.scene.enemyGroup.get(x, y);
         if (!e) return;
         e.spawn(x, y, type, GameState.wave);
+
+        // Phase 4: Bounty Hunter venture — mark a fraction of grunts as gold-bearing
+        const bountyLvl = GameState.ventureInvestments['bounty'] || 0;
+        if (type === 'grunt' && bountyLvl > 0 &&
+            Phaser.Math.Between(1, 100) <= GameConfig.venture.bountyChance) {
+            e.isBounty = true;
+            e.setTint(GameConfig.venture.bountyTint);
+        }
         this.alive += 1;
     }
 
@@ -1140,6 +1578,47 @@ class HUDManager {
         t.style.display = 'block';
         clearTimeout(this._txTimer);
         this._txTimer = setTimeout(() => { t.style.display = 'none'; }, 8000);
+    }
+
+    // showTutorialGate(msg, onDismiss) — Phase 2: persistent transmission with an
+    // ACKNOWLEDGE button. No auto-dismiss; click or SPACE/ENTER resumes the wave.
+    showTutorialGate(msg, onDismiss) {
+        const t = document.getElementById('hud-transmission');
+        clearTimeout(this._txTimer);
+        t.style.display = 'block';
+        t.innerHTML = '';
+
+        const body = document.createElement('div');
+        body.textContent = msg;
+        body.style.marginBottom = '12px';
+        t.appendChild(body);
+
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.textContent = '[ ACKNOWLEDGE ]';
+        btn.style.margin = '0';
+        btn.style.padding = '8px 16px';
+        btn.style.fontSize = '0.9em';
+        btn.style.pointerEvents = 'auto';
+        t.appendChild(btn);
+
+        const prevPE = t.style.pointerEvents;
+        t.style.pointerEvents = 'auto';
+
+        this._gateDone = false;
+        const dismiss = () => {
+            if (this._gateDone) return;
+            this._gateDone = true;
+            window.removeEventListener('keydown', onKey);
+            t.style.pointerEvents = prevPE;
+            t.style.display = 'none';
+            t.innerHTML = '';
+            onDismiss();
+        };
+        const onKey = (e) => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); dismiss(); } };
+
+        btn.addEventListener('click', dismiss);
+        window.addEventListener('keydown', onKey);
     }
 
     flashWaveClear() {
@@ -1365,7 +1844,7 @@ class ShopManager {
         const cam = this.scene.cameras.main;
         const x = cam.centerX - 200 + slot * 80;
         const y = cam.height - 220;
-        const bar = new Barricade(this.scene, x, y);
+        const bar = new Barricade(this.scene, x, y, slot);
         this.scene.add.existing(bar);
         this.scene.barricadeGroup.add(bar);
         GameState.barricades[slot] = { hp: bar.hp };
