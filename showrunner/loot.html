@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Showrunner | Loot Tables V4.1</title>
+
+  <script>
+    const SECURE_PIN = "goddammit_doughnut";
+    let savedPin = localStorage.getItem('showrunner_pin');
+
+    if (savedPin !== SECURE_PIN) {
+      document.documentElement.style.display = 'none';
+      let input = prompt("ACCESS RESTRICTED: Enter Showrunner PIN.");
+
+      if (input === SECURE_PIN) {
+        localStorage.setItem('showrunner_pin', input);
+        document.documentElement.style.display = '';
+      } else {
+        window.location.href = "https://kzick001.github.io/dashboard/dm-screen/players/players.html";
+      }
+    }
+  </script>
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23bb86fc;stop-opacity:1' /><stop offset='100%' style='stop-color:%239d4edd;stop-opacity:1' /></linearGradient></defs><polygon points='50,20 70,32 70,56 50,68 30,56 30,32' fill='none' stroke='url(%23grad)' stroke-width='2'/><polygon points='50,32 62,40 62,56 50,64 38,56 38,40' fill='none' stroke='url(%23grad)' stroke-width='1.5' opacity='0.7'/><polygon points='50,42 56,46 56,54 50,58 44,54 44,46' fill='url(%23grad)'/></svg>">
+
+  <style>
+    :root {
+      --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --text-muted: #888;
+      --accent: #bb86fc; --info: #74b9ff; --success: #03dac6; --danger: #cf6679; --warning: #f1c40f;
+      --header: #0f0f0f; --nav-bg: #161616; --mag-bg: #0a0a0a;
+      --glass: rgba(20, 20, 25, 0.7); --glass-border: rgba(255, 255, 255, 0.1);
+
+      /* rarity colors */
+      --r-common: #9e9e9e; --r-uncommon: #1eff00; --r-rare: #0070dd;
+      --r-veryrare: #a335ee; --r-legendary: #ff8000;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg); color: var(--text); margin: 0; line-height: 1.5;
+      height: 100vh; overflow: hidden; display: flex; flex-direction: column; font-variant-numeric: tabular-nums;
+    }
+    .hidden { display: none !important; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+
+    /* --- Global Navbar --- */
+    .navbar {
+      height: 60px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 1.5rem; background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+      border-bottom: 1px solid var(--glass-border); z-index: 200; flex-shrink: 0;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; letter-spacing: 0.15em; font-size: 1.1rem; color: #fff; text-shadow: 0 0 10px rgba(187,134,252,0.5); }
+    .nav-links { display: flex; gap: 0.75rem; }
+    .nav-link {
+      color: var(--text); text-decoration: none; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;
+      letter-spacing: 0.1em; padding: 6px 12px; border-radius: 20px; border: 1px solid transparent; transition: 0.3s;
+    }
+    .nav-link:hover { background: rgba(255,255,255,0.05); border-color: var(--glass-border); color: #fff; }
+    .nav-link.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(187,134,252,0.2); }
+    .debug-hint { font-size: 0.65rem; color: var(--text-muted); letter-spacing: 0.08em; margin-left: auto; padding-right: 1rem; cursor: help; }
+    .debug-hint:hover { color: var(--accent); }
+
+    /* --- Global Controls Bar --- */
+    .global-controls {
+      padding: 8px 1.5rem; background: rgba(10,10,12,0.8); border-bottom: 1px solid #333;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .gc-left, .gc-right { display: flex; align-items: center; gap: 10px; }
+
+    .btn-icon { background: transparent; border: 1px solid #333; padding: 6px 10px; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border-radius: 6px; transition: 0.2s; font-size: 0.8rem; font-weight: bold; letter-spacing: 0.05em; }
+    .btn-icon:hover { color: #fff; background: rgba(255,255,255,0.08); border-color: #555; }
+    .btn-icon.active { color: var(--accent); border-color: var(--accent); }
+
+    .sync-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--text-muted); transition: 0.3s; box-shadow: 0 0 6px currentColor; }
+    .sync-dot.idle { background: var(--success); color: var(--success); }
+    .sync-dot.busy { background: var(--warning); color: var(--warning); animation: pulse 0.8s infinite; }
+    .sync-dot.error { background: var(--danger); color: var(--danger); }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* --- Layout Grid --- */
+    .showrunner-layout {
+      display: grid; grid-template-columns: 280px 1fr 380px; flex-grow: 1;
+      transition: grid-template-columns 0.3s ease; overflow: hidden;
+    }
+    .showrunner-layout.left-collapsed { grid-template-columns: 0px 1fr 380px; }
+    .showrunner-layout.right-collapsed { grid-template-columns: 280px 1fr 0px; }
+    .showrunner-layout.left-collapsed.right-collapsed { grid-template-columns: 0px 1fr 0px; }
+
+    @media (max-width: 900px) {
+      .showrunner-layout, .showrunner-layout.left-collapsed, .showrunner-layout.right-collapsed { display: flex; flex-direction: column; overflow-y: auto; grid-template-columns: none; }
+      .nav-sidebar, .magazine-sidebar { width: 100%; max-height: 320px; flex-shrink: 0; border: none; border-bottom: 1px solid #333; }
+      .main-stage { overflow: visible; padding: 1.5rem; }
+      .nav-sidebar.mobile-hide, .magazine-sidebar.mobile-hide { display: none; }
+    }
+
+    /* --- Left Nav Sidebar --- */
+    .nav-sidebar { background: var(--nav-bg); border-right: 1px solid #333; display: flex; flex-direction: column; overflow: hidden; }
+    .nav-list { overflow-y: auto; flex-grow: 1; padding: 0.75rem 0; }
+    .nav-category { padding: 0.5rem 1.25rem 0.35rem; font-size: 0.72rem; color: #666; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 0.5rem; font-weight: bold; }
+    .nav-item {
+      padding: 0.6rem 1.25rem; cursor: pointer; border-left: 3px solid transparent; color: #aaa;
+      transition: 0.1s; font-size: 0.92rem; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+    .nav-item.active { border-left-color: var(--accent); background: rgba(187, 134, 252, 0.1); color: #fff; font-weight: bold; }
+    .nav-item .dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; display: inline-block; margin-right: 4px; }
+    .nav-item .label { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nav-item .count { font-size: 0.72rem; color: #666; font-family: monospace; background: rgba(255,255,255,0.05); padding: 1px 6px; border-radius: 8px; flex-shrink: 0; }
+    .nav-item.active .count { color: var(--accent); }
+
+    .dot-bronze { background: #cd7f32; }
+    .dot-silver { background: #c0c0c0; }
+    .dot-gold { background: #ffd700; }
+    .dot-platinum { background: #e5e4e2; }
+    .dot-personal { background: var(--info); }
+    .dot-custom { background: var(--accent); }
+
+    .sidebar-footer { padding: 0.85rem 1rem; border-top: 1px solid #333; display: flex; flex-direction: column; gap: 0.6rem; flex-shrink: 0; }
+
+    /* --- Center Stage --- */
+    .main-stage { overflow-y: auto; padding: 2rem; box-sizing: border-box; background: var(--bg); display: flex; flex-direction: column; align-items: center; }
+    .stage-inner { width: 100%; max-width: 620px; }
+    .stage-title { color: #777; text-transform: uppercase; letter-spacing: 0.12em; margin: 0 0 1.5rem; font-size: 1rem; text-align: center; }
+    .stage-title b { color: var(--accent); }
+
+    .roller-container { background: #111; border: 1px solid #333; padding: 1.75rem; border-radius: 10px; text-align: center; width: 100%; box-shadow: 0 8px 16px rgba(0,0,0,0.5); }
+    .roller-input-group { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
+    .dice-input { background: #050505; color: var(--accent); border: 2px solid #444; border-radius: 10px; font-size: 3rem; text-align: center; width: 130px; padding: 0.4rem; outline: none; font-family: monospace; transition: 0.2s; }
+    .dice-input:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(187, 134, 252, 0.4); }
+    .dice-input::-webkit-outer-spin-button, .dice-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .dice-hint { color: #555; font-size: 0.8rem; margin-bottom: 1rem; }
+
+    .btn-resolve { background: var(--accent); color: #000; font-size: 1.1rem; font-weight: bold; padding: 0.7rem 2rem; border-radius: 8px; border: none; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .btn-resolve:hover { background: #d0a3ff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(187, 134, 252, 0.4); }
+
+    /* --- Result Cards --- */
+    .result-container { width: 100%; margin-top: 1.75rem; }
+    .result-card { background: #1a1e24; border-top: 4px solid var(--info); padding: 1.75rem; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.8); animation: slideUp 0.3s ease-out forwards; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .result-card.error { border-top-color: var(--danger); background: #2a1518; }
+    .result-card.success { border-top-color: var(--success); }
+
+    .result-matched { font-size: 0.78rem; color: var(--success); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; font-weight: bold; }
+    .result-title { font-size: 1.55rem; color: #fff; margin: 0 0 0.6rem; }
+    .result-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 5px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: bold; background: rgba(255,255,255,0.08); color: #ccc; }
+    .badge.qty { color: var(--info); }
+    .badge.attune { color: var(--warning); border: 1px solid rgba(241,196,15,0.4); }
+    .badge-rarity { color: #000; }
+
+    .result-section { margin-bottom: 1rem; }
+    .result-section-label { font-size: 0.72rem; color: #777; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.3rem; font-weight: bold; }
+    .result-text { color: #d1d5db; line-height: 1.6; font-size: 1rem; white-space: pre-wrap; }
+    .result-charges { font-family: monospace; color: var(--warning); font-size: 0.95rem; }
+
+    .action-row { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid #333; }
+    .btn-action { background: #222; border: 1px solid #444; color: #fff; padding: 0.7rem; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: 0.2s; width: 100%; }
+    .btn-action:hover { background: #333; border-color: #666; }
+    .btn-action.copy { color: var(--info); border-color: rgba(116,185,255,0.3); }
+    .btn-action.copy:hover { background: var(--info); color: #000; }
+    .btn-action.undo { color: var(--warning); border-color: rgba(241,196,15,0.3); }
+    .btn-action.undo:hover { background: var(--warning); color: #000; }
+
+    .award-label { font-size: 0.72rem; color: #777; text-transform: uppercase; letter-spacing: 0.08em; margin: 0.5rem 0 0.25rem; font-weight: bold; }
+    .award-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; width: 100%; }
+    .award-btn { flex: 1; min-width: 90px; background: rgba(3, 218, 198, 0.1); border: 1px solid rgba(3, 218, 198, 0.3); color: var(--success); padding: 0.55rem; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
+    .award-btn:hover { background: var(--success); color: #000; }
+
+    /* --- Right Sidebar (Items list) --- */
+    .magazine-sidebar { background: var(--mag-bg); border-left: 1px solid #333; display: flex; flex-direction: column; overflow: hidden; }
+    .magazine-header { padding: 0.85rem 1rem; border-bottom: 1px solid #222; background: #111; font-weight: bold; letter-spacing: 0.05em; color: #aaa; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+    .magazine-list { overflow-y: auto; flex-grow: 1; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .slot { padding: 0.6rem 0.7rem; border-radius: 6px; font-size: 0.88rem; border: 1px solid transparent; transition: 0.2s; display: flex; align-items: center; gap: 0.6rem; }
+    .slot.loaded { background: #1a1a1a; border-color: #333; }
+    .slot.loaded:hover { border-color: #555; }
+    .slot .roll-tag { font-family: monospace; font-size: 0.78rem; color: #888; background: rgba(255,255,255,0.06); padding: 2px 7px; border-radius: 4px; flex-shrink: 0; min-width: 52px; text-align: center; }
+    .slot .item-name { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #ddd; }
+    .slot .rarity-pip { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .slot .slot-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .slot-btn { background: transparent; border: 1px solid #444; color: #888; width: 26px; height: 26px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; display: inline-flex; align-items: center; justify-content: center; transition: 0.15s; padding: 0; }
+    .slot-btn:hover { color: #fff; border-color: #777; }
+    .slot-btn.del:hover { color: var(--danger); border-color: var(--danger); }
+
+    .slot.empty { background: rgba(207, 102, 121, 0.08); border: 1px dashed var(--danger); color: var(--danger); }
+    .slot.empty .roll-tag { color: var(--danger); background: rgba(207,102,121,0.12); }
+    .slot.empty .item-name { color: var(--danger); font-style: italic; letter-spacing: 0.05em; }
+
+    .mag-footer { padding: 0.75rem; border-top: 1px solid #222; flex-shrink: 0; }
+
+    /* --- Buttons (generic) --- */
+    .btn { background: var(--card); color: var(--text); border: 1px solid #555; padding: 9px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem; width: 100%; }
+    .btn:hover { background: #333; border-color: #888; }
+    .btn-add { background: rgba(187, 134, 252, 0.1); border-color: var(--accent); color: var(--accent); }
+    .btn-add:hover { background: rgba(187, 134, 252, 0.2); }
+    .btn-primary { background: var(--accent); color: #000; border: none; }
+    .btn-primary:hover { background: #d0a3ff; }
+    .btn-danger { background: rgba(207,102,121,0.1); border-color: var(--danger); color: var(--danger); }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+
+    /* --- Modals --- */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 999; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-content { background: var(--card); padding: 1.75rem; border-radius: 10px; border: 1px solid #444; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+    .modal-content h2 { margin-top: 0; color: var(--accent); font-size: 1.3rem; }
+    .modal-content p.sub { color: #999; font-size: 0.88rem; margin-top: -0.5rem; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin: 1.25rem 0; }
+    .form-field { display: flex; flex-direction: column; gap: 0.3rem; }
+    .form-field.full { grid-column: 1 / -1; }
+    .form-field label { font-size: 0.74rem; color: #999; text-transform: uppercase; letter-spacing: 0.06em; font-weight: bold; }
+    .form-field input, .form-field select, .form-field textarea {
+      background: #111; color: #fff; border: 1px solid #444; padding: 0.55rem; border-radius: 6px;
+      font-family: inherit; font-size: 0.9rem; outline: none; transition: 0.2s; width: 100%;
+    }
+    .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--info); box-shadow: 0 0 8px rgba(116,185,255,0.2); }
+    .form-field textarea { resize: vertical; min-height: 64px; }
+    .form-field.checkbox { flex-direction: row; align-items: center; gap: 0.5rem; }
+    .form-field.checkbox input { width: auto; }
+    .form-field.checkbox label { text-transform: none; letter-spacing: 0; }
+
+    .form-section-divider { grid-column: 1 / -1; border-top: 1px solid #333; margin: 0.25rem 0; padding-top: 0.5rem; font-size: 0.72rem; color: #666; text-transform: uppercase; letter-spacing: 0.08em; font-weight: bold; }
+
+    .modal-actions { display: flex; gap: 0.75rem; margin-top: 0.5rem; }
+    .modal-actions .btn { flex: 1; }
+
+    /* --- Toasts --- */
+    #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+    .toast { background: rgba(10, 10, 12, 0.95); color: #fff; padding: 0.85rem 1.4rem; border-radius: 6px; border-left: 4px solid var(--accent); box-shadow: 0 4px 15px rgba(0,0,0,0.8); font-size: 0.9rem; animation: fadein 0.3s, fadeout 0.3s 3.7s forwards; max-width: 320px; }
+    @keyframes fadein { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
+
+    .empty-state { color: #555; text-align: center; padding: 2rem 1rem; font-size: 0.9rem; font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="brand">
+      <svg viewBox="0 0 100 100" width="24" height="24" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="grad-loot" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#bb86fc;stop-opacity:1" /><stop offset="100%" style="stop-color:#9d4edd;stop-opacity:1" /></linearGradient></defs><polygon points="50,20 70,32 70,56 50,68 30,56 30,32" fill="none" stroke="url(#grad-loot)" stroke-width="2"/><polygon points="50,32 62,40 62,56 50,64 38,56 38,40" fill="none" stroke="url(#grad-loot)" stroke-width="1.5" opacity="0.7"/><polygon points="50,42 56,46 56,54 50,58 44,54 44,46" fill="url(#grad-loot)"/></svg>
+      SHOWRUNNER // LOOT V4.0
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Dashboard</a>
+      <a href="loot.html" class="nav-link active">Loot</a>
+      <a href="data-forge.html" class="nav-link">Data Forge</a>
+      <div class="debug-hint" title="Add ?debug=1 to URL to enable debug logging in DevTools console">DEBUG: ?debug=1</div>
+    </div>
+  </nav>
+
+  <div class="global-controls">
+    <div class="gc-left">
+      <button id="toggle-left" class="btn-icon active" onclick="toggleColumn('left')" title="Toggle Tables panel">☰ TABLES</button>
+    </div>
+    <div class="gc-right">
+      <button class="btn-icon" onclick="undo()" title="Undo">⟲ UNDO</button>
+      <button class="btn-icon" onclick="redo()" title="Redo">⟳ REDO</button>
+      <div style="display:flex; align-items:center; gap:6px; margin-left:6px;">
+        <span id="sync-dot" class="sync-dot idle" title="Sync status"></span>
+        <span id="sync-label" style="font-size:0.72rem; color:#666; letter-spacing:0.05em;">SYNCED</span>
+      </div>
+      <button id="toggle-right" class="btn-icon active" onclick="toggleColumn('right')" title="Toggle Items panel" style="margin-left:6px;">ITEMS ☰</button>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <!-- ITEM MODAL -->
+  <div id="item-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h2 id="item-modal-title">Add Item</h2>
+      <p class="sub" id="item-modal-sub">Define the roll range and item details.</p>
+      <div class="form-grid">
+        <div class="form-field">
+          <label>Roll Range Min</label>
+          <input type="number" id="f-rollmin" min="1" placeholder="1">
+        </div>
+        <div class="form-field">
+          <label>Roll Range Max</label>
+          <input type="number" id="f-rollmax" min="1" placeholder="5">
+        </div>
+
+        <div class="form-field full">
+          <label>Item Name</label>
+          <input type="text" id="f-name" placeholder="e.g. Amulet of Health">
+        </div>
+
+        <div class="form-field">
+          <label>Type</label>
+          <select id="f-type" onchange="updateConditionalFields()">
+            <option value="weapon">Weapon</option>
+            <option value="armor">Armor</option>
+            <option value="wand">Wand</option>
+            <option value="ring">Ring</option>
+            <option value="potion">Potion</option>
+            <option value="wondrous">Wondrous</option>
+            <option value="instrument">Instrument</option>
+            <option value="consumable">Consumable</option>
+            <option value="trinket">Trinket</option>
+            <option value="currency">Currency</option>
+            <option value="arcane focus">Arcane Focus</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>Rarity</label>
+          <select id="f-rarity">
+            <option value="common">Common</option>
+            <option value="uncommon">Uncommon</option>
+            <option value="rare">Rare</option>
+            <option value="very rare">Very Rare</option>
+            <option value="legendary">Legendary</option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label>Quantity</label>
+          <input type="number" id="f-qty" min="1" value="1">
+        </div>
+        <div class="form-field"></div>
+
+        <div class="form-field full">
+          <label>Description (flavor)</label>
+          <textarea id="f-desc" placeholder="Dragon-scale amulet..."></textarea>
+        </div>
+        <div class="form-field full">
+          <label>Mechanics Text</label>
+          <textarea id="f-mechtext" placeholder="+1 to AC while worn"></textarea>
+        </div>
+
+        <!-- weapon-only -->
+        <div class="form-section-divider weapon-fields hidden">Weapon Mechanics</div>
+        <div class="form-field weapon-fields hidden">
+          <label>To-Hit Bonus</label>
+          <input type="number" id="f-tohit" placeholder="1">
+        </div>
+        <div class="form-field weapon-fields hidden">
+          <label>Damage Bonus</label>
+          <input type="text" id="f-dmg" placeholder="1d8+1">
+        </div>
+
+        <!-- armor-only -->
+        <div class="form-section-divider armor-fields hidden">Armor Mechanics</div>
+        <div class="form-field armor-fields hidden">
+          <label>AC Base</label>
+          <input type="number" id="f-acbase" placeholder="16">
+        </div>
+        <div class="form-field armor-fields hidden">
+          <label>AC Mod</label>
+          <input type="number" id="f-acmod" placeholder="1">
+        </div>
+
+        <!-- charges -->
+        <div class="form-section-divider">Charges & Attunement</div>
+        <div class="form-field checkbox full">
+          <input type="checkbox" id="f-haschanges" onchange="updateConditionalFields()">
+          <label for="f-haschanges">Item has charges</label>
+        </div>
+        <div class="form-field charge-fields hidden">
+          <label>Charges Current</label>
+          <input type="number" id="f-charcur" min="0" placeholder="3">
+        </div>
+        <div class="form-field charge-fields hidden">
+          <label>Charges Max</label>
+          <input type="number" id="f-charmax" min="0" placeholder="3">
+        </div>
+        <div class="form-field charge-fields hidden full">
+          <label>Reset Type</label>
+          <select id="f-charreset">
+            <option value="no">No reset (one-time)</option>
+            <option value="shortRest">Short Rest</option>
+            <option value="longRest">Long Rest</option>
+            <option value="daily">Daily</option>
+          </select>
+        </div>
+
+        <div class="form-field checkbox">
+          <input type="checkbox" id="f-attune" onchange="updateConditionalFields()">
+          <label for="f-attune">Requires Attunement</label>
+        </div>
+        <div class="form-field checkbox attune-fields hidden">
+          <input type="checkbox" id="f-isattuned">
+          <label for="f-isattuned">Currently Attuned</label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="saveItem()">Save Item</button>
+        <button class="btn" onclick="closeItemModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM TABLE MODAL -->
+  <div id="table-modal" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width:420px;">
+      <h2>New Custom Table</h2>
+      <p class="sub">Create a fresh roll table of any size.</p>
+      <div class="form-grid" style="grid-template-columns:1fr;">
+        <div class="form-field full">
+          <label>Table Name</label>
+          <input type="text" id="ct-name" placeholder="e.g. Boss Drops">
+        </div>
+        <div class="form-field full">
+          <label>Max Roll Size</label>
+          <input type="number" id="ct-max" min="1" value="20" placeholder="20">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="createCustomTable()">Create Table</button>
+        <button class="btn" onclick="closeTableModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="showrunner-layout" id="layout">
+
+    <!-- LEFT: Table navigation -->
+    <div class="nav-sidebar" id="nav-sidebar">
+      <div class="nav-list" id="nav-list"><!-- rendered --></div>
+      <div class="sidebar-footer">
+        <button class="btn btn-add" onclick="openTableModal()">+ New Custom Table</button>
+      </div>
+    </div>
+
+    <!-- CENTER: Roll & result -->
+    <div class="main-stage">
+      <div class="stage-inner">
+        <h2 class="stage-title" id="stage-title">Select a table</h2>
+
+        <div class="roller-container">
+          <div class="roller-input-group">
+            <svg viewBox="0 0 24 24" width="40" height="40" stroke="var(--accent)" stroke-width="1.5" fill="none"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            <input type="number" id="dice-input" class="dice-input" placeholder="00" min="1" onkeydown="if(event.key==='Enter') resolveRoll()">
+          </div>
+          <div class="dice-hint" id="dice-hint">Enter what the player rolled</div>
+          <button class="btn-resolve" onclick="resolveRoll()">Resolve Roll</button>
+        </div>
+
+        <div id="result-container" class="result-container"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Item list for selected table -->
+    <div class="magazine-sidebar" id="magazine-sidebar">
+      <div class="magazine-header">
+        <span id="magazine-title">Items</span>
+        <span id="magazine-fill" style="font-size:0.72rem; color:#666; font-family:monospace;"></span>
+      </div>
+      <div class="magazine-list" id="magazine-list"><!-- rendered --></div>
+      <div class="mag-footer">
+        <button class="btn btn-add" onclick="openItemModal()">+ Add Item</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+  /* ══════════════════════════════════════════════════
+     CONFIG & STATE
+  ══════════════════════════════════════════════════ */
+  const WORKER_URL = 'https://dmscreen.askozicki.workers.dev';
+  const DEBUG = new URLSearchParams(window.location.search).has('debug');
+
+  // Convert flat items (from Data Forge) to wrapped entries (expected by Loot Manager).
+  // Flat format: { id, name, type, rarity, rollRange: [min,max], ... }
+  // Entry format: { rollRange: [min,max], item: { id, name, type, rarity, ... } }
+  function normalizeFlatItems(items) {
+    if (!Array.isArray(items)) return [];
+    return items.map(it => {
+      if (it.item !== undefined) {
+        // Already wrapped — pass through
+        if (DEBUG) console.log('[LOOT-DEBUG] Item already wrapped:', it.item.name || '(unnamed)');
+        return it;
+      }
+      // Flat item — wrap it and preserve rollRange
+      const rollRange = Array.isArray(it.rollRange) ? it.rollRange : [null, null];
+      const wrappedItem = { ...it };
+      delete wrappedItem.rollRange; // Strip rollRange from item
+      if (DEBUG) console.log('[LOOT-DEBUG] Wrapping flat item:', wrappedItem.name || '(unnamed)', '→ range', rollRange);
+      return { rollRange, item: wrappedItem };
+    });
+  }
+
+  // appState holds the full KV doc. lootTables is our domain.
+  let appState = {
+    version: 0,
+    lootTables: {
+      tiers: { bronze: [], silver: [], gold: [], platinum: [] },
+      personal: {},
+      custom: {}
+    },
+    characters: []
+  };
+
+  const DEFAULT_TIER_MAX = 100;
+  const DEFAULT_PERSONAL_MAX = 10;
+
+  // Max roll per table, keyed by "category:id".
+  // Tiers/personal have implied maxes; custom stores explicit maxRoll on the table meta.
+  let tableMax = {};
+
+  let currentView = null;       // { category: 'tiers'|'personal'|'custom', id: 'bronze' }
+  let stagedRoll = null;        // { entryIndex, item, range }
+  let editingIndex = null;      // index in current table when editing an item, else null
+
+  let historyStack = [];
+  let redoStack = [];
+  let isPushing = false;
+
+  const RARITY_COLOR = {
+    'common': 'var(--r-common)', 'uncommon': 'var(--r-uncommon)', 'rare': 'var(--r-rare)',
+    'very rare': 'var(--r-veryrare)', 'legendary': 'var(--r-legendary)'
+  };
+
+  /* ══════════════════════════════════════════════════
+     IDS & SCHEMA HELPERS
+  ══════════════════════════════════════════════════ */
+  function genId(prefix) {
+    return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  }
+
+  // Build a schema-complete item object.
+  function blankItem() {
+    return {
+      id: genId('loot-item'),
+      name: '', type: 'wondrous', rarity: 'common', quantity: 1,
+      description: '',
+      mechanics: { toHitBonus: null, damageBonus: null, acBase: null, acMod: null, text: '' },
+      charges: null,
+      requiresAttunement: false, isAttuned: false, isDeleted: false
+    };
+  }
+
+  // An "entry" = { rollRange:[min,max], item: {...}|null }. null item = empty slot.
+  function isEmptyEntry(entry) {
+    return !entry || !entry.item || entry.item.type === 'none' || entry.item === null;
+  }
+
+  /* ══════════════════════════════════════════════════
+     TABLE ACCESS
+  ══════════════════════════════════════════════════ */
+  function getTable(view) {
+    if (!view) return [];
+    const lt = appState.lootTables;
+    let table = [];
+    if (view.category === 'tiers') table = lt.tiers[view.id] || [];
+    else if (view.category === 'personal') table = lt.personal[view.id] || [];
+    else if (view.category === 'custom') {
+      const t = lt.custom[view.id];
+      table = (t && Array.isArray(t.entries)) ? t.entries : [];
+    }
+    // Normalize flat items to entries on load (one-time conversion in memory).
+    const normalized = normalizeFlatItems(table);
+    if (DEBUG && normalized.length > 0) {
+      const emptyCount = normalized.filter(e => isEmptyEntry(e)).length;
+      console.log(`[LOOT-DEBUG] Loaded ${view.category}/${view.id}: ${normalized.length} entries, ${normalized.length - emptyCount} filled, ${emptyCount} empty`);
+    }
+    return normalized;
+  }
+
+  // Mutate a table inside a given state object (for mutateAndPush).
+  function getTableFrom(state, view) {
+    ensureLootShape(state);
+    const lt = state.lootTables;
+    if (view.category === 'tiers') { if (!lt.tiers[view.id]) lt.tiers[view.id] = []; return lt.tiers[view.id]; }
+    if (view.category === 'personal') { if (!lt.personal[view.id]) lt.personal[view.id] = []; return lt.personal[view.id]; }
+    if (view.category === 'custom') {
+      if (!lt.custom[view.id]) lt.custom[view.id] = { maxRoll: DEFAULT_TIER_MAX, entries: [] };
+      if (!Array.isArray(lt.custom[view.id].entries)) lt.custom[view.id].entries = [];
+      return lt.custom[view.id].entries;
+    }
+    return [];
+  }
+
+  function getMaxRoll(view) {
+    if (!view) return DEFAULT_TIER_MAX;
+    if (view.category === 'tiers') return DEFAULT_TIER_MAX;
+    if (view.category === 'personal') return DEFAULT_PERSONAL_MAX;
+    if (view.category === 'custom') {
+      const t = appState.lootTables.custom[view.id];
+      return (t && t.maxRoll) ? t.maxRoll : DEFAULT_TIER_MAX;
+    }
+    return DEFAULT_TIER_MAX;
+  }
+
+  function ensureLootShape(state) {
+    if (!state.lootTables) state.lootTables = {};
+    if (!state.lootTables.tiers) state.lootTables.tiers = {};
+    ['bronze','silver','gold','platinum'].forEach(t => { if (!state.lootTables.tiers[t]) state.lootTables.tiers[t] = []; });
+    if (!state.lootTables.personal) state.lootTables.personal = {};
+    if (!state.lootTables.custom) state.lootTables.custom = {};
+  }
+
+  // Personal tables are keyed by character name. Seed from characters in KV.
+  function seedPersonalTables() {
+    const lt = appState.lootTables;
+    if (!lt.personal) lt.personal = {};
+    (appState.characters || []).forEach(c => {
+      if (c && c.name && !lt.personal[c.name]) lt.personal[c.name] = [];
+    });
+    // Fallback if no characters present in KV yet.
+    if (Object.keys(lt.personal).length === 0) {
+      ['Chuck','Tilly','Hendrick','Jimothy','Aelar'].forEach(n => { lt.personal[n] = []; });
+    }
+  }
+
+  /* ══════════════════════════════════════════════════
+     INIT & SYNC
+  ══════════════════════════════════════════════════ */
+  function setSync(status) {
+    const dot = document.getElementById('sync-dot');
+    const label = document.getElementById('sync-label');
+    dot.className = 'sync-dot ' + status;
+    label.textContent = status === 'busy' ? 'SAVING…' : status === 'error' ? 'OFFLINE' : 'SYNCED';
+  }
+
+  async function init() {
+    // Offline-first: hydrate from local cache, then overwrite from worker if reachable.
+    const local = localStorage.getItem('showrunner_loot_v4');
+    if (local) { try { appState = JSON.parse(local); } catch(e) {} }
+
+    try {
+      const res = await fetch(WORKER_URL);
+      if (res.ok) {
+        const data = await res.json();
+        if (data) {
+          appState = data;
+          ensureLootShape(appState);
+        }
+      }
+      setSync('idle');
+    } catch (e) {
+      console.warn('Fetch failed; using local/offline state.', e);
+      setSync('error');
+    }
+
+    ensureLootShape(appState);
+    seedPersonalTables();
+    saveLocal();
+
+    renderNav();
+    // Auto-select first tier.
+    selectView('tiers', 'bronze');
+  }
+
+  function saveLocal() {
+    try { localStorage.setItem('showrunner_loot_v4', JSON.stringify(appState)); } catch(e) {}
+  }
+
+  async function mutateAndPush(mutationCallback, successMessage) {
+    if (isPushing) { showToast('Busy saving previous action…'); return; }
+    isPushing = true;
+    setSync('busy');
+    document.body.style.cursor = 'wait';
+
+    try {
+      const fetchRes = await fetch(WORKER_URL);
+      if (!fetchRes.ok) throw new Error('Fetch failed');
+      let latestState = await fetchRes.json();
+      if (!latestState || typeof latestState !== 'object') latestState = {};
+      ensureLootShape(latestState);
+      if (!latestState.characters) latestState.characters = appState.characters || [];
+
+      mutationCallback(latestState);
+
+      latestState.version = (latestState.version || 0) + 1;
+      latestState.lastModified = Date.now();
+
+      const payload = {
+        base_version: latestState.version - 1,
+        last_modified: latestState.lastModified,
+        data: latestState
+      };
+
+      const postRes = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!postRes.ok) throw new Error('Version collision');
+
+      appState = latestState;
+      ensureLootShape(appState);
+      seedPersonalTables();
+      saveLocal();
+      renderAll();
+      setSync('idle');
+      if (successMessage) showToast(successMessage);
+
+    } catch (e) {
+      console.error(e);
+      setSync('error');
+      showToast('Sync collision. Refreshing to latest live state…');
+      await init();
+    } finally {
+      isPushing = false;
+      document.body.style.cursor = 'default';
+    }
+  }
+
+  /* ══════════════════════════════════════════════════
+     UNDO / REDO
+     Snapshots both lootTables AND characters so that an
+     awarded item is fully reversed (table slot restored
+     AND inventory item removed) on undo.
+  ══════════════════════════════════════════════════ */
+  function snapshot() {
+    return JSON.stringify({
+      lootTables: appState.lootTables,
+      characters: appState.characters || []
+    });
+  }
+
+  function pushHistory() {
+    historyStack.push(snapshot());
+    if (historyStack.length > 15) historyStack.shift();
+    redoStack = [];
+  }
+
+  function applySnapshot(state, snap) {
+    const s = JSON.parse(snap);
+    state.lootTables = s.lootTables;
+    state.characters = s.characters;
+  }
+
+  function undo() {
+    if (historyStack.length === 0) return showToast('Nothing to undo.');
+    redoStack.push(snapshot());
+    const prev = historyStack.pop();
+    mutateAndPush((state) => { applySnapshot(state, prev); }, 'Undo successful.');
+  }
+
+  function redo() {
+    if (redoStack.length === 0) return showToast('Nothing to redo.');
+    historyStack.push(snapshot());
+    const next = redoStack.pop();
+    mutateAndPush((state) => { applySnapshot(state, next); }, 'Redo successful.');
+  }
+
+  /* ══════════════════════════════════════════════════
+     COLUMN COLLAPSE
+  ══════════════════════════════════════════════════ */
+  function toggleColumn(side) {
+    const layout = document.getElementById('layout');
+    const isMobile = window.matchMedia('(max-width: 900px)').matches;
+
+    if (side === 'left') {
+      const btn = document.getElementById('toggle-left');
+      if (isMobile) {
+        document.getElementById('nav-sidebar').classList.toggle('mobile-hide');
+        btn.classList.toggle('active');
+      } else {
+        layout.classList.toggle('left-collapsed');
+        btn.classList.toggle('active');
+      }
+    } else {
+      const btn = document.getElementById('toggle-right');
+      if (isMobile) {
+        document.getElementById('magazine-sidebar').classList.toggle('mobile-hide');
+        btn.classList.toggle('active');
+      } else {
+        layout.classList.toggle('right-collapsed');
+        btn.classList.toggle('active');
+      }
+    }
+  }
+
+  /* ══════════════════════════════════════════════════
+     NAV RENDER
+  ══════════════════════════════════════════════════ */
+  function filledCount(view) {
+    return getTable(view).filter(e => !isEmptyEntry(e)).length;
+  }
+
+  function renderNav() {
+    const lt = appState.lootTables;
+    let html = '';
+
+    // Tiers
+    html += `<div class="nav-category">Global Tiers</div>`;
+    ['bronze','silver','gold','platinum'].forEach(t => {
+      const v = { category: 'tiers', id: t };
+      html += navItemHtml(v, cap(t), `dot-${t}`);
+    });
+
+    // Personal
+    html += `<div class="nav-category">Personal Tables</div>`;
+    Object.keys(lt.personal).forEach(name => {
+      const v = { category: 'personal', id: name };
+      html += navItemHtml(v, name, 'dot-personal');
+    });
+
+    // Custom
+    const customKeys = Object.keys(lt.custom || {});
+    html += `<div class="nav-category">Custom Tables</div>`;
+    if (customKeys.length === 0) {
+      html += `<div style="padding:0.4rem 1.25rem; color:#555; font-size:0.82rem; font-style:italic;">None yet</div>`;
+    } else {
+      customKeys.forEach(name => {
+        const v = { category: 'custom', id: name };
+        html += navItemHtml(v, name, 'dot-custom', true);
+      });
+    }
+
+    document.getElementById('nav-list').innerHTML = html;
+  }
+
+  function navItemHtml(view, label, dotClass, deletable) {
+    const isActive = currentView && currentView.category === view.category && currentView.id === view.id;
+    const count = filledCount(view);
+    const max = getMaxRoll(view);
+    const delBtn = deletable
+      ? `<span class="slot-btn del" style="width:22px;height:22px;" title="Delete table" onclick="event.stopPropagation(); deleteCustomTable('${escAttr(view.id)}')">✕</span>`
+      : '';
+    return `
+      <div class="nav-item ${isActive ? 'active' : ''}" onclick="selectView('${view.category}','${escAttr(view.id)}')">
+        <span class="dot ${dotClass}"></span>
+        <span class="label">${escHtml(label)}</span>
+        <span class="count">${count}/${max}</span>
+        ${delBtn}
+      </div>`;
+  }
+
+  /* ══════════════════════════════════════════════════
+     VIEW SELECTION
+  ══════════════════════════════════════════════════ */
+  function selectView(category, id) {
+    currentView = { category, id };
+    stagedRoll = null;
+    editingIndex = null;
+
+    const max = getMaxRoll(currentView);
+    const catLabel = category === 'tiers' ? 'Tier' : category === 'personal' ? 'Personal' : 'Custom';
+    document.getElementById('stage-title').innerHTML = `${catLabel}: <b>${escHtml(id)}</b> · 1–${max}`;
+    document.getElementById('dice-hint').textContent = `Enter what the player rolled (1–${max})`;
+    const di = document.getElementById('dice-input');
+    di.max = max; di.value = '';
+    document.getElementById('result-container').innerHTML = '';
+
+    renderNav();
+    renderMagazine();
+  }
+
+  function renderAll() {
+    renderNav();
+    if (currentView) {
+      // Refresh stage title counts implicitly; keep current selection.
+      renderMagazine();
+    }
+  }
+
+  /* ══════════════════════════════════════════════════
+     ROLL RESOLUTION
+  ══════════════════════════════════════════════════ */
+  function findEntryForRoll(table, roll) {
+    if (DEBUG) console.log(`[LOOT-DEBUG] Searching for roll ${roll} in ${table.length} entries`);
+    for (let i = 0; i < table.length; i++) {
+      const e = table[i];
+      if (!e) {
+        if (DEBUG) console.warn(`[LOOT-DEBUG] Entry ${i} is null/undefined`);
+        continue;
+      }
+      if (!Array.isArray(e.rollRange)) {
+        if (DEBUG) console.warn(`[LOOT-DEBUG] Entry ${i} has invalid rollRange:`, e.rollRange);
+        continue;
+      }
+      const [min, max] = e.rollRange;
+      if (roll >= min && roll <= max) {
+        if (DEBUG) console.log(`[LOOT-DEBUG] Hit! Entry ${i} covers ${min}–${max}`);
+        return { entry: e, index: i };
+      }
+    }
+    if (DEBUG) console.log(`[LOOT-DEBUG] No match found for roll ${roll}`);
+    return null;
+  }
+
+  function resolveRoll() {
+    if (!currentView) return showToast('Select a table first.');
+    const input = document.getElementById('dice-input');
+    const roll = parseInt(input.value);
+    const max = getMaxRoll(currentView);
+
+    if (!roll || roll < 1 || roll > max) return showToast(`Enter a number between 1 and ${max}.`);
+
+    const table = getTable(currentView);
+    const match = findEntryForRoll(table, roll);
+
+    if (!match) {
+      stagedRoll = null;
+      renderResult({ roll, status: 'norange' });
+      return;
+    }
+    if (isEmptyEntry(match.entry)) {
+      stagedRoll = null;
+      renderResult({ roll, status: 'empty', range: match.entry.rollRange });
+      return;
+    }
+
+    stagedRoll = { entryIndex: match.index, item: match.entry.item, range: match.entry.rollRange, roll };
+    renderResult({ roll, status: 'hit' });
+  }
+
+  function rangeStr(r) { return Array.isArray(r) ? (r[0] === r[1] ? `${r[0]}` : `${r[0]}–${r[1]}`) : '?'; }
+
+  function renderResult(ctx) {
+    const rc = document.getElementById('result-container');
+
+    if (ctx.status === 'norange') {
+      rc.innerHTML = `
+        <div class="result-card error">
+          <h2 class="result-title" style="color:var(--danger)">No Match</h2>
+          <p class="result-text">Roll <b>${ctx.roll}</b> doesn't fall in any defined range on this table. Add an item covering that range, or re-roll.</p>
+        </div>`;
+      return;
+    }
+    if (ctx.status === 'empty') {
+      rc.innerHTML = `
+        <div class="result-card error">
+          <div class="result-matched">Roll ${ctx.roll} → Range ${rangeStr(ctx.range)}</div>
+          <h2 class="result-title" style="color:var(--danger)">Slot Empty</h2>
+          <p class="result-text">This range was awarded or cleared. The Kouateen are displeased.</p>
+        </div>`;
+      return;
+    }
+
+    // hit
+    const i = stagedRoll.item;
+    const m = i.mechanics || {};
+    const rarColor = RARITY_COLOR[i.rarity] || 'var(--r-common)';
+
+    let badges = `<span class="badge badge-rarity" style="background:${rarColor}">${escHtml(i.rarity)}</span>`;
+    badges += `<span class="badge">${escHtml(i.type)}</span>`;
+    if (i.quantity && i.quantity > 1) badges += `<span class="badge qty">×${i.quantity}</span>`;
+    if (i.requiresAttunement) badges += `<span class="badge attune">${i.isAttuned ? 'Attuned' : 'Attunement'}</span>`;
+
+    let mechParts = [];
+    if (m.text) mechParts.push(escHtml(m.text));
+    if (m.toHitBonus != null && m.toHitBonus !== '') mechParts.push(`To-hit: ${m.toHitBonus >= 0 ? '+' : ''}${m.toHitBonus}`);
+    if (m.damageBonus) mechParts.push(`Damage: ${escHtml(m.damageBonus)}`);
+    if (m.acBase != null && m.acBase !== '') mechParts.push(`AC Base: ${m.acBase}`);
+    if (m.acMod != null && m.acMod !== '' && m.acMod !== 0) mechParts.push(`AC Mod: ${m.acMod >= 0 ? '+' : ''}${m.acMod}`);
+
+    let chargesHtml = '';
+    if (i.charges && i.charges.max) {
+      chargesHtml = `
+        <div class="result-section">
+          <div class="result-section-label">Charges</div>
+          <div class="result-charges">${i.charges.current}/${i.charges.max} · resets: ${escHtml(i.charges.resetType || 'no')}</div>
+        </div>`;
+    }
+
+    const awardBtns = (appState.characters || []).length
+      ? (appState.characters || []).map(c => `<button class="award-btn" onclick="awardTo('${escAttr(c.id)}','${escAttr(c.name)}')">${escHtml(c.name)}</button>`).join('')
+      : Object.keys(appState.lootTables.personal).map(n => `<button class="award-btn" onclick="awardTo(null,'${escAttr(n)}')">${escHtml(n)}</button>`).join('');
+
+    rc.innerHTML = `
+      <div class="result-card">
+        <div class="result-matched">Roll ${ctx.roll} → Range ${rangeStr(stagedRoll.range)} ✓</div>
+        <h2 class="result-title">${escHtml(i.name)}</h2>
+        <div class="result-badges">${badges}</div>
+
+        ${i.description ? `<div class="result-section"><div class="result-section-label">Description</div><div class="result-text">${escHtml(i.description)}</div></div>` : ''}
+        ${mechParts.length ? `<div class="result-section"><div class="result-section-label">Mechanics</div><div class="result-text">${mechParts.join('\n')}</div></div>` : ''}
+        ${chargesHtml}
+
+        <div class="action-row">
+          <button class="btn-action copy" onclick="copyToClipboard()">⧉ Copy Stats &amp; Description</button>
+          <div class="award-label">Transfer to Player</div>
+          <div class="award-buttons">${awardBtns}</div>
+        </div>
+      </div>`;
+  }
+
+  /* ══════════════════════════════════════════════════
+     CLIPBOARD
+  ══════════════════════════════════════════════════ */
+  function copyToClipboard() {
+    if (!stagedRoll || !stagedRoll.item) return;
+    const i = stagedRoll.item;
+    const m = i.mechanics || {};
+    let lines = [`**${i.name}**`, `*${cap(i.rarity)} ${i.type}*`];
+    if (i.quantity > 1) lines.push(`Quantity: ${i.quantity}`);
+    if (i.description) lines.push('', i.description);
+    let mech = [];
+    if (m.text) mech.push(m.text);
+    if (m.toHitBonus != null && m.toHitBonus !== '') mech.push(`To-hit ${m.toHitBonus >= 0 ? '+' : ''}${m.toHitBonus}`);
+    if (m.damageBonus) mech.push(`Damage ${m.damageBonus}`);
+    if (m.acBase != null && m.acBase !== '') mech.push(`AC Base ${m.acBase}`);
+    if (m.acMod) mech.push(`AC Mod ${m.acMod >= 0 ? '+' : ''}${m.acMod}`);
+    if (mech.length) lines.push('', `Mechanics: ${mech.join('; ')}`);
+    if (i.charges && i.charges.max) lines.push(`Charges: ${i.charges.current}/${i.charges.max} (resets ${i.charges.resetType})`);
+    if (i.requiresAttunement) lines.push(`Requires Attunement`);
+
+    const text = lines.join('\n');
+    navigator.clipboard.writeText(text).then(
+      () => showToast('Copied to clipboard.'),
+      () => showToast('Clipboard blocked by browser.')
+    );
+  }
+
+  /* ══════════════════════════════════════════════════
+     AWARD FLOW
+  ══════════════════════════════════════════════════ */
+  function awardTo(charId, charName) {
+    if (!stagedRoll || !stagedRoll.item) return;
+    const view = { ...currentView };
+    const idx = stagedRoll.entryIndex;
+    const item = JSON.parse(JSON.stringify(stagedRoll.item));
+    const range = stagedRoll.range;
+
+    pushHistory();
+
+    mutateAndPush((state) => {
+      // Add item to character inventory if we have a matching character.
+      if (!state.characters) state.characters = [];
+      let char = charId ? state.characters.find(c => c.id === charId) : null;
+      if (!char && charName) char = state.characters.find(c => c.name === charName);
+
+      if (char) {
+        if (!Array.isArray(char.inventory)) char.inventory = [];
+        const invItem = JSON.parse(JSON.stringify(item));
+        invItem.id = genId('item');       // fresh inventory id
+        invItem.isDeleted = false;
+        char.inventory.push(invItem);
+        char.updatedAt = new Date().toISOString();
+      }
+
+      // Empty out the source slot (preserve the rollRange).
+      const table = getTableFrom(state, view);
+      if (table[idx]) table[idx].item = null;
+    }, `${item.name} → ${charName}.`);
+
+    // Optimistic result swap.
+    document.getElementById('result-container').innerHTML = `
+      <div class="result-card success">
+        <h2 class="result-title" style="color:var(--success)">Payload Delivered</h2>
+        <p class="result-text"><b>${escHtml(item.name)}</b> (range ${rangeStr(range)}) sent to <b>${escHtml(charName)}</b>. Slot is now empty.</p>
+        <div class="action-row">
+          <button class="btn-action undo" onclick="undo()">⟲ Undo Award</button>
+        </div>
+      </div>`;
+    stagedRoll = null;
+  }
+
+  /* ══════════════════════════════════════════════════
+     RIGHT SIDEBAR (items list)
+  ══════════════════════════════════════════════════ */
+  function renderMagazine() {
+    if (!currentView) return;
+    const table = getTable(currentView);
+    const max = getMaxRoll(currentView);
+    const filled = filledCount(currentView);
+
+    document.getElementById('magazine-title').textContent = currentView.id;
+    document.getElementById('magazine-fill').textContent = `${filled} item${filled === 1 ? '' : 's'} · 1–${max}`;
+
+    if (table.length === 0) {
+      document.getElementById('magazine-list').innerHTML = `<div class="empty-state">No items yet.<br>Use “+ Add Item” to define a roll range.</div>`;
+      return;
+    }
+
+    // Sort entries by range start for display (without mutating source).
+    const ordered = table
+      .map((e, idx) => ({ e, idx }))
+      .sort((a, b) => {
+        const am = (a.e.rollRange && a.e.rollRange[0]) || 0;
+        const bm = (b.e.rollRange && b.e.rollRange[0]) || 0;
+        return am - bm;
+      });
+
+    const html = ordered.map(({ e, idx }) => {
+      const rng = rangeStr(e.rollRange);
+      if (isEmptyEntry(e)) {
+        return `
+          <div class="slot empty">
+            <span class="roll-tag">${rng}</span>
+            <span class="item-name">[ EMPTY ]</span>
+            <span class="slot-actions">
+              <button class="slot-btn" title="Edit / fill" onclick="openItemModal(${idx})">✎</button>
+              <button class="slot-btn del" title="Delete entry" onclick="deleteEntry(${idx})">✕</button>
+            </span>
+          </div>`;
+      }
+      const it = e.item;
+      const rarColor = RARITY_COLOR[it.rarity] || 'var(--r-common)';
+      return `
+        <div class="slot loaded">
+          <span class="roll-tag">${rng}</span>
+          <span class="rarity-pip" style="background:${rarColor}" title="${escAttr(it.rarity)}"></span>
+          <span class="item-name" title="${escAttr(it.name)}">${escHtml(it.name)}</span>
+          <span class="slot-actions">
+            <button class="slot-btn" title="Edit" onclick="openItemModal(${idx})">✎</button>
+            <button class="slot-btn del" title="Delete" onclick="deleteEntry(${idx})">✕</button>
+          </span>
+        </div>`;
+    }).join('');
+
+    document.getElementById('magazine-list').innerHTML = html;
+  }
+
+  /* ══════════════════════════════════════════════════
+     ITEM MODAL (add / edit)
+  ══════════════════════════════════════════════════ */
+  function openItemModal(idx) {
+    if (!currentView) return showToast('Select a table first.');
+    editingIndex = (typeof idx === 'number') ? idx : null;
+    const modal = document.getElementById('item-modal');
+    const table = getTable(currentView);
+
+    // Reset all fields.
+    setVal('f-rollmin', ''); setVal('f-rollmax', '');
+    setVal('f-name', ''); setVal('f-type', 'wondrous'); setVal('f-rarity', 'common');
+    setVal('f-qty', 1); setVal('f-desc', ''); setVal('f-mechtext', '');
+    setVal('f-tohit', ''); setVal('f-dmg', ''); setVal('f-acbase', ''); setVal('f-acmod', '');
+    document.getElementById('f-haschanges').checked = false;
+    setVal('f-charcur', ''); setVal('f-charmax', ''); setVal('f-charreset', 'no');
+    document.getElementById('f-attune').checked = false;
+    document.getElementById('f-isattuned').checked = false;
+
+    if (editingIndex != null && table[editingIndex]) {
+      const e = table[editingIndex];
+      document.getElementById('item-modal-title').textContent = isEmptyEntry(e) ? 'Fill Empty Slot' : 'Edit Item';
+      document.getElementById('item-modal-sub').textContent = `Range currently ${rangeStr(e.rollRange)}.`;
+      if (Array.isArray(e.rollRange)) { setVal('f-rollmin', e.rollRange[0]); setVal('f-rollmax', e.rollRange[1]); }
+      const it = e.item;
+      if (it && !isEmptyEntry(e)) {
+        setVal('f-name', it.name || '');
+        setVal('f-type', it.type || 'wondrous');
+        setVal('f-rarity', it.rarity || 'common');
+        setVal('f-qty', it.quantity || 1);
+        setVal('f-desc', it.description || '');
+        const m = it.mechanics || {};
+        setVal('f-mechtext', m.text || '');
+        setVal('f-tohit', m.toHitBonus != null ? m.toHitBonus : '');
+        setVal('f-dmg', m.damageBonus || '');
+        setVal('f-acbase', m.acBase != null ? m.acBase : '');
+        setVal('f-acmod', m.acMod != null ? m.acMod : '');
+        if (it.charges && it.charges.max) {
+          document.getElementById('f-haschanges').checked = true;
+          setVal('f-charcur', it.charges.current);
+          setVal('f-charmax', it.charges.max);
+          setVal('f-charreset', it.charges.resetType || 'no');
+        }
+        document.getElementById('f-attune').checked = !!it.requiresAttunement;
+        document.getElementById('f-isattuned').checked = !!it.isAttuned;
+      }
+    } else {
+      document.getElementById('item-modal-title').textContent = 'Add Item';
+      // Suggest next open range start.
+      const used = table.filter(e => Array.isArray(e.rollRange)).map(e => e.rollRange[1]);
+      const nextMin = used.length ? Math.max(...used) + 1 : 1;
+      const max = getMaxRoll(currentView);
+      if (nextMin <= max) { setVal('f-rollmin', nextMin); setVal('f-rollmax', Math.min(nextMin + 4, max)); }
+      document.getElementById('item-modal-sub').textContent = `Table allows rolls 1–${max}.`;
+    }
+
+    updateConditionalFields();
+    modal.classList.remove('hidden');
+  }
+
+  function closeItemModal() {
+    document.getElementById('item-modal').classList.add('hidden');
+    editingIndex = null;
+  }
+
+  function updateConditionalFields() {
+    const type = document.getElementById('f-type').value;
+    toggleClassHidden('.weapon-fields', type !== 'weapon');
+    toggleClassHidden('.armor-fields', type !== 'armor');
+    toggleClassHidden('.charge-fields', !document.getElementById('f-haschanges').checked);
+    toggleClassHidden('.attune-fields', !document.getElementById('f-attune').checked);
+  }
+
+  function saveItem() {
+    if (!currentView) return;
+    const min = parseInt(document.getElementById('f-rollmin').value);
+    const max = parseInt(document.getElementById('f-rollmax').value);
+    const name = document.getElementById('f-name').value.trim();
+    const tableMaxRoll = getMaxRoll(currentView);
+
+    if (!name) return showToast('Item requires a name.');
+    if (!min || !max || min < 1 || max < min) return showToast('Invalid roll range.');
+    if (max > tableMaxRoll) return showToast(`Range exceeds table max (${tableMaxRoll}).`);
+
+    // Overlap check (ignore the entry being edited).
+    const table = getTable(currentView);
+    for (let i = 0; i < table.length; i++) {
+      if (i === editingIndex) continue;
+      const r = table[i].rollRange;
+      if (!Array.isArray(r)) continue;
+      if (min <= r[1] && max >= r[0]) {
+        return showToast(`Range ${min}–${max} overlaps existing ${rangeStr(r)}.`);
+      }
+    }
+
+    // Build item.
+    const item = blankItem();
+    item.name = name;
+    item.type = document.getElementById('f-type').value;
+    item.rarity = document.getElementById('f-rarity').value;
+    item.quantity = parseInt(document.getElementById('f-qty').value) || 1;
+    item.description = document.getElementById('f-desc').value.trim();
+    item.mechanics.text = document.getElementById('f-mechtext').value.trim();
+
+    if (item.type === 'weapon') {
+      const th = document.getElementById('f-tohit').value;
+      const dg = document.getElementById('f-dmg').value.trim();
+      item.mechanics.toHitBonus = th === '' ? null : parseInt(th);
+      item.mechanics.damageBonus = dg || null;
+    }
+    if (item.type === 'armor') {
+      const ab = document.getElementById('f-acbase').value;
+      const am = document.getElementById('f-acmod').value;
+      item.mechanics.acBase = ab === '' ? null : parseInt(ab);
+      item.mechanics.acMod = am === '' ? null : parseInt(am);
+    }
+
+    if (document.getElementById('f-haschanges').checked) {
+      const cur = parseInt(document.getElementById('f-charcur').value);
+      const cmax = parseInt(document.getElementById('f-charmax').value);
+      item.charges = {
+        current: isNaN(cur) ? 0 : cur,
+        max: isNaN(cmax) ? 0 : cmax,
+        resetType: document.getElementById('f-charreset').value,
+        lastReset: new Date().toISOString()
+      };
+    } else {
+      item.charges = null;
+    }
+
+    item.requiresAttunement = document.getElementById('f-attune').checked;
+    item.isAttuned = item.requiresAttunement ? document.getElementById('f-isattuned').checked : false;
+
+    const view = { ...currentView };
+    const editIdx = editingIndex;
+
+    // Preserve existing item id when editing a filled slot.
+    if (editIdx != null && table[editIdx] && table[editIdx].item && table[editIdx].item.id) {
+      item.id = table[editIdx].item.id;
+    }
+
+    pushHistory();
+    mutateAndPush((state) => {
+      const t = getTableFrom(state, view);
+      if (editIdx != null && t[editIdx]) {
+        t[editIdx] = { rollRange: [min, max], item };
+      } else {
+        t.push({ rollRange: [min, max], item });
+      }
+    }, editIdx != null ? 'Item updated.' : 'Item added.');
+
+    closeItemModal();
+  }
+
+  function deleteEntry(idx) {
+    if (!currentView) return;
+    const table = getTable(currentView);
+    const e = table[idx];
+    if (!e) return;
+    const label = isEmptyEntry(e) ? `the empty range ${rangeStr(e.rollRange)}` : `"${e.item.name}"`;
+    if (!confirm(`Delete ${label} from this table? This removes the range entirely.`)) return;
+
+    const view = { ...currentView };
+    pushHistory();
+    mutateAndPush((state) => {
+      const t = getTableFrom(state, view);
+      t.splice(idx, 1);
+    }, 'Entry deleted.');
+  }
+
+  /* ══════════════════════════════════════════════════
+     CUSTOM TABLE MODAL
+  ══════════════════════════════════════════════════ */
+  function openTableModal() {
+    setVal('ct-name', ''); setVal('ct-max', 20);
+    document.getElementById('table-modal').classList.remove('hidden');
+  }
+  function closeTableModal() { document.getElementById('table-modal').classList.add('hidden'); }
+
+  function createCustomTable() {
+    const name = document.getElementById('ct-name').value.trim();
+    const max = parseInt(document.getElementById('ct-max').value);
+    if (!name) return showToast('Table needs a name.');
+    if (!max || max < 1) return showToast('Max roll must be ≥ 1.');
+    if (appState.lootTables.custom[name]) return showToast('A table with that name exists.');
+
+    pushHistory();
+    mutateAndPush((state) => {
+      ensureLootShape(state);
+      state.lootTables.custom[name] = { maxRoll: max, entries: [] };
+    }, `Created table "${name}".`);
+
+    closeTableModal();
+    // Select it once synced.
+    setTimeout(() => { if (appState.lootTables.custom[name]) selectView('custom', name); }, 200);
+  }
+
+  function deleteCustomTable(name) {
+    if (!confirm(`Delete custom table "${name}" and all its items?`)) return;
+    const wasSelected = currentView && currentView.category === 'custom' && currentView.id === name;
+    pushHistory();
+    mutateAndPush((state) => {
+      ensureLootShape(state);
+      delete state.lootTables.custom[name];
+    }, `Deleted "${name}".`);
+    if (wasSelected) selectView('tiers', 'bronze');
+  }
+
+  /* ══════════════════════════════════════════════════
+     UTILITIES
+  ══════════════════════════════════════════════════ */
+  function showToast(msg) {
+    const c = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = 'toast'; t.textContent = msg;
+    c.appendChild(t); setTimeout(() => t.remove(), 4000);
+  }
+  function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+  function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = v; }
+  function toggleClassHidden(sel, hide) {
+    document.querySelectorAll(sel).forEach(el => el.classList.toggle('hidden', hide));
+  }
+  function escHtml(str) {
+    return str == null ? '' : str.toString()
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function escAttr(str) {
+    return str == null ? '' : str.toString()
+      .replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  }
+
+  init();
+  </script>
+</body>
+</html>
