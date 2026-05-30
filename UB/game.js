@@ -1,0 +1,1468 @@
+// ==========================================
+// UNDEAD BARRAGE - GAME ENGINE (v0.5)
+// Layers 1-5: Foundation, Combat, Shop, Mastery, Director+Polish
+// ==========================================
+
+import { GameConfig } from './config.js';
+import { FlavorText } from './flavor.js';
+
+// Mastery track definitions now live in GameConfig.mastery (config.js).
+
+// ========== GAME STATE ==========
+const GameState = {
+    // Game Loop
+    wave: 1,
+    gameActive: false,
+    isPaused: false,
+    inShop: false,
+    inHarvest: false,
+
+    // Player
+    maxHp: 5,
+    hp: 5,
+    maxArmor: 5,
+    armor: 0,
+    funds: 0,
+    grenades: 0,
+    primaryWeapon: 0,
+    secondaryWeapon: null,
+    activeSlot: 'primary',
+
+    // Combat
+    ammo: {},
+    isReloading: false,
+    combo: 0,
+    maxCombo: 0,
+    kills: 0,
+
+    // Progression
+    mutations: [],
+    weaponMastery: {},
+    unlockedWeapons: [0],
+
+    // Defenses
+    barricades: [null, null, null, null, null, null],
+    defenses: [],
+
+    // Economy
+    ventureInvestments: {},
+
+    // Settings
+    godMode: false,
+    virtualGamepad: false,
+    screenShake: true,
+    devOverrides: false
+};
+
+// Initialize ammo and mastery for all weapons
+GameConfig.weapons.forEach((wpn, idx) => {
+    GameState.ammo[idx] = wpn.magSize;
+    GameState.weaponMastery[idx] = { track1: 0, track2: 0, track3: 0 };
+});
+
+// activeWeaponId() — resolve the weapon id for the currently selected slot
+function activeWeaponId() {
+    if (GameState.activeSlot === 'secondary' && GameState.secondaryWeapon !== null) {
+        return GameState.secondaryWeapon;
+    }
+    return GameState.primaryWeapon;
+}
+
+// getModifiedStats(wpnId) — apply mastery track bonuses to a weapon's base stats
+function getModifiedStats(wpnId) {
+    const base = GameConfig.weapons[wpnId];
+    const stats = Object.assign({}, base);
+    const arch = GameConfig.mastery.archetypes[base.archetype];
+    const mastery = GameState.weaponMastery[wpnId] || { track1: 0, track2: 0, track3: 0 };
+    if (!arch) return stats;
+
+    ['track1', 'track2', 'track3'].forEach(tk => {
+        const def = arch[tk];
+        const lvl = mastery[tk] || 0;
+        if (!def || lvl <= 0) return;
+        const cur = stats[def.stat];
+        if (def.mode === 'mult') {
+            stats[def.stat] = cur * (1 + def.perLevel * lvl);
+        } else {
+            stats[def.stat] = cur + def.perLevel * lvl;
+        }
+    });
+
+    // Mutation: Heavy Boots handled at fire-time (standing still). Tungsten Core = pierce.
+    if (GameState.mutations.includes('Tungsten Core')) stats.pierce = true;
+    return stats;
+}
+
+// ========== EVENT BUS ==========
+class EventBus extends EventTarget {
+    constructor() {
+        super();
+    }
+
+    emit(eventName, detail) {
+        this.dispatchEvent(new CustomEvent(eventName, { detail }));
+    }
+
+    on(eventName, handler) {
+        this.addEventListener(eventName, e => handler(e.detail));
+    }
+}
+
+const eventBus = new EventBus();
+
+// ========== GAME SCENE ==========
+class GameScene extends Phaser.Scene {
+    constructor() {
+        super('GameScene');
+    }
+
+    preload() {
+        // Backgrounds
+        this.load.svg('road_bg', 'assets/svgs/road-background.svg');
+        this.load.svg('sidewalk_bg', 'assets/svgs/sidewalk.svg');
+
+        this.load.svg('player', 'assets/svgs/player.svg');
+
+        // Enemies
+        this.load.svg('grunt', 'assets/svgs/grunt.svg');
+        this.load.svg('sprinter', 'assets/svgs/sprinter.svg');
+        this.load.svg('spitter', 'assets/svgs/spitter.svg');
+        this.load.svg('tank', 'assets/svgs/tank.svg');
+        this.load.svg('burrower', 'assets/svgs/burrower.svg');
+        this.load.svg('boss', 'assets/svgs/boss.svg');
+
+        // Weapons (in-hand + HUD)
+        for (let i = 0; i < 8; i++) {
+            this.load.svg(`wpn_${i}`, `assets/svgs/wpn_${i}.svg`);
+            this.load.svg(`wpn_side_${i}`, `assets/svgs/wpn_side_${i}.svg`);
+        }
+
+        // Projectiles
+        this.load.svg('bullet', 'assets/svgs/bullet.svg');
+        this.load.svg('grenade_proj', 'assets/svgs/grenade.svg');
+
+        // Items
+        this.load.svg('coin', 'assets/svgs/coin.svg');
+        this.load.svg('crate', 'assets/svgs/crate.svg');
+        this.load.svg('grenade_pickup', 'assets/svgs/grenade_pickup.svg');
+        this.load.svg('barricade', 'assets/svgs/barricade.svg');
+    }
+
+    create() {
+        const cam = this.cameras.main;
+        const roadWidth = 500;
+
+        // Background
+        this.add.image(cam.centerX, cam.centerY, 'road_bg')
+            .setDisplaySize(roadWidth, cam.height)
+            .setDepth(1);
+        this.add.image(cam.centerX - roadWidth / 2 - 500, cam.centerY, 'sidewalk_bg')
+            .setDisplaySize(1000, cam.height)
+            .setDepth(0);
+        this.add.image(cam.centerX + roadWidth / 2 + 500, cam.centerY, 'sidewalk_bg')
+            .setDisplaySize(1000, cam.height)
+            .setDepth(0);
+
+        // World bounds = camera bounds (arena is the visible screen)
+        this.physics.world.setBounds(0, 0, cam.width, cam.height);
+
+        // ----- Object pools -----
+        this.projectilePool = this.physics.add.group({
+            classType: Projectile, maxSize: 300, runChildUpdate: true
+        });
+        this.enemyGroup = this.physics.add.group({
+            classType: Enemy, runChildUpdate: true
+        });
+        this.coinGroup = this.physics.add.group({
+            classType: Coin, maxSize: 200, runChildUpdate: true
+        });
+        this.grenadeGroup = this.physics.add.group({
+            classType: GrenadeProj, maxSize: 30, runChildUpdate: true
+        });
+        this.barricadeGroup = this.physics.add.staticGroup();
+
+        // ----- Player -----
+        this.player = new Player(this, cam.centerX, cam.height - 120);
+        this.add.existing(this.player);
+        this.physics.add.existing(this.player);
+        this.player.body.setCollideWorldBounds(true);
+
+        // ----- Collisions -----
+        this.physics.add.overlap(this.projectilePool, this.enemyGroup, this.onProjectileHitEnemy, null, this);
+        this.physics.add.overlap(this.grenadeGroup, this.enemyGroup, this.onGrenadeHitEnemy, null, this);
+        this.physics.add.overlap(this.player, this.enemyGroup, this.onPlayerHitByEnemy, null, this);
+        this.physics.add.overlap(this.player, this.coinGroup, this.onPlayerCollectCoin, null, this);
+
+        // ----- Managers -----
+        this.director = new DirectorAI(this);
+        this.hud = new HUDManager(this);
+        this.shop = new ShopManager(this);
+        this.harvest = new HarvestManager(this);
+
+        // ----- Input -----
+        this.setupInputHandlers();
+        this.setupEventBus();
+        this.bindSettingsToggles();
+
+        // Floating text group (plain text objects, manually recycled)
+        this.floatTexts = [];
+    }
+
+    // ---------- Event wiring ----------
+    setupEventBus() {
+        eventBus.on('GAME_START', () => this.onGameStart());
+        eventBus.on('PAUSE_GAME', () => this.onPauseGame());
+        eventBus.on('RESUME_GAME', () => this.onResumeGame());
+        eventBus.on('WAVE_CLEARED', (d) => this.onWaveCleared(d));
+        eventBus.on('RETURN_TO_BATTLEFIELD', () => this.onReturnToBattlefield());
+        eventBus.on('PLAYER_DIED', () => this.onPlayerDied());
+        eventBus.on('MUTATION_CHOSEN', () => this.onMutationChosen());
+    }
+
+    onGameStart() {
+        // Reset run-scoped state
+        GameState.gameActive = true;
+        GameState.isPaused = false;
+        GameState.inShop = false;
+        GameState.inHarvest = false;
+        GameState.wave = 1;
+        GameState.hp = GameState.maxHp;
+        GameState.armor = 0;
+        GameState.funds = 0;
+        GameState.grenades = 0;
+        GameState.combo = 0;
+        GameState.kills = 0;
+        GameState.primaryWeapon = 0;
+        GameState.secondaryWeapon = null;
+        GameState.activeSlot = 'primary';
+        GameConfig.weapons.forEach((wpn, idx) => { GameState.ammo[idx] = wpn.magSize; });
+
+        this.player.respawn();
+        this.physics.world.resume();
+        this.hud.show();
+        this.director.startWave(GameState.wave);
+        this.showTutorial(GameState.wave);
+    }
+
+    onPauseGame() {
+        GameState.isPaused = true;
+        this.physics.world.pause();
+    }
+
+    onResumeGame() {
+        GameState.isPaused = false;
+        this.physics.world.resume();
+    }
+
+    // onWaveCleared(detail) — director reports all enemies dead
+    onWaveCleared(detail) {
+        // Wave-end payout + venture interest
+        this.applyWaveEndEconomy();
+        this.hud.flashWaveClear();
+
+        // Every 5 waves => harvest; otherwise => shop
+        if (GameState.wave % 5 === 0) {
+            this.time.delayedCall(1400, () => {
+                GameState.inHarvest = true;
+                this.onPauseGame();
+                this.harvest.open();
+            });
+        } else {
+            this.time.delayedCall(1400, () => {
+                GameState.inShop = true;
+                this.onPauseGame();
+                this.shop.open();
+            });
+        }
+    }
+
+    onMutationChosen() {
+        // After harvest, go to shop unless this was a checkpoint we skip
+        GameState.inHarvest = false;
+        GameState.inShop = true;
+        this.shop.open();
+    }
+
+    onReturnToBattlefield() {
+        GameState.inShop = false;
+        GameState.inHarvest = false;
+        GameState.wave += 1;
+        eventBus.emit('WAVE_STARTED', { wave: GameState.wave });
+        this.onResumeGame();
+        this.director.startWave(GameState.wave);
+        this.showTutorial(GameState.wave);
+    }
+
+    onPlayerDied() {
+        GameState.gameActive = false;
+        this.physics.world.pause();
+        this.hud.hide();
+        const title = document.getElementById('game-over-title');
+        const stats = document.getElementById('game-over-stats');
+        if (title) title.textContent = FlavorText.gameOver.titleDead;
+        if (stats) stats.textContent = `${FlavorText.gameOver.survived} ${GameState.wave} WAVES`;
+        this.showModal('screen-game-over');
+    }
+
+    // ---------- Economy ----------
+    applyWaveEndEconomy() {
+        // Compound Interest venture (unlocks wave 25)
+        const interestLvl = GameState.ventureInvestments['interest'] || 0;
+        if (interestLvl > 0) {
+            const old = GameState.funds;
+            const interest = Math.floor(GameState.funds * GameConfig.venture.interestRate * interestLvl);
+            GameState.funds += interest;
+            eventBus.emit('FUNDS_CHANGED', { new: GameState.funds, old });
+        }
+    }
+
+    addFunds(amount) {
+        const old = GameState.funds;
+        GameState.funds += amount;
+        eventBus.emit('FUNDS_CHANGED', { new: GameState.funds, old });
+    }
+
+    // ---------- Combat callbacks ----------
+    onProjectileHitEnemy(proj, enemy) {
+        if (!proj.active || !enemy.active || enemy.invulnerable) return;
+        const stats = proj.stats;
+        let dmg = proj.damage;
+        let crit = false;
+        if (Phaser.Math.Between(1, 100) <= (stats.critChance || 0)) {
+            dmg = dmg * (stats.critMult || 1);
+            crit = true;
+        }
+        enemy.takeDamage(dmg, crit, proj.dirX, proj.dirY);
+
+        // Mutation: Bitch Splinters — crit causes shrapnel burst
+        if (crit && GameState.mutations.includes('Bitch Splinters')) {
+            this.shrapnelBurst(enemy.x, enemy.y, dmg * GameConfig.mutations['Bitch Splinters'].damageFraction);
+        }
+
+        if (!stats.pierce) {
+            proj.despawn();
+        } else {
+            proj.pierceCount = (proj.pierceCount || 0) + 1;
+            if (proj.pierceCount > 2) proj.despawn();
+        }
+    }
+
+    onGrenadeHitEnemy(gren, enemy) {
+        if (!gren.active) return;
+        gren.detonate();
+    }
+
+    onPlayerHitByEnemy(player, enemy) {
+        if (!enemy.active || enemy.invulnerable) return;
+        if (this.player.invulnTimer > 0) return;
+
+        this.player.takeDamage(enemy.contactDamage);
+
+        // Knock the attacker back rather than deleting it (tanks/bosses survive contact)
+        const ang = Phaser.Math.Angle.Between(this.player.x, this.player.y, enemy.x, enemy.y);
+        enemy.x += Math.cos(ang) * 30;
+        enemy.y += Math.sin(ang) * 30;
+    }
+
+    onPlayerCollectCoin(player, coin) {
+        if (!coin.active) return;
+        // Inflation Hedge venture multiplier
+        const inflationLvl = GameState.ventureInvestments['inflation'] || 0;
+        const value = Math.floor(coin.value * (1 + GameConfig.venture.inflationMult * inflationLvl));
+        this.addFunds(value);
+
+        // Mutation: Scavenger — coin pickup grants speed + brief immunity
+        if (GameState.mutations.includes('Scavenger')) {
+            this.player.grantScavengerBuff();
+        }
+        coin.despawn();
+    }
+
+    // ---------- Helpers ----------
+    spawnProjectile(x, y, vx, vy, damage, stats, dirX, dirY) {
+        const proj = this.projectilePool.get();
+        if (!proj) return;
+        proj.fire(x, y, vx, vy, damage, stats, dirX, dirY);
+    }
+
+    spawnCoin(x, y, value) {
+        const coin = this.coinGroup.get();
+        if (!coin) return;
+        coin.drop(x, y, value);
+    }
+
+    shrapnelBurst(x, y, dmg) {
+        const cfg = GameConfig.mutations['Bitch Splinters'];
+        const stats = { critChance: 0, critMult: 1, pierce: false, range: cfg.range };
+        for (let i = 0; i < cfg.shards; i++) {
+            const ang = (Math.PI * 2 / cfg.shards) * i;
+            this.spawnProjectile(x, y, Math.cos(ang) * cfg.speed, Math.sin(ang) * cfg.speed,
+                dmg, stats, Math.cos(ang), Math.sin(ang));
+        }
+    }
+
+    explode(x, y, radius, damage) {
+        // Mutation: Chain Reaction — chance for over-performing explosion
+        let dmg = damage;
+        const cr = GameConfig.mutations['Chain Reaction'];
+        if (GameState.mutations.includes('Chain Reaction') && Phaser.Math.Between(1, 100) <= cr.chance) {
+            dmg = damage * cr.damageMult;
+        }
+        const fx = this.add.circle(x, y, radius, 0xff8a00, 0.5).setDepth(20);
+        this.tweens.add({ targets: fx, alpha: 0, scale: 1.3, duration: 250, onComplete: () => fx.destroy() });
+        if (GameState.screenShake) this.cameras.main.shake(120, 0.012);
+
+        this.enemyGroup.getChildren().forEach(e => {
+            if (!e.active || e.invulnerable) return;
+            const d = Phaser.Math.Distance.Between(x, y, e.x, e.y);
+            if (d <= radius) e.takeDamage(dmg, false, 0, 1);
+        });
+    }
+
+    floatingText(x, y, msg, color) {
+        const t = this.add.text(x, y, msg, {
+            fontFamily: 'Share Tech Mono, monospace',
+            fontSize: '18px',
+            color: color || '#ffffff'
+        }).setOrigin(0.5).setDepth(50);
+        this.tweens.add({
+            targets: t, y: y - 40, alpha: 0, duration: 600,
+            onComplete: () => t.destroy()
+        });
+    }
+
+    showTutorial(wave) {
+        const msg = FlavorText.tutorials[wave];
+        if (!msg) return;
+        this.hud.showTransmission(msg);
+    }
+
+    // ---------- DOM modal handling ----------
+    setupInputHandlers() {
+        const click = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('click', fn);
+        };
+
+        click('btn-new-game', () => { this.hideAllModals(); eventBus.emit('GAME_START'); });
+        click('btn-restart', () => { this.hideAllModals(); eventBus.emit('GAME_START'); });
+        click('btn-resume', () => { this.hideAllModals(); eventBus.emit('RESUME_GAME'); });
+        click('btn-open-settings', () => this.showModal('screen-settings'));
+        click('btn-settings', () => this.showModal('screen-settings'));
+        click('btn-close-settings', () => {
+            this.hideAllModals();
+            if (GameState.gameActive && !GameState.inShop && !GameState.inHarvest) {
+                eventBus.emit('RESUME_GAME');
+            } else if (GameState.inShop) {
+                this.shop.open();
+            } else if (GameState.inHarvest) {
+                this.harvest.open();
+            }
+        });
+    }
+
+    bindSettingsToggles() {
+        const toggle = (id, key, onLabel, offLabel) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('click', () => {
+                GameState[key] = !GameState[key];
+                el.textContent = GameState[key] ? (onLabel || 'ON') : (offLabel || 'OFF');
+                if (key === 'virtualGamepad') this.hud.setGamepadVisible(GameState[key]);
+                if (key === 'devOverrides') this.hud.setDevPanelVisible(GameState[key]);
+            });
+        };
+        toggle('tog-controls', 'virtualGamepad');
+        toggle('tog-shake', 'screenShake');
+        toggle('tog-dev', 'devOverrides');
+    }
+
+    showModal(modalId) {
+        this.hideAllModals();
+        const el = document.getElementById(modalId);
+        if (el) el.classList.add('active');
+        if (GameState.gameActive && !GameState.inShop && !GameState.inHarvest) {
+            eventBus.emit('PAUSE_GAME');
+        }
+    }
+
+    hideAllModals() {
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+    }
+
+    // ---------- Main loop ----------
+    update(time, delta) {
+        if (!GameState.gameActive || GameState.isPaused) return;
+
+        this.player.tick(time, delta);
+        this.director.tick(time, delta);
+        GameState.defenses.forEach(d => d.entity && d.entity.tick && d.entity.tick(time, delta));
+    }
+}
+
+// ========== ENTITY CLASSES ==========
+
+// ---- Player ----
+class Player extends Phaser.GameObjects.Image {
+    constructor(scene, x, y) {
+        super(scene, x, y, 'player');
+        this.scene = scene;
+        this.setDepth(30);
+        this.setScale(GameConfig.player.playerScale);
+        this.invulnTimer = 0;
+        this.lastFire = 0;
+        this.scavengerTimer = 0;
+        this.moveX = 0;
+        this.moveY = 0;
+
+        this.keys = scene.input.keyboard.addKeys('W,A,S,D,R,F,Q');
+        scene.input.on('pointerdown', (p) => this.onPointerDown(p));
+        scene.input.keyboard.on('keydown-R', () => this.reload());
+        scene.input.keyboard.on('keydown-F', () => this.throwGrenade());
+        scene.input.keyboard.on('keydown-Q', () => this.swapWeapon());
+        scene.input.keyboard.on('keydown-ESC', () => this.scene.showModal('screen-pause'));
+    }
+
+    respawn() {
+        const cam = this.scene.cameras.main;
+        this.setPosition(cam.centerX, cam.height - 120);
+        this.invulnTimer = 0;
+        this.setVisible(true).setActive(true);
+        if (this.body) this.body.enable = true;
+    }
+
+    grantScavengerBuff() { this.scavengerTimer = GameConfig.mutations['Scavenger'].immunityMs; }
+
+    onPointerDown(pointer) {
+        if (!GameState.gameActive || GameState.isPaused) return;
+        if (pointer.leftButtonDown && pointer.event && pointer.event.target &&
+            pointer.event.target.tagName === 'CANVAS') {
+            this.firing = true;
+        }
+    }
+
+    tick(time, delta) {
+        if (this.invulnTimer > 0) this.invulnTimer -= delta;
+        if (this.scavengerTimer > 0) this.scavengerTimer -= delta;
+
+        // --- Movement ---
+        let speed = GameConfig.player.baseSpeed;
+        if (this.scavengerTimer > 0) speed *= GameConfig.mutations['Scavenger'].speedMult; // Scavenger speed boost
+        let dx = 0, dy = 0;
+        if (this.keys.A.isDown) dx -= 1;
+        if (this.keys.D.isDown) dx += 1;
+        if (this.keys.W.isDown) dy -= 1;
+        if (this.keys.S.isDown) dy += 1;
+
+        // Virtual gamepad joystick overrides
+        if (GameState.virtualGamepad && this.scene.hud.joyVector) {
+            dx = this.scene.hud.joyVector.x;
+            dy = this.scene.hud.joyVector.y;
+        }
+
+        const len = Math.hypot(dx, dy);
+        if (len > 0) { dx /= len; dy /= len; }
+        this.moveX = dx; this.moveY = dy;
+        this.body.setVelocity(dx * speed, dy * speed);
+
+        // --- Aim ---
+        if (GameState.virtualGamepad) {
+            if (len > 0) this.rotation = Math.atan2(dy, dx) + Math.PI / 2;
+        } else {
+            const ptr = this.scene.input.activePointer;
+            this.rotation = Phaser.Math.Angle.Between(this.x, this.y, ptr.worldX, ptr.worldY) + Math.PI / 2;
+        }
+
+        // --- Fire ---
+        const ptr = this.scene.input.activePointer;
+        const wantFire = (ptr.isDown && ptr.leftButtonDown && this.firing) ||
+            (GameState.virtualGamepad && this.scene.hud.firePressed);
+        if (wantFire) this.tryFire(time);
+        if (!ptr.isDown) this.firing = false;
+    }
+
+    tryFire(time) {
+        if (GameState.isReloading) return;
+        const wpnId = activeWeaponId();
+        const stats = getModifiedStats(wpnId);
+
+        if (GameState.ammo[wpnId] <= 0) { this.reload(); return; }
+
+        // Mutation: Heavy Boots — accelerated fire rate when standing still
+        let rate = stats.rate;
+        if (GameState.mutations.includes('Heavy Boots') && this.moveX === 0 && this.moveY === 0) {
+            rate *= GameConfig.mutations['Heavy Boots'].fireRateMult;
+        }
+        if (time - this.lastFire < rate) return;
+        this.lastFire = time;
+
+        GameState.ammo[wpnId] -= 1;
+        eventBus.emit('AMMO_CHANGED', { wpnId, ammo: GameState.ammo[wpnId] });
+
+        const baseAngle = this.rotation - Math.PI / 2;
+        const multi = Math.max(1, Math.round(stats.multi));
+        for (let i = 0; i < multi; i++) {
+            const spreadRad = Phaser.Math.DegToRad(stats.spread);
+            const offset = multi > 1
+                ? Phaser.Math.Linear(-spreadRad, spreadRad, i / (multi - 1))
+                : Phaser.Math.FloatBetween(-spreadRad / 2, spreadRad / 2);
+            const ang = baseAngle + offset;
+            const vx = Math.cos(ang) * stats.speed;
+            const vy = Math.sin(ang) * stats.speed;
+            this.scene.spawnProjectile(this.x, this.y, vx, vy, stats.damage, stats, Math.cos(ang), Math.sin(ang));
+        }
+
+        if (GameState.screenShake && stats.camShake) {
+            this.scene.cameras.main.shake(60, stats.camShake);
+        }
+        if (GameState.ammo[wpnId] <= 0) this.reload();
+    }
+
+    reload() {
+        const wpnId = activeWeaponId();
+        const stats = getModifiedStats(wpnId);
+        if (GameState.isReloading || GameState.ammo[wpnId] >= Math.round(stats.magSize)) return;
+        GameState.isReloading = true;
+        eventBus.emit('RELOAD_START', { wpnId });
+        this.scene.time.delayedCall(stats.reloadTime, () => {
+            GameState.ammo[wpnId] = Math.round(stats.magSize);
+            GameState.isReloading = false;
+            eventBus.emit('AMMO_CHANGED', { wpnId, ammo: GameState.ammo[wpnId] });
+        });
+    }
+
+    throwGrenade() {
+        if (!GameState.gameActive || GameState.isPaused) return;
+        if (GameState.grenades <= 0) return;
+        GameState.grenades -= 1;
+        eventBus.emit('GRENADES_CHANGED', { grenades: GameState.grenades });
+        const ang = this.rotation - Math.PI / 2;
+        const g = this.scene.grenadeGroup.get();
+        if (g) g.launch(this.x, this.y, Math.cos(ang) * GameConfig.combat.grenadeSpeed, Math.sin(ang) * GameConfig.combat.grenadeSpeed);
+    }
+
+    swapWeapon() {
+        if (GameState.secondaryWeapon === null) return;
+        GameState.activeSlot = GameState.activeSlot === 'primary' ? 'secondary' : 'primary';
+        eventBus.emit('WEAPON_SWAPPED', { slot: GameState.activeSlot, wpnId: activeWeaponId() });
+    }
+
+    takeDamage(power) {
+        if (this.invulnTimer > 0 || GameState.godMode) return;
+        const old = GameState.hp;
+
+        // Pay It Forward / armor absorbs first
+        if (GameState.armor > 0) {
+            GameState.armor -= 1;
+            eventBus.emit('ARMOR_CHANGED', { new: GameState.armor, old: GameState.armor + 1 });
+        } else {
+            GameState.hp -= 1;
+            eventBus.emit('PLAYER_HIT', { new: GameState.hp, old });
+        }
+
+        // Taking a hit breaks the flawless combo
+        GameState.combo = 0;
+        eventBus.emit('COMBO_CHANGED', { combo: 0 });
+
+        this.invulnTimer = GameConfig.combat.hitInvulnMs;
+        if (GameState.screenShake) this.scene.cameras.main.shake(150, 0.02);
+        this.scene.tweens.add({ targets: this, alpha: 0.3, duration: 100, yoyo: true, repeat: 3,
+            onComplete: () => this.setAlpha(1) });
+
+        if (GameState.hp <= 0) eventBus.emit('PLAYER_DIED');
+    }
+}
+
+// ---- Projectile ----
+class Projectile extends Phaser.GameObjects.Image {
+    constructor(scene, x, y) {
+        super(scene, x, y, 'bullet');
+        this.setDepth(25);
+        this.bornAt = 0;
+    }
+
+    fire(x, y, vx, vy, damage, stats, dirX, dirY) {
+        this.setActive(true).setVisible(true);
+        this.setPosition(x, y);
+        this.rotation = Math.atan2(vy, vx);
+        this.damage = damage;
+        this.stats = stats;
+        this.dirX = dirX; this.dirY = dirY;
+        this.pierceCount = 0;
+        this.maxLife = (stats.range / stats.speed) * 1000;
+        this.bornAt = this.scene.time.now;
+        if (this.body) {
+            this.body.enable = true;
+            this.body.setVelocity(vx, vy);
+        }
+    }
+
+    update(time) {
+        if (!this.active) return;
+        if (time - this.bornAt > this.maxLife) this.despawn();
+        const cam = this.scene.cameras.main;
+        if (this.x < -50 || this.x > cam.width + 50 || this.y < -50 || this.y > cam.height + 50) {
+            this.despawn();
+        }
+    }
+
+    despawn() {
+        this.setActive(false).setVisible(false);
+        if (this.body) { this.body.enable = false; this.body.setVelocity(0, 0); }
+    }
+}
+
+// ---- Grenade projectile ----
+class GrenadeProj extends Phaser.GameObjects.Image {
+    constructor(scene, x, y) {
+        super(scene, x, y, 'grenade_proj');
+        this.setDepth(25);
+    }
+
+    launch(x, y, vx, vy) {
+        this.setActive(true).setVisible(true).setPosition(x, y);
+        if (this.body) { this.body.enable = true; this.body.setVelocity(vx, vy); }
+        this.scene.time.delayedCall(GameConfig.combat.grenadeFuseMs, () => { if (this.active) this.detonate(); });
+    }
+
+    detonate() {
+        if (!this.active) return;
+        this.scene.explode(this.x, this.y, GameConfig.combat.grenadeRadius, GameConfig.combat.grenadeDamage);
+        this.despawn();
+    }
+
+    update() {
+        if (this.body) this.body.setVelocity(this.body.velocity.x * 0.96, this.body.velocity.y * 0.96);
+    }
+
+    despawn() {
+        this.setActive(false).setVisible(false);
+        if (this.body) { this.body.enable = false; this.body.setVelocity(0, 0); }
+    }
+}
+
+// ---- Enemy ----
+class Enemy extends Phaser.GameObjects.Image {
+    constructor(scene, x, y) {
+        super(scene, x, y, 'grunt');
+        this.setDepth(20);
+        this.invulnerable = false;
+    }
+
+    // spawn(type, wave) — configure from GameConfig.mobs or bosses
+    spawn(x, y, type, wave) {
+        this.type = type;
+        this.isBoss = (type === 'boss');
+        this.setActive(true).setVisible(true).setPosition(x, y);
+        this.setTexture(this.isBoss ? 'boss' : type);
+        this.invulnerable = false;
+
+        if (this.isBoss) {
+            const def = GameConfig.bosses[wave] || GameConfig.bosses[50];
+            this.maxHp = def.hp;
+            this.hp = def.hp;
+            this.speed = def.speed;
+            this.contactDamage = def.power;
+            this.setScale(def.scale * 0.5);
+        } else {
+            const def = GameConfig.mobs[type];
+            this.maxHp = def.baseHp + def.hpPerWave * (wave - 1);
+            this.hp = this.maxHp;
+            this.speed = def.baseSpeed + def.speedPerWave * (wave - 1);
+            this.contactDamage = 1;
+            this.setScale(1);
+        }
+
+        if (this.body) { this.body.enable = true; this.body.setVelocity(0, 0); }
+
+        // Burrower: invulnerable while "digging" for first 2s
+        if (type === 'burrower') {
+            this.invulnerable = true;
+            this.setAlpha(0.4);
+            this.scene.time.delayedCall(GameConfig.combat.burrowerDigMs, () => {
+                if (this.active) { this.invulnerable = false; this.setAlpha(1); }
+            });
+        }
+    }
+
+    update(time, delta) {
+        if (!this.active) return;
+        const p = this.scene.player;
+        if (!p.active) { this.body.setVelocity(0, 0); return; }
+        const ang = Phaser.Math.Angle.Between(this.x, this.y, p.x, p.y);
+        this.body.setVelocity(Math.cos(ang) * this.speed, Math.sin(ang) * this.speed);
+        this.rotation = ang + Math.PI / 2;
+    }
+
+    takeDamage(dmg, crit, dirX, dirY) {
+        if (this.invulnerable || !this.active) return;
+        this.hp -= dmg;
+        this.scene.floatingText(this.x, this.y - 20, Math.round(dmg), crit ? '#ffd43b' : '#ffffff');
+
+        // hit flash
+        this.setTint(0xff5555);
+        this.scene.time.delayedCall(60, () => { if (this.active) this.clearTint(); });
+
+        // knockback
+        if (dirX !== undefined && this.body) {
+            this.x += dirX * 4; this.y += dirY * 4;
+        }
+        if (this.hp <= 0) this.die();
+    }
+
+    die() {
+        if (!this.active) return;
+        const x = this.x, y = this.y;
+
+        // Mutation: Corpse-a-Cola — rupture on death scaling with max HP
+        if (GameState.mutations.includes('Corpse-a-Cola')) {
+            const cc = GameConfig.mutations['Corpse-a-Cola'];
+            this.scene.explode(x, y, cc.radius, this.maxHp * cc.hpDamageMult);
+        }
+
+        // Combo + kill accounting
+        GameState.kills += 1;
+        GameState.combo += 1;
+        if (GameState.combo > GameState.maxCombo) GameState.maxCombo = GameState.combo;
+        eventBus.emit('COMBO_CHANGED', { combo: GameState.combo });
+        eventBus.emit('ENEMY_DIED', { type: this.type, x, y });
+
+        // Coin drop (tiered by enemy value; Spare Change mutation boosts on crit/explosive deaths)
+        this.dropLoot(x, y);
+
+        this.setActive(false).setVisible(false);
+        if (this.body) this.body.enable = false;
+        this.scene.director.notifyKill();
+    }
+
+    dropLoot(x, y) {
+        const C = GameConfig.combat;
+        const tierValue = this.isBoss ? C.bossCoinValue : (GameConfig.mobs[this.type].cost * C.coinValuePerCost);
+        let count = this.isBoss ? C.bossCoinCount : Phaser.Math.Between(C.mobCoinMin, C.mobCoinMax);
+        if (GameState.mutations.includes('Spare Change')) count += GameConfig.mutations['Spare Change'].bonusCoins;
+        for (let i = 0; i < count; i++) {
+            let v = tierValue;
+            // Midas Touch venture: chance to upgrade coin value
+            const midasLvl = GameState.ventureInvestments['midas'] || 0;
+            if (midasLvl > 0 && Phaser.Math.Between(1, 100) <= GameConfig.venture.midasChance * midasLvl) v *= GameConfig.venture.midasMult;
+            this.scene.spawnCoin(x + Phaser.Math.Between(-20, 20), y + Phaser.Math.Between(-20, 20), v);
+        }
+    }
+}
+
+// ---- Coin ----
+class Coin extends Phaser.GameObjects.Image {
+    constructor(scene, x, y) {
+        super(scene, x, y, 'coin');
+        this.setDepth(15);
+    }
+
+    drop(x, y, value) {
+        this.value = value;
+        this.setActive(true).setVisible(true).setPosition(x, y);
+        this.bornAt = this.scene.time.now;
+        if (this.body) {
+            this.body.enable = true;
+            this.body.setVelocity(Phaser.Math.Between(-80, 80), Phaser.Math.Between(-80, 80));
+        }
+    }
+
+    update(time) {
+        if (!this.active) return;
+        if (time - this.bornAt > GameConfig.player.coinLifespan) { this.despawn(); return; }
+        if (this.body) {
+            this.body.setVelocity(this.body.velocity.x * GameConfig.player.coinDrag,
+                this.body.velocity.y * GameConfig.player.coinDrag);
+        }
+        // magnet toward player
+        const p = this.scene.player;
+        const d = Phaser.Math.Distance.Between(this.x, this.y, p.x, p.y);
+        if (d < GameConfig.player.magnetRadius) {
+            const ang = Phaser.Math.Angle.Between(this.x, this.y, p.x, p.y);
+            this.x += Math.cos(ang) * 6;
+            this.y += Math.sin(ang) * 6;
+        }
+    }
+
+    despawn() {
+        this.setActive(false).setVisible(false);
+        if (this.body) { this.body.enable = false; this.body.setVelocity(0, 0); }
+    }
+}
+
+// ---- Barricade (Layer 5 defense) ----
+class Barricade extends Phaser.GameObjects.Image {
+    constructor(scene, x, y) {
+        super(scene, x, y, 'barricade');
+        this.setDepth(18);
+        this.hp = GameConfig.defenses.barricade.hp;
+    }
+    tick() {}
+}
+
+// ---- Turret (Layer 5 defense) ----
+class Turret {
+    constructor(scene, x, y) {
+        this.scene = scene;
+        this.sprite = scene.add.image(x, y, 'wpn_side_5').setDepth(19).setScale(1.2);
+        this.lastFire = 0;
+        const def = GameConfig.defenses.turret;
+        this.range = def.range;
+        this.rate = def.rate;
+        this.damage = def.damage;
+        this.projectileSpeed = def.projectileSpeed;
+    }
+
+    tick(time) {
+        if (time - this.lastFire < this.rate) return;
+        // target nearest enemy
+        let target = null, best = this.range;
+        this.scene.enemyGroup.getChildren().forEach(e => {
+            if (!e.active) return;
+            const d = Phaser.Math.Distance.Between(this.sprite.x, this.sprite.y, e.x, e.y);
+            if (d < best) { best = d; target = e; }
+        });
+        if (!target) return;
+        this.lastFire = time;
+        const ang = Phaser.Math.Angle.Between(this.sprite.x, this.sprite.y, target.x, target.y);
+        const stats = { critChance: 0, critMult: 1, pierce: false, range: this.range, speed: this.projectileSpeed, camShake: 0 };
+        this.scene.spawnProjectile(this.sprite.x, this.sprite.y,
+            Math.cos(ang) * this.projectileSpeed, Math.sin(ang) * this.projectileSpeed, this.damage, stats, Math.cos(ang), Math.sin(ang));
+    }
+}
+
+// ========== MANAGER CLASSES ==========
+
+// ---- DirectorAI ----
+class DirectorAI {
+    constructor(scene) {
+        this.scene = scene;
+        this.spawning = false;
+        this.toSpawn = 0;
+        this.alive = 0;
+        this.nextSpawnAt = 0;
+        this.waveActive = false;
+    }
+
+    // mobBudget(wave) — exponential budget from config
+    mobBudget(wave) {
+        return Math.floor(GameConfig.director.budgetBase *
+            Math.pow(GameConfig.director.budgetScaling, wave));
+    }
+
+    // availableMobs(wave) — gated by design.md unlock thresholds
+    availableMobs(wave) {
+        const pool = ['grunt'];
+        if (wave >= 3) pool.push('sprinter');
+        if (wave >= 8) pool.push('spitter');
+        if (wave >= 12) pool.push('tank');
+        if (wave >= 15) pool.push('burrower');
+        return pool;
+    }
+
+    // startWave(wave) — Layer 2 used hardcoded 3 grunts; Layer 5 uses budget.
+    startWave(wave) {
+        this.waveActive = true;
+        this.alive = 0;
+        eventBus.emit('WAVE_STARTED', { wave });
+
+        // Boss waves spawn one boss plus a reduced budget of mobs
+        if (wave % 10 === 0) {
+            this.spawnBoss(wave);
+            this.queue = this.buildQueue(wave, Math.floor(this.mobBudget(wave) * 0.5));
+        } else {
+            this.queue = this.buildQueue(wave, this.mobBudget(wave));
+        }
+        this.toSpawn = this.queue.length;
+        this.spawning = true;
+        this.nextSpawnAt = this.scene.time.now + 500;
+    }
+
+    buildQueue(wave, budget) {
+        const pool = this.availableMobs(wave);
+        const queue = [];
+        let spent = 0;
+        let guard = 0;
+        while (spent < budget && guard < 1000) {
+            guard++;
+            const type = Phaser.Utils.Array.GetRandom(pool);
+            const cost = GameConfig.mobs[type].cost;
+            if (spent + cost > budget && queue.length > 0) break;
+            queue.push(type);
+            spent += cost;
+        }
+        return queue;
+    }
+
+    spawnBoss(wave) {
+        const cam = this.scene.cameras.main;
+        const e = this.scene.enemyGroup.get(cam.centerX, -80);
+        if (!e) return;
+        e.spawn(cam.centerX, -80, 'boss', wave);
+        this.alive += 1;
+    }
+
+    tick(time) {
+        if (!this.spawning) return;
+        if (this.queue.length === 0) { this.spawning = false; return; }
+        if (time < this.nextSpawnAt) return;
+
+        const clump = Phaser.Math.Between(GameConfig.director.burstClumpMin, GameConfig.director.burstClumpMax);
+        for (let i = 0; i < clump && this.queue.length > 0; i++) {
+            const type = this.queue.shift();
+            this.spawnMob(type);
+        }
+        this.nextSpawnAt = time + Phaser.Math.Between(
+            GameConfig.director.spawnPauseMin, GameConfig.director.spawnPauseMax);
+    }
+
+    spawnMob(type) {
+        const cam = this.scene.cameras.main;
+        const roadWidth = 500;
+        const x = cam.centerX + Phaser.Math.Between(-roadWidth / 2 + 30, roadWidth / 2 - 30);
+        const y = -40;
+        const e = this.scene.enemyGroup.get(x, y);
+        if (!e) return;
+        e.spawn(x, y, type, GameState.wave);
+        this.alive += 1;
+    }
+
+    notifyKill() {
+        this.alive -= 1;
+        if (this.alive <= 0 && !this.spawning && this.queue.length === 0) {
+            this.waveActive = false;
+            eventBus.emit('WAVE_CLEARED', { wave: GameState.wave });
+        }
+    }
+
+    // Dev tool: KILL ALL
+    killAll() {
+        this.scene.enemyGroup.getChildren().forEach(e => { if (e.active) e.die(); });
+        this.queue = [];
+        this.spawning = false;
+    }
+}
+
+// ---- HUDManager (DOM-injected; index.html untouched) ----
+class HUDManager {
+    constructor(scene) {
+        this.scene = scene;
+        this.joyVector = null;
+        this.firePressed = false;
+        this.root = document.getElementById('hud-root');
+        this.gamepad = document.getElementById('hud-gamepad');
+        this.devPanel = document.getElementById('hud-dev');
+        this.wireGamepad();
+        this.buildDevButtons();
+        this.bindEvents();
+    }
+
+    // wireGamepad() — attach touch handlers to the static gamepad markup in index.html
+    wireGamepad() {
+        const base = document.getElementById('joy-base');
+        const stick = document.getElementById('joy-stick');
+        const fire = document.getElementById('btn-fire');
+        const bomb = document.getElementById('btn-bomb');
+        if (!base) return;
+
+        const setJoy = (e) => {
+            const r = base.getBoundingClientRect();
+            const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+            const t = e.touches ? e.touches[0] : e;
+            let dx = t.clientX - cx, dy = t.clientY - cy;
+            const max = r.width / 2;
+            const d = Math.hypot(dx, dy);
+            if (d > max) { dx = dx / d * max; dy = dy / d * max; }
+            stick.style.left = (35 + dx) + 'px';
+            stick.style.top = (35 + dy) + 'px';
+            this.joyVector = { x: dx / max, y: dy / max };
+        };
+        const resetJoy = () => { this.joyVector = { x: 0, y: 0 }; stick.style.left = '35px'; stick.style.top = '35px'; };
+        base.addEventListener('touchstart', setJoy);
+        base.addEventListener('touchmove', setJoy);
+        base.addEventListener('touchend', resetJoy);
+        fire.addEventListener('touchstart', () => { this.firePressed = true; });
+        fire.addEventListener('touchend', () => { this.firePressed = false; });
+        bomb.addEventListener('touchstart', () => this.scene.player.throwGrenade());
+    }
+
+    // buildDevButtons() — inject FlavorText-labelled admin buttons into #hud-dev
+    buildDevButtons() {
+        const mk = (label, fn) => {
+            const b = document.createElement('button');
+            b.textContent = label;
+            b.addEventListener('click', fn);
+            this.devPanel.appendChild(b);
+            return b;
+        };
+        mk(FlavorText.dev.godMode + ' OFF', (e) => {
+            GameState.godMode = !GameState.godMode;
+            e.target.textContent = FlavorText.dev.godMode + (GameState.godMode ? ' ON' : ' OFF');
+        });
+        mk(FlavorText.dev.funds, () => this.scene.addFunds(10000));
+        mk(FlavorText.dev.unlockWeapons, () => {
+            GameConfig.weapons.forEach((w, i) => { if (!GameState.unlockedWeapons.includes(i)) GameState.unlockedWeapons.push(i); });
+        });
+        mk(FlavorText.dev.skipWave, () => this.scene.director.killAll());
+    }
+
+    bindEvents() {
+        const $ = (id) => document.getElementById(id);
+        eventBus.on('WAVE_STARTED', (d) => { $('hud-wave').textContent = `${FlavorText.hud.wave} ${d.wave}`; this.refreshAll(); });
+        eventBus.on('FUNDS_CHANGED', (d) => { $('hud-funds').textContent = `$${d.new}`; });
+        eventBus.on('PLAYER_HIT', () => this.refreshHP());
+        eventBus.on('ARMOR_CHANGED', () => this.refreshArmor());
+        eventBus.on('GRENADES_CHANGED', () => this.refreshGrenades());
+        eventBus.on('AMMO_CHANGED', () => this.refreshWeapon());
+        eventBus.on('WEAPON_SWAPPED', () => this.refreshWeapon());
+        eventBus.on('WEAPON_EQUIPPED', () => this.refreshWeapon());
+        eventBus.on('RELOAD_START', () => { $('hud-ammo').textContent = 'RELOAD...'; });
+        eventBus.on('COMBO_CHANGED', (d) => {
+            $('hud-combo').textContent = d.combo > GameConfig.combat.comboDisplayMin ? `${FlavorText.hud.combo} x${d.combo}` : '';
+        });
+    }
+
+    refreshAll() { this.refreshHP(); this.refreshArmor(); this.refreshGrenades(); this.refreshWeapon();
+        document.getElementById('hud-funds').textContent = `$${GameState.funds}`; }
+    refreshHP() { document.getElementById('hud-hp').textContent = `${FlavorText.hud.hp} ` + '♥'.repeat(Math.max(0, GameState.hp)); }
+    refreshArmor() { document.getElementById('hud-armor').textContent = GameState.armor > 0 ? `${FlavorText.hud.armor} ` + '▮'.repeat(GameState.armor) : ''; }
+    refreshGrenades() { document.getElementById('hud-grenades').textContent = GameState.grenades > 0 ? `${FlavorText.hud.grenades} ${GameState.grenades}` : ''; }
+    refreshWeapon() {
+        const wpnId = activeWeaponId();
+        const wpn = GameConfig.weapons[wpnId];
+        document.getElementById('hud-wpn-name').textContent = wpn.name;
+        document.getElementById('hud-ammo').textContent = GameState.isReloading ? 'RELOAD...' : `${GameState.ammo[wpnId]} / ${Math.round(getModifiedStats(wpnId).magSize)}`;
+    }
+
+    showTransmission(msg) {
+        const t = document.getElementById('hud-transmission');
+        t.textContent = msg;
+        t.style.display = 'block';
+        clearTimeout(this._txTimer);
+        this._txTimer = setTimeout(() => { t.style.display = 'none'; }, 8000);
+    }
+
+    flashWaveClear() {
+        const t = document.getElementById('hud-transmission');
+        t.textContent = FlavorText.waveClear;
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 1300);
+    }
+
+    show() { this.root.style.display = 'block'; this.refreshAll();
+        document.getElementById('hud-wave').textContent = `${FlavorText.hud.wave} ${GameState.wave}`; }
+    hide() { this.root.style.display = 'none'; }
+    setGamepadVisible(v) { this.gamepad.style.display = v ? 'block' : 'none'; if (v) this.joyVector = { x: 0, y: 0 }; }
+    setDevPanelVisible(v) { this.devPanel.style.display = v ? 'flex' : 'none'; }
+}
+
+// ---- ShopManager (wires the static #screen-shop modal in index.html) ----
+class ShopManager {
+    constructor(scene) {
+        this.scene = scene;
+        this.activeTab = 'firearms';
+        this.selectedWeapon = 0;
+        this.modal = document.getElementById('screen-shop');
+        this.body = document.getElementById('shop-body');
+        this.wire();
+    }
+
+    wire() {
+        this.modal.querySelectorAll('.shop-tab').forEach(b => {
+            b.addEventListener('click', () => { this.activeTab = b.dataset.tab; this.render(); });
+        });
+        document.getElementById('btn-return-battlefield').addEventListener('click', () => {
+            this.close();
+            eventBus.emit('RETURN_TO_BATTLEFIELD');
+        });
+    }
+
+    open() { this.scene.hideAllModals(); this.modal.classList.add('active'); this.render(); }
+    close() { this.modal.classList.remove('active'); }
+
+    render() {
+        const body = this.body;
+        body.innerHTML = `<div class="shop-funds">FUNDS: $${GameState.funds}</div>`;
+        if (this.activeTab === 'firearms') this.renderFirearms(body);
+        else if (this.activeTab === 'logistics') this.renderLogistics(body);
+        else this.renderVenture(body);
+    }
+
+    renderFirearms(body) {
+        // Weapon rack: 15 slots
+        const rack = document.createElement('div');
+        rack.id = 'shop-rack';
+        GameConfig.weapons.forEach((w, i) => {
+            const unlocked = GameState.unlockedWeapons.includes(i);
+            const isEvolution = GameConfig.economy.chassisConversionCosts[i] !== undefined;
+            const slot = document.createElement('button');
+            slot.className = 'btn' + (unlocked ? '' : ' locked');
+            slot.textContent = unlocked ? w.name : (isEvolution ? FlavorText.shop.classifiedWeapon : `$${GameConfig.economy.baseBuyInCosts[i] || '—'}`);
+            slot.addEventListener('click', () => {
+                if (!unlocked) { this.tryBuyWeapon(i); }
+                else { this.selectedWeapon = i; this.render(); }
+            });
+            rack.appendChild(slot);
+        });
+        body.appendChild(rack);
+
+        // Mastery tracks for selected weapon (Layer 4)
+        this.renderMastery(body, this.selectedWeapon);
+
+        // Equip buttons
+        const equipP = this._mkBtn(FlavorText.shop.equipPrimary, () => {
+            GameState.primaryWeapon = this.selectedWeapon; GameState.activeSlot = 'primary';
+            eventBus.emit('WEAPON_EQUIPPED', { slot: 'primary', wpnId: this.selectedWeapon }); this.render();
+        });
+        const equipS = this._mkBtn(FlavorText.shop.equipSecondary, () => {
+            GameState.secondaryWeapon = this.selectedWeapon;
+            eventBus.emit('WEAPON_EQUIPPED', { slot: 'secondary', wpnId: this.selectedWeapon }); this.render();
+        });
+        if (!GameState.unlockedWeapons.includes(this.selectedWeapon)) { equipP.classList.add('locked'); equipS.classList.add('locked'); }
+        body.appendChild(equipP); body.appendChild(equipS);
+    }
+
+    renderMastery(body, wpnId) {
+        const w = GameConfig.weapons[wpnId];
+        const arch = GameConfig.mastery.archetypes[w.archetype];
+        const mastery = GameState.weaponMastery[wpnId];
+        const wrap = document.createElement('div');
+        wrap.className = 'mastery-wrap';
+        wrap.innerHTML = `<div class="mastery-head">${w.name} — ${w.archetype.toUpperCase()}</div>`;
+
+        ['track1', 'track2', 'track3'].forEach(tk => {
+            const def = arch[tk];
+            const lvl = mastery[tk];
+            const cost = this.upgradeCost(wpnId);
+            const row = document.createElement('div');
+            row.className = 'mastery-row';
+            const maxed = lvl >= GameConfig.mastery.maxLevel;
+            row.innerHTML = `<span>${def.label} [${lvl}/${GameConfig.mastery.maxLevel}]</span>`;
+            const btn = document.createElement('button');
+            btn.className = 'btn' + ((maxed || GameState.funds < cost) ? ' locked' : '');
+            btn.textContent = maxed ? 'MAX' : `$${cost}`;
+            if (!maxed) btn.addEventListener('click', () => this.tryUpgrade(wpnId, tk));
+            row.appendChild(btn);
+            wrap.appendChild(row);
+        });
+
+        // Chassis conversion (max all tracks => evolve)
+        if (w.evolvesTo !== undefined) {
+            const allMax = ['track1', 'track2', 'track3'].every(t => mastery[t] >= GameConfig.mastery.maxLevel);
+            const cost = GameConfig.economy.chassisConversionCosts[w.evolvesTo];
+            const evo = this._mkBtn(`${FlavorText.shop.chassisConversion} → ${GameConfig.weapons[w.evolvesTo].name} ($${cost})`,
+                () => this.tryEvolve(wpnId));
+            if (!allMax || GameState.funds < cost) evo.classList.add('locked');
+            wrap.appendChild(evo);
+        }
+        body.appendChild(wrap);
+    }
+
+    renderLogistics(body) {
+        const wave = GameState.wave;
+        const sc = GameConfig.economy.supplyCosts;
+        const add = (label, cost, fn, enabled = true) => {
+            const b = this._mkBtn(`${label} ($${cost})`, fn);
+            if (!enabled || GameState.funds < cost) b.classList.add('locked');
+            body.appendChild(b);
+        };
+        add(FlavorText.logistics.kevlar, sc.armor, () => {
+            if (GameState.funds >= sc.armor && GameState.armor < GameState.maxArmor) {
+                this.scene.addFunds(-sc.armor); GameState.armor += 1;
+                eventBus.emit('ARMOR_CHANGED', { new: GameState.armor, old: GameState.armor - 1 }); this.render();
+            }
+        });
+        add(FlavorText.logistics.grenades, sc.grenade, () => {
+            if (GameState.funds >= sc.grenade) {
+                this.scene.addFunds(-sc.grenade); GameState.grenades += 1;
+                eventBus.emit('GRENADES_CHANGED', { grenades: GameState.grenades }); this.render();
+            }
+        }, wave >= 5);
+        add(FlavorText.logistics.barricade, sc.buildBarricade, () => this.tryBuildBarricade(), wave >= 12);
+        add(FlavorText.logistics.turret, GameConfig.economy.upgradeBaseCosts.turret, () => this.tryBuildTurret(), wave >= 20);
+    }
+
+    renderVenture(body) {
+        if (GameState.wave < GameConfig.venture.unlockWave) {
+            const note = document.createElement('div');
+            note.className = 'venture-locked';
+            note.textContent = FlavorText.venture.encrypted;
+            body.appendChild(note);
+            return;
+        }
+        const v = FlavorText.venture;
+        const opts = [
+            { key: 'midas', name: v.midas, desc: v.midasDesc },
+            { key: 'interest', name: v.interest, desc: v.interestDesc },
+            { key: 'bounty', name: v.bounty, desc: v.bountyDesc },
+            { key: 'inflation', name: v.inflation, desc: v.inflationDesc }
+        ];
+        opts.forEach(o => {
+            const lvl = GameState.ventureInvestments[o.key] || 0;
+            const cost = GameConfig.venture.baseCost * (lvl + 1);
+            const b = this._mkBtn(`${o.name} [${lvl}] — ${o.desc} ($${cost})`, () => {
+                if (GameState.funds >= cost) {
+                    this.scene.addFunds(-cost);
+                    GameState.ventureInvestments[o.key] = lvl + 1; this.render();
+                }
+            });
+            if (GameState.funds < cost) b.classList.add('locked');
+            body.appendChild(b);
+        });
+    }
+
+    // ---- shop actions ----
+    upgradeCost(wpnId) {
+        const m = GameState.weaponMastery[wpnId];
+        const bought = m.track1 + m.track2 + m.track3;
+        return Math.floor(GameConfig.weapons[wpnId].baseUpgradeCost * Math.pow(GameConfig.mastery.costScaling, bought));
+    }
+
+    tryUpgrade(wpnId, track) {
+        const cost = this.upgradeCost(wpnId);
+        if (GameState.funds < cost) return;
+        if (GameState.weaponMastery[wpnId][track] >= GameConfig.mastery.maxLevel) return;
+        this.scene.addFunds(-cost);
+        GameState.weaponMastery[wpnId][track] += 1;
+        eventBus.emit('WEAPON_UPGRADED', { wpnId, track });
+        this.render();
+    }
+
+    tryBuyWeapon(i) {
+        const cost = GameConfig.economy.baseBuyInCosts[i];
+        if (cost === undefined) return; // evolution-only weapon, not directly buyable
+        if (GameState.funds < cost) return;
+        this.scene.addFunds(-cost);
+        GameState.unlockedWeapons.push(i);
+        this.selectedWeapon = i;
+        this.render();
+    }
+
+    tryEvolve(wpnId) {
+        const w = GameConfig.weapons[wpnId];
+        const target = w.evolvesTo;
+        const m = GameState.weaponMastery[wpnId];
+        const allMax = ['track1', 'track2', 'track3'].every(t => m[t] >= GameConfig.mastery.maxLevel);
+        const cost = GameConfig.economy.chassisConversionCosts[target];
+        if (!allMax || GameState.funds < cost) return;
+        this.scene.addFunds(-cost);
+        if (!GameState.unlockedWeapons.includes(target)) GameState.unlockedWeapons.push(target);
+        // Previous tier disappears; equip evolution where the old one was equipped
+        if (GameState.primaryWeapon === wpnId) GameState.primaryWeapon = target;
+        if (GameState.secondaryWeapon === wpnId) GameState.secondaryWeapon = target;
+        GameState.unlockedWeapons = GameState.unlockedWeapons.filter(x => x !== wpnId);
+        GameState.ammo[target] = Math.round(getModifiedStats(target).magSize); // refill on evolution
+        this.selectedWeapon = target;
+        eventBus.emit('WEAPON_EVOLVED', { from: wpnId, to: target });
+        this.render();
+    }
+
+    tryBuildBarricade() {
+        const cost = GameConfig.economy.supplyCosts.buildBarricade;
+        const slot = GameState.barricades.findIndex(b => b === null);
+        if (GameState.funds < cost || slot < 0) return;
+        this.scene.addFunds(-cost);
+        const cam = this.scene.cameras.main;
+        const x = cam.centerX - 200 + slot * 80;
+        const y = cam.height - 220;
+        const bar = new Barricade(this.scene, x, y);
+        this.scene.add.existing(bar);
+        this.scene.barricadeGroup.add(bar);
+        GameState.barricades[slot] = { hp: bar.hp };
+        this.render();
+    }
+
+    tryBuildTurret() {
+        const cost = GameConfig.economy.upgradeBaseCosts.turret;
+        if (GameState.funds < cost) return;
+        this.scene.addFunds(-cost);
+        const cam = this.scene.cameras.main;
+        const t = new Turret(this.scene, cam.centerX + Phaser.Math.Between(-150, 150), cam.height - 200);
+        GameState.defenses.push({ type: 'turret', entity: t });
+        this.render();
+    }
+
+    _mkBtn(label, fn) {
+        const b = document.createElement('button');
+        b.className = 'btn shop-action';
+        b.textContent = label;
+        b.addEventListener('click', fn);
+        return b;
+    }
+}
+
+// ---- HarvestManager (wires the static #screen-harvest modal in index.html) ----
+class HarvestManager {
+    constructor(scene) {
+        this.scene = scene;
+        this.modal = document.getElementById('screen-harvest');
+        this.intro = document.getElementById('harvest-intro');
+        this.cardsEl = document.getElementById('harvest-cards');
+        this.intro.textContent = FlavorText.harvest.intro;
+    }
+
+    open() {
+        this.scene.hideAllModals();
+        this.modal.classList.add('active');
+        const cards = this.cardsEl;
+        cards.innerHTML = '';
+
+        const available = Object.keys(FlavorText.mutations).filter(k => !GameState.mutations.includes(k));
+        if (available.length === 0) { this.grantConsolation(cards); return; }
+        const picks = Phaser.Utils.Array.Shuffle(available.slice()).slice(0, 3);
+
+        picks.forEach(key => {
+            const mut = FlavorText.mutations[key];
+            const card = document.createElement('button');
+            card.className = 'btn';
+            card.innerHTML = `<div class="harvest-title">${mut.title}</div>
+              <div class="harvest-desc">${mut.desc}</div>
+              <div class="harvest-quote">${mut.quote}</div>`;
+            card.addEventListener('click', () => this.choose(key));
+            cards.appendChild(card);
+        });
+    }
+
+    grantConsolation(cards) {
+        const note = document.createElement('div');
+        note.className = 'harvest-consolation';
+        note.textContent = FlavorText.harvest.noMutations;
+        cards.appendChild(note);
+        this.scene.addFunds(500);
+        this.scene.time.delayedCall(1500, () => { this.close(); eventBus.emit('MUTATION_CHOSEN'); });
+    }
+
+    choose(key) {
+        GameState.mutations.push(key);
+        eventBus.emit('MUTATION_ACQUIRED', { mutation: key });
+        this.close();
+        eventBus.emit('MUTATION_CHOSEN');
+    }
+
+    close() { this.modal.classList.remove('active'); }
+}
+
+// ========== BOOTSTRAP ==========
+const config = {
+    type: Phaser.AUTO,
+    scale: {
+        mode: Phaser.Scale.RESIZE,
+        parent: 'game-wrapper',
+        width: '100%',
+        height: '100%'
+    },
+    physics: {
+        default: 'arcade',
+        arcade: { debug: false }
+    },
+    scene: [GameScene],
+    pixelArt: false,
+    antialias: true
+};
+
+window.game = new Phaser.Game(config);
+window.GameState = GameState;
+window.eventBus = eventBus;
+window.GameConfig = GameConfig;
+window.FlavorText = FlavorText;
+window.getModifiedStats = getModifiedStats;
