@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Showrunner // Data Forge V4.1.7</title>
+
+  <script>
+    /* ──────────────────────────────────────────────
+       PIN GATE (artifact-safe: localStorage wrapped)
+       On GitHub Pages this gates access. In the Claude
+       artifact preview localStorage may throw, so we
+       degrade gracefully instead of hard-crashing.
+    ────────────────────────────────────────────── */
+    (function () {
+      const SECURE_PIN = "goddammit_doughnut";
+      let savedPin = null;
+      try { savedPin = localStorage.getItem('showrunner_pin'); } catch (e) { /* sandboxed */ }
+
+      if (savedPin === SECURE_PIN) return; // already authed
+
+      // If localStorage is unavailable (artifact preview), skip the prompt loop.
+      let storageOk = true;
+      try { localStorage.setItem('__sr_test', '1'); localStorage.removeItem('__sr_test'); }
+      catch (e) { storageOk = false; }
+
+      if (!storageOk) return; // preview mode — let it render
+
+      const input = prompt("ACCESS RESTRICTED: Enter Showrunner PIN.");
+      if (input === SECURE_PIN) {
+        try { localStorage.setItem('showrunner_pin', input); } catch (e) {}
+      } else {
+        document.documentElement.style.display = 'none';
+        window.location.href = "https://kzick001.github.io/dashboard/dm-screen/players/players.html";
+      }
+    })();
+  </script>
+
+  <style>
+    :root {
+      --bg: #0a0a0c;
+      --glass: rgba(20, 20, 25, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --accent: #bb86fc;
+      --accent-dim: rgba(187, 134, 252, 0.15);
+      --danger: #ff4757;
+      --warn: #ffb300;
+      --success: #03dac6;
+      --text: #e0e0e0;
+      --text-muted: #666;
+      --field-bg: #111114;
+    }
+
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+    body, html {
+      margin: 0; padding: 0; height: 100vh; width: 100vw;
+      background-color: var(--bg); color: var(--text); overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+
+    /* ── NAVBAR ── */
+    .navbar {
+      height: 60px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+      border-bottom: 1px solid var(--glass-border); z-index: 100; flex-shrink: 0;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 900; letter-spacing: 0.15em; font-size: 1.2rem; color: #fff; text-shadow: 0 0 10px rgba(187,134,252,0.5); }
+    .nav-links { display: flex; gap: 1rem; }
+    .nav-link {
+      color: var(--text); text-decoration: none; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;
+      letter-spacing: 0.1em; padding: 6px 12px; border-radius: 20px; border: 1px solid transparent; transition: 0.3s;
+    }
+    .nav-link:hover { background: rgba(255,255,255,0.05); border-color: var(--glass-border); color: #fff; }
+    .nav-link.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(187,134,252,0.2); }
+
+    /* ── TABS ── */
+    .tab-container { padding: 1rem 2rem 0 2rem; flex-shrink: 0; overflow: hidden; }
+    .tabs { display: flex; gap: 10px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); overflow-x: auto; overflow-y: hidden; min-width: 0; }
+    .tab-btn {
+      flex: 0 0 auto; min-width: 90px; white-space: nowrap; background: transparent; color: #aaa; border: 1px solid transparent; padding: 10px;
+      border-radius: 4px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; transition: 0.3s; font-size: 0.8rem;
+    }
+    .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .tab-btn.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); box-shadow: 0 0 15px rgba(187, 134, 252, 0.2); }
+    .tab-btn svg { vertical-align: -3px; margin-right: 5px; }
+    .btn-action svg { vertical-align: -3px; margin-right: 5px; }
+
+    /* ── WORKSPACE ── */
+    .workspace { display: flex; flex: 1; gap: 1rem; padding: 1rem 2rem 1.5rem 2rem; overflow: hidden; }
+    .tab-pane { display: none; flex: 1; gap: 1rem; overflow: hidden; }
+    .tab-pane.active { display: flex; }
+
+    .pane {
+      background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px;
+      display: flex; flex-direction: column; backdrop-filter: blur(10px); overflow: hidden;
+    }
+    .pane-input { flex: 0.85; min-width: 280px; }
+    .pane-review { flex: 1.2; }
+    .pane-output { flex: 0.85; min-width: 280px; }
+
+    .pane-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.75rem 1rem; border-bottom: 1px solid var(--glass-border); background: rgba(0,0,0,0.3); flex-shrink: 0;
+    }
+    .pane-header-title { font-size: 0.85rem; font-weight: bold; color: #fff; letter-spacing: 0.1em; }
+    .pane-header-badge { font-size: 0.7rem; color: var(--text-muted); font-family: monospace; }
+
+    .pane-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+    .pane-scroll { flex: 1; overflow-y: auto; padding: 1rem; }
+
+    textarea.raw {
+      flex: 1; width: 100%; resize: none; border: none; outline: none; padding: 1rem;
+      background: transparent; color: var(--text); font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 0.85rem;
+      line-height: 1.55; overflow-y: auto;
+    }
+
+    pre.json {
+      flex: 1; margin: 0; padding: 1rem; background: #050505; color: #a6e22e; overflow: auto;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 0.78rem; line-height: 1.5;
+      white-space: pre-wrap; word-wrap: break-word;
+    }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+    ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    .pane-footer { padding: 0.85rem; border-top: 1px solid var(--glass-border); background: rgba(0,0,0,0.3); flex-shrink: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+
+    /* ── BUTTONS ── */
+    .btn-action {
+      width: 100%; padding: 11px; border-radius: 4px; font-weight: bold; text-transform: uppercase;
+      letter-spacing: 0.1em; cursor: pointer; transition: 0.2s; border: 1px solid transparent; font-size: 0.8rem;
+    }
+    .btn-primary { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .btn-primary:hover:not(:disabled) { background: var(--accent); color: #000; }
+    .btn-primary:disabled { border-color: #333; color: #555; cursor: not-allowed; background: transparent; }
+    .btn-success { background: rgba(3,218,198,0.1); border-color: var(--success); color: var(--success); }
+    .btn-success:hover:not(:disabled) { background: var(--success); color: #000; }
+    .btn-success:disabled { border-color: #333; color: #555; cursor: not-allowed; background: transparent; }
+    .btn-ghost { background: transparent; border-color: var(--glass-border); color: var(--text-muted); }
+    .btn-ghost:hover:not(:disabled) { color: #fff; border-color: #888; }
+
+    /* ── INPUT CONTROLS ── */
+    .control-row { display: flex; gap: 0.5rem; align-items: center; }
+    .select, .text-input {
+      background: var(--field-bg); color: var(--text); border: 1px solid var(--glass-border);
+      border-radius: 4px; padding: 8px 10px; font-size: 0.8rem; outline: none; transition: 0.2s; width: 100%;
+    }
+    .select:focus, .text-input:focus { border-color: var(--accent); }
+    .control-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 0.3rem; display: block; }
+
+    .model-toggle { display: flex; gap: 0; border: 1px solid var(--glass-border); border-radius: 4px; overflow: hidden; }
+    .model-toggle button {
+      flex: 1; background: transparent; border: none; color: var(--text-muted); padding: 7px 4px;
+      font-size: 0.68rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; transition: 0.2s;
+    }
+    .model-toggle button.active { background: var(--accent-dim); color: var(--accent); }
+    .model-toggle button:hover:not(.active) { color: #fff; }
+
+    /* ── REVIEW CARDS ── */
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); text-align: center; padding: 2rem; gap: 0.5rem; }
+    .empty-state .big { font-size: 2rem; opacity: 0.5; }
+    .empty-state .sub { font-size: 0.8rem; max-width: 280px; line-height: 1.5; }
+
+    .card {
+      background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: 6px;
+      margin-bottom: 0.85rem; overflow: hidden; transition: 0.2s;
+    }
+    .card.is-new { border-left: 3px solid var(--success); }
+    .card.is-update { border-left: 3px solid var(--warn); }
+    .card.is-flagged { border-left: 3px solid var(--danger); }
+
+    .card-head {
+      display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.85rem;
+      background: rgba(255,255,255,0.02); cursor: pointer; user-select: none;
+    }
+    .card-head:hover { background: rgba(187,134,252,0.06); }
+    .card-chevron { transition: transform 0.2s; color: var(--text-muted); font-size: 0.7rem; }
+    .card.open .card-chevron { transform: rotate(90deg); }
+    .card-title { flex: 1; font-weight: bold; font-size: 0.85rem; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .card-tag {
+      font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 7px; border-radius: 10px; font-weight: bold; flex-shrink: 0;
+    }
+    .tag-new { background: rgba(3,218,198,0.15); color: var(--success); }
+    .tag-update { background: rgba(255,179,0,0.15); color: var(--warn); }
+    .tag-flagged { background: rgba(255,71,87,0.15); color: var(--danger); }
+
+    .card-body { padding: 0.85rem; display: none; border-top: 1px solid var(--glass-border); }
+    .card.open .card-body { display: block; }
+
+    .field { margin-bottom: 0.75rem; }
+    .field:last-child { margin-bottom: 0; }
+    .field label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 0.25rem; display: block; }
+    .field input, .field textarea, .field select {
+      width: 100%; background: var(--field-bg); color: var(--text); border: 1px solid var(--glass-border);
+      border-radius: 4px; padding: 7px 9px; font-size: 0.8rem; outline: none; transition: 0.2s; font-family: inherit;
+    }
+    .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--accent); }
+    .field textarea { resize: vertical; min-height: 60px; line-height: 1.45; }
+    .field-row { display: flex; gap: 0.6rem; }
+    .field-row .field { flex: 1; }
+
+    .subsection { margin-top: 0.6rem; border-top: 1px dashed #333; padding-top: 0.6rem; }
+    .subsection-title { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
+    .sub-item { background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 4px; padding: 0.6rem; margin-bottom: 0.5rem; position: relative; }
+
+    .chip-input-wrap { display: flex; flex-wrap: wrap; gap: 0.3rem; background: var(--field-bg); border: 1px solid var(--glass-border); border-radius: 4px; padding: 5px; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; background: var(--accent-dim); color: var(--accent); border-radius: 10px; padding: 2px 8px; font-size: 0.72rem; }
+    .chip button { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.85rem; line-height: 1; padding: 0; }
+    .chip-input-wrap input { flex: 1; min-width: 80px; background: transparent; border: none; outline: none; color: var(--text); font-size: 0.78rem; padding: 2px; }
+
+    .card-actions { display: flex; gap: 0.5rem; margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px solid var(--glass-border); }
+    .btn-mini {
+      flex: 1; padding: 6px; border-radius: 3px; font-size: 0.68rem; font-weight: bold; text-transform: uppercase;
+      letter-spacing: 0.05em; cursor: pointer; transition: 0.2s; border: 1px solid;
+    }
+    .btn-mini-danger { background: rgba(255,71,87,0.12); border-color: var(--danger); color: var(--danger); }
+    .btn-mini-danger:hover { background: var(--danger); color: #000; }
+    .btn-mini-ghost { background: transparent; border-color: var(--glass-border); color: var(--text-muted); }
+    .btn-mini-ghost:hover { color: #fff; border-color: #888; }
+
+    .btn-add-sub {
+      width: 100%; padding: 5px; background: transparent; border: 1px dashed #444; color: var(--text-muted);
+      border-radius: 4px; font-size: 0.7rem; cursor: pointer; transition: 0.2s;
+    }
+    .btn-add-sub:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── REVIEW HEADER STATS ── */
+    .review-stats { display: flex; gap: 0.75rem; font-size: 0.7rem; }
+    .review-stats span { display: flex; align-items: center; gap: 0.3rem; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot-new { background: var(--success); }
+    .dot-update { background: var(--warn); }
+    .dot-flagged { background: var(--danger); }
+
+    /* ── LOADER ── */
+    .loader { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── TOASTS ── */
+    #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 4000; display: flex; flex-direction: column; gap: 0.5rem; }
+    .toast { background: rgba(10,10,12,0.96); color: #fff; padding: 0.85rem 1.3rem; border-radius: 4px; border-left: 4px solid var(--accent); box-shadow: 0 4px 15px rgba(0,0,0,0.8); animation: fadein 0.3s, fadeout 0.3s 4.2s forwards; font-size: 0.85rem; font-weight: bold; max-width: 340px; }
+    .toast.err { border-left-color: var(--danger); }
+    .toast.ok { border-left-color: var(--success); }
+    @keyframes fadein { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
+
+    .hint { font-size: 0.68rem; color: var(--text-muted); line-height: 1.4; padding: 0 0.1rem; }
+    .badge-count { background: var(--accent-dim); color: var(--accent); border-radius: 10px; padding: 1px 8px; font-size: 0.7rem; font-weight: bold; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1100px) {
+      .tab-pane.active { flex-direction: column; overflow-y: auto; }
+      .pane { min-height: 320px; }
+      .pane-input, .pane-review, .pane-output { flex: none; }
+      body, html { overflow: auto; }
+      .workspace { overflow: visible; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" width="24" height="24" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+      SHOWRUNNER // DATA FORGE V4.1.7
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Dashboard</a>
+      <a href="loot.html" class="nav-link">Loot</a>
+      <a href="data-forge.html" class="nav-link active">Data Forge</a>
+    </div>
+  </nav>
+
+  <div class="tab-container">
+    <div class="tabs">
+      <button class="tab-btn active" data-type="rooms"     onclick="switchTab('rooms')"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="21" x2="21" y2="21"/><line x1="5" y1="21" x2="5" y2="10"/><line x1="19" y1="21" x2="19" y2="10"/><line x1="9" y1="21" x2="9" y2="14"/><line x1="15" y1="21" x2="15" y2="14"/><polygon points="3 10 12 3 21 10"/></svg>Rooms</button>
+      <button class="tab-btn"        data-type="npcs"      onclick="switchTab('npcs')"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>NPCs</button>
+      <button class="tab-btn"        data-type="rules"     onclick="switchTab('rules')"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Rules</button>
+      <button class="tab-btn"        data-type="timeline"  onclick="switchTab('timeline')"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Timeline</button>
+      <button class="tab-btn"        data-type="characters" onclick="switchTab('characters')"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/></svg>Characters</button>
+      <button class="tab-btn"        data-type="lootItems"  onclick="switchTab('lootItems')"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.2c0-1 .9-1.7 2.5-1.7s2.5.7 2.5 1.7c0 2.4-5 1.3-5 3.6 0 1 1 1.7 2.5 1.7s2.5-.7 2.5-1.7"/></svg>Loot Items</button>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <div id="tab-pane" class="tab-pane active">
+
+      <!-- INPUT -->
+      <div class="pane pane-input">
+        <div class="pane-header">
+          <span class="pane-header-title" id="input-title">1 · Raw Notes</span>
+          <span class="pane-header-badge" id="input-char-count">0 chars</span>
+        </div>
+        <div class="pane-content" style="padding: 0.75rem 0.75rem 0 0.75rem;">
+          <!-- Mode toggle -->
+          <div style="display: flex; gap: 6px; margin-bottom: 0.6rem; flex-shrink: 0;">
+            <button id="btn-mode-raw" onclick="setInputMode('raw')" style="flex: 1; padding: 6px 12px; background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.05em;">Raw Notes</button>
+            <button id="btn-mode-json" onclick="setInputMode('json')" style="flex: 1; padding: 6px 12px; background: transparent; border: 1px solid var(--glass-border); color: #aaa; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.05em;">Parsed JSON</button>
+          </div>
+          <!-- Textareas — only one visible at a time -->
+          <textarea id="raw-input" class="raw" style="flex: 1; display: block;" placeholder="Paste raw notes here.&#10;&#10;The Forge sends them to Claude, which extracts structured entities matching the KV schema. You then review and edit every field before syncing.&#10;&#10;Formatting is forgiving — paste straight from your RTF/Doc dumps."></textarea>
+          <textarea id="json-input" class="raw" style="flex: 1; display: none;" placeholder="Paste pre-parsed JSON array here.&#10;&#10;Expected format: [ { &quot;id&quot;: &quot;...&quot;, &quot;name&quot;: &quot;...&quot; }, ... ]&#10;&#10;Useful for testing or when you already have Claude's output."></textarea>
+        </div>
+        <div class="pane-footer">
+          <div>
+            <span class="control-label">Parser Model</span>
+            <div class="model-toggle" id="model-toggle">
+              <button data-model="claude-haiku-4-5-20251001" class="active" onclick="setModel(this)">Haiku 4.5</button>
+              <button data-model="claude-sonnet-4-20250514" onclick="setModel(this)">Sonnet 4</button>
+            </div>
+          </div>
+          <div id="loot-target-selector" style="display:none; padding: 0.6rem; background: rgba(187,134,252,0.08); border-radius: 6px; border: 1px solid rgba(187,134,252,0.2);">
+            <span class="control-label">Sync Loot Items To</span>
+            <select id="loot-target-select" style="width:100%; margin-top:4px; padding:6px; background:var(--field-bg); color:var(--text); border:1px solid var(--glass-border); border-radius:4px; font-size:0.8rem;" onchange="setLootTarget(this.value)">
+              <optgroup label="Standard Tiers">
+                <option value="bronze">Bronze Tier</option>
+                <option value="silver">Silver Tier</option>
+                <option value="gold">Gold Tier</option>
+                <option value="platinum">Platinum Tier</option>
+              </optgroup>
+              <optgroup label="Player Tables" id="personal-tables-group"></optgroup>
+              <optgroup label="Custom Tables" id="custom-tables-group"></optgroup>
+            </select>
+            <p class="hint" style="margin-top:4px;">Items sync to this table. Player tables target <code>lootTables.personal.&lt;name&gt;</code>.</p>
+          </div>
+          <p class="hint">Haiku is fast/cheap for clean dumps. Switch to Sonnet for dense or ambiguous notes.</p>
+          <button id="btn-parse" class="btn-action btn-primary" onclick="runParse()"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Forge Entities</button>
+          <button id="btn-view-output" class="btn-action btn-ghost" onclick="showClaudeOutputModal()">View Claude Output</button>
+        </div>
+      </div>
+
+      <!-- REVIEW -->
+      <div class="pane pane-review">
+        <div class="pane-header">
+          <span class="pane-header-title">2 · Review &amp; Edit</span>
+          <span class="review-stats" id="review-stats"></span>
+        </div>
+        <div class="pane-content">
+          <div class="pane-scroll" id="review-scroll">
+            <div class="empty-state">
+              <div class="big"><svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8L19 13M15 9h0M17.8 6.2L19 5M3 21l9-9M12.2 6.2L11 5"/></svg></div>
+              <div class="sub">Forged entities appear here as editable cards. Nothing is sent to KV until you sync.</div>
+            </div>
+          </div>
+        </div>
+        <div class="pane-footer">
+          <div class="control-row">
+            <button class="btn-action btn-ghost" style="flex:1" onclick="addBlankCard()">+ Add Blank</button>
+            <button class="btn-action btn-ghost" style="flex:1" onclick="expandCollapseAll()">Toggle All</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- OUTPUT -->
+      <div class="pane pane-output">
+        <div class="pane-header">
+          <span class="pane-header-title">3 · JSON &amp; Sync</span>
+          <span class="pane-header-badge" id="kv-status">KV: idle</span>
+        </div>
+        <div class="pane-content">
+          <pre class="json" id="json-preview">// Forge entities to preview output JSON.</pre>
+        </div>
+        <div class="pane-footer">
+          <p class="hint" id="merge-hint">Sync merges by <code>id</code>: existing entries update, new ones append. Fetches latest KV first to avoid collisions.</p>
+          <div class="control-row">
+            <button class="btn-action btn-ghost" style="flex:1" onclick="copyJson()">Copy JSON</button>
+            <button id="btn-sync" class="btn-action btn-success" style="flex:1.4" onclick="syncToKV()" disabled>Sync to KV</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <!-- Claude Output Modal -->
+  <div id="claude-output-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 5000; overflow: auto;">
+    <div style="background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px; margin: 2rem auto; padding: 1.5rem; max-width: 800px; max-height: 80vh; overflow: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0; color: #fff;">Claude Raw Output</h3>
+        <button onclick="closeClaudeOutputModal()" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.5rem; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold;">✕</button>
+      </div>
+      <pre id="claude-output-text" style="background: #050505; color: #a6e22e; padding: 1rem; border-radius: 4px; overflow: auto; max-height: 60vh; font-size: 0.8rem; margin: 0 0 1rem 0; font-family: ui-monospace, monospace;"></pre>
+      <div style="display: flex; gap: 0.5rem;">
+        <button onclick="copyClaudeOutput()" class="btn-action btn-ghost" style="flex: 1;">Copy to Clipboard</button>
+        <button onclick="closeClaudeOutputModal()" class="btn-action btn-ghost" style="flex: 1;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  /* ══════════════════════════════════════════════════
+     CONFIG
+  ══════════════════════════════════════════════════ */
+  const WORKER_URL = "https://dmscreen.askozicki.workers.dev";
+
+  let MODEL = "claude-haiku-4-5-20251001";
+  let activeType = "rooms";
+  let lastClaudeOutput = null; // Store full Claude response for debugging
+  let lootTargetTable = "bronze"; // Which tier/custom table to sync loot items to
+  let inputMode = "raw"; // "raw" (notes) or "json" (pre-parsed)
+
+  // entities[type] = array of entity objects (schema-shaped)
+  const entities = { rooms: [], npcs: [], rules: [], timeline: [], characters: [], lootItems: [] };
+  // status[type][id] = 'new' | 'update' | 'flagged'
+  const cardStatus = { rooms: {}, npcs: {}, rules: {}, timeline: {}, characters: {}, lootItems: {} };
+  // openState[type][id] = bool
+  const openState = { rooms: {}, npcs: {}, rules: {}, timeline: {}, characters: {}, lootItems: {} };
+
+  // Cache of the last fetched KV state, used for new/update diffing.
+  let kvCache = null;
+
+  /* ══════════════════════════════════════════════════
+     SCHEMA — defaults + ID resolution per entity type.
+     idKey: which field is the primary identity for merge.
+     For timeline (no id) we synthesize a stable key from
+     date+event.
+  ══════════════════════════════════════════════════ */
+  const SCHEMA = {
+    rooms: {
+      label: "Room",
+      idKey: "id",
+      kvPath: ["campaign", "rooms"],
+      blank: () => ({
+        id: genId("room"),
+        name: "",
+        area: "",
+        description: "",
+        readaloud: "",
+        encounters: [],
+        mechanics: { terrain: "", hazards: [], interactables: [] },
+        connections: { north: null, south: null, east: null, west: null },
+        discovered: false,
+        cleared: false,
+        notes: ""
+      })
+    },
+    npcs: {
+      label: "NPC",
+      idKey: "id",
+      kvPath: ["campaign", "npcs"],
+      blank: () => ({
+        id: genId("npc"),
+        name: "",
+        race: "",
+        role: "",
+        personality: "",
+        locations: [],
+        isDefeated: false
+      })
+    },
+    rules: {
+      label: "Rule",
+      idKey: "id",
+      kvPath: ["campaign", "rules"],
+      blank: () => ({
+        id: genId("rule"),
+        name: "",
+        description: "",
+        appliesTo: []
+      })
+    },
+    timeline: {
+      label: "Event",
+      idKey: "__key", // synthetic
+      kvPath: ["campaign", "timeline"],
+      blank: () => ({
+        date: "",
+        event: "",
+        notes: ""
+      })
+    },
+    characters: {
+      label: "Character",
+      idKey: "id",
+      kvPath: ["characters"],
+      blank: () => ({
+        id: genId("char"),
+        name: "",
+        race: "",
+        class: "",
+        level: 1,
+        profileImage: null,
+        stats: { hp: { current: 0, max: 0 }, ac: 10, passivePerception: 10, passiveInsight: 10, speed: 30 },
+        abilities: { strength: 10, dexterity: 10, constitution: 10, intelligence: 10, wisdom: 10, charisma: 10 },
+        conditions: [],
+        deathSaves: { successes: 0, failures: 0, isStabilized: false, timestampAtDeathStart: null },
+        spellSlots: null,
+        familiar: null,
+        gold: 0,
+        inventory: [],
+        isArchived: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      })
+    },
+    lootItems: {
+      label: "Loot Item",
+      idKey: "id",
+      kvPath: ["lootTables", "allItems"],
+      blank: () => ({
+        id: genId("loot-item"),
+        name: "",
+        type: "wondrous",
+        rarity: "common",
+        quantity: 1,
+        description: "",
+        rollRange: [null, null],
+        mechanics: { toHitBonus: null, damageBonus: null, acBase: null, acMod: null, text: "" },
+        charges: null,
+        requiresAttunement: false,
+        isAttuned: false,
+        isDeleted: false
+      })
+    }
+  };
+
+  function genId(prefix) {
+    return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  }
+
+  // Synthetic identity for timeline events (no id field in schema).
+  function entityKey(type, ent) {
+    if (type === "timeline") return `${(ent.date || "").trim()}|${(ent.event || "").trim()}`;
+    return ent.id || "";
+  }
+
+  /* ══════════════════════════════════════════════════
+     AI PARSE PROMPTS — instruct Claude to emit a strict
+     JSON array matching the schema for the active type.
+  ══════════════════════════════════════════════════ */
+  function buildPrompt(type, raw) {
+    const shapes = {
+      rooms: `Each object: {
+  "id": "room_<slug>"  (lowercase, derive from the room name/number; stable),
+  "name": string,
+  "area": string  (e.g. "Level 3"; "" if unknown),
+  "description": string  (DM-facing summary / DM notes),
+  "readaloud": string  (the read-aloud / visuals text players hear),
+  "encounters": [ { "id":"enc_<slug>", "name":string, "type":"combat"|"social"|"exploration"|"trap", "enemies":[ {"id":"enemy_<slug>","name":string,"hp":number|null,"ac":number|null,"cr":number|null,"notes":string} ], "completed":false, "completedDate":null, "notes":string } ],
+  "mechanics": { "terrain": string, "hazards": [string], "interactables": [string] },
+  "connections": { "north":null,"south":null,"east":null,"west":null }  (fill with room ids only if explicitly stated, else null),
+  "discovered": false,
+  "cleared": false,
+  "notes": string  (any extra DM notes, achievements, tooltips, loot references as plain text)
+}`,
+      npcs: `Each object: {
+  "id": "npc_<slug>",
+  "name": string,
+  "race": string,
+  "role": string  (e.g. "Encounter Boss", "Quest Giver"),
+  "personality": string,
+  "locations": [string]  (room ids or room names if ids unknown),
+  "isDefeated": false
+}`,
+      rules: `Each object: {
+  "id": "rule_<slug>",
+  "name": string,
+  "description": string,
+  "appliesTo": [string]  (room ids or descriptive scope)
+}`,
+      timeline: `Each object: {
+  "date": string  (ISO date "YYYY-MM-DD" if given, else best guess or ""),
+  "event": string  (short title),
+  "notes": string
+}`,
+      characters: `Each object: {
+  "id": "char_<firstname-lower>",
+  "name": string,
+  "race": string,
+  "class": string,
+  "level": number,
+  "stats": { "hp": {"current":number,"max":number}, "ac":number, "passivePerception":number, "passiveInsight":number, "speed":number },
+  "abilities": { "strength":number,"dexterity":number,"constitution":number,"intelligence":number,"wisdom":number,"charisma":number },
+  "gold": number
+}
+Only include fields you can determine; omit unknown numeric fields rather than guessing wildly.`,
+      lootItems: `Each object: {
+  "id": "loot-item_<slug>"  (lowercase, derive from item name; stable),
+  "name": string  (required; extract from the ITEM: field),
+  "type": one of "weapon"|"armor"|"wand"|"ring"|"potion"|"wondrous"|"instrument"|"consumable"|"trinket"|"currency"|"arcane focus"  (parse the TYPE: field; "Consumable" -> "consumable", "Wondrous Item" -> "wondrous", "Armor (Shield)" -> "armor", "Weapon (Longsword)" -> "weapon"),
+  "rarity": one of "common"|"uncommon"|"rare"|"very rare"|"legendary"  (if not specified, default to "common"),
+  "quantity": number  (default 1),
+  "description": string  (the full DESCRIPTION: text, preserved faithfully and completely),
+  "rollRange": [min, max]  (parse from the [Roll XX-YY] prefix at the start of the line; e.g. "[Roll 01-03]" -> [1, 3], "[Roll 47-50]" -> [47, 50]. Strip leading zeros. If no roll prefix is present, use [null, null]),
+  "mechanics": {
+    "toHitBonus": number|null  (e.g. +1/+2/+3 to attack on weapons),
+    "damageBonus": string|null  (e.g. "1d8+1", or extra damage dice like "2d6 lightning"),
+    "acBase": number|null  (armor base AC if stated),
+    "acMod": number|null  (e.g. +1/+2/+3 to AC on armor/shields),
+    "text": string  (concise mechanical summary: bonuses, charges, spells granted, curses)
+  },
+  "charges": { "current": number, "max": number, "resetType": "no"|"shortRest"|"longRest"|"daily", "lastReset": null } | null  (only if the item explicitly has limited charges/uses; else null),
+  "requiresAttunement": boolean,
+  "isAttuned": false,
+  "isDeleted": false
+}
+Each line has format: [Roll XX-YY] ITEM: <name> TYPE: <type> DESCRIPTION: <full text>
+Roll ranges are ALWAYS present at the start of each entry — parse them strictly. Strip leading zeros from the numbers (e.g. "01" -> 1, "03" -> 3).
+Extract EVERY item. Do NOT invent mechanics or rarity — use only what is explicitly stated. Preserve the full flavor + mechanical description verbatim in "description"; additionally distill any mechanics (bonuses, damage, effects) into "mechanics". For weapons/armor map numeric bonuses to toHitBonus or acMod.`
+    };
+
+    return `You are a data extraction engine for a D&D 5e campaign manager. Extract every ${SCHEMA[type].label} from the raw notes below into a JSON array.
+
+OUTPUT RULES:
+- Respond with ONLY a JSON array. No prose, no markdown fences, no preamble.
+- If nothing of this type is present, respond with [].
+- ${shapes[type]}
+- Preserve the campaign's flavor text faithfully; do not summarize away detail in description/readaloud/notes.
+- Generate stable lowercase ids from names. Do not invent data that isn't implied by the notes.
+
+RAW NOTES:
+"""
+${raw}
+"""`;
+  }
+
+  /* ══════════════════════════════════════════════════
+     PARSE — call the Anthropic API (Claude-in-Claude).
+  ══════════════════════════════════════════════════ */
+  /* ══════════════════════════════════════════════════
+     AUTO-BATCHING — Haiku 4.5 caps output at ~8,192 tokens.
+     Large inputs are split into chunks on entity boundaries
+     so no single forge call ever truncates. Each chunk is
+     forged sequentially and merged into the review pane.
+  ══════════════════════════════════════════════════ */
+
+  // Target chars of RAW INPUT per batch. Output JSON is ~2-3x the input size,
+  // and we must stay under Haiku's 8k output-token ceiling (~28k chars).
+  // ~6000 input chars -> ~15-18k output chars -> safely under the limit.
+  const BATCH_CHAR_TARGET = 6000;
+
+  // Split raw text into chunks without cutting an entity in half.
+  // Strategy depends on the entity type's natural delimiter:
+  //  - lootItems: each "[Roll ...]" or "ITEM:" line is one entity.
+  //  - timeline/prose types: split on blank lines (paragraph/section breaks).
+  function chunkRawInput(type, raw) {
+    // Determine the line-grouping boundary.
+    const lines = raw.split("\n");
+    const chunks = [];
+    let current = [];
+    let currentLen = 0;
+
+    // A line that starts a NEW entity (so we can break BEFORE it, never mid-entity).
+    const isBoundary = (line) => {
+      const l = line.trim();
+      if (!l) return false;
+      if (type === "lootItems") {
+        // New item markers in the user's loot format.
+        return /^\[?\s*roll\b/i.test(l) || /^item\s*:/i.test(l);
+      }
+      // Prose types (rooms, npcs, rules, timeline, characters):
+      // treat ALL-CAPS headers or numbered/bulleted leads as soft boundaries.
+      return /^[A-Z0-9][A-Z0-9 \-&'/]{4,}$/.test(l)   // ALL-CAPS header line
+          || /^(room|npc|rule|session|achievement|part|quest)\b/i.test(l);
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const lineLen = line.length + 1;
+
+      // If adding this line would blow the target AND we're at a clean
+      // boundary with content already buffered, cut here.
+      if (currentLen + lineLen > BATCH_CHAR_TARGET && current.length && isBoundary(line)) {
+        chunks.push(current.join("\n"));
+        current = [];
+        currentLen = 0;
+      }
+      current.push(line);
+      currentLen += lineLen;
+    }
+    if (current.length) chunks.push(current.join("\n"));
+
+    // Fallback: if a single chunk is STILL way over target (e.g. no boundaries
+    // detected), hard-split it on blank lines, then on raw size as last resort.
+    const finalChunks = [];
+    for (const c of chunks) {
+      if (c.length <= BATCH_CHAR_TARGET * 1.6) { finalChunks.push(c); continue; }
+      const paras = c.split(/\n\s*\n/);
+      let buf = "", bufLen = 0;
+      for (const p of paras) {
+        if (bufLen + p.length > BATCH_CHAR_TARGET && buf) {
+          finalChunks.push(buf);
+          buf = ""; bufLen = 0;
+        }
+        buf += (buf ? "\n\n" : "") + p;
+        bufLen += p.length;
+      }
+      if (buf) finalChunks.push(buf);
+    }
+    return finalChunks.filter(c => c.trim().length);
+  }
+
+  // Forge a single batch through the worker. Returns parsed entity array.
+  // Throws on error (caller handles per-batch failures).
+  async function forgeBatch(type, chunk) {
+    const res = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "forge_entities",
+        entityType: type,
+        model: MODEL,
+        maxTokens: 8000,
+        prompt: buildPrompt(type, chunk)
+      })
+    });
+
+    const data = await res.json();
+    if (data.rawOutput) lastClaudeOutput = data.rawOutput;
+
+    if (!res.ok || data.error) {
+      console.error("Forge batch error:", {
+        error: data.error,
+        truncated: data.truncated,
+        stopReason: data.stopReason,
+        preview: data.preview,
+        tail: data.tail,
+        diagnostics: { rawLength: data.rawLength, startsWithBracket: data.startsWithBracket, endsWithBracket: data.endsWithBracket }
+      });
+      const err = new Error(data.error || `Worker ${res.status}`);
+      err.truncated = !!data.truncated;
+      throw err;
+    }
+
+    if (!Array.isArray(data.entities)) throw new Error("Worker did not return an entities array");
+    return data.entities;
+  }
+
+  async function runParse() {
+    const btn = document.getElementById("btn-parse");
+    btn.disabled = true;
+
+    const label = SCHEMA[activeType].label.toLowerCase();
+
+    try {
+      if (inputMode === "json") {
+        // ── JSON mode: parse pre-parsed input directly, skip Claude ──
+        const jsonVal = document.getElementById("json-input").value.trim();
+        if (!jsonVal) { toast("Paste a JSON array first.", "err"); return; }
+        let parsed;
+        try {
+          parsed = JSON.parse(jsonVal);
+        } catch (e) {
+          toast(`JSON parse error: ${e.message}`, "err"); return;
+        }
+        if (!Array.isArray(parsed)) { toast("Expected a JSON array at the top level.", "err"); return; }
+        mergeParsedIntoReview(activeType, parsed);
+        toast(`Loaded ${parsed.length} ${label}${parsed.length === 1 ? "" : "s"} from JSON. Review before syncing.`, "ok");
+        return;
+      }
+
+      // ── Raw mode: chunk + forge through Claude ──
+      const raw = document.getElementById("raw-input").value.trim();
+      if (!raw) { toast("Paste some notes first.", "err"); return; }
+
+      const chunks = chunkRawInput(activeType, raw);
+      let totalForged = 0;
+      let failedBatches = 0;
+
+      for (let i = 0; i < chunks.length; i++) {
+        btn.innerHTML = `<span class="loader"></span> Forging batch ${i + 1}/${chunks.length}…`;
+        try {
+          const parsed = await forgeBatch(activeType, chunks[i]);
+          mergeParsedIntoReview(activeType, parsed);
+          totalForged += parsed.length;
+        } catch (batchErr) {
+          failedBatches++;
+          console.error(`Batch ${i + 1}/${chunks.length} failed:`, batchErr.message);
+          const detail = batchErr.truncated ? " (response truncated — batch too large)" : "";
+          toast(`Batch ${i + 1}/${chunks.length} failed: ${batchErr.message}${detail}`, "err");
+        }
+      }
+
+      if (totalForged > 0) {
+        const batchNote = chunks.length > 1 ? ` across ${chunks.length} batches` : "";
+        const failNote = failedBatches ? ` (${failedBatches} batch${failedBatches === 1 ? "" : "es"} failed)` : "";
+        toast(`Forged ${totalForged} ${label}${totalForged === 1 ? "" : "s"}${batchNote}. Review before syncing.${failNote}`, failedBatches ? "err" : "ok");
+      } else {
+        toast(`No ${label}s forged.${failedBatches ? " All batches failed — check console." : " Nothing of this type was found in the notes."}`, "err");
+      }
+
+    } catch (err) {
+      console.error("Parse failed:", err);
+      toast(`Parse failed: ${err.message}`, "err");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Forge Entities';
+    }
+  }
+
+  // Normalize a parsed object against the schema blank so all expected
+  // fields exist (the model may omit some). Then push/replace into review.
+  function mergeParsedIntoReview(type, arr) {
+    arr.forEach(obj => {
+      const ent = deepMerge(SCHEMA[type].blank(), obj || {});
+      // Ensure timeline has no stray id; ensure others have an id.
+      if (type !== "timeline" && !ent.id) ent.id = genId(type.slice(0, 4));
+      const key = entityKey(type, ent);
+      const existingIdx = entities[type].findIndex(e => entityKey(type, e) === key && key !== "|");
+      if (existingIdx >= 0 && key !== "|") {
+        entities[type][existingIdx] = ent;
+      } else {
+        entities[type].push(ent);
+      }
+      openState[type][key] = false;
+    });
+    recomputeStatus(type);
+    renderReview();
+    renderJson();
+  }
+
+  // Deep merge source onto a fresh target (target = schema blank).
+  // Arrays from source replace target arrays.
+  function deepMerge(target, source) {
+    if (Array.isArray(source)) return source;
+    if (typeof source !== "object" || source === null) return source;
+    const out = Array.isArray(target) ? [] : { ...target };
+    for (const k of Object.keys(source)) {
+      const sv = source[k];
+      if (sv && typeof sv === "object" && !Array.isArray(sv) && target[k] && typeof target[k] === "object" && !Array.isArray(target[k])) {
+        out[k] = deepMerge(target[k], sv);
+      } else {
+        out[k] = sv;
+      }
+    }
+    return out;
+  }
+
+  /* ══════════════════════════════════════════════════
+     DIFF STATUS — compare each review entity to kvCache.
+     new = not in KV; update = id exists in KV; flagged =
+     missing required identity field (name / event).
+  ══════════════════════════════════════════════════ */
+  function recomputeStatus(type) {
+    const existingKeys = getKvKeySet(type);
+    entities[type].forEach(ent => {
+      const key = entityKey(type, ent);
+      const requiredOk = type === "timeline" ? !!(ent.event && ent.event.trim()) : !!(ent.name && ent.name.trim());
+      if (!requiredOk) { cardStatus[type][key] = "flagged"; return; }
+      cardStatus[type][key] = existingKeys.has(key) ? "update" : "new";
+    });
+  }
+
+  function getKvKeySet(type) {
+    const set = new Set();
+    if (!kvCache) return set;
+    const list = readKvPath(kvCache, SCHEMA[type].kvPath);
+    if (Array.isArray(list)) list.forEach(e => set.add(entityKey(type, e)));
+    return set;
+  }
+
+  function readKvPath(obj, path) {
+    let cur = obj;
+    for (const p of path) { if (cur == null) return undefined; cur = cur[p]; }
+    return cur;
+  }
+
+  /* ══════════════════════════════════════════════════
+     RENDER — REVIEW CARDS
+  ══════════════════════════════════════════════════ */
+  function renderReview() {
+    const scroll = document.getElementById("review-scroll");
+    const list = entities[activeType];
+
+    if (!list.length) {
+      scroll.innerHTML = `<div class="empty-state"><div class="big"><svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8L19 13M15 9h0M17.8 6.2L19 5M3 21l9-9M12.2 6.2L11 5"/></svg></div><div class="sub">Forged entities appear here as editable cards. Nothing is sent to KV until you sync.</div></div>`;
+      renderStats();
+      return;
+    }
+
+    scroll.innerHTML = "";
+    list.forEach((ent, idx) => scroll.appendChild(renderCard(activeType, ent, idx)));
+    renderStats();
+  }
+
+  function renderStats() {
+    const list = entities[activeType];
+    const counts = { new: 0, update: 0, flagged: 0 };
+    list.forEach(e => { const s = cardStatus[activeType][entityKey(activeType, e)]; if (counts[s] !== undefined) counts[s]++; });
+    document.getElementById("review-stats").innerHTML = list.length
+      ? `<span><i class="dot dot-new"></i>${counts.new} new</span><span><i class="dot dot-update"></i>${counts.update} upd</span>${counts.flagged ? `<span><i class="dot dot-flagged"></i>${counts.flagged} flag</span>` : ""}`
+      : "";
+  }
+
+  function renderCard(type, ent, idx) {
+    const key = entityKey(type, ent);
+    const status = cardStatus[type][key] || "new";
+    const card = document.createElement("div");
+    card.className = `card ${status === "new" ? "is-new" : status === "update" ? "is-update" : "is-flagged"} ${openState[type][key] ? "open" : ""}`;
+
+    const titleText = type === "timeline"
+      ? (ent.event || "⚠ Untitled event")
+      : (ent.name || "⚠ Unnamed");
+    const tagClass = status === "new" ? "tag-new" : status === "update" ? "tag-update" : "tag-flagged";
+    const tagText = status === "new" ? "NEW" : status === "update" ? "UPDATE" : "FIX";
+
+    const head = document.createElement("div");
+    head.className = "card-head";
+    head.innerHTML = `<span class="card-chevron">▶</span><span class="card-title">${escapeHtml(titleText)}</span><span class="card-tag ${tagClass}">${tagText}</span>`;
+    head.onclick = () => { openState[type][key] = !openState[type][key]; card.classList.toggle("open"); };
+    card.appendChild(head);
+
+    const body = document.createElement("div");
+    body.className = "card-body";
+    body.appendChild(buildFields(type, ent, idx));
+    card.appendChild(body);
+
+    return card;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  /* ── Field builders per type ── */
+  function buildFields(type, ent, idx) {
+    const wrap = document.createElement("div");
+    if (type === "rooms") wrap.appendChild(roomFields(ent, idx));
+    else if (type === "npcs") wrap.appendChild(npcFields(ent, idx));
+    else if (type === "rules") wrap.appendChild(ruleFields(ent, idx));
+    else if (type === "timeline") wrap.appendChild(timelineFields(ent, idx));
+    else if (type === "characters") wrap.appendChild(charFields(ent, idx));
+    else if (type === "lootItems") wrap.appendChild(lootItemFields(ent, idx));
+
+    const actions = document.createElement("div");
+    actions.className = "card-actions";
+    actions.innerHTML = `
+      <button class="btn-mini btn-mini-ghost" onclick="duplicateCard('${type}', ${idx})">Duplicate</button>
+      <button class="btn-mini btn-mini-danger" onclick="deleteCard('${type}', ${idx})">Delete</button>`;
+    wrap.appendChild(actions);
+    return wrap;
+  }
+
+  // Generic field helpers — each writes back to the entity and re-renders JSON.
+  function txt(label, val, onInput, area) {
+    const f = document.createElement("div"); f.className = "field";
+    f.innerHTML = `<label>${label}</label>`;
+    const el = document.createElement(area ? "textarea" : "input");
+    if (!area) el.type = "text";
+    el.value = val == null ? "" : val;
+    el.addEventListener("input", () => onInput(el.value));
+    f.appendChild(el);
+    return f;
+  }
+  function num(label, val, onInput) {
+    const f = document.createElement("div"); f.className = "field";
+    f.innerHTML = `<label>${label}</label>`;
+    const el = document.createElement("input"); el.type = "number"; el.value = val == null ? "" : val;
+    el.addEventListener("input", () => onInput(el.value === "" ? null : Number(el.value)));
+    f.appendChild(el); return f;
+  }
+  function row(...fields) { const r = document.createElement("div"); r.className = "field-row"; fields.forEach(x => r.appendChild(x)); return r; }
+  function sel(label, val, options, onInput) {
+    const f = document.createElement("div"); f.className = "field";
+    f.innerHTML = `<label>${label}</label>`;
+    const s = document.createElement("select");
+    options.forEach(o => { const opt = document.createElement("option"); opt.value = o; opt.textContent = o; if (o === val) opt.selected = true; s.appendChild(opt); });
+    s.addEventListener("change", () => onInput(s.value));
+    f.appendChild(s); return f;
+  }
+  function bool(label, val, onInput) {
+    const f = document.createElement("div"); f.className = "field";
+    const id = "cb_" + Math.random().toString(36).slice(2);
+    f.innerHTML = `<label>${label}</label>`;
+    const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = !!val; cb.id = id;
+    cb.style.width = "auto"; cb.style.transform = "scale(1.3)"; cb.style.cursor = "pointer";
+    cb.addEventListener("change", () => onInput(cb.checked));
+    f.appendChild(cb); return f;
+  }
+  // Chip / tag editor for string arrays.
+  function chips(label, arr, onChange) {
+    const f = document.createElement("div"); f.className = "field";
+    f.innerHTML = `<label>${label}</label>`;
+    const wrap = document.createElement("div"); wrap.className = "chip-input-wrap";
+    function redraw() {
+      wrap.innerHTML = "";
+      arr.forEach((v, i) => {
+        const chip = document.createElement("span"); chip.className = "chip";
+        chip.innerHTML = `${escapeHtml(v)} `;
+        const x = document.createElement("button"); x.textContent = "×";
+        x.onclick = () => { arr.splice(i, 1); onChange(arr); redraw(); };
+        chip.appendChild(x); wrap.appendChild(chip);
+      });
+      const inp = document.createElement("input"); inp.placeholder = "add + Enter";
+      inp.addEventListener("keydown", e => {
+        if (e.key === "Enter" && inp.value.trim()) { arr.push(inp.value.trim()); onChange(arr); redraw(); }
+      });
+      wrap.appendChild(inp);
+    }
+    redraw(); f.appendChild(wrap); return f;
+  }
+
+  function reRenderJsonAndStatus() { recomputeStatus(activeType); renderJson(); renderStats(); }
+
+  /* ── ROOM ── */
+  function roomFields(r, idx) {
+    const c = document.createElement("div");
+    c.appendChild(row(
+      txt("ID", r.id, v => { r.id = v; reRenderJsonAndStatus(); }),
+      txt("Area", r.area, v => { r.area = v; renderJson(); })
+    ));
+    c.appendChild(txt("Name", r.name, v => { r.name = v; refreshTitle(idx); reRenderJsonAndStatus(); }));
+    c.appendChild(txt("Read-Aloud", r.readaloud, v => { r.readaloud = v; renderJson(); }, true));
+    c.appendChild(txt("Description / DM Notes", r.description, v => { r.description = v; renderJson(); }, true));
+
+    const ms = document.createElement("div"); ms.className = "subsection";
+    ms.innerHTML = `<div class="subsection-title">Mechanics</div>`;
+    ms.appendChild(txt("Terrain", r.mechanics.terrain, v => { r.mechanics.terrain = v; renderJson(); }));
+    ms.appendChild(chips("Hazards", r.mechanics.hazards, a => { r.mechanics.hazards = a; renderJson(); }));
+    ms.appendChild(chips("Interactables", r.mechanics.interactables, a => { r.mechanics.interactables = a; renderJson(); }));
+    c.appendChild(ms);
+
+    const cs = document.createElement("div"); cs.className = "subsection";
+    cs.innerHTML = `<div class="subsection-title">Connections (room ids)</div>`;
+    cs.appendChild(row(
+      txt("North", r.connections.north, v => { r.connections.north = v || null; renderJson(); }),
+      txt("South", r.connections.south, v => { r.connections.south = v || null; renderJson(); })
+    ));
+    cs.appendChild(row(
+      txt("East", r.connections.east, v => { r.connections.east = v || null; renderJson(); }),
+      txt("West", r.connections.west, v => { r.connections.west = v || null; renderJson(); })
+    ));
+    c.appendChild(cs);
+
+    // Encounters
+    const es = document.createElement("div"); es.className = "subsection";
+    const esTitle = document.createElement("div"); esTitle.className = "subsection-title";
+    esTitle.innerHTML = `<span>Encounters</span>`;
+    es.appendChild(esTitle);
+    r.encounters.forEach((enc, ei) => es.appendChild(encounterItem(r, enc, ei, idx)));
+    const addEnc = document.createElement("button"); addEnc.className = "btn-add-sub"; addEnc.textContent = "+ Add Encounter";
+    addEnc.onclick = () => { r.encounters.push({ id: genId("enc"), name: "", type: "combat", enemies: [], completed: false, completedDate: null, notes: "" }); renderReview(); openState.rooms[entityKey("rooms", r)] = true; renderJson(); };
+    es.appendChild(addEnc);
+    c.appendChild(es);
+
+    c.appendChild(row(
+      bool("Discovered", r.discovered, v => { r.discovered = v; renderJson(); }),
+      bool("Cleared", r.cleared, v => { r.cleared = v; renderJson(); })
+    ));
+    c.appendChild(txt("Extra Notes", r.notes, v => { r.notes = v; renderJson(); }, true));
+    return c;
+  }
+
+  function encounterItem(room, enc, ei, roomIdx) {
+    const box = document.createElement("div"); box.className = "sub-item";
+    box.appendChild(row(
+      txt("Enc Name", enc.name, v => { enc.name = v; renderJson(); }),
+      sel("Type", enc.type, ["combat", "social", "exploration", "trap"], v => { enc.type = v; renderJson(); })
+    ));
+    // Enemies
+    const enWrap = document.createElement("div");
+    (enc.enemies || []).forEach((en, eni) => {
+      const eb = document.createElement("div"); eb.className = "sub-item";
+      eb.appendChild(row(
+        txt("Enemy", en.name, v => { en.name = v; renderJson(); }),
+        num("CR", en.cr, v => { en.cr = v; renderJson(); })
+      ));
+      eb.appendChild(row(
+        num("HP", en.hp, v => { en.hp = v; renderJson(); }),
+        num("AC", en.ac, v => { en.ac = v; renderJson(); })
+      ));
+      eb.appendChild(txt("Enemy Notes", en.notes, v => { en.notes = v; renderJson(); }, true));
+      const del = document.createElement("button"); del.className = "btn-add-sub"; del.style.borderColor = "#5a2a2f"; del.style.color = "var(--danger)"; del.textContent = "− Remove Enemy";
+      del.onclick = () => { enc.enemies.splice(eni, 1); renderReview(); openState.rooms[entityKey("rooms", room)] = true; renderJson(); };
+      eb.appendChild(del);
+      enWrap.appendChild(eb);
+    });
+    box.appendChild(enWrap);
+    const addEn = document.createElement("button"); addEn.className = "btn-add-sub"; addEn.textContent = "+ Add Enemy";
+    addEn.onclick = () => { enc.enemies = enc.enemies || []; enc.enemies.push({ id: genId("enemy"), name: "", hp: null, ac: null, cr: null, notes: "" }); renderReview(); openState.rooms[entityKey("rooms", room)] = true; renderJson(); };
+    box.appendChild(addEn);
+
+    box.appendChild(txt("Encounter Notes", enc.notes, v => { enc.notes = v; renderJson(); }, true));
+    const delEnc = document.createElement("button"); delEnc.className = "btn-add-sub"; delEnc.style.borderColor = "#5a2a2f"; delEnc.style.color = "var(--danger)"; delEnc.textContent = "− Remove Encounter";
+    delEnc.onclick = () => { room.encounters.splice(ei, 1); renderReview(); openState.rooms[entityKey("rooms", room)] = true; renderJson(); };
+    box.appendChild(delEnc);
+    return box;
+  }
+
+  /* ── NPC ── */
+  function npcFields(n, idx) {
+    const c = document.createElement("div");
+    c.appendChild(row(
+      txt("ID", n.id, v => { n.id = v; reRenderJsonAndStatus(); }),
+      txt("Race", n.race, v => { n.race = v; renderJson(); })
+    ));
+    c.appendChild(txt("Name", n.name, v => { n.name = v; refreshTitle(idx); reRenderJsonAndStatus(); }));
+    c.appendChild(txt("Role", n.role, v => { n.role = v; renderJson(); }));
+    c.appendChild(txt("Personality", n.personality, v => { n.personality = v; renderJson(); }, true));
+    c.appendChild(chips("Locations", n.locations, a => { n.locations = a; renderJson(); }));
+    c.appendChild(bool("Defeated", n.isDefeated, v => { n.isDefeated = v; renderJson(); }));
+    return c;
+  }
+
+  /* ── RULE ── */
+  function ruleFields(r, idx) {
+    const c = document.createElement("div");
+    c.appendChild(txt("ID", r.id, v => { r.id = v; reRenderJsonAndStatus(); }));
+    c.appendChild(txt("Name", r.name, v => { r.name = v; refreshTitle(idx); reRenderJsonAndStatus(); }));
+    c.appendChild(txt("Description", r.description, v => { r.description = v; renderJson(); }, true));
+    c.appendChild(chips("Applies To", r.appliesTo, a => { r.appliesTo = a; renderJson(); }));
+    return c;
+  }
+
+  /* ── TIMELINE ── */
+  function timelineFields(t, idx) {
+    const c = document.createElement("div");
+    c.appendChild(row(
+      txt("Date (YYYY-MM-DD)", t.date, v => { t.date = v; reRenderJsonAndStatus(); }),
+      txt("Event", t.event, v => { t.event = v; refreshTitle(idx); reRenderJsonAndStatus(); })
+    ));
+    c.appendChild(txt("Notes", t.notes, v => { t.notes = v; renderJson(); }, true));
+    return c;
+  }
+
+  /* ── CHARACTER (lite) ── */
+  function charFields(ch, idx) {
+    const c = document.createElement("div");
+    c.appendChild(row(
+      txt("ID", ch.id, v => { ch.id = v; reRenderJsonAndStatus(); }),
+      num("Level", ch.level, v => { ch.level = v || 1; renderJson(); })
+    ));
+    c.appendChild(txt("Name", ch.name, v => { ch.name = v; refreshTitle(idx); reRenderJsonAndStatus(); }));
+    c.appendChild(row(
+      txt("Race", ch.race, v => { ch.race = v; renderJson(); }),
+      txt("Class", ch.class, v => { ch.class = v; renderJson(); })
+    ));
+    const st = document.createElement("div"); st.className = "subsection";
+    st.innerHTML = `<div class="subsection-title">Combat Stats</div>`;
+    st.appendChild(row(
+      num("HP Cur", ch.stats.hp.current, v => { ch.stats.hp.current = v || 0; renderJson(); }),
+      num("HP Max", ch.stats.hp.max, v => { ch.stats.hp.max = v || 0; renderJson(); }),
+      num("AC", ch.stats.ac, v => { ch.stats.ac = v || 10; renderJson(); })
+    ));
+    st.appendChild(row(
+      num("Pass. Perc", ch.stats.passivePerception, v => { ch.stats.passivePerception = v || 10; renderJson(); }),
+      num("Pass. Ins", ch.stats.passiveInsight, v => { ch.stats.passiveInsight = v || 10; renderJson(); }),
+      num("Speed", ch.stats.speed, v => { ch.stats.speed = v || 30; renderJson(); })
+    ));
+    c.appendChild(st);
+    const ab = document.createElement("div"); ab.className = "subsection";
+    ab.innerHTML = `<div class="subsection-title">Abilities</div>`;
+    ab.appendChild(row(
+      num("STR", ch.abilities.strength, v => { ch.abilities.strength = v || 10; renderJson(); }),
+      num("DEX", ch.abilities.dexterity, v => { ch.abilities.dexterity = v || 10; renderJson(); }),
+      num("CON", ch.abilities.constitution, v => { ch.abilities.constitution = v || 10; renderJson(); })
+    ));
+    ab.appendChild(row(
+      num("INT", ch.abilities.intelligence, v => { ch.abilities.intelligence = v || 10; renderJson(); }),
+      num("WIS", ch.abilities.wisdom, v => { ch.abilities.wisdom = v || 10; renderJson(); }),
+      num("CHA", ch.abilities.charisma, v => { ch.abilities.charisma = v || 10; renderJson(); })
+    ));
+    c.appendChild(ab);
+    c.appendChild(num("Gold", ch.gold, v => { ch.gold = v || 0; renderJson(); }));
+    const note = document.createElement("p"); note.className = "hint"; note.style.marginTop = "0.6rem";
+    note.textContent = "Character-lite: identity, stats, abilities, gold. Inventory, spell slots, and familiars are managed in the Dashboard.";
+    c.appendChild(note);
+    return c;
+  }
+
+  /* ── LOOT ITEM ── */
+  const LOOT_TYPES = ["weapon", "armor", "wand", "ring", "potion", "wondrous", "instrument", "consumable", "trinket", "currency", "arcane focus"];
+  const LOOT_RARITIES = ["common", "uncommon", "rare", "very rare", "legendary"];
+  const CHARGE_RESETS = ["no", "shortRest", "longRest", "daily"];
+
+  function lootItemFields(it, idx) {
+    const c = document.createElement("div");
+
+    // Ensure nested shapes exist (parsed objects may omit them).
+    if (!it.mechanics) it.mechanics = { toHitBonus: null, damageBonus: null, acBase: null, acMod: null, text: "" };
+    if (!Array.isArray(it.rollRange)) it.rollRange = [null, null];
+
+    c.appendChild(row(
+      txt("ID", it.id, v => { it.id = v; reRenderJsonAndStatus(); }),
+      num("Quantity", it.quantity, v => { it.quantity = v || 1; renderJson(); })
+    ));
+    c.appendChild(txt("Name", it.name, v => { it.name = v; refreshTitle(idx); reRenderJsonAndStatus(); }));
+    c.appendChild(row(
+      sel("Type", it.type, LOOT_TYPES, v => { it.type = v; renderJson(); }),
+      sel("Rarity", it.rarity, LOOT_RARITIES, v => { it.rarity = v; renderJson(); })
+    ));
+
+    // Roll Range subsection
+    const rs = document.createElement("div"); rs.className = "subsection";
+    rs.innerHTML = `<div class="subsection-title">Roll Range</div>`;
+    rs.appendChild(row(
+      num("Min Roll", it.rollRange[0], v => { it.rollRange[0] = v; renderJson(); }),
+      num("Max Roll", it.rollRange[1], v => { it.rollRange[1] = v; renderJson(); })
+    ));
+    c.appendChild(rs);
+    c.appendChild(txt("Description (flavor + full text)", it.description, v => { it.description = v; renderJson(); }, true));
+
+    // Mechanics subsection
+    const ms = document.createElement("div"); ms.className = "subsection";
+    ms.innerHTML = `<div class="subsection-title">Mechanics</div>`;
+    ms.appendChild(txt("Summary", it.mechanics.text, v => { it.mechanics.text = v; renderJson(); }, true));
+    ms.appendChild(row(
+      num("To-Hit Bonus", it.mechanics.toHitBonus, v => { it.mechanics.toHitBonus = v; renderJson(); }),
+      txt("Damage Bonus", it.mechanics.damageBonus, v => { it.mechanics.damageBonus = v || null; renderJson(); })
+    ));
+    ms.appendChild(row(
+      num("AC Base", it.mechanics.acBase, v => { it.mechanics.acBase = v; renderJson(); }),
+      num("AC Mod", it.mechanics.acMod, v => { it.mechanics.acMod = v; renderJson(); })
+    ));
+    c.appendChild(ms);
+
+    // Charges subsection — toggled on/off (null when off).
+    const cs = document.createElement("div"); cs.className = "subsection";
+    cs.innerHTML = `<div class="subsection-title">Charges</div>`;
+    cs.appendChild(bool("Has charges", !!it.charges, v => {
+      it.charges = v ? { current: 0, max: 0, resetType: "no", lastReset: null } : null;
+      renderReview(); openState.lootItems[entityKey("lootItems", it)] = true; renderJson();
+    }));
+    if (it.charges) {
+      cs.appendChild(row(
+        num("Current", it.charges.current, v => { it.charges.current = v || 0; renderJson(); }),
+        num("Max", it.charges.max, v => { it.charges.max = v || 0; renderJson(); })
+      ));
+      cs.appendChild(sel("Reset Type", it.charges.resetType, CHARGE_RESETS, v => { it.charges.resetType = v; renderJson(); }));
+    }
+    c.appendChild(cs);
+
+    // Attunement
+    c.appendChild(row(
+      bool("Requires Attunement", it.requiresAttunement, v => {
+        it.requiresAttunement = v;
+        if (!v) it.isAttuned = false;
+        renderReview(); openState.lootItems[entityKey("lootItems", it)] = true; renderJson();
+      }),
+      it.requiresAttunement
+        ? bool("Is Attuned", it.isAttuned, v => { it.isAttuned = v; renderJson(); })
+        : (() => { const sp = document.createElement("div"); sp.className = "field"; return sp; })()
+    ));
+
+    const note = document.createElement("p"); note.className = "hint"; note.style.marginTop = "0.6rem";
+    note.textContent = "Roll ranges are parsed from [Roll XX-YY] prefixes in raw notes and synced directly into the target tier table.";
+    c.appendChild(note);
+    return c;
+  }
+
+  // Update only a card's title text without a full re-render (keeps focus).
+  function refreshTitle(idx) {
+    const cards = document.querySelectorAll("#review-scroll .card");
+    const ent = entities[activeType][idx];
+    if (!cards[idx] || !ent) return;
+    const titleEl = cards[idx].querySelector(".card-title");
+    if (titleEl) titleEl.textContent = activeType === "timeline" ? (ent.event || "⚠ Untitled event") : (ent.name || "⚠ Unnamed");
+  }
+
+  /* ══════════════════════════════════════════════════
+     CARD ACTIONS
+  ══════════════════════════════════════════════════ */
+  function deleteCard(type, idx) {
+    entities[type].splice(idx, 1);
+    recomputeStatus(type); renderReview(); renderJson();
+  }
+  function duplicateCard(type, idx) {
+    const clone = JSON.parse(JSON.stringify(entities[type][idx]));
+    if (type !== "timeline") clone.id = genId(type.slice(0, 4));
+    entities[type].splice(idx + 1, 0, clone);
+    recomputeStatus(type); renderReview(); renderJson();
+  }
+  function addBlankCard() {
+    const ent = SCHEMA[activeType].blank();
+    entities[activeType].push(ent);
+    openState[activeType][entityKey(activeType, ent)] = true;
+    recomputeStatus(activeType); renderReview(); renderJson();
+  }
+  function expandCollapseAll() {
+    const anyClosed = entities[activeType].some(e => !openState[activeType][entityKey(activeType, e)]);
+    entities[activeType].forEach(e => { openState[activeType][entityKey(activeType, e)] = anyClosed; });
+    renderReview();
+  }
+
+  /* ══════════════════════════════════════════════════
+     JSON PREVIEW
+  ══════════════════════════════════════════════════ */
+  function renderJson() {
+    const list = entities[activeType];
+    document.getElementById("btn-sync").disabled = list.length === 0;
+    const out = { _target: SCHEMA[activeType].kvPath.join("."), _count: list.length, entities: list };
+    document.getElementById("json-preview").textContent = list.length
+      ? JSON.stringify(out, null, 2)
+      : "// Forge entities to preview output JSON.";
+  }
+
+  function copyJson() {
+    const list = entities[activeType];
+    if (!list.length) return toast("Nothing to copy.", "err");
+    const txt = JSON.stringify(list, null, 2);
+    navigator.clipboard?.writeText(txt).then(
+      () => toast("JSON copied to clipboard.", "ok"),
+      () => toast("Clipboard blocked — select manually.", "err")
+    );
+  }
+
+  /* ══════════════════════════════════════════════════
+     SYNC TO KV  — fetch latest, merge by id, POST with
+     optimistic lock. Matches worker contract exactly:
+       GET  → full state
+       POST → { base_version, data }  →  { new_version }
+     Schema V5 fields: version, lastModified (camelCase).
+  ══════════════════════════════════════════════════ */
+  async function syncToKV() {
+    const type = activeType;
+    const list = entities[type];
+    if (!list.length) return toast("Nothing to sync.", "err");
+
+    // Block sync if any card is flagged (missing identity).
+    recomputeStatus(type);
+    const flagged = list.filter(e => cardStatus[type][entityKey(type, e)] === "flagged");
+    if (flagged.length) {
+      renderReview();
+      return toast(`${flagged.length} card(s) missing a ${type === "timeline" ? "event title" : "name"}. Fix before syncing.`, "err");
+    }
+
+    const btn = document.getElementById("btn-sync");
+    btn.disabled = true; btn.textContent = "Syncing…";
+    setKvStatus("fetching latest…");
+
+    try {
+      const res = await fetch(WORKER_URL, { method: "GET", mode: "cors" });
+      if (!res.ok) throw new Error(`GET ${res.status}`);
+      let state = await res.json();
+      kvCache = state;
+
+      // Ensure loot containers exist (idempotent).
+      state.version = state.version || 0;
+      if (!state.campaign) state.campaign = { rooms: [], npcs: [], rules: [], timeline: [] };
+      if (!Array.isArray(state.characters)) state.characters = [];
+      ["rooms", "npcs", "rules", "timeline"].forEach(k => { if (!Array.isArray(state.campaign[k])) state.campaign[k] = []; });
+      if (!state.lootTables) state.lootTables = {};
+      if (!state.lootTables.tiers) state.lootTables.tiers = {};
+      ["bronze", "silver", "gold", "platinum"].forEach(t => {
+        if (!Array.isArray(state.lootTables.tiers[t])) state.lootTables.tiers[t] = [];
+      });
+      if (!state.lootTables.personal) state.lootTables.personal = {};
+      if (!state.lootTables.custom) state.lootTables.custom = {};
+      if (!Array.isArray(state.lootTables.allItems)) state.lootTables.allItems = [];
+
+      // Resolve the target KV path for this sync.
+      // For lootItems, use the dynamically selected table rather than the schema default.
+      let kvPath = SCHEMA[type].kvPath;
+      let resolvedPathLabel = kvPath.join(".");
+      if (type === "lootItems") {
+        const TIERS = ["bronze", "silver", "gold", "platinum"];
+        if (TIERS.includes(lootTargetTable)) {
+          kvPath = ["lootTables", "tiers", lootTargetTable];
+        } else {
+          // Determine if it's a personal or custom table by checking both buckets.
+          // Personal tables: lootTables.personal.<name>
+          // Custom tables:   lootTables.custom.<name>
+          const isPersonal = Object.prototype.hasOwnProperty.call(state.lootTables.personal, lootTargetTable);
+          kvPath = isPersonal
+            ? ["lootTables", "personal", lootTargetTable]
+            : ["lootTables", "custom", lootTargetTable];
+        }
+        resolvedPathLabel = kvPath.join(".");
+
+        // Ensure the target array exists at the resolved path before merging.
+        // This handles new custom/personal tables that haven't been written to KV yet.
+        let bucket = readKvPath(state, kvPath.slice(0, -1)); // parent object
+        const leafKey = kvPath[kvPath.length - 1];
+        if (!Array.isArray(bucket[leafKey])) {
+          bucket[leafKey] = [];
+        }
+      }
+
+      // Merge entities into the target array by identity key.
+      const targetArr = readKvPath(state, kvPath);
+      if (!Array.isArray(targetArr)) {
+        throw new Error(`Target path "${resolvedPathLabel}" is not an array. Sync aborted.`);
+      }
+      list.forEach(ent => {
+        const key = entityKey(type, ent);
+        const i = targetArr.findIndex(e => entityKey(type, e) === key);
+        if (i >= 0) targetArr[i] = ent; else targetArr.push(ent);
+      });
+
+      const baseVersion = state.version;
+      state.version = baseVersion + 1;
+      state.lastModified = Date.now();
+
+      setKvStatus("writing…");
+      const post = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ base_version: baseVersion, data: state })
+      });
+
+      if (post.status === 409) { setKvStatus("collision"); throw new Error("Version collision — another device wrote first. Re-run sync."); }
+      if (!post.ok) throw new Error(`POST ${post.status}`);
+      const result = await post.json();
+
+      kvCache = state; // refresh cache so re-syncs diff as 'update'
+      recomputeStatus(type);
+      renderReview();
+      setKvStatus(`synced · v${result.new_version ?? state.version}`);
+      toast(`Synced ${list.length} ${SCHEMA[type].label.toLowerCase()}(s) → ${resolvedPathLabel ?? SCHEMA[type].kvPath.join(".")}.`, "ok");
+
+      btn.textContent = "Synced ✓";
+      setTimeout(() => { btn.textContent = "Sync to KV"; btn.disabled = list.length === 0; }, 2200);
+    } catch (err) {
+      console.error(err);
+      setKvStatus("error");
+      toast(`Sync failed: ${err.message}`, "err");
+      btn.textContent = "Sync to KV"; btn.disabled = false;
+    }
+  }
+
+  function setKvStatus(s) { document.getElementById("kv-status").textContent = "KV: " + s; }
+
+  /* ══════════════════════════════════════════════════
+     TABS + MISC UI
+  ══════════════════════════════════════════════════ */
+  function switchTab(type) {
+    activeType = type;
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.type === type));
+    // Show loot tier selector only on lootItems tab
+    const selector = document.getElementById("loot-target-selector");
+    if (type === "lootItems") {
+      selector.style.display = "block";
+      populateLootTargets();
+    } else {
+      selector.style.display = "none";
+    }
+    renderReview(); renderJson();
+    setKvStatus("idle");
+  }
+
+  function setModel(btn) {
+    MODEL = btn.dataset.model;
+    document.querySelectorAll("#model-toggle button").forEach(b => b.classList.toggle("active", b === btn));
+  }
+
+  function toast(msg, kind) {
+    const c = document.getElementById("toast-container");
+    const t = document.createElement("div");
+    t.className = "toast" + (kind === "err" ? " err" : kind === "ok" ? " ok" : "");
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 4600);
+  }
+
+  /* ── INPUT MODE TOGGLE ── */
+  function setInputMode(mode) {
+    inputMode = mode;
+    const rawArea  = document.getElementById("raw-input");
+    const jsonArea = document.getElementById("json-input");
+    const btnRaw   = document.getElementById("btn-mode-raw");
+    const btnJson  = document.getElementById("btn-mode-json");
+    const titleEl  = document.getElementById("input-title");
+
+    if (mode === "raw") {
+      rawArea.style.display  = "block";
+      jsonArea.style.display = "none";
+      btnRaw.style.background   = "var(--accent-dim)";
+      btnRaw.style.borderColor  = "var(--accent)";
+      btnRaw.style.color        = "var(--accent)";
+      btnJson.style.background  = "transparent";
+      btnJson.style.borderColor = "var(--glass-border)";
+      btnJson.style.color       = "#aaa";
+      titleEl.textContent = "1 · Raw Notes";
+    } else {
+      rawArea.style.display  = "none";
+      jsonArea.style.display = "block";
+      btnRaw.style.background   = "transparent";
+      btnRaw.style.borderColor  = "var(--glass-border)";
+      btnRaw.style.color        = "#aaa";
+      btnJson.style.background  = "var(--accent-dim)";
+      btnJson.style.borderColor = "var(--accent)";
+      btnJson.style.color       = "var(--accent)";
+      titleEl.textContent = "1 · Parsed JSON";
+    }
+    updateCharCount();
+  }
+
+  function updateCharCount() {
+    const area = inputMode === "raw"
+      ? document.getElementById("raw-input")
+      : document.getElementById("json-input");
+    document.getElementById("input-char-count").textContent =
+      `${area.value.length.toLocaleString()} chars`;
+  }
+
+  function setLootTarget(tableName) {
+    lootTargetTable = tableName;
+  }
+
+  function populateLootTargets() {
+    const personalGroup = document.getElementById("personal-tables-group");
+    const customGroup   = document.getElementById("custom-tables-group");
+    personalGroup.innerHTML = "";
+    customGroup.innerHTML   = "";
+
+    fetch(WORKER_URL, { method: "GET", mode: "cors" })
+      .then(res => res.json())
+      .then(data => {
+        // Personal tables — lootTables.personal keys
+        const personal = (data.lootTables && data.lootTables.personal)
+          ? Object.keys(data.lootTables.personal) : [];
+        personal.forEach(name => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name + " (player)";
+          personalGroup.appendChild(opt);
+        });
+
+        // Custom tables — lootTables.custom keys
+        const custom = (data.lootTables && data.lootTables.custom)
+          ? Object.keys(data.lootTables.custom) : [];
+        custom.forEach(name => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          customGroup.appendChild(opt);
+        });
+
+        // Sync the DOM select value to the current lootTargetTable var.
+        // If the saved target no longer exists in the list, fall back to bronze.
+        const sel = document.getElementById("loot-target-select");
+        const allValues = ["bronze", "silver", "gold", "platinum", ...personal, ...custom];
+        if (!allValues.includes(lootTargetTable)) {
+          lootTargetTable = "bronze";
+        }
+        sel.value = lootTargetTable;
+      })
+      .catch(err => {
+        console.warn("Could not fetch loot table list:", err);
+        // Still sync the selector to whatever we have locally.
+        const sel = document.getElementById("loot-target-select");
+        sel.value = lootTargetTable;
+      });
+  }
+
+  // Live char counters for both inputs
+  document.getElementById("raw-input").addEventListener("input", updateCharCount);
+  document.getElementById("json-input").addEventListener("input", updateCharCount);
+
+  // Claude output modal controls
+  function showClaudeOutputModal() {
+    if (!lastClaudeOutput) {
+      toast("No Claude output captured yet. Run Forge Entities first.", "err");
+      return;
+    }
+    document.getElementById("claude-output-text").textContent = lastClaudeOutput;
+    document.getElementById("claude-output-modal").style.display = "block";
+  }
+
+  function closeClaudeOutputModal() {
+    document.getElementById("claude-output-modal").style.display = "none";
+  }
+
+  function copyClaudeOutput() {
+    if (!lastClaudeOutput) return;
+    navigator.clipboard?.writeText(lastClaudeOutput).then(
+      () => toast("Claude output copied to clipboard.", "ok"),
+      () => toast("Clipboard blocked — select manually.", "err")
+    );
+  }
+
+  // Initial paint
+  renderReview();
+  renderJson();
+  </script>
+</body>
+</html>
