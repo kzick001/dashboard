@@ -1,5 +1,5 @@
 // ==========================================
-// UNDEAD BARRAGE V16.7.2 - GLOBAL CONFIGURATION
+// UNDEAD BARRAGE V16.8.0 - GLOBAL CONFIGURATION
 // ==========================================
 export const GameConfig = {
     
@@ -12,8 +12,14 @@ export const GameConfig = {
         burstClumpMin: 3,
         burstClumpMax: 12,
         burstDelay: 150,
+        phaseCount: 3,           // sub-waves per wave
+        phaseBasePause: 5000,    // ms floor between phases
+        phaseScalePerBudget: 20, // +1ms between phases per (budgetPerPhase / this); bigger budget = longer gap
+        phaseScaleCap: 7000,     // max additional ms from budget scaling
         supplyDropMin: 45000,
         supplyDropMax: 60000,
+        crateLifespanMs: 10000,  // stationary crate self-despawn
+        crateFallSpeed: 60,
         crateHealthChance: 30,
         crateBombChance: 50,
         crateEnergyChance: 20
@@ -137,7 +143,7 @@ export const GameConfig = {
     mobs: {
         grunt:    { baseHp: 3,  baseSpeed: 100, cost: 1, hpPerWave: 1, speedPerWave: 0 },
         sprinter: { baseHp: 2,  baseSpeed: 160, cost: 2, hpPerWave: 1, speedPerWave: 2 },
-        spitter:  { baseHp: 4,  baseSpeed: 80,  cost: 3, hpPerWave: 1, speedPerWave: 0 },
+        spitter:  { baseHp: 4,  baseSpeed: 80,  cost: 3, hpPerWave: 1, speedPerWave: 0, spitRange: 350, spitRate: 1500, spitDamage: 1, spitSpeed: 400, spitDecay: 0.96 },
         tank:     { baseHp: 12, baseSpeed: 50,  cost: 4, hpPerWave: 2, speedPerWave: 0 },
         burrower: { baseHp: 5,  baseSpeed: 90,  cost: 3, hpPerWave: 1, speedPerWave: 1 }
     },
@@ -158,6 +164,14 @@ export const GameConfig = {
         arterialSpraySpeed: 300,
         splatScaleMin: 0.8,
         splatScaleMax: 2.5,
+        splatCount: 4,           // blood circles per hit
+        splatRadius: 3,          // base circle radius
+        splatFadeDuration: 500,
+        casingCount: 2,          // shells per shot
+        casingVelocityX: 80,     // lateral eject speed (toward right of barrel)
+        casingVelocityY: -40,    // upward kick
+        casingGravity: 6,        // fall accel applied in tween
+        casingFadeDuration: 700,
         shakeIntensity: 1.0,
         maxBloodParticles: 1500,
         maxCasings: 200,
@@ -227,7 +241,7 @@ export const GameConfig = {
         "Heavy Boots":    { fireRateMult: 0.5 },
         "Scavenger":      { speedMult: 1.6, immunityMs: 1000 },
         "Corpse-a-Cola":  { radius: 70, hpDamageMult: 1.5 },
-        "Pay It Forward": { damageBonus: 3 },           // not yet wired (needs barricade-damage hook)
+        "Pay It Forward": { damageBonus: 3, durationMs: 3000 }, // flat +damage while buff active
         "Bitch Splinters":{ shards: 8, damageFraction: 0.4, speed: 700, range: 250 },
         "Spare Change":   { bonusCoins: 2 },
         "Chain Reaction": { chance: 15, damageMult: 1.5 },
@@ -242,7 +256,9 @@ export const GameConfig = {
         inflationMult: 0.15,    // per level, flat coin-value multiplier
         midasChance: 10,        // per level, % chance to upgrade a coin's value
         midasMult: 3,           // coin value multiplier on Midas proc
-        bountyAmount: 500       // not yet wired (needs marked-grunt spawn hook)
+        bountyChance: 8,        // % chance to mark a spawned grunt as bounty
+        bountyTint: 0xffff00,   // visual marker for bounty grunts
+        bountyAmount: 500       // gold dropped by a bounty grunt on death
     },
 
     // 11. ENGINEERING (DEFENSES)
