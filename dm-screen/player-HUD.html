@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Crawler Terminal V5.1.2</title>
+  <title>Showrunner | Crawler Terminal V5.2</title>
 
   <svg xmlns="http://www.w3.org/2000/svg" style="display:none;position:absolute">
     <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
@@ -201,6 +201,28 @@
     .ach-item-ack:hover { transform:translateY(-1px); box-shadow:0 2px 10px rgba(187,134,252,.4); }
     .ach-empty { text-align:center; color:var(--muted); font-size:.8rem; padding:1rem; }
 
+    /* Notification toast */
+    #ach-toast { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%); background:rgba(74,222,128,.95); border:1px solid rgba(74,222,128,.6); border-radius:var(--r-sm); padding:1rem 1.4rem; color:#000; font-size:.85rem; font-weight:bold; z-index:2999; box-shadow:0 8px 24px rgba(74,222,128,.3); animation:toast-slide-in .3s ease-out; max-width:min(90vw,380px); text-align:center; display:none; }
+    #ach-toast.show { display:block; }
+    @keyframes toast-slide-in { from{opacity:0;transform:translateX(-50%) translateY(20px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+    #ach-toast-title { font-size:.9rem; margin-bottom:.3rem; }
+    #ach-toast-subtitle { font-size:.75rem; opacity:.9; }
+
+    /* Achievement detail modal (expanded state inside main modal) */
+    .ach-detail-panel { display:none; }
+    .ach-detail-panel.active { display:block; }
+    .ach-detail-name { font-size:1rem; font-weight:bold; color:var(--accent); margin-bottom:.5rem; text-transform:uppercase; letter-spacing:.05em; }
+    .ach-detail-desc { font-size:.8rem; color:var(--text); margin-bottom:.6rem; line-height:1.6; }
+    .ach-detail-loot { background:rgba(255,215,0,.08); border:1px solid rgba(255,215,0,.25); border-radius:var(--r-sm); padding:.7rem; margin:.6rem 0; }
+    .ach-detail-loot-label { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.3rem; }
+    .ach-detail-loot-text { font-family:monospace; font-size:.75rem; color:rgba(224,224,224,.9); line-height:1.7; white-space:pre-wrap; word-break:break-word; }
+    .ach-detail-gold { font-size:.8rem; color:var(--loot); margin:.5rem 0; font-weight:bold; }
+    .ach-detail-actions { display:flex; gap:.5rem; margin-top:1rem; flex-wrap:wrap; }
+    .btn-copy-loot { background:rgba(255,215,0,.15); border:1px solid rgba(255,215,0,.4); color:var(--loot); padding:.4rem .7rem; border-radius:var(--r-sm); font-size:.7rem; font-weight:bold; text-transform:uppercase; cursor:pointer; transition:all .2s ease; }
+    .btn-copy-loot:hover { background:rgba(255,215,0,.25); box-shadow:0 0 10px rgba(255,215,0,.3); }
+    .btn-ach-action { background:linear-gradient(135deg,var(--accent),var(--primary)); border:none; color:#fff; padding:.4rem .8rem; border-radius:var(--r-sm); font-size:.65rem; font-weight:bold; text-transform:uppercase; letter-spacing:.05em; cursor:pointer; transition:all .2s ease; flex:1; min-width:120px; }
+    .btn-ach-action:hover { transform:translateY(-1px); box-shadow:0 2px 10px rgba(187,134,252,.4); }
+
     /* Condition pulse */
     @keyframes cond-pulse { 0%,100%{border-color:var(--border)} 50%{border-color:var(--accent); box-shadow:0 0 12px rgba(187,134,252,.3)} }
     .cond-alert { animation:cond-pulse .6s ease-in-out; }
@@ -351,6 +373,12 @@
       <p id="ach-empty-archive" class="ach-empty">Archive empty.</p>
     </div>
   </div>
+</div>
+
+<!-- NOTIFICATION TOAST -->
+<div id="ach-toast">
+  <div id="ach-toast-title">🏆 YOU EARNED</div>
+  <div id="ach-toast-subtitle">Click to view details</div>
 </div>
 
 <!-- LOGOUT CONFIRMATION -->
@@ -504,6 +532,7 @@ function showHUD() {
   requestAnimationFrame(() => {
     renderAll();
     initTicker();
+    startAchievementPolling();
   });
 }
 
@@ -893,35 +922,151 @@ function longRest() {
 /* ══════════════════════════════
    ACHIEVEMENTS
 ══════════════════════════════ */
-function unacked() {
-  if (!state?.achievements || !player) return [];
+/* ══════════════════════════════
+   ACHIEVEMENTS
+══════════════════════════════ */
+let achCurrentPage = null; // Current achievement detail being shown
+let pollAchInterval = null;
+
+/* Count of unaward achievements (pending notify) that player earned */
+function unacknowledgedCount() {
+  if (!state?.achievements || !player) return 0;
   return state.achievements.filter(a => {
+    // Only count if NOT archived, player earned it, and notify is pending (not yet awarded)
     if (a.isArchived) return false;
-    if (a.acknowledgedBy?.includes(player.id)) return false;
-    
-    // Determine visibility: show if party achievement OR player earned it
-    if (!a.earnedBy || typeof a.earnedBy === 'boolean' || (typeof a.earnedBy === 'object' && Object.keys(a.earnedBy).length === 0)) {
-      return true; // party achievement
-    }
-    if (typeof a.earnedBy === 'object' && a.earnedBy[player.id]) {
-      return true; // player earned it
-    }
-    return false; // player didn't earn it
-  });
+    if (a.earnedBy && typeof a.earnedBy === 'object' && !a.earnedBy[player.id]) return false;
+    // Count if notifyPlayerAt is set but awardedAt is NOT set
+    if (a.notifyPlayerAt && !a.awardedAt) return true;
+    return false;
+  }).length;
 }
 
 function updateAchPill() {
-  const list  = unacked();
+  const count = unacknowledgedCount();
   const pill  = get('ach-pill');
   const badge = get('ach-badge');
-  if (list.length > 0) {
+  if (count > 0) {
     pill.style.display = 'flex';
-    if (badge) badge.textContent = list.length;
+    if (badge) badge.textContent = count;
     pill.classList.add('unread');
   } else {
     pill.style.display = 'none';
     pill.classList.remove('unread');
   }
+}
+
+/* Delegated copy button handler for loot details */
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-copy-loot]');
+  if (!btn) return;
+  const mode = btn.dataset.copyLoot;
+  if (mode === 'name' && achCurrentPage?.loot) {
+    copyToClipboard(achCurrentPage.loot.name, 'Copied name');
+  } else if (mode === 'full' && achCurrentPage?.loot) {
+    copyToClipboard(formatLootText(achCurrentPage.loot), 'Copied details');
+  }
+});
+
+function copyToClipboard(text, label) {
+  if (!text) { notifyToast('Nothing to copy'); return; }
+  navigator.clipboard.writeText(text).then(() => {
+    notifyToast((label || 'Copied'));
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    notifyToast((label || 'Copied'));
+  });
+}
+
+/* Format loot as all-caps text */
+function formatLootText(loot) {
+  if (!loot) return '';
+  return [
+    'NAME: ' + (loot.name || '').toUpperCase(),
+    'TYPE: ' + (loot.type || 'WONDROUS').toUpperCase(),
+    'RARITY: ' + (loot.rarity || 'COMMON').toUpperCase(),
+    'DESCRIPTION: ' + (loot.description || ''),
+    'EFFECT: ' + (loot.effect || '')
+  ].join('\n');
+}
+
+/* Show notification toast */
+function notifyToast(message, duration = 3000) {
+  const toast = get('ach-toast');
+  if (message.includes('Copied') || message === 'Copied') {
+    get('ach-toast-subtitle').textContent = message;
+  } else {
+    get('ach-toast-title').textContent = message;
+  }
+  toast.classList.add('show');
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, duration);
+}
+
+/* Show achievement detail panel (NOT the full modal, just the detail within modal) */
+function showAchievementDetail(achId) {
+  const a = state?.achievements?.find(x => x.id === achId);
+  if (!a) return;
+  
+  achCurrentPage = a;
+  
+  // Hide list tabs, show detail
+  document.querySelectorAll('.ach-tab-content').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ach-detail-panel').forEach(p => p.classList.remove('active'));
+  
+  const statusBadge = a.awardedAt ? '✓ AWARDED' : (a.notifyPlayerAt ? '🔔 NOTIFICATION' : 'PENDING');
+  const goldLine = (a.rewards?.gold) ? `<div class="ach-detail-gold">${a.rewards.gold} gp awarded</div>` : '';
+  
+  let lootHtml = '';
+  if (a.loot && a.loot.name && a.awardedAt) {
+    lootHtml = `
+      <div class="ach-detail-loot">
+        <div class="ach-detail-loot-label">Loot Details</div>
+        <div class="ach-detail-loot-text">${escapeHtml(formatLootText(a.loot))}</div>
+        <div class="ach-detail-actions" style="gap:0.4rem;margin-top:0.5rem;">
+          <button class="btn-copy-loot" data-copy-loot="name">📋 Copy Name</button>
+          <button class="btn-copy-loot" data-copy-loot="full">📋 Copy All</button>
+        </div>
+      </div>`;
+  }
+  
+  let actionBtns = '';
+  if (a.notifyPlayerAt && !a.awardedAt) {
+    // Notification-only state
+    actionBtns = `<button class="btn-ach-action" onclick="markAcknowledgedAch('${escapeForAttr(a.id)}')">OK, I SAW IT</button>`;
+  } else if (a.awardedAt) {
+    // Fully awarded state
+    actionBtns = `<button class="btn-ach-action" onclick="markAcknowledgedAch('${escapeForAttr(a.id)}')">OK, GOT IT</button>`;
+  }
+  
+  const detail = document.createElement('div');
+  detail.className = 'ach-detail-panel active';
+  detail.innerHTML = `
+    <button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.8rem;padding:0;margin-bottom:0.5rem;" onclick="backToList();">← Back to List</button>
+    <div class="ach-detail-name">${escapeHtml(a.name)}</div>
+    <div style="font-size:0.7rem;color:var(--muted);margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.05em;">${statusBadge}</div>
+    <div class="ach-detail-desc">${escapeHtml(a.description || '')}</div>
+    ${goldLine}
+    ${lootHtml}
+    <div class="ach-detail-actions">${actionBtns}</div>
+  `;
+  
+  document.querySelector('.ach-modal').insertBefore(detail, document.querySelector('.ach-modal-tabs').nextElementSibling);
+}
+
+function backToList() {
+  document.querySelectorAll('.ach-detail-panel').forEach(p => p.remove());
+  document.querySelectorAll('.ach-tab-content').forEach(p => p.classList.remove('active'));
+  get('ach-tab-new').classList.add('active');
+  populateAchList('new');
 }
 
 function openModal() {
@@ -931,14 +1076,12 @@ function openModal() {
 
 function closeModal() {
   get('modal-overlay').classList.add('hidden');
+  document.querySelectorAll('.ach-detail-panel').forEach(p => p.remove());
 }
 
 function switchAchTab(tab) {
   get('ach-tab-new').classList.toggle('active', tab === 'new');
   get('ach-tab-archive').classList.toggle('active', tab === 'archive');
-  document.querySelectorAll('.ach-tab').forEach(b => {
-    b.classList.toggle('active', b.dataset.tab === tab);
-  });
   populateAchList(tab);
 }
 
@@ -948,15 +1091,18 @@ function populateAchList(tab) {
   const list = tab === 'new'
     ? state.achievements.filter(a => {
         if (a.isArchived) return false;
-        if (a.acknowledgedBy?.includes(player.id)) return false;
-        if (!a.earnedBy || typeof a.earnedBy === 'boolean' || Object.keys(a.earnedBy).length === 0) return true;
-        return typeof a.earnedBy === 'object' && !!a.earnedBy[player.id];
+        // Show if player earned it or it's unassigned (party achievement)
+        const isUnassigned = !a.earnedBy || typeof a.earnedBy === 'boolean' || Object.keys(a.earnedBy).length === 0;
+        if (!isUnassigned && !a.earnedBy[player.id]) return false;
+        // Only show if NOT acknowledged OR not yet awarded
+        return !a.acknowledgedBy?.includes(player.id) || !a.awardedAt;
       })
     : state.achievements.filter(a => {
         if (!a.isArchived) return false;
-        if (!a.acknowledgedBy?.includes(player.id)) return false;
-        if (!a.earnedBy || typeof a.earnedBy === 'boolean' || Object.keys(a.earnedBy).length === 0) return true;
-        return typeof a.earnedBy === 'object' && !!a.earnedBy[player.id];
+        // Show archived if player earned it or it's unassigned
+        const isUnassigned = !a.earnedBy || typeof a.earnedBy === 'boolean' || Object.keys(a.earnedBy).length === 0;
+        if (!isUnassigned && !a.earnedBy[player.id]) return false;
+        return true;
       });
 
   const container = tab === 'new' ? get('ach-list-new') : get('ach-list-archive');
@@ -972,30 +1118,133 @@ function populateAchList(tab) {
   container.innerHTML = list.map(a => {
     const earnedTs  = a.earnedBy && player ? a.earnedBy[player.id] : null;
     const earnedStr = earnedTs ? new Date(earnedTs).toLocaleDateString() : 'Party achievement';
-    const ackBtn = tab === 'new'
-      ? `<button class="ach-item-ack" onclick="acknowledgeAch('${x(a.id)}')">Acknowledge</button>`
-      : '';
+    
+    let statusClass = '';
+    let statusIcon = '';
+    if (a.notifyPlayerAt && !a.awardedAt) {
+      statusClass = 'notified';
+      statusIcon = '🔔';
+    } else if (a.awardedAt) {
+      statusClass = 'awarded';
+      statusIcon = '✓';
+    }
+    
     return `
-      <div class="ach-item">
-        <div class="ach-item-name">${x(a.name || 'Achievement')}</div>
-        <div class="ach-item-desc">${x(a.description || '')}</div>
-        <div class="ach-item-earned">Earned: ${x(earnedStr)}</div>
-        ${ackBtn}
+      <div class="ach-item" onclick="showAchievementDetail('${escapeForAttr(a.id)}');">
+        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:0.05em;">${statusIcon} ${statusClass.toUpperCase()}</div>
+        <div class="ach-item-name">${escapeHtml(a.name || 'Achievement')}</div>
+        <div class="ach-item-desc">${escapeHtml(a.description || '')}</div>
+        <div class="ach-item-earned">Earned: ${escapeHtml(earnedStr)}</div>
       </div>`;
   }).join('');
 }
 
-async function acknowledgeAch(achId) {
+async function markAcknowledgedAch(achId) {
   if (!state || !player) return;
   const ach = state.achievements?.find(a => a.id === achId);
-  if (ach) {
-    if (!ach.acknowledgedBy) ach.acknowledgedBy = [];
-    if (!ach.acknowledgedBy.includes(player.id)) ach.acknowledgedBy.push(player.id);
-    ach.glow = false;
-    await syncToKV();
-    updateAchPill();
-    populateAchList('new'); // refresh the New tab
+  if (!ach) return;
+  
+  // Mark acknowledged locally
+  if (!ach.acknowledgedBy) ach.acknowledgedBy = [];
+  if (!ach.acknowledgedBy.includes(player.id)) ach.acknowledgedBy.push(player.id);
+  
+  // POST to worker to sync KV
+  try {
+    await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'acknowledge_achievement',
+        achievementId: achId,
+        characterId: player.id
+      })
+    });
+  } catch (e) {
+    console.error('Post acknowledge failed:', e);
   }
+  
+  // Update UI
+  updateAchPill();
+  backToList();
+  notifyToast('Achievement acknowledged');
+}
+
+/* Poll for achievement state changes every 12s */
+function startAchievementPolling() {
+  if (pollAchInterval) clearInterval(pollAchInterval);
+  
+  pollAchInterval = setInterval(async () => {
+    try {
+      const res = await fetch(WORKER_URL);
+      if (res.ok) {
+        const newState = await res.json();
+        // Merge achievements only (don't lose local character state)
+        if (newState.achievements) {
+          state.achievements = newState.achievements;
+        }
+        // Process any new notifications
+        processAchievementNotifications();
+        updateAchPill();
+        // Refresh list if modal is open
+        if (!get('modal-overlay').classList.contains('hidden')) {
+          populateAchList('new');
+        }
+      }
+    } catch (e) {
+      console.error('Achievement poll failed:', e);
+    }
+  }, 12000);
+}
+
+/* Show toast for pending notifications */
+function processAchievementNotifications() {
+  if (!state?.achievements || !player) return;
+  
+  const unaware = state.achievements.find(a => {
+    // Achievement with notifyPlayerAt set
+    if (!a.notifyPlayerAt) return false;
+    // But player hasn't seen it yet
+    if (a.acknowledgedBy?.includes(player.id)) return false;
+    // And player earned it
+    if (a.earnedBy && typeof a.earnedBy === 'object' && !a.earnedBy[player.id]) return false;
+    // And it's not archived
+    if (a.isArchived) return false;
+    return true;
+  });
+  
+  if (unaware) {
+    showNotificationToast(unaware);
+  }
+}
+
+function showNotificationToast(ach) {
+  const toast = get('ach-toast');
+  get('ach-toast-title').textContent = '🏆 YOU EARNED: ' + (ach.name || 'Achievement');
+  get('ach-toast-subtitle').textContent = 'Click to view details';
+  toast.classList.add('show');
+  
+  // Clicking toast opens modal and shows detail
+  toast.onclick = () => {
+    openModal();
+    showAchievementDetail(ach.id);
+    toast.classList.remove('show');
+  };
+  
+  // Auto-hide after 8s
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 8000);
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  return text.replace(/[&<>"']/g, c => map[c]);
+}
+
+function escapeForAttr(text) {
+  if (!text) return '';
+  return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
 /* ══════════════════════════════
