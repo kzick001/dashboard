@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Crawler Terminal V5.2.1</title>
+  <title>Showrunner | Crawler Terminal V5.3.0</title>
 
   <svg xmlns="http://www.w3.org/2000/svg" style="display:none;position:absolute">
     <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
@@ -179,6 +179,7 @@
     @keyframes ticker-scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-100%)} }
     .ticker-eye { background:none; border:none; color:var(--terminal); font-size:1rem; cursor:pointer; padding:.2rem; transition:all .2s ease; }
     .ticker-eye:hover { transform:scale(1.2); }
+    .ticker-prefix { color: var(--muted); font-weight: normal; }
 
     /* Modal */
     #modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:3000; backdrop-filter:blur(4px); }
@@ -211,6 +212,7 @@
     /* Achievement detail modal (expanded state inside main modal) */
     .ach-detail-panel { display:none; }
     .ach-detail-panel.active { display:block; }
+    .ach-modal.in-detail .ach-tab-content { display:none !important; }
     .ach-detail-name { font-size:1rem; font-weight:bold; color:var(--accent); margin-bottom:.5rem; text-transform:uppercase; letter-spacing:.05em; }
     .ach-detail-desc { font-size:.8rem; color:var(--text); margin-bottom:.6rem; line-height:1.6; }
     .ach-detail-loot { background:rgba(255,215,0,.08); border:1px solid rgba(255,215,0,.25); border-radius:var(--r-sm); padding:.7rem; margin:.6rem 0; }
@@ -241,6 +243,12 @@
     /* Toast */
     .toast { position:fixed; bottom:1rem; left:50%; transform:translateX(-50%); background:rgba(14,18,40,.95); border:1px solid var(--accent); color:var(--text); padding:.8rem 1.2rem; border-radius:var(--r-sm); font-size:.8rem; z-index:4000; box-shadow:0 4px 16px rgba(0,0,0,.6); animation:toast-slide 0.3s ease-out; }
     @keyframes toast-slide { from { transform:translateX(-50%) translateY(20px); opacity:0; } to { transform:translateX(-50%) translateY(0); opacity:1; } }
+
+    /* Achievement Notification Toast (bottom-right, accent gradient) */
+    #ach-notify-toast { position:fixed; bottom:2rem; right:1.5rem; background:linear-gradient(135deg,rgba(187,134,252,.97),rgba(0,229,255,.9)); border:none; border-radius:var(--r); padding:.9rem 1.2rem; color:#0a0e27; font-size:.8rem; font-weight:bold; z-index:2999; box-shadow:0 8px 24px rgba(187,134,252,.35); max-width:min(85vw,280px); word-wrap:break-word; opacity:0; pointer-events:none; transition:opacity .3s ease,transform .3s ease; transform:translateY(8px); }
+    #ach-notify-toast.show { opacity:1; pointer-events:auto; transform:translateY(0); cursor:pointer; }
+    #ach-notify-label { font-size:.65rem; letter-spacing:.08em; text-transform:uppercase; margin-bottom:.3rem; opacity:.8; }
+    #ach-notify-name { font-size:.9rem; letter-spacing:.03em; }
 
     /* Logout Button (top-right of HUD) */
     .btn-logout-hud { position:absolute; top:.4rem; right:.4rem; background:rgba(248,113,113,.2); border:1px solid var(--danger); color:var(--danger); padding:.2rem .45rem; border-radius:2px; font-size:1.1rem; line-height:1; cursor:pointer; transition:all .2s ease; z-index:100; }
@@ -381,6 +389,12 @@
   <div id="ach-toast-subtitle">Click to view details</div>
 </div>
 
+<!-- ACHIEVEMENT NOTIFICATION TOAST -->
+<div id="ach-notify-toast">
+  <div id="ach-notify-label">🏆 ACHIEVEMENT EARNED</div>
+  <div id="ach-notify-name"></div>
+</div>
+
 <!-- LOGOUT CONFIRMATION -->
 <div id="logout-confirm-overlay" class="hidden">
   <div class="logout-confirm-modal">
@@ -402,6 +416,7 @@ const TICKER_URL   = 'https://kzick.dev/dm-screen/ticker.json';
 const AVATAR_BASE  = 'https://cdn.jsdelivr.net/gh/kzick001/dashboard@main/dm-screen/players/';
 const P_KEY        = 'showrunner_active_player';
 const T_KEY        = 'showrunner_ticker_visible';
+const ACK_LS_KEY   = () => `showrunner_acked_${player?.id || 'unknown'}`;
 const POLL_MS      = 30000;
 const TICKER_MS    = 180000; // 3 minutes per message
 const LOAD_MS      = 6000;
@@ -532,6 +547,7 @@ function showHUD() {
   requestAnimationFrame(() => {
     renderAll();
     initTicker();
+    loadLocalAcks();
     startAchievementPolling();
   });
 }
@@ -930,6 +946,25 @@ let pollAchInterval = null;
 const _toastShownFor = new Set();      // achievement IDs that have already popped a toast this session
 const _acknowledgedLocally = new Set(); // achievement IDs the player acknowledged this session (survives poll merges)
 
+/* Item 9 — Persist acknowledged achievements across sessions */
+function loadLocalAcks() {
+  try {
+    const stored = localStorage.getItem(ACK_LS_KEY());
+    if (stored) JSON.parse(stored).forEach(k => _acknowledgedLocally.add(k));
+  } catch(e) { console.warn('[HUD] Could not load local acks:', e); }
+}
+
+function persistLocalAck(notifyKey) {
+  try {
+    const key = ACK_LS_KEY();
+    const existing = JSON.parse(localStorage.getItem(key) || '[]');
+    if (!existing.includes(notifyKey)) {
+      existing.push(notifyKey);
+      localStorage.setItem(key, JSON.stringify(existing));
+    }
+  } catch(e) { console.warn('[HUD] Could not persist local ack:', e); }
+}
+
 /* Count of unaward achievements (pending notify) that player earned */
 function unacknowledgedCount() {
   if (!state?.achievements || !player) return 0;
@@ -1079,10 +1114,13 @@ function showAchievementDetail(achId) {
     <div class="ach-detail-actions">${actionBtns}</div>
   `;
   
-  document.querySelector('.ach-modal').insertBefore(detail, document.querySelector('.ach-modal-tabs').nextElementSibling);
+  const modal = document.querySelector('.ach-modal');
+  modal.classList.add('in-detail');
+  modal.insertBefore(detail, document.querySelector('.ach-modal-tabs').nextElementSibling);
 }
 
 function backToList() {
+  document.querySelector('.ach-modal')?.classList.remove('in-detail');
   document.querySelectorAll('.ach-detail-panel').forEach(p => p.remove());
   switchAchTab('new');
 }
@@ -1098,6 +1136,9 @@ function closeModal() {
 }
 
 function switchAchTab(tab) {
+  // Clear any open detail panel before switching tabs
+  document.querySelector('.ach-modal')?.classList.remove('in-detail');
+  document.querySelectorAll('.ach-detail-panel').forEach(p => p.remove());
   // Toggle the content panels...
   get('ach-tab-new').classList.toggle('active', tab === 'new');
   get('ach-tab-archive').classList.toggle('active', tab === 'archive');
@@ -1179,8 +1220,10 @@ async function markAcknowledgedAch(achId) {
   // Remember this notify-wave so poll merges can't resurrect it; a future
   // DM re-notify produces a new notifyPlayerAt and therefore a new key.
   _acknowledgedLocally.add(_notifyKey(ach));
+  persistLocalAck(_notifyKey(ach));  // Item 9: survive refresh
   
-  // Silence the notification toast immediately (kill click handler + hide)
+  // Silence the notification toast immediately
+  dismissNotifyToast();
   const toast = get('ach-toast');
   toast.onclick = null;
   toast.style.cursor = 'default';
@@ -1277,27 +1320,27 @@ function processAchievementNotifications() {
 }
 
 function showNotificationToast(ach) {
-  const toast = get('ach-toast');
-  get('ach-toast-title').textContent = '🏆 YOU EARNED: ' + (ach.name || 'Achievement');
-  get('ach-toast-subtitle').textContent = 'Click to view details';
-  toast.style.cursor = 'pointer';
+  const toast = get('ach-notify-toast');
+  if (!toast) return;
+  get('ach-notify-name').textContent = ach.name || 'Achievement';
   toast.classList.add('show');
-  
-  // Clicking toast opens modal and shows detail
+
+  // Clicking toast opens modal directly to detail
   toast.onclick = () => {
+    dismissNotifyToast();
     openModal();
     showAchievementDetail(ach.id);
-    toast.onclick = null;
-    toast.style.cursor = 'default';
-    toast.classList.remove('show');
   };
-  
-  // Auto-hide after 8s (handler cleared so it can't fire stale)
-  setTimeout(() => {
-    toast.classList.remove('show');
-    toast.onclick = null;
-    toast.style.cursor = 'default';
-  }, 8000);
+
+  // Auto-dismiss after 4s
+  setTimeout(dismissNotifyToast, 4000);
+}
+
+function dismissNotifyToast() {
+  const toast = get('ach-notify-toast');
+  if (!toast) return;
+  toast.classList.remove('show');
+  toast.onclick = null;
 }
 
 function escapeHtml(text) {
@@ -1329,7 +1372,8 @@ function randomTip() {
 function randomMsg() {
   if (!tickData) return 'DUNGEON BROADCAST SYSTEM — stand by.';
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-  return `${pick(tickData.subjects)} ${pick(tickData.actions)} ${pick(tickData.results)}`;
+  const signoff = tickData.signoffs?.length ? ` ${pick(tickData.signoffs)}` : '';
+  return `${pick(tickData.subjects)} ${pick(tickData.actions)} ${pick(tickData.results)}${signoff}`;
 }
 
 function initTicker() {
@@ -1337,7 +1381,7 @@ function initTicker() {
   const pill = get('ticker-pill');
   const eye  = get('ticker-eye-icon');
   get('ticker-eye').classList.remove('hidden'); // eye always visible once logged in
-  if (eye) eye.setAttribute('href', visible ? '#icon-eye' : '#icon-eye-hidden');
+  if (eye) eye.setAttribute('href', visible ? '#icon-eye-hidden' : '#icon-eye');
   if (visible) {
     pill.classList.remove('hidden');
     rotateTick();
@@ -1350,7 +1394,7 @@ function initTicker() {
 function rotateTick() {
   const textEl = get('ticker-text');
   if (!textEl) return;
-  textEl.textContent = randomMsg();
+  textEl.innerHTML = `<span class="ticker-prefix">[SYSTEM BROADCAST]</span> ${escapeHtml(randomMsg())}`;
 }
 
 function toggleTicker(e) {
@@ -1360,12 +1404,12 @@ function toggleTicker(e) {
   const visible = !pill.classList.contains('hidden');
   if (visible) {
     pill.classList.add('hidden');
-    if (eye) eye.setAttribute('href', '#icon-eye-hidden');
+    if (eye) eye.setAttribute('href', '#icon-eye');
     localStorage.setItem(T_KEY, 'false');
     if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
   } else {
     pill.classList.remove('hidden');
-    if (eye) eye.setAttribute('href', '#icon-eye');
+    if (eye) eye.setAttribute('href', '#icon-eye-hidden');
     localStorage.setItem(T_KEY, 'true');
     rotateTick();
     tickTimer = setInterval(rotateTick, TICKER_MS);
