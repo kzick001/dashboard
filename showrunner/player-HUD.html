@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Showrunner | Crawler Terminal V5.3.0</title>
+
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none;position:absolute">
+    <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="icon-droplet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.32 0z"/></symbol>
+    <symbol id="icon-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+    <symbol id="icon-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+    <symbol id="icon-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></symbol>
+    <symbol id="icon-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
+    <symbol id="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="icon-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="icon-pause-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="10" y1="8" x2="10" y2="16"/><line x1="14" y1="8" x2="14" y2="16"/></symbol>
+    <symbol id="icon-x-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></symbol>
+    <symbol id="icon-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 12 12 17 22 12"/><polyline points="2 17 12 22 22 17"/></symbol>
+    <symbol id="icon-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+    <symbol id="icon-battery" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="16" height="12" rx="2" ry="2"/><line x1="23" y1="13" x2="23" y2="11"/></symbol>
+    <symbol id="icon-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+    <symbol id="icon-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+    <symbol id="icon-radio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></symbol>
+    <symbol id="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="icon-eye-hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
+  </svg>
+
+  <style>
+    :root {
+      --bg:         #0a0e27;
+      --bg-card:    rgba(14,18,40,0.97);
+      --accent:     #bb86fc;
+      --accent-dim: rgba(187,134,252,0.13);
+      --terminal:   #ffeb3b;
+      --primary:    #00e5ff;
+      --danger:     #f87171;
+      --success:    #4ade80;
+      --orange:     #fb923c;
+      --text:       #e0e0e0;
+      --muted:      #888;
+      --glass:      rgba(14,18,40,0.88);
+      --border:     rgba(187,134,252,0.28);
+      --r:          8px;
+      --r-sm:       4px;
+      --r-pill:     20px;
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html, body { width:100%; height:100%; background:var(--bg); color:var(--text); font-family:'Courier New',Courier,monospace; font-size:14px; overflow:hidden; }
+    button { cursor:pointer; font-family:inherit; }
+    svg { display:block; }
+    .hidden { display:none !important; }
+
+    /* VFX */
+    #vfx-layer { position:fixed; inset:0; pointer-events:none; z-index:100; transition:box-shadow 1s ease,background 1s ease; }
+    .vfx-critical { box-shadow:inset 0 0 160px rgba(255,0,0,.7),inset 0 0 220px rgba(255,71,87,.5); animation:vfx-crit .8s ease-in-out infinite; }
+    .vfx-bleeding { box-shadow:inset 0 0 120px rgba(248,113,113,.55); animation:vfx-bleed 2.5s ease-in-out infinite; }
+    .vfx-poison   { box-shadow:inset 0 0 140px rgba(74,222,128,.28); background:radial-gradient(circle at center,transparent 50%,rgba(46,204,113,.07) 100%); }
+    .vfx-stunned  { box-shadow:inset 0 0 130px rgba(251,191,36,.32); animation:vfx-stun 1.5s ease-in-out infinite; }
+    .vfx-burning  { box-shadow:inset 0 0 150px rgba(251,146,60,.48); animation:vfx-burn 1s ease-in-out infinite; }
+    .vfx-blinded  { background:rgba(0,0,0,.88); backdrop-filter:blur(8px); }
+    @keyframes vfx-crit  { 0%,100%{box-shadow:inset 0 0 160px rgba(255,0,0,.6),inset 0 0 220px rgba(255,71,87,.4)} 50%{box-shadow:inset 0 0 220px rgba(255,0,0,.9),inset 0 0 300px rgba(255,71,87,.7)} }
+    @keyframes vfx-bleed { 0%,100%{box-shadow:inset 0 0 120px rgba(248,113,113,.4)} 50%{box-shadow:inset 0 0 200px rgba(248,113,113,.75)} }
+    @keyframes vfx-stun  { 0%,100%{box-shadow:inset 0 0 130px rgba(251,191,36,.22)} 50%{box-shadow:inset 0 0 200px rgba(251,191,36,.52)} }
+    @keyframes vfx-burn  { 0%,100%{box-shadow:inset 0 0 150px rgba(251,146,60,.38)} 50%{box-shadow:inset 0 0 210px rgba(251,146,60,.68)} }
+    @keyframes hp-pulse  { 0%,100%{background:rgba(248,113,113,.1)} 50%{background:rgba(248,113,113,.3)} }
+
+    /* LOGIN */
+    #login-layer { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2.5rem; padding:2rem; z-index:2000; overflow-y:auto; }
+    .login-hero { display:flex; flex-direction:column; align-items:center; gap:.75rem; text-align:center; }
+    #hero-name { font-size:clamp(2rem,7vw,3.2rem); font-weight:bold; color:var(--terminal); letter-spacing:.12em; text-transform:uppercase; text-shadow:0 0 24px rgba(255,235,59,.35); }
+    .roster-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.9rem; width:100%; max-width:680px; }
+    .roster-btn { background:var(--glass); border:2px solid var(--border); color:var(--text); padding:1.4rem 1rem; border-radius:var(--r); transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease; display:flex; flex-direction:column; align-items:center; gap:.55rem; }
+    .roster-btn:hover { transform:scale(1.06); border-color:var(--accent); box-shadow:0 0 24px rgba(187,134,252,.4); }
+    .roster-btn span { font-size:1.15rem; font-weight:bold; letter-spacing:.03em; text-transform:capitalize; }
+
+    /* LOADING */
+    #loading-layer { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.5rem; z-index:2500; padding:2rem; text-align:center; }
+    .load-icon { width:60px; height:60px; color:var(--terminal); animation:spin 2s linear infinite; }
+    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    #load-title { font-size:clamp(1.3rem,5vw,1.9rem); color:var(--terminal); letter-spacing:.18em; text-transform:uppercase; animation:blink 1s step-end infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+    #load-tip { font-size:.82rem; color:var(--muted); max-width:400px; line-height:1.65; font-style:italic; }
+    .bar-wrap { width:260px; height:4px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; }
+    .bar { height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--primary)); border-radius:2px; transition:width 6s linear; }
+
+    /* HUD */
+    #main-hud { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:min(93vw,480px); max-height:88vh; background:var(--bg-card); border:2px solid var(--accent); border-radius:12px; padding:1.2rem; z-index:1000; display:flex; flex-direction:column; gap:.8rem; overflow-y:auto; box-shadow:0 8px 40px rgba(0,0,0,.7),0 0 60px rgba(187,134,252,.08); scrollbar-width:thin; scrollbar-color:var(--accent) transparent; }
+    #main-hud::-webkit-scrollbar { width:4px; }
+    #main-hud::-webkit-scrollbar-thumb { background:var(--accent); border-radius:2px; }
+    .hud-section { background:rgba(0,0,0,.22); border:1px solid var(--border); border-radius:var(--r); padding:.85rem; }
+    .section-label { font-size:.62rem; color:var(--muted); text-transform:uppercase; letter-spacing:.12em; margin-bottom:.55rem; }
+
+    /* Header */
+    .hud-header { display:flex; align-items:flex-start; gap:1rem; position:relative; padding-right:3.6rem; }
+    #hud-avatar { width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--primary)); padding:2px; flex-shrink:0; }
+    .av-inner { width:100%; height:100%; border-radius:50%; background:var(--bg); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .av-inner img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+    .av-inner svg { width:55%; height:55%; color:var(--accent); }
+    .hud-info { flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .hud-info h2 { font-size:1.575rem; color:var(--terminal); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin:0; font-weight:bold; letter-spacing:.05em; }
+    .hud-info p { font-size:.75rem; color:var(--muted); margin:0.4rem 0 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    /* Vitals Inline */
+    #vitals-inline { font-size:.82rem; color:var(--text); text-align:center; padding:.7rem; background:rgba(0,0,0,.22); border:1px solid var(--border); border-radius:var(--r); font-family:monospace; letter-spacing:.03em; }
+    .vs { background:rgba(0,0,0,.15); border:1px solid var(--border); border-radius:var(--r-sm); padding:.65rem; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; }
+    .vs .sl { font-size:.6rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:.2rem; }
+    .vs .sv { font-size:.95rem; font-weight:bold; color:var(--primary); font-family:monospace; }
+    .vs.hp-low .sv { color:var(--orange); }
+    .vs.hp-crit { border-color:var(--danger); box-shadow:inset 0 0 16px rgba(248,113,113,.15); animation:hp-pulse 1.2s ease-in-out infinite; }
+    .vs.hp-crit .sv { color:var(--danger); }
+
+    /* Actions */
+    #actions { display:grid; grid-template-columns:repeat(2,1fr); gap:.6rem; }
+    .action-btn { background:rgba(0,0,0,.2); border:1px solid var(--border); color:var(--text); padding:.65rem; border-radius:var(--r-sm); font-size:.75rem; font-weight:bold; letter-spacing:.07em; text-transform:uppercase; transition:all .2s ease; cursor:pointer; }
+    .action-btn:hover { border-color:var(--accent); box-shadow:0 0 12px rgba(187,134,252,.25); transform:translateY(-1px); }
+    .action-btn:active { transform:translateY(0); }
+
+    /* Conditions */
+    #cond-grid { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; min-height:2.4rem; }
+    .chip { display:inline-flex; align-items:center; gap:.4rem; background:rgba(0,0,0,.2); border:1px solid var(--border); border-radius:var(--r-pill); padding:.4rem .65rem; font-size:.7rem; font-weight:bold; text-transform:uppercase; letter-spacing:.06em; }
+    .chip svg { width:14px; height:14px; }
+    .c-poison { border-color:rgba(74,222,128,.4); color:rgba(74,222,128,.9); }
+    .c-bleeding { border-color:rgba(248,113,113,.4); color:rgba(248,113,113,.9); }
+    .c-burning { border-color:rgba(251,146,60,.4); color:rgba(251,146,60,.9); }
+    .c-stunned { border-color:rgba(251,191,36,.4); color:rgba(251,191,36,.9); }
+    .c-charmed { border-color:rgba(236,72,153,.4); color:rgba(236,72,153,.9); }
+    .c-frightened { border-color:rgba(139,92,246,.4); color:rgba(139,92,246,.9); }
+    .c-blinded { border-color:rgba(100,116,139,.4); color:rgba(100,116,139,.9); }
+    .c-deafened { border-color:rgba(100,116,139,.4); color:rgba(100,116,139,.9); }
+    .c-restrained { border-color:rgba(59,130,246,.4); color:rgba(59,130,246,.9); }
+    .c-grappled { border-color:rgba(59,130,246,.4); color:rgba(59,130,246,.9); }
+    .c-incap { border-color:rgba(255,193,7,.4); color:rgba(255,193,7,.9); }
+    .c-unconscious { border-color:rgba(255,0,0,.4); color:rgba(255,0,0,.9); }
+    .c-petrified { border-color:rgba(156,163,175,.4); color:rgba(156,163,175,.9); }
+    .c-concentrating { border-color:rgba(59,130,246,.4); color:rgba(59,130,246,.9); }
+    .c-exhaustion { border-color:rgba(248,113,113,.4); color:rgba(248,113,113,.9); }
+    .c-inspired { border-color:rgba(34,197,94,.4); color:rgba(34,197,94,.9); }
+    .c-protected { border-color:rgba(59,130,246,.4); color:rgba(59,130,246,.9); }
+    .c-cursed { border-color:rgba(139,92,246,.4); color:rgba(139,92,246,.9); }
+    .c-default { border-color:var(--border); color:var(--text); }
+    .no-cond { font-size:.75rem; color:var(--muted); font-style:italic; }
+
+    /* Spells */
+    #spell-section { margin-top:.6rem; padding-top:.6rem; border-top:1px solid var(--border); }
+    .sp-intro { font-size:.75rem; color:var(--muted); margin-bottom:.6rem; }
+    .sp-btns { display:flex; gap:.4rem; margin-bottom:.8rem; flex-wrap:wrap; }
+    .sp-btn { background:rgba(0,0,0,.2); border:1px solid var(--border); color:var(--text); padding:.5rem 1.6rem .5rem .8rem; border-radius:var(--r-sm); font-size:.7rem; font-weight:bold; text-transform:uppercase; letter-spacing:.06em; transition:all .2s ease; position:relative; }
+    .sp-btn:hover { border-color:var(--primary); }
+    .sp-btn.no-slots { opacity:.5; cursor:not-allowed; }
+    .sp-btn.depleted { border-color:var(--danger); color:var(--danger); }
+    .cnt { position:absolute; top:.3rem; right:.5rem; font-size:.55rem; }
+    .sp-detail { max-height:0; overflow:hidden; transition:max-height .3s ease; }
+    .sp-detail.open { max-height:200px; }
+    .sp-dlabel { display:block; font-size:.65rem; color:var(--muted); margin-bottom:.4rem; }
+    .sp-ctrl { display:flex; align-items:center; gap:.4rem; margin-bottom:.5rem; }
+    .sp-adj { background:rgba(0,0,0,.15); border:1px solid var(--border); color:var(--primary); padding:.35rem .5rem; font-size:.8rem; border-radius:var(--r-sm); cursor:pointer; transition:all .2s ease; }
+    .sp-adj:hover { border-color:var(--primary); box-shadow:0 0 8px rgba(0,229,255,.2); }
+    .sp-adj:disabled { opacity:.4; cursor:not-allowed; }
+    .sp-val { font-family:monospace; font-size:.85rem; flex:1; text-align:center; }
+    .sp-reset { background:rgba(187,134,252,.1); border:1px solid var(--accent); color:var(--accent); padding:.4rem .8rem; border-radius:var(--r-sm); font-size:.65rem; font-weight:bold; text-transform:uppercase; letter-spacing:.05em; margin-top:.4rem; cursor:pointer; transition:all .2s ease; align-self:flex-start; }
+    .sp-reset:hover { box-shadow:0 0 12px rgba(187,134,252,.25); }
+    .spell-toggle-eye { background:none; border:none; color:var(--accent); cursor:pointer; font-size:1rem; padding:0; line-height:1; }
+
+    /* Achievement Badge (top-right of HUD) */
+    #ach-pill { position:absolute; top:.4rem; right:2.8rem; display:none; align-items:center; justify-content:center; background:rgba(187,134,252,.15); border:1px solid var(--accent); color:var(--accent); width:28px; height:28px; border-radius:50%; cursor:pointer; transition:all .3s ease; z-index:100; font-size:.9rem; }
+    #ach-pill:hover { background:rgba(187,134,252,.25); }
+    #ach-pill.unread { animation:badge-glow 1s ease-in-out infinite; }
+    #ach-badge { font-weight:bold; font-size:.8rem; }
+    @keyframes badge-glow { 0%,100%{box-shadow:0 0 8px rgba(187,134,252,.4)} 50%{box-shadow:0 0 16px rgba(187,134,252,.9)} }
+
+    /* Ticker (centered below HUD) */
+    .ticker-container { position:fixed; left:50%; transform:translateX(-50%); top:calc(50% + 220px); z-index:500; display:flex; flex-direction:column; align-items:center; gap:.4rem; }
+    .ticker-pill { width:min(90vw,720px); background:rgba(14,18,40,.95); border:1px solid var(--terminal); border-radius:2px; padding:.5rem .8rem; font-size:.75rem; color:var(--terminal); letter-spacing:.08em; text-transform:uppercase; overflow:hidden; white-space:nowrap; cursor:pointer; transition:all .2s ease; }
+    .ticker-pill:hover { box-shadow:inset 0 0 12px rgba(255,235,59,.2); }
+    #ticker-text { display:inline-block; padding-left:100%; font-weight:bold; animation:ticker-scroll 22.5s linear infinite; }
+    @keyframes ticker-scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-100%)} }
+    .ticker-eye { background:none; border:none; color:var(--terminal); font-size:1rem; cursor:pointer; padding:.2rem; transition:all .2s ease; }
+    .ticker-eye:hover { transform:scale(1.2); }
+    .ticker-prefix { color: var(--muted); font-weight: normal; }
+
+    /* Modal */
+    #modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:3000; backdrop-filter:blur(4px); }
+    .ach-modal { background:var(--bg-card); border:2px solid var(--accent); border-radius:var(--r); padding:1.5rem; width:min(92vw,420px); box-shadow:0 8px 32px rgba(187,134,252,.25); }
+    .ach-modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid var(--border); padding-bottom:.8rem; }
+    .ach-modal-header h2 { margin:0; font-size:1.2rem; color:var(--terminal); text-transform:uppercase; letter-spacing:.08em; }
+    .ach-modal-close { background:none; border:none; color:var(--text); cursor:pointer; font-size:1.2rem; transition:color .2s ease; }
+    .ach-modal-close:hover { color:var(--danger); }
+    .ach-modal-tabs { display:flex; gap:.5rem; margin-bottom:1rem; border-bottom:1px solid var(--border); }
+    .ach-tab { background:none; border:none; color:var(--muted); padding:.5rem .8rem; cursor:pointer; font-size:.8rem; font-weight:bold; text-transform:uppercase; transition:all .2s ease; border-bottom:2px solid transparent; }
+    .ach-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+    .ach-tab:hover { color:var(--text); }
+    .ach-tab-content { display:none; max-height:400px; overflow-y:auto; }
+    .ach-tab-content.active { display:block; }
+    .ach-item { background:rgba(0,0,0,.2); border:1px solid var(--border); border-radius:var(--r-sm); padding:.6rem; margin-bottom:.5rem; text-align:left; }
+    .ach-item-name { font-size:.9rem; font-weight:bold; color:var(--accent); margin-bottom:.2rem; }
+    .ach-item-desc { font-size:.7rem; color:var(--muted); margin-bottom:.3rem; line-height:1.4; }
+    .ach-item-earned { font-size:.65rem; color:var(--muted); font-style:italic; margin-bottom:.4rem; }
+    .ach-item-ack { background:linear-gradient(135deg,var(--accent),var(--primary)); border:none; color:#fff; padding:.4rem .8rem; border-radius:var(--r-sm); font-size:.65rem; font-weight:bold; text-transform:uppercase; letter-spacing:.05em; cursor:pointer; transition:all .2s ease; }
+    .ach-item-ack:hover { transform:translateY(-1px); box-shadow:0 2px 10px rgba(187,134,252,.4); }
+    .ach-empty { text-align:center; color:var(--muted); font-size:.8rem; padding:1rem; }
+
+    /* Notification toast */
+    #ach-toast { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%); background:rgba(74,222,128,.95); border:1px solid rgba(74,222,128,.6); border-radius:var(--r-sm); padding:1rem 1.4rem; color:#000; font-size:.85rem; font-weight:bold; z-index:2999; box-shadow:0 8px 24px rgba(74,222,128,.3); animation:toast-slide-in .3s ease-out; max-width:min(90vw,380px); text-align:center; display:none; }
+    #ach-toast.show { display:block; }
+    @keyframes toast-slide-in { from{opacity:0;transform:translateX(-50%) translateY(20px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+    #ach-toast-title { font-size:.9rem; margin-bottom:.3rem; }
+    #ach-toast-subtitle { font-size:.75rem; opacity:.9; }
+
+    /* Achievement detail modal (expanded state inside main modal) */
+    .ach-detail-panel { display:none; }
+    .ach-detail-panel.active { display:block; }
+    .ach-modal.in-detail .ach-tab-content { display:none !important; }
+    .ach-detail-name { font-size:1rem; font-weight:bold; color:var(--accent); margin-bottom:.5rem; text-transform:uppercase; letter-spacing:.05em; }
+    .ach-detail-desc { font-size:.8rem; color:var(--text); margin-bottom:.6rem; line-height:1.6; }
+    .ach-detail-loot { background:rgba(255,215,0,.08); border:1px solid rgba(255,215,0,.25); border-radius:var(--r-sm); padding:.7rem; margin:.6rem 0; }
+    .ach-detail-loot-label { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.3rem; }
+    .ach-detail-loot-text { font-family:monospace; font-size:.75rem; color:rgba(224,224,224,.9); line-height:1.7; white-space:pre-wrap; word-break:break-word; }
+    .ach-detail-gold { font-size:.8rem; color:var(--loot); margin:.5rem 0; font-weight:bold; }
+    .ach-detail-actions { display:flex; gap:.5rem; margin-top:1rem; flex-wrap:wrap; }
+    .btn-copy-loot { background:rgba(255,215,0,.15); border:1px solid rgba(255,215,0,.4); color:var(--loot); padding:.4rem .7rem; border-radius:var(--r-sm); font-size:.7rem; font-weight:bold; text-transform:uppercase; cursor:pointer; transition:all .2s ease; }
+    .btn-copy-loot:hover { background:rgba(255,215,0,.25); box-shadow:0 0 10px rgba(255,215,0,.3); }
+    .btn-ach-action { background:linear-gradient(135deg,var(--accent),var(--primary)); border:none; color:#fff; padding:.4rem .8rem; border-radius:var(--r-sm); font-size:.65rem; font-weight:bold; text-transform:uppercase; letter-spacing:.05em; cursor:pointer; transition:all .2s ease; flex:1; min-width:120px; }
+    .btn-ach-action:hover { transform:translateY(-1px); box-shadow:0 2px 10px rgba(187,134,252,.4); }
+
+    /* Condition pulse */
+    @keyframes cond-pulse { 0%,100%{border-color:var(--border)} 50%{border-color:var(--accent); box-shadow:0 0 12px rgba(187,134,252,.3)} }
+    .cond-alert { animation:cond-pulse .6s ease-in-out; }
+
+    /* Logout Confirmation Modal */
+    #logout-confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:3500; backdrop-filter:blur(4px); }
+    .logout-confirm-modal { background:var(--bg-card); border:2px solid var(--danger); border-radius:var(--r); padding:2rem; width:min(92vw,340px); text-align:center; box-shadow:0 8px 32px rgba(248,113,113,.35); }
+    .logout-confirm-modal h3 { font-size:1.2rem; color:var(--danger); margin:0 0 .8rem 0; text-transform:uppercase; letter-spacing:.06em; }
+    .logout-confirm-modal p { font-size:.9rem; color:var(--text); margin:0 0 1.4rem 0; }
+    .logout-confirm-buttons { display:flex; gap:.8rem; }
+    .btn-cancel { flex:1; background:rgba(255,255,255,.08); border:1px solid var(--border); color:var(--text); padding:.7rem; border-radius:var(--r-sm); font-size:.8rem; font-weight:bold; text-transform:uppercase; letter-spacing:.05em; cursor:pointer; transition:all .2s ease; }
+    .btn-cancel:hover { background:rgba(255,255,255,.15); border-color:var(--text); }
+    .btn-confirm { flex:1; background:linear-gradient(135deg,var(--danger),rgba(248,113,113,.7)); border:1px solid var(--danger); color:#fff; padding:.7rem; border-radius:var(--r-sm); font-size:.8rem; font-weight:bold; text-transform:uppercase; letter-spacing:.05em; cursor:pointer; transition:all .2s ease; }
+    .btn-confirm:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(248,113,113,.4); }
+
+    /* Toast */
+    .toast { position:fixed; bottom:1rem; left:50%; transform:translateX(-50%); background:rgba(14,18,40,.95); border:1px solid var(--accent); color:var(--text); padding:.8rem 1.2rem; border-radius:var(--r-sm); font-size:.8rem; z-index:4000; box-shadow:0 4px 16px rgba(0,0,0,.6); animation:toast-slide 0.3s ease-out; }
+    @keyframes toast-slide { from { transform:translateX(-50%) translateY(20px); opacity:0; } to { transform:translateX(-50%) translateY(0); opacity:1; } }
+
+    /* Achievement Notification Toast (bottom-right, accent gradient) */
+    #ach-notify-toast { position:fixed; bottom:2rem; right:1.5rem; background:linear-gradient(135deg,rgba(187,134,252,.97),rgba(0,229,255,.9)); border:none; border-radius:var(--r); padding:.9rem 1.2rem; color:#0a0e27; font-size:.8rem; font-weight:bold; z-index:2999; box-shadow:0 8px 24px rgba(187,134,252,.35); max-width:min(85vw,280px); word-wrap:break-word; opacity:0; pointer-events:none; transition:opacity .3s ease,transform .3s ease; transform:translateY(8px); }
+    #ach-notify-toast.show { opacity:1; pointer-events:auto; transform:translateY(0); cursor:pointer; }
+    #ach-notify-label { font-size:.65rem; letter-spacing:.08em; text-transform:uppercase; margin-bottom:.3rem; opacity:.8; }
+    #ach-notify-name { font-size:.9rem; letter-spacing:.03em; }
+
+    /* Logout Button (top-right of HUD) */
+    .btn-logout-hud { position:absolute; top:.4rem; right:.4rem; background:rgba(248,113,113,.2); border:1px solid var(--danger); color:var(--danger); padding:.2rem .45rem; border-radius:2px; font-size:1.1rem; line-height:1; cursor:pointer; transition:all .2s ease; z-index:100; }
+    .btn-logout-hud:hover { background:rgba(248,113,113,.4); box-shadow:0 0 8px rgba(248,113,113,.5); }
+
+    /* ── MOBILE RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      #main-hud { width:90vw; padding:1rem; }
+      .hud-header { gap:.8rem; }
+      #hud-avatar { width:70px; height:70px; }
+      .hud-info h2 { font-size:.95rem; }
+      .hud-info p { font-size:.7rem; }
+      #vitals-inline { font-size:.75rem; padding:.5rem; }
+      .section-label { font-size:.55rem; }
+      .hud-section { padding:.7rem; }
+      .sp-btn { padding:.4rem 1.4rem .4rem .6rem; font-size:.65rem; }
+      .sp-adj { padding:.3rem .4rem; font-size:.7rem; }
+      .action-btn { padding:.5rem; font-size:.7rem; }
+    }
+    @media (max-width: 768px) {
+      #main-hud { width:95vw; top:45%; max-height:85vh; padding:.8rem; }
+      .hud-header { gap:.6rem; padding-right:3.2rem; }
+      #hud-avatar { width:64px; height:64px; }
+      .hud-info h2 { font-size:.9rem; }
+      .hud-info p { font-size:.65rem; }
+      #vitals-inline { font-size:.68rem; padding:.5rem .3rem; }
+      .section-label { font-size:.55rem; }
+      .hud-section { padding:.6rem; border-radius:4px; }
+      #cond-grid { min-height:1.8rem; }
+      .chip { padding:.3rem .5rem; font-size:.6rem; }
+      .sp-btn { padding:.35rem 1.2rem .35rem .5rem; font-size:.6rem; }
+      .sp-adj { padding:.25rem .35rem; font-size:.65rem; }
+      .sp-val { font-size:.75rem; }
+      .sp-detail.open { max-height:160px; }
+      .action-btn { padding:.4rem; font-size:.65rem; }
+      .btn-logout-hud { padding:.15rem .35rem; font-size:1rem; }
+      .ticker-container { top:auto; bottom:1rem; }
+      .ticker-pill { width:95vw; font-size:.65rem; padding:.4rem .6rem; }
+      #ticker-text { animation:ticker-scroll 27.5s linear infinite; }
+      .ach-modal { width:92vw; max-height:75vh; padding:1rem; }
+      .ach-modal-header h2 { font-size:1rem; }
+      .ach-tab { padding:.4rem .6rem; font-size:.7rem; }
+      .ach-tab-content { max-height:50vh; }
+      .ach-item-name { font-size:.8rem; }
+      .ach-item-desc { font-size:.65rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="vfx-layer"></div>
+
+<!-- LOGIN -->
+<div id="login-layer">
+  <div class="login-hero">
+    <h1 id="hero-name">CRAWLER LOGIN</h1>
+  </div>
+  <div class="roster-grid" id="roster-grid"></div>
+</div>
+
+<!-- LOADING -->
+<div id="loading-layer" class="hidden">
+  <svg class="load-icon" viewBox="0 0 24 24"><use href="#icon-radio"/></svg>
+  <h1 id="load-title">STANDBY</h1>
+  <p id="load-tip"></p>
+  <div class="bar-wrap"><div class="bar" id="load-bar"></div></div>
+</div>
+
+<!-- MAIN HUD -->
+<div id="main-hud" class="hidden">
+  <button id="btn-logout" class="btn-logout-hud" onclick="confirmLogout();" title="Logout">✕</button>
+  <div id="ach-pill" onclick="openModal();" title="View achievements">
+    <span id="ach-badge">0</span>
+  </div>
+  <div class="hud-header">
+    <div id="hud-avatar">
+      <div id="av-inner" class="av-inner"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg></div>
+    </div>
+    <div class="hud-info">
+      <h2 id="hud-name">—</h2>
+      <p id="hud-sub">Awaiting data...</p>
+    </div>
+  </div>
+
+  <div id="vitals-inline"></div>
+
+  <div class="hud-section">
+    <div class="section-label">Status</div>
+    <div id="cond-grid"><span class="no-cond">No active conditions</span></div>
+  </div>
+
+  <div id="actions">
+    <button class="action-btn" id="btn-items">Inventory</button>
+    <button class="action-btn" id="btn-ach">Achievements</button>
+  </div>
+</div>
+
+<!-- TICKER -->
+<div id="ticker-container" class="ticker-container">
+  <div id="ticker-pill" class="ticker-pill hidden">
+    <span id="ticker-text">DUNGEON BROADCAST SYSTEM</span>
+  </div>
+  <button id="ticker-eye" class="ticker-eye hidden" onclick="toggleTicker(event);" title="Toggle ticker">
+    <svg id="ticker-eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px; height:20px;">
+      <use href="#icon-eye"/>
+    </svg>
+  </button>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" class="hidden">
+  <div class="ach-modal">
+    <div class="ach-modal-header">
+      <h2>Achievements</h2>
+      <button onclick="closeModal();" class="ach-modal-close" title="Close">✕</button>
+    </div>
+
+    <div class="ach-modal-tabs">
+      <button class="ach-tab active" data-tab="new" onclick="switchAchTab('new');">New</button>
+      <button class="ach-tab" data-tab="archive" onclick="switchAchTab('archive');">Archive</button>
+    </div>
+
+    <div id="ach-tab-new" class="ach-tab-content active">
+      <div id="ach-list-new"></div>
+      <p id="ach-empty-new" class="ach-empty">No new achievements.</p>
+    </div>
+
+    <div id="ach-tab-archive" class="ach-tab-content">
+      <div id="ach-list-archive"></div>
+      <p id="ach-empty-archive" class="ach-empty">Archive empty.</p>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION TOAST -->
+<div id="ach-toast">
+  <div id="ach-toast-title">🏆 YOU EARNED</div>
+  <div id="ach-toast-subtitle">Click to view details</div>
+</div>
+
+<!-- ACHIEVEMENT NOTIFICATION TOAST -->
+<div id="ach-notify-toast">
+  <div id="ach-notify-label">🏆 ACHIEVEMENT EARNED</div>
+  <div id="ach-notify-name"></div>
+</div>
+
+<!-- LOGOUT CONFIRMATION -->
+<div id="logout-confirm-overlay" class="hidden">
+  <div class="logout-confirm-modal">
+    <h3>Confirm Logout</h3>
+    <p>Are you sure you want to log out?</p>
+    <div class="logout-confirm-buttons">
+      <button class="btn-cancel" onclick="closeLogoutConfirm();">Cancel</button>
+      <button class="btn-confirm" onclick="logout();">Logout</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ── Config ── */
+const WORKER_URL   = 'https://dmscreen.askozicki.workers.dev';
+const TICKER_URL   = 'https://kzick.dev/dm-screen/ticker.json';
+const AVATAR_BASE  = 'https://cdn.jsdelivr.net/gh/kzick001/dashboard@main/dm-screen/players/';
+const P_KEY        = 'showrunner_active_player';
+const T_KEY        = 'showrunner_ticker_visible';
+const ACK_LS_KEY   = () => `showrunner_acked_${player?.id || 'unknown'}`;
+const POLL_MS      = 30000;
+const TICKER_MS    = 180000; // 3 minutes per message
+const LOAD_MS      = 6000;
+const ROSTER       = ['Chuck','Tilly Tiggins','Hendrick Hill','Aelar Menendez','Jimothy'];
+
+/* ── Condition definitions ── */
+const CDEF = {
+  poisoned:      {icon:'icon-droplet',       css:'c-poison',        vfx:'vfx-poison'  },
+  bleeding:      {icon:'icon-droplet',       css:'c-bleeding',      vfx:'vfx-bleeding'},
+  burning:       {icon:'icon-flame',          css:'c-burning',       vfx:'vfx-burning' },
+  stunned:       {icon:'icon-zap',            css:'c-stunned',       vfx:'vfx-stunned' },
+  charmed:       {icon:'icon-heart',          css:'c-charmed',       vfx:null          },
+  frightened:    {icon:'icon-alert-triangle', css:'c-frightened',    vfx:null          },
+  blinded:       {icon:'icon-eye-off',        css:'c-blinded',       vfx:'vfx-blinded' },
+  deafened:      {icon:'icon-eye-off',        css:'c-deafened',      vfx:null          },
+  restrained:    {icon:'icon-lock',           css:'c-restrained',    vfx:null          },
+  grappled:      {icon:'icon-link',           css:'c-grappled',      vfx:null          },
+  incapacitated: {icon:'icon-pause-circle',   css:'c-incap',         vfx:null          },
+  unconscious:   {icon:'icon-x-circle',       css:'c-unconscious',   vfx:'vfx-critical'},
+  petrified:     {icon:'icon-layers',         css:'c-petrified',     vfx:null          },
+  concentrating: {icon:'icon-target',         css:'c-concentrating', vfx:null          },
+  exhaustion:    {icon:'icon-battery',        css:'c-exhaustion',    vfx:null          },
+  inspired:      {icon:'icon-star',           css:'c-inspired',      vfx:null          },
+  protected:     {icon:'icon-shield',         css:'c-protected',     vfx:null          },
+  cursed:        {icon:'icon-settings',       css:'c-cursed',        vfx:null          },
+};
+const VFX_ALL = ['vfx-critical','vfx-bleeding','vfx-poison','vfx-stunned','vfx-burning','vfx-blinded'];
+
+/* ── State ── */
+let state      = null;   // full campaign state from KV
+let player     = null;   // current character object
+let playerName = null;   // active player name string
+let pollTimer  = null;
+let tickTimer  = null;
+let tickData   = null;
+let spellBuilt = false;  // track whether spell section DOM exists
+
+/* ══════════════════════════════
+   INIT
+══════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('[HUD] DOM loaded, starting init...');
+  fetchTickerData();
+  startPolling();
+  buildRoster();
+
+  get('btn-items').addEventListener('click', () => toast('Items list coming soon.'));
+  get('btn-ach').addEventListener('click', openModal);
+  get('ticker-pill').addEventListener('click', toggleTicker);
+  get('modal-overlay').addEventListener('click', e => { if (e.target === get('modal-overlay')) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  // Auto-login after first state fetch
+  console.log('[HUD] Attempting auto-login...');
+  fetchState().then(() => {
+    console.log('[HUD] fetchState resolved, state version:', state?.version);
+    const saved = localStorage.getItem(P_KEY);
+    if (saved !== null) {
+      const idx = parseInt(saved);
+      console.log('[HUD] Auto-login index:', idx, 'player:', ROSTER[idx]);
+      if (!isNaN(idx) && ROSTER[idx]) doLogin(ROSTER[idx], idx, true);
+    } else {
+      console.log('[HUD] No saved player index');
+    }
+  }).catch(e => {
+    console.error('[HUD] fetchState rejected:', e);
+  });
+});
+
+/* ══════════════════════════════
+   ROSTER
+══════════════════════════════ */
+function buildRoster() {
+  const grid = get('roster-grid');
+  grid.innerHTML = '';
+  ROSTER.forEach((name, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'roster-btn';
+    btn.innerHTML = `<span>${x(name)}</span>`;
+    btn.addEventListener('click', () => doLogin(name, idx, false));
+    grid.appendChild(btn);
+  });
+}
+
+/* ══════════════════════════════
+   LOGIN / LOADING
+══════════════════════════════ */
+function doLogin(name, idx, isAuto) {
+  console.log('[HUD] doLogin:', name, 'auto:', isAuto);
+  playerName = name;
+  if (state?.characters) {
+    player = state.characters.find(c => c.name === name) || null;
+    console.log('[HUD] Found player:', player?.name, 'from', state.characters.length, 'chars');
+  } else {
+    console.warn('[HUD] doLogin: state.characters not available');
+  }
+
+  if (isAuto) { showHUD(); return; }
+
+  // Show loading screen, then reveal HUD
+  const loginLayer = get('login-layer');
+  const loadLayer  = get('loading-layer');
+
+  get('load-title').textContent = 'LOADING';
+  get('load-tip').textContent   = randomTip();
+  get('load-bar').style.width   = '0%';
+
+  loginLayer.classList.add('hidden');
+  loadLayer.classList.remove('hidden');
+
+  // Trigger bar animation on next frame
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    get('load-bar').style.width = '100%';
+  }));
+
+  setTimeout(() => {
+    localStorage.setItem(P_KEY, idx.toString());
+    loadLayer.classList.add('hidden');
+    showHUD();
+  }, LOAD_MS);
+}
+
+function showHUD() {
+  get('login-layer').classList.add('hidden');
+  get('loading-layer').classList.add('hidden');
+  get('main-hud').classList.remove('hidden');
+  // Delay render to allow DOM to paint
+  requestAnimationFrame(() => {
+    renderAll();
+    initTicker();
+    loadLocalAcks();
+    startAchievementPolling();
+  });
+}
+
+/* ══════════════════════════════
+   LOGOUT
+══════════════════════════════ */
+function confirmLogout() {
+  get('logout-confirm-overlay').classList.remove('hidden');
+}
+
+function closeLogoutConfirm() {
+  get('logout-confirm-overlay').classList.add('hidden');
+}
+
+function logout() {
+  localStorage.removeItem(P_KEY);
+  playerName = null; player = null; spellBuilt = false;
+
+  VFX_ALL.forEach(c => get('vfx-layer').classList.remove(c));
+  if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+
+  const pill = get('ach-pill');
+  pill.style.display = 'none';
+  pill.classList.remove('unread');
+  get('ticker-pill').classList.add('hidden');
+  get('ticker-eye').classList.add('hidden');
+  get('vitals-inline').textContent = '';
+  get('cond-grid').innerHTML = '<span class="no-cond">No active conditions</span>';
+
+  const ss = document.getElementById('spell-section');
+  if (ss) ss.remove();
+  const fs = document.getElementById('familiar-section');
+  if (fs) fs.remove();
+
+  get('main-hud').classList.add('hidden');
+  get('login-layer').classList.remove('hidden');
+  get('logout-confirm-overlay').classList.add('hidden');
+  buildRoster();
+}
+
+/* ══════════════════════════════
+   KV POLLING
+══════════════════════════════ */
+async function fetchState() {
+  try {
+    const res = await fetch(WORKER_URL, {method:'GET', mode:'cors'});
+    if (!res.ok) { console.error('[HUD] Poll', res.status); return; }
+    state = await res.json();
+    console.log('[HUD] State fetched:', state?.version, 'characters:', state?.characters?.length);
+    // Migrate old v31 schema (players → characters)
+    if (state.version === 31 && state.players && !state.characters) {
+      state.characters = state.players;
+      console.log('[HUD] Migrated v31 players → characters');
+    }
+    if (playerName) player = state.characters?.find(c => c.name === playerName) || null;
+    console.log('[HUD] Player set:', player?.name);
+    if (!get('main-hud').classList.contains('hidden')) renderAll();
+  } catch (e) { console.error('[HUD] Poll error:', e.message, e.stack); }
+}
+
+function startPolling() {
+  fetchState();
+  pollTimer = setInterval(fetchState, POLL_MS);
+}
+
+async function syncToKV() {
+  if (!state) return;
+  try {
+    const res = await fetch(WORKER_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({base_version: state.version || 0, data: state})
+    });
+    if (res.ok) {
+      const r = await res.json();
+      if (r.new_version !== undefined) state.version = r.new_version;
+    } else if (res.status === 409) {
+      console.warn('[HUD] Collision — re-fetching');
+      await fetchState();
+    } else {
+      toast('Save failed. Try again.');
+    }
+  } catch (e) { toast('Connection error. Could not save.'); }
+}
+
+/* ══════════════════════════════
+   RENDER ALL
+══════════════════════════════ */
+function renderAll() {
+  console.log('[HUD] renderAll called, player:', player?.name);
+  updateHeader();
+  updateAvatar();
+  updateVitals();
+  updateConditions();
+  renderFamiliarSection();
+  renderSpellSection();
+  updateSpellCounts();
+  applyVFX();
+  updateAchPill();
+}
+
+/* ══════════════════════════════
+   HEADER
+══════════════════════════════ */
+function updateHeader() {
+  get('hud-name').textContent = player?.name || playerName || '—';
+  const sub = player ? [player.race, player.class].filter(Boolean).join(' ') : 'Awaiting data...';
+  get('hud-sub').textContent = sub || '—';
+}
+
+/* ══════════════════════════════
+   AVATAR
+══════════════════════════════ */
+function updateAvatar() {
+  if (!player) { console.warn('[HUD] updateAvatar: player is null'); return; }
+  
+  // Try multiple selectors to find the element
+  let inner = get('av-inner');
+  if (!inner) {
+    console.error('[HUD] av-inner not found via getElementById, trying querySelector');
+    inner = document.querySelector('.av-inner');
+  }
+  if (!inner) {
+    console.error('[HUD] av-inner not found. Available DOM:', document.body.innerHTML.substring(0, 500));
+    return;
+  }
+  
+  const name    = player.name?.split(' ')[0].toLowerCase() || '';
+  const imgPath = `${AVATAR_BASE}${name}.png?v=51`;
+  console.log('[HUD] Loading avatar:', imgPath);
+  
+  const existing = inner.querySelector('img');
+  if (existing && existing.dataset.src === imgPath) return; // no-op if unchanged
+
+  const img = new Image();
+  img.dataset.src = imgPath;
+  img.onload = () => {
+    console.log('[HUD] Avatar loaded:', imgPath);
+    inner.innerHTML = '';
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;';
+    inner.appendChild(img);
+  };
+  img.onerror = () => {
+    console.warn('[HUD] Avatar failed to load:', imgPath);
+    inner.innerHTML = '<svg viewBox="0 0 24 24"><use href="#icon-user"/></svg>';
+  };
+  img.src = imgPath;
+}
+
+/* ══════════════════════════════
+   VITALS
+══════════════════════════════ */
+function updateVitals() {
+  if (!player) { console.warn('[HUD] updateVitals: player is null'); return; }
+  const hp    = player?.stats?.hp?.current ?? null;
+  const maxHp = player?.stats?.hp?.max     ?? null;
+  const ac    = player?.stats?.ac ?? null;
+  const pass  = player?.stats?.passivePerception ?? null;
+  const speed = player?.stats?.speed ?? null;
+  console.log('[HUD] Vitals:', {hp, maxHp, ac, pass, speed});
+
+  const fmt = (v, unit='') => v != null ? `${v}${unit}` : '—';
+  const el = get('vitals-inline');
+  if (!el) return;
+
+  const hpPct = (hp !== null && maxHp) ? hp/maxHp : 1;
+  const hpColor = hpPct <= 0.25 ? 'var(--danger)' : hpPct <= 0.5 ? 'var(--orange)' : 'var(--primary)';
+
+  el.innerHTML =
+    `<span style="color:${hpColor};">HP ${fmt(hp)}/${fmt(maxHp)}</span>` +
+    `<span style="color:var(--muted);"> &nbsp;|&nbsp; </span>` +
+    `<span style="color:var(--primary);">AC ${fmt(ac)}</span>` +
+    `<span style="color:var(--muted);"> &nbsp;|&nbsp; </span>` +
+    `<span style="color:var(--primary);">Passive ${fmt(pass)}</span>` +
+    `<span style="color:var(--muted);"> &nbsp;|&nbsp; </span>` +
+    `<span style="color:var(--primary);">Speed ${fmt(speed,' ft')}</span>`;
+}
+
+/* ══════════════════════════════
+   CONDITIONS
+══════════════════════════════ */
+function updateConditions() {
+  const grid  = get('cond-grid');
+  const conds = player?.conditions || [];
+  const prevCount = grid.querySelectorAll('.chip').length;
+
+  grid.innerHTML = '';
+
+  if (!conds.length) {
+    grid.innerHTML = '<span class="no-cond">No active conditions</span>';
+  } else {
+    conds.forEach(raw => {
+      const key = raw.toLowerCase().replace(/\s+/g,'_');
+      const def = CDEF[key] || {icon:'icon-alert-triangle', css:'c-default', vfx:null};
+      const lbl = raw.charAt(0).toUpperCase() + raw.slice(1);
+      const chip = document.createElement('span');
+      chip.className = `chip ${def.css}`;
+      chip.title = lbl;
+      chip.innerHTML = `<svg viewBox="0 0 24 24"><use href="#${def.icon}"/></svg>${x(lbl)}`;
+      grid.appendChild(chip);
+    });
+  }
+
+  // Pulse the Status section if condition count changed
+  if (conds.length !== prevCount) {
+    const section = grid.closest('.hud-section');
+    if (section) {
+      section.classList.remove('cond-alert');
+      void section.offsetWidth; // reflow to restart animation
+      section.classList.add('cond-alert');
+      setTimeout(() => section.classList.remove('cond-alert'), 600);
+    }
+  }
+}
+
+/* ══════════════════════════════
+   VFX
+══════════════════════════════ */
+function applyVFX() {
+  const vfx = get('vfx-layer');
+  VFX_ALL.forEach(c => vfx.classList.remove(c));
+
+  // Player conditions
+  if (player?.conditions) {
+    player.conditions.map(c => c.toLowerCase().replace(/\s+/g,'_')).forEach(c => {
+      const vfxClass = CDEF[c]?.vfx;
+      if (vfxClass) vfx.classList.add(vfxClass);
+    });
+  }
+
+  // Familiar conditions (layered on same VFX layer)
+  if (player?.familiar?.conditions) {
+    player.familiar.conditions.map(c => c.toLowerCase().replace(/\s+/g,'_')).forEach(c => {
+      const vfxClass = CDEF[c]?.vfx;
+      if (vfxClass) vfx.classList.add(vfxClass);
+    });
+  }
+}
+
+/* ══════════════════════════════
+   FAMILIAR / COMPANION
+══════════════════════════════ */
+function renderFamiliarSection() {
+  const existing = document.getElementById('familiar-section');
+  if (!player?.familiar || !player.familiar.isActive || player.familiar.isDead) {
+    if (existing) existing.remove();
+    return;
+  }
+
+  let famSec = existing;
+  if (!famSec) {
+    famSec = document.createElement('div');
+    famSec.id = 'familiar-section';
+    famSec.className = 'hud-section';
+    const statusSec = get('cond-grid').closest('.hud-section');
+    statusSec.parentNode.insertBefore(famSec, statusSec.nextSibling);
+  }
+
+  const fam = player.familiar;
+  const hpCur = fam.stats?.hp?.current ?? 0;
+  const hpMax = fam.stats?.hp?.max ?? 0;
+  const hpPct = hpMax ? hpCur/hpMax : 1;
+  const hpClass = hpPct <= 0.25 ? 'hp-crit' : hpPct <= 0.5 ? 'hp-low' : '';
+  const conds = fam.conditions || [];
+
+  famSec.innerHTML = `
+    <div class="section-label">Companion: ${x(fam.name || 'Familiar')}</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:.5rem; margin-bottom:.6rem;">
+      <div class="vs ${hpClass}"><span class="sl">HP</span><span class="sv">${hpCur}/${hpMax}</span></div>
+      <div class="vs"><span class="sl">AC</span><span class="sv">${fam.stats?.ac ?? '—'}</span></div>
+      <div class="vs"><span class="sl">Speed</span><span class="sv">${fam.stats?.speed ?? 0} ft</span></div>
+    </div>
+    <div style="display:flex; flex-wrap:wrap; gap:.4rem; align-items:center; min-height:1.6rem;">
+      ${conds.length === 0
+        ? '<span class="no-cond">No conditions</span>'
+        : conds.map(c => {
+            const key = c.toLowerCase().replace(/\s+/g,'_');
+            const def = CDEF[key] || {icon:'icon-alert-triangle', css:'c-default'};
+            const lbl = c.charAt(0).toUpperCase() + c.slice(1);
+            return `<span class="chip ${def.css}" title="${x(lbl)}"><svg viewBox="0 0 24 24"><use href="#${def.icon}"/></svg>${x(lbl)}</span>`;
+          }).join('')}
+    </div>
+  `;
+}
+
+/* ══════════════════════════════
+   SPELLS
+══════════════════════════════ */
+function renderSpellSection() {
+  if (!player?.spellSlots || spellBuilt) return;
+  const hud = get('main-hud');
+  const actions = document.getElementById('actions');
+  const sec = document.createElement('div');
+  sec.id = 'spell-section';
+  sec.className = 'hud-section';
+  sec.innerHTML = `
+    <div class="section-label" style="display:flex; justify-content:space-between; align-items:center;">
+      <span>Spell Slots</span>
+      <button class="spell-toggle-eye" onclick="toggleSpellVisibility()" title="Show/hide slots">👁</button>
+    </div>
+    <div class="sp-intro">Track and spend spell slots across levels.</div>
+    <div class="sp-btns">
+      ${[1,2,3].map(i=>`
+        <button class="sp-btn" id="sp-btn-${i}" onclick="toggleDetail(${i})">
+          Level ${i}
+          <span class="cnt" id="sp-cnt-${i}">—</span>
+        </button>`).join('')}
+    </div>
+    ${[1,2,3].map(i=>`
+      <div class="sp-detail" id="sp-det-${i}">
+        <span class="sp-dlabel">Level ${i}</span>
+        <div class="sp-ctrl">
+          <button class="sp-adj" id="sp-dec-${i}" onclick="adjSlot(${i},-1)">−</button>
+          <span class="sp-val" id="sp-val-${i}">—</span>
+          <button class="sp-adj" id="sp-inc-${i}" onclick="adjSlot(${i},1)">+</button>
+        </div>
+      </div>`).join('')}
+    <button class="sp-reset" onclick="longRest()">Reset Slots</button>
+  `;
+  hud.insertBefore(sec, actions);
+  spellBuilt = true;
+}
+
+function toggleSpellVisibility() {
+  const sec = document.getElementById('spell-section');
+  if (!sec) return;
+  const buttons = sec.querySelector('.sp-btns');
+  const intro   = sec.querySelector('.sp-intro');
+  const details = sec.querySelectorAll('.sp-detail');
+  const reset   = sec.querySelector('.sp-reset');
+  const hidden  = buttons?.style.display === 'none';
+
+  if (buttons) buttons.style.display = hidden ? 'flex' : 'none';
+  if (intro)   intro.style.display   = hidden ? 'block' : 'none';
+  details.forEach(d => d.style.display = hidden ? 'block' : 'none');
+  if (reset)   reset.style.display    = hidden ? 'block' : 'none';
+}
+
+function updateSpellCounts() {
+  if (!player?.spellSlots) return;
+  [1,2,3].forEach(i => {
+    const slot = player.spellSlots[`level${i}`];
+    const btn  = document.getElementById(`sp-btn-${i}`);
+    const cnt  = document.getElementById(`sp-cnt-${i}`);
+    const val  = document.getElementById(`sp-val-${i}`);
+    const dec  = document.getElementById(`sp-dec-${i}`);
+    const inc  = document.getElementById(`sp-inc-${i}`);
+    if (!btn || !slot) return;
+    const max = slot.max ?? 0, cur = slot.current ?? 0;
+    if (max === 0) { btn.className='sp-btn no-slots'; if(cnt) cnt.textContent='N/A'; }
+    else { btn.className = cur===0 ? 'sp-btn depleted':'sp-btn'; if(cnt) cnt.textContent=`${cur}/${max}`; }
+    if (val) val.textContent = `${cur} / ${max}`;
+    if (dec) dec.disabled = cur<=0;
+    if (inc) inc.disabled = cur>=max;
+  });
+}
+
+function toggleDetail(i) {
+  const d = document.getElementById(`sp-det-${i}`);
+  if (d) d.classList.toggle('open');
+}
+
+function adjSlot(i, delta) {
+  if (!player?.spellSlots) return;
+  const slot = player.spellSlots[`level${i}`];
+  if (!slot) return;
+  const n = (slot.current ?? 0) + delta;
+  if (n < 0 || n > (slot.max ?? 0)) return;
+  slot.current = n;
+  updateSpellCounts();
+  syncToKV();
+}
+
+function longRest() {
+  if (!player?.spellSlots) return;
+  if (!confirm('Reset all spell slots? This counts as a long rest.')) return;
+  [1,2,3].forEach(i => {
+    const s = player.spellSlots[`level${i}`];
+    if (s) s.current = s.max ?? 0;
+  });
+  player.spellSlots.lastLongRest = new Date().toISOString();
+  updateSpellCounts();
+  syncToKV();
+  toast('Long rest complete. All slots restored.');
+}
+
+/* ══════════════════════════════
+   ACHIEVEMENTS
+══════════════════════════════ */
+/* ══════════════════════════════
+   ACHIEVEMENTS
+══════════════════════════════ */
+let achCurrentPage = null; // Current achievement detail being shown
+let pollAchInterval = null;
+const _toastShownFor = new Set();      // achievement IDs that have already popped a toast this session
+const _acknowledgedLocally = new Set(); // achievement IDs the player acknowledged this session (survives poll merges)
+
+/* Item 9 — Persist acknowledged achievements across sessions */
+function loadLocalAcks() {
+  try {
+    const stored = localStorage.getItem(ACK_LS_KEY());
+    if (stored) JSON.parse(stored).forEach(k => _acknowledgedLocally.add(k));
+  } catch(e) { console.warn('[HUD] Could not load local acks:', e); }
+}
+
+function persistLocalAck(notifyKey) {
+  try {
+    const key = ACK_LS_KEY();
+    const existing = JSON.parse(localStorage.getItem(key) || '[]');
+    if (!existing.includes(notifyKey)) {
+      existing.push(notifyKey);
+      localStorage.setItem(key, JSON.stringify(existing));
+    }
+  } catch(e) { console.warn('[HUD] Could not persist local ack:', e); }
+}
+
+/* Count of unaward achievements (pending notify) that player earned */
+function unacknowledgedCount() {
+  if (!state?.achievements || !player) return 0;
+  return state.achievements.filter(a => {
+    // Only count if NOT archived, player earned it, and notify is pending (not yet awarded)
+    if (a.isArchived) return false;
+    if (a.earnedBy && typeof a.earnedBy === 'object' && !a.earnedBy[player.id]) return false;
+    // Count if notifyPlayerAt is set but awardedAt is NOT set
+    if (a.notifyPlayerAt && !a.awardedAt) return true;
+    return false;
+  }).length;
+}
+
+function updateAchPill() {
+  const count = unacknowledgedCount();
+  const pill  = get('ach-pill');
+  const badge = get('ach-badge');
+  if (count > 0) {
+    pill.style.display = 'flex';
+    if (badge) badge.textContent = count;
+    pill.classList.add('unread');
+  } else {
+    pill.style.display = 'none';
+    pill.classList.remove('unread');
+  }
+}
+
+/* Delegated copy button handler for loot details */
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-copy-loot]');
+  if (!btn) return;
+  const mode = btn.dataset.copyLoot;
+  if (mode === 'name' && achCurrentPage?.loot) {
+    copyToClipboard(achCurrentPage.loot.name, 'Copied name');
+  } else if (mode === 'full' && achCurrentPage?.loot) {
+    copyToClipboard(formatLootText(achCurrentPage.loot), 'Copied details');
+  }
+});
+
+function copyToClipboard(text, label) {
+  if (!text) { notifyToast('Nothing to copy'); return; }
+  navigator.clipboard.writeText(text).then(() => {
+    notifyToast((label || 'Copied'));
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    notifyToast((label || 'Copied'));
+  });
+}
+
+/* Format loot as all-caps text */
+function formatLootText(loot) {
+  if (!loot) return '';
+  return [
+    'NAME: ' + (loot.name || '').toUpperCase(),
+    'TYPE: ' + (loot.type || 'WONDROUS').toUpperCase(),
+    'RARITY: ' + (loot.rarity || 'COMMON').toUpperCase(),
+    'DESCRIPTION: ' + (loot.description || ''),
+    'EFFECT: ' + (loot.effect || '')
+  ].join('\n');
+}
+
+/* Show a transient confirmation toast (copy/acknowledge). NOT a notification. */
+function notifyToast(message, duration = 3000) {
+  const toast = get('ach-toast');
+  // This is a confirmation toast, not an achievement notification —
+  // strip any click handler left over from a notification toast.
+  toast.onclick = null;
+  toast.style.cursor = 'default';
+  if (message.includes('Copied') || message === 'Copied') {
+    get('ach-toast-subtitle').textContent = message;
+  } else {
+    get('ach-toast-title').textContent = message;
+    get('ach-toast-subtitle').textContent = '';
+  }
+  toast.classList.add('show');
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, duration);
+}
+
+/* Show achievement detail panel (NOT the full modal, just the detail within modal) */
+function showAchievementDetail(achId) {
+  const a = state?.achievements?.find(x => x.id === achId);
+  if (!a) return;
+  
+  achCurrentPage = a;
+  
+  // Hide list tabs, show detail
+  document.querySelectorAll('.ach-tab-content').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ach-detail-panel').forEach(p => p.classList.remove('active'));
+  
+  // Details (description, loot, gold) stay locked until the DM awards.
+  const unlocked = !!a.awardedAt || !!a.isArchived;
+  
+  const statusBadge = a.awardedAt ? '✓ AWARDED' : (a.notifyPlayerAt ? '🔔 NOTIFICATION' : 'PENDING');
+  
+  let bodyHtml = '';
+  let actionBtns = '';
+  
+  if (unlocked) {
+    // Full details
+    const goldLine = (a.rewards?.gold) ? `<div class="ach-detail-gold">${a.rewards.gold} gp awarded</div>` : '';
+    let lootHtml = '';
+    if (a.loot && a.loot.name) {
+      lootHtml = `
+        <div class="ach-detail-loot">
+          <div class="ach-detail-loot-label">Loot Details</div>
+          <div class="ach-detail-loot-text">${escapeHtml(formatLootText(a.loot))}</div>
+          <div class="ach-detail-actions" style="gap:0.4rem;margin-top:0.5rem;">
+            <button class="btn-copy-loot" data-copy-loot="name">📋 Copy Name</button>
+            <button class="btn-copy-loot" data-copy-loot="full">📋 Copy All</button>
+          </div>
+        </div>`;
+    }
+    bodyHtml = `
+      <div class="ach-detail-desc">${escapeHtml(a.description || '')}</div>
+      ${goldLine}
+      ${lootHtml}`;
+    // Archived items are read-only; only awarded-not-acked shows the button
+    if (a.awardedAt && !a.isArchived) {
+      actionBtns = `<button class="btn-ach-action" onclick="markAcknowledgedAch('${escapeForAttr(a.id)}')">OK, GOT IT</button>`;
+    }
+  } else {
+    // Locked: notification pending. Title only, no flavor/loot/gold yet.
+    bodyHtml = `
+      <div class="ach-detail-desc" style="font-style:italic;color:var(--muted);">
+        You've earned something. The DM will reveal the details when it's awarded.
+      </div>`;
+    actionBtns = `<button class="btn-ach-action" onclick="markAcknowledgedAch('${escapeForAttr(a.id)}')">OK, I SAW IT</button>`;
+  }
+  
+  const detail = document.createElement('div');
+  detail.className = 'ach-detail-panel active';
+  detail.innerHTML = `
+    <button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.8rem;padding:0;margin-bottom:0.5rem;" onclick="backToList();">← Back to List</button>
+    <div class="ach-detail-name">${escapeHtml(a.name)}</div>
+    <div style="font-size:0.7rem;color:var(--muted);margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.05em;">${statusBadge}</div>
+    ${bodyHtml}
+    <div class="ach-detail-actions">${actionBtns}</div>
+  `;
+  
+  const modal = document.querySelector('.ach-modal');
+  modal.classList.add('in-detail');
+  modal.insertBefore(detail, document.querySelector('.ach-modal-tabs').nextElementSibling);
+}
+
+function backToList() {
+  document.querySelector('.ach-modal')?.classList.remove('in-detail');
+  document.querySelectorAll('.ach-detail-panel').forEach(p => p.remove());
+  switchAchTab('new');
+}
+
+function openModal() {
+  get('modal-overlay').classList.remove('hidden');
+  switchAchTab('new');
+}
+
+function closeModal() {
+  get('modal-overlay').classList.add('hidden');
+  document.querySelectorAll('.ach-detail-panel').forEach(p => p.remove());
+}
+
+function switchAchTab(tab) {
+  // Clear any open detail panel before switching tabs
+  document.querySelector('.ach-modal')?.classList.remove('in-detail');
+  document.querySelectorAll('.ach-detail-panel').forEach(p => p.remove());
+  // Toggle the content panels...
+  get('ach-tab-new').classList.toggle('active', tab === 'new');
+  get('ach-tab-archive').classList.toggle('active', tab === 'archive');
+  // ...and the tab buttons themselves (this drives the purple underline).
+  document.querySelectorAll('.ach-modal-tabs .ach-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  populateAchList(tab);
+}
+
+function populateAchList(tab) {
+  if (!state?.achievements || !player) return;
+
+  const list = tab === 'new'
+    ? state.achievements.filter(a => {
+        if (a.isArchived) return false;
+        // Show if player earned it or it's unassigned (party achievement)
+        const isUnassigned = !a.earnedBy || typeof a.earnedBy === 'boolean' || Object.keys(a.earnedBy).length === 0;
+        if (!isUnassigned && !a.earnedBy[player.id]) return false;
+        // Only show if NOT acknowledged OR not yet awarded
+        return !a.acknowledgedBy?.includes(player.id) || !a.awardedAt;
+      })
+    : state.achievements.filter(a => {
+        if (!a.isArchived) return false;
+        // Show archived if player earned it or it's unassigned
+        const isUnassigned = !a.earnedBy || typeof a.earnedBy === 'boolean' || Object.keys(a.earnedBy).length === 0;
+        if (!isUnassigned && !a.earnedBy[player.id]) return false;
+        return true;
+      });
+
+  const container = tab === 'new' ? get('ach-list-new') : get('ach-list-archive');
+  const empty     = tab === 'new' ? get('ach-empty-new') : get('ach-empty-archive');
+
+  if (!list.length) {
+    container.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+  container.innerHTML = list.map(a => {
+    const earnedTs  = a.earnedBy && player ? a.earnedBy[player.id] : null;
+    const earnedStr = earnedTs ? new Date(earnedTs).toLocaleDateString() : 'Party achievement';
+    
+    let statusClass = '';
+    let statusIcon = '';
+    if (a.notifyPlayerAt && !a.awardedAt) {
+      statusClass = 'notified';
+      statusIcon = '🔔';
+    } else if (a.awardedAt) {
+      statusClass = 'awarded';
+      statusIcon = '✓';
+    }
+    
+    // Details (flavor text) stay hidden until the DM awards.
+    const unlocked = !!a.awardedAt || !!a.isArchived;
+    const descHtml = unlocked
+      ? `<div class="ach-item-desc">${escapeHtml(a.description || '')}</div>`
+      : `<div class="ach-item-desc" style="font-style:italic;opacity:0.7;">Details locked until awarded</div>`;
+    
+    return `
+      <div class="ach-item" onclick="showAchievementDetail('${escapeForAttr(a.id)}');">
+        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:0.05em;">${statusIcon} ${statusClass.toUpperCase()}</div>
+        <div class="ach-item-name">${escapeHtml(a.name || 'Achievement')}</div>
+        ${descHtml}
+        <div class="ach-item-earned">Earned: ${escapeHtml(earnedStr)}</div>
+      </div>`;
+  }).join('');
+}
+
+async function markAcknowledgedAch(achId) {
+  if (!state || !player) return;
+  const ach = state.achievements?.find(a => a.id === achId);
+  if (!ach) return;
+  
+  // Mark acknowledged locally
+  if (!ach.acknowledgedBy) ach.acknowledgedBy = [];
+  if (!ach.acknowledgedBy.includes(player.id)) ach.acknowledgedBy.push(player.id);
+  // Remember this notify-wave so poll merges can't resurrect it; a future
+  // DM re-notify produces a new notifyPlayerAt and therefore a new key.
+  _acknowledgedLocally.add(_notifyKey(ach));
+  persistLocalAck(_notifyKey(ach));  // Item 9: survive refresh
+  
+  // Silence the notification toast immediately
+  dismissNotifyToast();
+  const toast = get('ach-toast');
+  toast.onclick = null;
+  toast.style.cursor = 'default';
+  toast.classList.remove('show');
+  
+  // POST to worker to sync KV
+  try {
+    await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'acknowledge_achievement',
+        achievementId: achId,
+        characterId: player.id
+      })
+    });
+  } catch (e) {
+    console.error('Post acknowledge failed:', e);
+  }
+  
+  // Update UI
+  updateAchPill();
+  backToList();
+  notifyToast('Achievement acknowledged');
+}
+
+/* Poll for achievement state changes every 12s */
+function startAchievementPolling() {
+  if (pollAchInterval) clearInterval(pollAchInterval);
+  
+  pollAchInterval = setInterval(async () => {
+    try {
+      const res = await fetch(WORKER_URL);
+      if (res.ok) {
+        const newState = await res.json();
+        // Merge achievements only (don't lose local character state)
+        if (newState.achievements) {
+          state.achievements = newState.achievements;
+          // Re-apply any acks made locally this session so a slow KV write
+          // can't resurrect a notification the player already dismissed. Keyed
+          // to the notify-wave, so a DM re-notify is not suppressed.
+          if (player) {
+            state.achievements.forEach(a => {
+              if (_acknowledgedLocally.has(_notifyKey(a))) {
+                if (!Array.isArray(a.acknowledgedBy)) a.acknowledgedBy = [];
+                if (!a.acknowledgedBy.includes(player.id)) a.acknowledgedBy.push(player.id);
+              }
+            });
+          }
+        }
+        // Process any new notifications
+        processAchievementNotifications();
+        updateAchPill();
+        // Refresh list if modal is open
+        if (!get('modal-overlay').classList.contains('hidden')) {
+          populateAchList('new');
+        }
+      }
+    } catch (e) {
+      console.error('Achievement poll failed:', e);
+    }
+  }, 5000);
+}
+
+/* Build a key unique to a given notification "wave" so a re-notify pops fresh */
+function _notifyKey(a) {
+  return a.id + '|' + (a.notifyPlayerAt || '');
+}
+
+/* Show toast for pending notifications (deduped per notify-wave) */
+function processAchievementNotifications() {
+  if (!state?.achievements || !player) return;
+  
+  const unaware = state.achievements.find(a => {
+    // Must have an active notification
+    if (!a.notifyPlayerAt) return false;
+    // Player must have earned it (or it's a party achievement)
+    if (a.earnedBy && typeof a.earnedBy === 'object' && !a.earnedBy[player.id]) return false;
+    // Not archived
+    if (a.isArchived) return false;
+    // Already acknowledged on the server → silent
+    if (a.acknowledgedBy?.includes(player.id)) return false;
+    // Acknowledged locally this session for THIS notify-wave → silent
+    if (_acknowledgedLocally.has(_notifyKey(a))) return false;
+    // Already toasted this exact notify-wave → don't re-pop every poll
+    if (_toastShownFor.has(_notifyKey(a))) return false;
+    return true;
+  });
+  
+  if (unaware) {
+    _toastShownFor.add(_notifyKey(unaware));
+    showNotificationToast(unaware);
+  }
+}
+
+function showNotificationToast(ach) {
+  const toast = get('ach-notify-toast');
+  if (!toast) return;
+  get('ach-notify-name').textContent = ach.name || 'Achievement';
+  toast.classList.add('show');
+
+  // Clicking toast opens modal directly to detail
+  toast.onclick = () => {
+    dismissNotifyToast();
+    openModal();
+    showAchievementDetail(ach.id);
+  };
+
+  // Auto-dismiss after 4s
+  setTimeout(dismissNotifyToast, 4000);
+}
+
+function dismissNotifyToast() {
+  const toast = get('ach-notify-toast');
+  if (!toast) return;
+  toast.classList.remove('show');
+  toast.onclick = null;
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  return text.replace(/[&<>"']/g, c => map[c]);
+}
+
+function escapeForAttr(text) {
+  if (!text) return '';
+  return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+/* ══════════════════════════════
+   TICKER
+══════════════════════════════ */
+async function fetchTickerData() {
+  try {
+    const res = await fetch(TICKER_URL);
+    if (res.ok) tickData = await res.json();
+  } catch (e) { console.warn('[HUD] Ticker fetch:', e.message); }
+}
+
+function randomTip() {
+  if (!tickData?.tips?.length) return 'Stay calm. Extraction in progress.';
+  return tickData.tips[Math.floor(Math.random() * tickData.tips.length)];
+}
+
+function randomMsg() {
+  if (!tickData) return 'DUNGEON BROADCAST SYSTEM — stand by.';
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const signoff = tickData.signoffs?.length ? ` ${pick(tickData.signoffs)}` : '';
+  return `${pick(tickData.subjects)} ${pick(tickData.actions)} ${pick(tickData.results)}${signoff}`;
+}
+
+function initTicker() {
+  const visible = localStorage.getItem(T_KEY) !== 'false';
+  const pill = get('ticker-pill');
+  const eye  = get('ticker-eye-icon');
+  get('ticker-eye').classList.remove('hidden'); // eye always visible once logged in
+  if (eye) eye.setAttribute('href', visible ? '#icon-eye-hidden' : '#icon-eye');
+  if (visible) {
+    pill.classList.remove('hidden');
+    rotateTick();
+    tickTimer = setInterval(rotateTick, TICKER_MS);
+  } else {
+    pill.classList.add('hidden');
+  }
+}
+
+function rotateTick() {
+  const textEl = get('ticker-text');
+  if (!textEl) return;
+  textEl.innerHTML = `<span class="ticker-prefix">[SYSTEM BROADCAST]</span> ${escapeHtml(randomMsg())}`;
+}
+
+function toggleTicker(e) {
+  if (e) e.stopPropagation();
+  const pill    = get('ticker-pill');
+  const eye     = get('ticker-eye-icon');
+  const visible = !pill.classList.contains('hidden');
+  if (visible) {
+    pill.classList.add('hidden');
+    if (eye) eye.setAttribute('href', '#icon-eye');
+    localStorage.setItem(T_KEY, 'false');
+    if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+  } else {
+    pill.classList.remove('hidden');
+    if (eye) eye.setAttribute('href', '#icon-eye-hidden');
+    localStorage.setItem(T_KEY, 'true');
+    rotateTick();
+    tickTimer = setInterval(rotateTick, TICKER_MS);
+  }
+}
+
+/* ══════════════════════════════
+   UTILITIES
+══════════════════════════════ */
+const get = id => document.getElementById(id);
+
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function x(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
