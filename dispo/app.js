@@ -327,5 +327,29 @@ document.querySelectorAll('th[data-sort]').forEach(th => {
     });
 });
 
+// Export Raw Vault Data
+document.getElementById('btnExport').addEventListener('click', async () => {
+  const btnExport = document.getElementById('btnExport');
+  const originalText = btnExport.innerText;
+  btnExport.innerText = "Downloading..."; btnExport.disabled = true;
+  
+  try {
+    const res = await fetch(`${BASE_WORKER_URL}/vault`);
+    const data = await res.json();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dispo-heist-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert("Export failed: " + err.message);
+  } finally {
+    btnExport.innerText = originalText;
+    btnExport.disabled = false;
+  }
+});
+
 // Boot Process
 loadCloudState();
