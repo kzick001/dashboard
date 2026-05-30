@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Crawler Terminal V5.2</title>
+  <title>Showrunner | Crawler Terminal V5.2.1</title>
 
   <svg xmlns="http://www.w3.org/2000/svg" style="display:none;position:absolute">
     <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
@@ -172,10 +172,10 @@
     @keyframes badge-glow { 0%,100%{box-shadow:0 0 8px rgba(187,134,252,.4)} 50%{box-shadow:0 0 16px rgba(187,134,252,.9)} }
 
     /* Ticker (centered below HUD) */
-    .ticker-container { position:fixed; left:50%; transform:translateX(-50%); top:calc(50% + 310px); z-index:500; display:flex; flex-direction:column; align-items:center; gap:.4rem; }
+    .ticker-container { position:fixed; left:50%; transform:translateX(-50%); top:calc(50% + 220px); z-index:500; display:flex; flex-direction:column; align-items:center; gap:.4rem; }
     .ticker-pill { width:min(90vw,720px); background:rgba(14,18,40,.95); border:1px solid var(--terminal); border-radius:2px; padding:.5rem .8rem; font-size:.75rem; color:var(--terminal); letter-spacing:.08em; text-transform:uppercase; overflow:hidden; white-space:nowrap; cursor:pointer; transition:all .2s ease; }
     .ticker-pill:hover { box-shadow:inset 0 0 12px rgba(255,235,59,.2); }
-    #ticker-text { display:inline-block; padding-left:100%; font-weight:bold; animation:ticker-scroll 18s linear infinite; }
+    #ticker-text { display:inline-block; padding-left:100%; font-weight:bold; animation:ticker-scroll 22.5s linear infinite; }
     @keyframes ticker-scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-100%)} }
     .ticker-eye { background:none; border:none; color:var(--terminal); font-size:1rem; cursor:pointer; padding:.2rem; transition:all .2s ease; }
     .ticker-eye:hover { transform:scale(1.2); }
@@ -279,7 +279,7 @@
       .btn-logout-hud { padding:.15rem .35rem; font-size:1rem; }
       .ticker-container { top:auto; bottom:1rem; }
       .ticker-pill { width:95vw; font-size:.65rem; padding:.4rem .6rem; }
-      #ticker-text { animation:ticker-scroll 22s linear infinite; }
+      #ticker-text { animation:ticker-scroll 27.5s linear infinite; }
       .ach-modal { width:92vw; max-height:75vh; padding:1rem; }
       .ach-modal-header h2 { font-size:1rem; }
       .ach-tab { padding:.4rem .6rem; font-size:.7rem; }
@@ -927,6 +927,8 @@ function longRest() {
 ══════════════════════════════ */
 let achCurrentPage = null; // Current achievement detail being shown
 let pollAchInterval = null;
+const _toastShownFor = new Set();      // achievement IDs that have already popped a toast this session
+const _acknowledgedLocally = new Set(); // achievement IDs the player acknowledged this session (survives poll merges)
 
 /* Count of unaward achievements (pending notify) that player earned */
 function unacknowledgedCount() {
@@ -997,13 +999,18 @@ function formatLootText(loot) {
   ].join('\n');
 }
 
-/* Show notification toast */
+/* Show a transient confirmation toast (copy/acknowledge). NOT a notification. */
 function notifyToast(message, duration = 3000) {
   const toast = get('ach-toast');
+  // This is a confirmation toast, not an achievement notification —
+  // strip any click handler left over from a notification toast.
+  toast.onclick = null;
+  toast.style.cursor = 'default';
   if (message.includes('Copied') || message === 'Copied') {
     get('ach-toast-subtitle').textContent = message;
   } else {
     get('ach-toast-title').textContent = message;
+    get('ach-toast-subtitle').textContent = '';
   }
   toast.classList.add('show');
   setTimeout(() => {
@@ -1022,29 +1029,44 @@ function showAchievementDetail(achId) {
   document.querySelectorAll('.ach-tab-content').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.ach-detail-panel').forEach(p => p.classList.remove('active'));
   
+  // Details (description, loot, gold) stay locked until the DM awards.
+  const unlocked = !!a.awardedAt || !!a.isArchived;
+  
   const statusBadge = a.awardedAt ? '✓ AWARDED' : (a.notifyPlayerAt ? '🔔 NOTIFICATION' : 'PENDING');
-  const goldLine = (a.rewards?.gold) ? `<div class="ach-detail-gold">${a.rewards.gold} gp awarded</div>` : '';
   
-  let lootHtml = '';
-  if (a.loot && a.loot.name && a.awardedAt) {
-    lootHtml = `
-      <div class="ach-detail-loot">
-        <div class="ach-detail-loot-label">Loot Details</div>
-        <div class="ach-detail-loot-text">${escapeHtml(formatLootText(a.loot))}</div>
-        <div class="ach-detail-actions" style="gap:0.4rem;margin-top:0.5rem;">
-          <button class="btn-copy-loot" data-copy-loot="name">📋 Copy Name</button>
-          <button class="btn-copy-loot" data-copy-loot="full">📋 Copy All</button>
-        </div>
-      </div>`;
-  }
-  
+  let bodyHtml = '';
   let actionBtns = '';
-  if (a.notifyPlayerAt && !a.awardedAt) {
-    // Notification-only state
+  
+  if (unlocked) {
+    // Full details
+    const goldLine = (a.rewards?.gold) ? `<div class="ach-detail-gold">${a.rewards.gold} gp awarded</div>` : '';
+    let lootHtml = '';
+    if (a.loot && a.loot.name) {
+      lootHtml = `
+        <div class="ach-detail-loot">
+          <div class="ach-detail-loot-label">Loot Details</div>
+          <div class="ach-detail-loot-text">${escapeHtml(formatLootText(a.loot))}</div>
+          <div class="ach-detail-actions" style="gap:0.4rem;margin-top:0.5rem;">
+            <button class="btn-copy-loot" data-copy-loot="name">📋 Copy Name</button>
+            <button class="btn-copy-loot" data-copy-loot="full">📋 Copy All</button>
+          </div>
+        </div>`;
+    }
+    bodyHtml = `
+      <div class="ach-detail-desc">${escapeHtml(a.description || '')}</div>
+      ${goldLine}
+      ${lootHtml}`;
+    // Archived items are read-only; only awarded-not-acked shows the button
+    if (a.awardedAt && !a.isArchived) {
+      actionBtns = `<button class="btn-ach-action" onclick="markAcknowledgedAch('${escapeForAttr(a.id)}')">OK, GOT IT</button>`;
+    }
+  } else {
+    // Locked: notification pending. Title only, no flavor/loot/gold yet.
+    bodyHtml = `
+      <div class="ach-detail-desc" style="font-style:italic;color:var(--muted);">
+        You've earned something. The DM will reveal the details when it's awarded.
+      </div>`;
     actionBtns = `<button class="btn-ach-action" onclick="markAcknowledgedAch('${escapeForAttr(a.id)}')">OK, I SAW IT</button>`;
-  } else if (a.awardedAt) {
-    // Fully awarded state
-    actionBtns = `<button class="btn-ach-action" onclick="markAcknowledgedAch('${escapeForAttr(a.id)}')">OK, GOT IT</button>`;
   }
   
   const detail = document.createElement('div');
@@ -1053,9 +1075,7 @@ function showAchievementDetail(achId) {
     <button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.8rem;padding:0;margin-bottom:0.5rem;" onclick="backToList();">← Back to List</button>
     <div class="ach-detail-name">${escapeHtml(a.name)}</div>
     <div style="font-size:0.7rem;color:var(--muted);margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.05em;">${statusBadge}</div>
-    <div class="ach-detail-desc">${escapeHtml(a.description || '')}</div>
-    ${goldLine}
-    ${lootHtml}
+    ${bodyHtml}
     <div class="ach-detail-actions">${actionBtns}</div>
   `;
   
@@ -1064,9 +1084,7 @@ function showAchievementDetail(achId) {
 
 function backToList() {
   document.querySelectorAll('.ach-detail-panel').forEach(p => p.remove());
-  document.querySelectorAll('.ach-tab-content').forEach(p => p.classList.remove('active'));
-  get('ach-tab-new').classList.add('active');
-  populateAchList('new');
+  switchAchTab('new');
 }
 
 function openModal() {
@@ -1080,8 +1098,13 @@ function closeModal() {
 }
 
 function switchAchTab(tab) {
+  // Toggle the content panels...
   get('ach-tab-new').classList.toggle('active', tab === 'new');
   get('ach-tab-archive').classList.toggle('active', tab === 'archive');
+  // ...and the tab buttons themselves (this drives the purple underline).
+  document.querySelectorAll('.ach-modal-tabs .ach-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
   populateAchList(tab);
 }
 
@@ -1129,11 +1152,17 @@ function populateAchList(tab) {
       statusIcon = '✓';
     }
     
+    // Details (flavor text) stay hidden until the DM awards.
+    const unlocked = !!a.awardedAt || !!a.isArchived;
+    const descHtml = unlocked
+      ? `<div class="ach-item-desc">${escapeHtml(a.description || '')}</div>`
+      : `<div class="ach-item-desc" style="font-style:italic;opacity:0.7;">Details locked until awarded</div>`;
+    
     return `
       <div class="ach-item" onclick="showAchievementDetail('${escapeForAttr(a.id)}');">
         <div style="font-size:0.7rem;color:var(--muted);margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:0.05em;">${statusIcon} ${statusClass.toUpperCase()}</div>
         <div class="ach-item-name">${escapeHtml(a.name || 'Achievement')}</div>
-        <div class="ach-item-desc">${escapeHtml(a.description || '')}</div>
+        ${descHtml}
         <div class="ach-item-earned">Earned: ${escapeHtml(earnedStr)}</div>
       </div>`;
   }).join('');
@@ -1147,6 +1176,15 @@ async function markAcknowledgedAch(achId) {
   // Mark acknowledged locally
   if (!ach.acknowledgedBy) ach.acknowledgedBy = [];
   if (!ach.acknowledgedBy.includes(player.id)) ach.acknowledgedBy.push(player.id);
+  // Remember this notify-wave so poll merges can't resurrect it; a future
+  // DM re-notify produces a new notifyPlayerAt and therefore a new key.
+  _acknowledgedLocally.add(_notifyKey(ach));
+  
+  // Silence the notification toast immediately (kill click handler + hide)
+  const toast = get('ach-toast');
+  toast.onclick = null;
+  toast.style.cursor = 'default';
+  toast.classList.remove('show');
   
   // POST to worker to sync KV
   try {
@@ -1181,6 +1219,17 @@ function startAchievementPolling() {
         // Merge achievements only (don't lose local character state)
         if (newState.achievements) {
           state.achievements = newState.achievements;
+          // Re-apply any acks made locally this session so a slow KV write
+          // can't resurrect a notification the player already dismissed. Keyed
+          // to the notify-wave, so a DM re-notify is not suppressed.
+          if (player) {
+            state.achievements.forEach(a => {
+              if (_acknowledgedLocally.has(_notifyKey(a))) {
+                if (!Array.isArray(a.acknowledgedBy)) a.acknowledgedBy = [];
+                if (!a.acknowledgedBy.includes(player.id)) a.acknowledgedBy.push(player.id);
+              }
+            });
+          }
         }
         // Process any new notifications
         processAchievementNotifications();
@@ -1193,26 +1242,36 @@ function startAchievementPolling() {
     } catch (e) {
       console.error('Achievement poll failed:', e);
     }
-  }, 12000);
+  }, 5000);
 }
 
-/* Show toast for pending notifications */
+/* Build a key unique to a given notification "wave" so a re-notify pops fresh */
+function _notifyKey(a) {
+  return a.id + '|' + (a.notifyPlayerAt || '');
+}
+
+/* Show toast for pending notifications (deduped per notify-wave) */
 function processAchievementNotifications() {
   if (!state?.achievements || !player) return;
   
   const unaware = state.achievements.find(a => {
-    // Achievement with notifyPlayerAt set
+    // Must have an active notification
     if (!a.notifyPlayerAt) return false;
-    // But player hasn't seen it yet
-    if (a.acknowledgedBy?.includes(player.id)) return false;
-    // And player earned it
+    // Player must have earned it (or it's a party achievement)
     if (a.earnedBy && typeof a.earnedBy === 'object' && !a.earnedBy[player.id]) return false;
-    // And it's not archived
+    // Not archived
     if (a.isArchived) return false;
+    // Already acknowledged on the server → silent
+    if (a.acknowledgedBy?.includes(player.id)) return false;
+    // Acknowledged locally this session for THIS notify-wave → silent
+    if (_acknowledgedLocally.has(_notifyKey(a))) return false;
+    // Already toasted this exact notify-wave → don't re-pop every poll
+    if (_toastShownFor.has(_notifyKey(a))) return false;
     return true;
   });
   
   if (unaware) {
+    _toastShownFor.add(_notifyKey(unaware));
     showNotificationToast(unaware);
   }
 }
@@ -1221,18 +1280,23 @@ function showNotificationToast(ach) {
   const toast = get('ach-toast');
   get('ach-toast-title').textContent = '🏆 YOU EARNED: ' + (ach.name || 'Achievement');
   get('ach-toast-subtitle').textContent = 'Click to view details';
+  toast.style.cursor = 'pointer';
   toast.classList.add('show');
   
   // Clicking toast opens modal and shows detail
   toast.onclick = () => {
     openModal();
     showAchievementDetail(ach.id);
+    toast.onclick = null;
+    toast.style.cursor = 'default';
     toast.classList.remove('show');
   };
   
-  // Auto-hide after 8s
+  // Auto-hide after 8s (handler cleared so it can't fire stale)
   setTimeout(() => {
     toast.classList.remove('show');
+    toast.onclick = null;
+    toast.style.cursor = 'default';
   }, 8000);
 }
 
