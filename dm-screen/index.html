@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Dashboard V5.1.2</title>
+  <title>Showrunner | Dashboard V5.2</title>
 
   <script>
     const WORKER_URL = "https://dmscreen.askozicki.workers.dev";
@@ -313,13 +313,39 @@
     .drawer-tab-panel.active { display: block; }
 
     /* Achievement entries */
-    .ach-entry { border: 1px solid var(--glass-border); border-radius: 6px; padding: 0.7rem; margin-bottom: 0.6rem; }
-    .ach-entry.assigned { opacity: 0.55; }
-    .ach-entry .ach-name { font-weight: bold; }
-    .ach-entry .ach-desc { font-size: 0.8rem; color: var(--text-muted); margin: 0.35rem 0; line-height: 1.4; }
-    .ach-entry .ach-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .ach-entry { border: 1px solid var(--glass-border); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.7rem; transition: border-color 0.2s; }
+    .ach-entry.status-notified  { border-color: rgba(250,204,21,0.45); }
+    .ach-entry.status-awarded   { border-color: rgba(74,222,128,0.4); }
+    .ach-entry.status-archived  { border-color: rgba(255,255,255,0.08); opacity: 0.7; }
+    .ach-status-badge { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.6rem; letter-spacing: 1px; font-weight: bold; text-transform: uppercase; border-radius: 10px; padding: 0.15rem 0.55rem; border: 1px solid currentColor; margin-bottom: 0.45rem; }
+    .ach-status-badge.notified  { color: var(--warning); }
+    .ach-status-badge.awarded   { color: var(--success); }
+    .ach-status-badge.archived  { color: var(--text-muted); }
+    .ach-entry .ach-name { font-weight: bold; font-size: 0.9rem; display: block; margin-bottom: 0.2rem; }
+    .ach-entry .ach-desc { font-size: 0.8rem; color: var(--text-muted); margin: 0.3rem 0; line-height: 1.45; }
+    .ach-entry .ach-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px solid var(--glass-border); }
     .ach-loot-tag { font-size: 0.68rem; color: var(--loot); border: 1px solid rgba(255,215,0,0.3); border-radius: 4px; padding: 0.1rem 0.45rem; display: inline-block; margin-top: 0.25rem; }
-    .scope-tag { font-size: 0.66rem; color: var(--text-muted); margin-top: 0.2rem; }
+    .scope-tag { font-size: 0.68rem; color: var(--text-muted); margin-top: 0.25rem; }
+    /* Acknowledge grid */
+    .ach-ack-grid { margin: 0.5rem 0 0; padding: 0.5rem; border: 1px dashed var(--glass-border); border-radius: 6px; display: flex; flex-direction: column; gap: 0.3rem; }
+    .ach-ack-row { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; }
+    .ach-ack-row input[type="checkbox"] { width: auto; margin: 0; accent-color: var(--success); }
+    .ach-ack-row .ack-name { flex: 1; }
+    .ach-ack-row .ack-status { font-size: 0.68rem; color: var(--text-muted); }
+    .ach-ack-row .ack-status.seen { color: var(--success); }
+    /* Loot details panel */
+    .ach-loot-panel { margin-top: 0.55rem; border: 1px solid rgba(255,215,0,0.2); border-radius: 6px; overflow: hidden; }
+    .ach-loot-toggle { width: 100%; background: rgba(255,215,0,0.05); border: none; color: var(--loot); padding: 0.45rem 0.7rem; font-size: 0.78rem; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-family: inherit; transition: background 0.15s; }
+    .ach-loot-toggle:hover { background: rgba(255,215,0,0.1); }
+    .ach-loot-toggle .loot-caret { transition: transform 0.2s; margin-left: auto; }
+    .ach-loot-toggle.open .loot-caret { transform: rotate(90deg); }
+    .ach-loot-body { display: none; padding: 0.6rem 0.7rem; background: rgba(0,0,0,0.2); }
+    .ach-loot-body.open { display: block; }
+    .ach-loot-text { font-family: monospace; font-size: 0.78rem; line-height: 1.7; color: rgba(224,224,224,0.9); white-space: pre-wrap; word-break: break-word; }
+    .ach-loot-copy-row { display: flex; gap: 0.4rem; margin-top: 0.55rem; flex-wrap: wrap; }
+    .btn-copy { background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.3); color: var(--loot); padding: 0.3rem 0.65rem; border-radius: 4px; font-size: 0.76rem; cursor: pointer; font-family: inherit; transition: background 0.15s; display: inline-flex; align-items: center; gap: 0.3rem; }
+    .btn-copy:hover { background: rgba(255,215,0,0.18); }
+    /* Assign grid (re-used for assign-by-char) */
     .ach-assign-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.2rem 0.5rem; margin: 0.5rem 0; padding: 0.5rem; border: 1px dashed var(--glass-border); border-radius: 6px; }
     .ach-assign-grid label { display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; color: var(--text); margin: 0; cursor: pointer; }
     .ach-assign-grid input { width: auto; margin: 0; accent-color: var(--accent); }
@@ -414,7 +440,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="22" height="22" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-      SHOWRUNNER // DASHBOARD V5.1.2
+      SHOWRUNNER // DASHBOARD V5.2
       <span id="sync-heartbeat" class="heartbeat" title="Live database connection"></span>
     </div>
     <div class="nav-links">
@@ -615,13 +641,18 @@
     </div>
     <!-- Tab bar -->
     <div class="drawer-tabs">
-      <button class="drawer-tab active" id="ach-tab-btn-active" onclick="switchAchTab('active')">Active</button>
-      <button class="drawer-tab" id="ach-tab-btn-single" onclick="switchAchTab('single')">Add Single</button>
-      <button class="drawer-tab" id="ach-tab-btn-bulk" onclick="switchAchTab('bulk')">Import</button>
+      <button class="drawer-tab active" id="ach-tab-btn-active"   onclick="switchAchTab('active')">Active</button>
+      <button class="drawer-tab"        id="ach-tab-btn-archived" onclick="switchAchTab('archived')">Archived</button>
+      <button class="drawer-tab"        id="ach-tab-btn-single"   onclick="switchAchTab('single')">Add</button>
+      <button class="drawer-tab"        id="ach-tab-btn-bulk"     onclick="switchAchTab('bulk')">Import</button>
     </div>
     <!-- Tab: Active -->
     <div class="drawer-tab-panel active" id="ach-tab-active">
       <div id="ach-list"></div>
+    </div>
+    <!-- Tab: Archived -->
+    <div class="drawer-tab-panel" id="ach-tab-archived">
+      <div id="ach-archived-list"></div>
     </div>
     <!-- Tab: Add Single -->
     <div class="drawer-tab-panel" id="ach-tab-single">
@@ -1591,43 +1622,193 @@
     document.getElementById("ach-drawer").classList.add("open");
     document.getElementById("ach-backdrop").classList.add("open");
   }
+
+  /* Delegated click for loot copy buttons (data-copy-ach + data-copy-mode) */
+  document.addEventListener("click", function(e){
+    const btn = e.target.closest("[data-copy-ach]");
+    if(!btn) return;
+    const achId = btn.dataset.copyAch;
+    const mode  = btn.dataset.copyMode;
+    const a = campaignState && campaignState.achievements && campaignState.achievements.find(x=>x.id===achId);
+    if(!a||!a.loot) return;
+    if(mode==="name"){
+      copyToClipboard(a.loot.name, "Copied name");
+    } else {
+      copyToClipboard(lootFormatText(a.loot), "Copied details");
+    }
+  });
   function closeAchievementDrawer(){
     document.getElementById("ach-drawer").classList.remove("open");
     document.getElementById("ach-backdrop").classList.remove("open");
   }
   function switchAchTab(which){
-    ["active","single","bulk"].forEach(t=>{
-      document.getElementById("ach-tab-btn-"+t).classList.toggle("active",t===which);
-      document.getElementById("ach-tab-"+t).classList.toggle("active",t===which);
+    ["active","archived","single","bulk"].forEach(t=>{
+      const btn=document.getElementById("ach-tab-btn-"+t);
+      const panel=document.getElementById("ach-tab-"+t);
+      if(btn)  btn.classList.toggle("active",t===which);
+      if(panel)panel.classList.toggle("active",t===which);
     });
+    if(which==="active")   renderAchievementList();
+    if(which==="archived") renderArchivedAchievements();
   }
+
   function isUnassigned(a){return a.earnedBy==null||(typeof a.earnedBy==="object"&&Object.keys(a.earnedBy).length===0);}
+
   function achScope(a){
     if(isUnassigned(a))return "Unassigned";
     return Object.keys(a.earnedBy).map(id=>{const c=findChar(id);return c?c.name:id;}).join(", ");
   }
+
+  function achStatus(a){
+    if(a.awardedAt)      return "awarded";
+    if(a.notifyPlayerAt) return "notified";
+    return "pending";
+  }
+
+  function lootFormatText(loot){
+    if(!loot) return "";
+    return [
+      "NAME: "+(loot.name||"").toUpperCase(),
+      "TYPE: "+(loot.type||"WONDROUS").toUpperCase(),
+      "RARITY: "+(loot.rarity||"COMMON").toUpperCase(),
+      "DESCRIPTION: "+(loot.description||""),
+      "EFFECT: "+(loot.effect||"")
+    ].join("\n");
+  }
+
+  function copyToClipboard(text,label){
+    if(!text){toast("Nothing to copy.","warn");return;}
+    navigator.clipboard.writeText(text).then(()=>{
+      toast((label||"Copied")+".","success");
+    }).catch(()=>{
+      const ta=document.createElement("textarea");
+      ta.value=text;ta.style.position="fixed";ta.style.opacity="0";
+      document.body.appendChild(ta);ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      toast((label||"Copied")+".","success");
+    });
+  }
+
+  function toggleLootPanel(achId){
+    const body=document.getElementById("loot-body-"+achId);
+    const btn =document.getElementById("loot-toggle-"+achId);
+    if(!body||!btn)return;
+    const open=body.classList.toggle("open");
+    btn.classList.toggle("open",open);
+  }
+
+  function buildAchCard(a,isArchived){
+    const status  =achStatus(a);
+    const gold    =(a.rewards&&a.rewards.gold)||0;
+    const hasLoot =!!(a.loot&&a.loot.name);
+    const assigned=!isUnassigned(a);
+    const chars   =campaignState.characters.filter(c=>!c.isArchived);
+
+    // Status badge
+    let badgeHtml="";
+    if(isArchived){
+      badgeHtml='<span class="ach-status-badge archived">&#x1F4C1; Archived</span>';
+    }else if(status==="awarded"){
+      const d=new Date(a.awardedAt).toLocaleDateString();
+      badgeHtml='<span class="ach-status-badge awarded">&#x2713; Awarded '+esc(d)+'</span>';
+    }else if(status==="notified"){
+      badgeHtml='<span class="ach-status-badge notified">&#x1F514; Notification Pending</span>';
+    }
+
+    // Assign checkboxes
+    const assignChecks=chars.map(c=>{
+      const earned=assigned&&a.earnedBy[c.id]?"checked":"";
+      return '<label><input type="checkbox" '+earned+' onchange="toggleAssign(\''+esc(a.id)+'\',\''+esc(c.id)+'\',this.checked)">'+esc(c.name)+'</label>';
+    }).join("");
+
+    // Acknowledge rows per earner
+    let ackRows="";
+    if(assigned){
+      const earnerIds=Object.keys(a.earnedBy);
+      const rows=earnerIds.map(cid=>{
+        const ch=findChar(cid);if(!ch)return "";
+        const acked=Array.isArray(a.acknowledgedBy)&&a.acknowledgedBy.includes(cid);
+        return '<div class="ach-ack-row">'+
+          '<input type="checkbox" '+(acked?"checked":"")+
+          ' onchange="setAcknowledge(\''+esc(a.id)+'\',\''+esc(cid)+'\',this.checked)"'+
+          ' title="'+(acked?"Un-acknowledge to re-notify player":"Mark acknowledged manually")+'">'+
+          '<span class="ack-name">'+esc(ch.name)+'</span>'+
+          '<span class="ack-status'+(acked?" seen":"")+'">'+( acked?"&#x2713; Seen":"Not seen")+'</span>'+
+        '</div>';
+      }).join("");
+      if(rows)ackRows='<div class="ach-ack-grid">'+rows+'</div>';
+    }
+
+    // Loot panel
+    let lootPanelHtml="";
+    if(hasLoot&&(status==="awarded"||isArchived)){
+      const lootText=lootFormatText(a.loot);
+      const safeId=esc(a.id);
+      lootPanelHtml=
+        '<div class="ach-loot-panel">'+
+          '<button class="ach-loot-toggle" id="loot-toggle-'+safeId+'" onclick="toggleLootPanel(\''+safeId+'\')">'+
+            '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'+
+            ' Loot Details'+
+            '<svg class="loot-caret" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>'+
+          '</button>'+
+          '<div class="ach-loot-body" id="loot-body-'+safeId+'">'+
+            '<pre class="ach-loot-text">'+esc(lootText)+'</pre>'+
+            '<div class="ach-loot-copy-row">'+
+              '<button class="btn-copy" data-copy-ach="'+safeId+'" data-copy-mode="name">&#x1F4CB; Copy Name</button>'+
+              '<button class="btn-copy" data-copy-ach="'+safeId+'" data-copy-mode="full">&#x1F4CB; Copy All Details</button>'+
+            '</div>'+
+          '</div>'+
+        '</div>';
+    }else if(hasLoot&&status!=="awarded"&&!isArchived){
+      lootPanelHtml='<div><span class="ach-loot-tag">'+esc(a.loot.name)+'</span> <span style="font-size:0.65rem;color:var(--text-muted);">(visible after award)</span></div>';
+    }
+
+    const goldLine=gold?'<div class="scope-tag">'+gold+' gp reward</div>':"";
+
+    // Action buttons
+    let actionBtns="";
+    if(!isArchived){
+      if((status==="pending"||status==="notified")&&assigned){
+        actionBtns+='<button class="btn-ghost" onclick="showAchievementInHUD(\''+esc(a.id)+'\')" title="Queue HUD notification">&#x1F514; Show in HUD</button>';
+        actionBtns+='<button class="btn-ghost" style="color:var(--success);border-color:rgba(74,222,128,0.4);" onclick="awardAndDistribute(\''+esc(a.id)+'\')" title="Award loot + gold to assigned players">&#x2713; Award &amp; Distribute</button>';
+      }
+      if(status==="awarded"){
+        actionBtns+='<button class="btn-danger" onclick="archiveAchievement(\''+esc(a.id)+'\')">&#x1F4C1; Archive</button>';
+      }
+    }else{
+      actionBtns+='<button class="btn-ghost" onclick="restoreAchievement(\''+esc(a.id)+'\')">Restore</button>';
+    }
+
+    const statusClass=isArchived?"status-archived":(status==="awarded"?"status-awarded":status==="notified"?"status-notified":"");
+
+    return '<div class="ach-entry '+statusClass+'" id="ach-entry-'+esc(a.id)+'">'+
+      (badgeHtml?'<div>'+badgeHtml+'</div>':'')+
+      '<span class="ach-name">'+esc(a.name)+'</span>'+
+      '<div class="ach-desc">'+esc(a.description||"")+'</div>'+
+      '<div class="scope-tag">'+esc(achScope(a))+'</div>'+
+      goldLine+
+      lootPanelHtml+
+      (assignChecks?'<div class="ach-assign-grid">'+assignChecks+'</div>':'')+
+      ackRows+
+      (actionBtns?'<div class="ach-actions">'+actionBtns+'</div>':'')+
+    '</div>';
+  }
+
   function renderAchievementList(){
     const list=document.getElementById("ach-list");
     const items=campaignState.achievements.filter(a=>!a.isArchived);
-    if(!items.length){list.innerHTML='<p class="empty-hint">No achievements yet.</p>';return;}
-    const chars=campaignState.characters.filter(c=>!c.isArchived);
-    list.innerHTML=items.map(a=>{
-      const gold=(a.rewards&&a.rewards.gold)||0;
-      const unassigned=isUnassigned(a);
-      const checks=chars.map(c=>{const on=(!unassigned&&a.earnedBy[c.id])?"checked":"";return '<label><input type="checkbox" '+on+' onchange="toggleAssign(\''+esc(a.id)+'\',\''+esc(c.id)+'\',this.checked)">'+esc(c.name)+'</label>';}).join("");
-      const lootTag=a.loot&&a.loot.name?'<span class="ach-loot-tag">'+esc(a.loot.name)+'</span>':'';
-      return '<div class="ach-entry'+(unassigned?"":" assigned")+'">'+
-        '<div><span class="ach-name">'+esc(a.name)+'</span></div>'+
-        (lootTag?'<div>'+lootTag+'</div>':'')+
-        '<div class="ach-desc">'+esc(a.description||"")+'</div>'+
-        '<div class="scope-tag">'+esc(achScope(a))+(gold?' &middot; '+gold+' gp':'')+'</div>'+
-        '<div class="ach-assign-grid">'+checks+'</div>'+
-        '<div class="ach-actions">'+
-          (gold?'<button class="btn-ghost" onclick="awardGold(\''+esc(a.id)+'\')">Pay '+gold+' gp</button>':'')+
-          '<button class="btn-danger" onclick="archiveAchievement(\''+esc(a.id)+'\')">Archive</button>'+
-        '</div></div>';
-    }).join("");
+    if(!items.length){list.innerHTML='<p class="empty-hint">No active achievements yet.</p>';return;}
+    list.innerHTML=items.map(a=>buildAchCard(a,false)).join("");
   }
+
+  function renderArchivedAchievements(){
+    const list=document.getElementById("ach-archived-list");
+    const items=campaignState.achievements.filter(a=>a.isArchived);
+    if(!items.length){list.innerHTML='<p class="empty-hint">No archived achievements.</p>';return;}
+    list.innerHTML=items.map(a=>buildAchCard(a,true)).join("");
+  }
+
   function toggleAssign(achId,charId,on){
     const a=campaignState.achievements.find(x=>x.id===achId);if(!a)return;
     if(!a.earnedBy||typeof a.earnedBy!=="object")a.earnedBy={};
@@ -1635,20 +1816,73 @@
     if(Object.keys(a.earnedBy).length===0)a.earnedBy=null;
     renderAchievementList();scheduleSync(null);
   }
-  function awardGold(achId){
-    const a=campaignState.achievements.find(x=>x.id===achId);
-    if(!a||!a.rewards||!a.rewards.gold)return;
-    if(isUnassigned(a)){toast("Assign this achievement to a player first.","warn");return;}
-    const targets=Object.keys(a.earnedBy).map(findChar).filter(Boolean);
-    if(!targets.length){toast("No recipients found.","warn");return;}
-    targets.forEach(c=>{c.gold=(c.gold||0)+a.rewards.gold;});
-    renderCards();scheduleSync(null);
-    toast("Awarded "+a.rewards.gold+" gp to "+targets.length+" character(s).","success");
+
+  function setAcknowledge(achId,charId,on){
+    const a=campaignState.achievements.find(x=>x.id===achId);if(!a)return;
+    if(!Array.isArray(a.acknowledgedBy))a.acknowledgedBy=[];
+    if(on){if(!a.acknowledgedBy.includes(charId))a.acknowledgedBy.push(charId);}
+    else  {a.acknowledgedBy=a.acknowledgedBy.filter(id=>id!==charId);}
+    renderAchievementList();scheduleSync(null);
+    toast(on?"Marked acknowledged.":"Un-acknowledged. Player will see notification on next poll.","success");
   }
+
+  function showAchievementInHUD(achId){
+    const a=campaignState.achievements.find(x=>x.id===achId);if(!a)return;
+    if(isUnassigned(a)){toast("Assign to a player first.","warn");return;}
+    a.notifyPlayerAt=new Date().toISOString();
+    const earnerIds=Object.keys(a.earnedBy||{});
+    if(!Array.isArray(a.acknowledgedBy))a.acknowledgedBy=[];
+    a.acknowledgedBy=a.acknowledgedBy.filter(id=>!earnerIds.includes(id));
+    renderAchievementList();scheduleSync(null);
+    toast("HUD notification queued. Players will see it on next poll.","success");
+  }
+
+  function awardAndDistribute(achId){
+    const a=campaignState.achievements.find(x=>x.id===achId);if(!a)return;
+    if(isUnassigned(a)){toast("Assign to a player first.","warn");return;}
+    if(a.awardedAt){toast("Already awarded.","warn");return;}
+    const earnerIds=Object.keys(a.earnedBy||{});
+    const gold=(a.rewards&&a.rewards.gold)||0;
+    const lootAddedTo=[];
+    earnerIds.forEach(cid=>{
+      const ch=findChar(cid);if(!ch)return;
+      if(gold>0)ch.gold=(ch.gold||0)+gold;
+      if(a.loot&&a.loot.name){
+        if(!Array.isArray(ch.inventory))ch.inventory=[];
+        ch.inventory.push({
+          id:"ach_loot_"+Date.now().toString(36)+"_"+cid,
+          name:a.loot.name,
+          type:(a.loot.type||"wondrous").replace("_item",""),
+          rarity:a.loot.rarity||"uncommon",
+          description:a.loot.description||"",
+          quantity:1,
+          mechanics:{toHitBonus:null,damageBonus:null,acBase:null,acMod:null,text:a.loot.effect||""},
+          charges:null,requiresAttunement:false,isAttuned:false,isDeleted:false
+        });
+        lootAddedTo.push(ch.name);
+      }
+    });
+    a.awardedAt=new Date().toISOString();
+    a.notifyPlayerAt=a.notifyPlayerAt||a.awardedAt;
+    if(!Array.isArray(a.acknowledgedBy))a.acknowledgedBy=[];
+    a.acknowledgedBy=a.acknowledgedBy.filter(id=>!earnerIds.includes(id));
+    renderCards();renderAchievementList();scheduleSync(null);
+    const msgs=[];
+    if(gold>0)msgs.push(gold+" gp awarded");
+    if(lootAddedTo.length)msgs.push(a.loot.name+" added to inventory for "+lootAddedTo.join(", "));
+    toast("Awarded! "+(msgs.join(" · ")||""),"success");
+  }
+
   function archiveAchievement(achId){
     const a=campaignState.achievements.find(x=>x.id===achId);if(!a)return;
+    if(!a.awardedAt){toast("Award the achievement before archiving.","warn");return;}
     if(!confirm('Archive "'+a.name+'"?'))return;
     a.isArchived=true;renderAchievementList();scheduleSync(null);toast("Archived.","success");
+  }
+
+  function restoreAchievement(achId){
+    const a=campaignState.achievements.find(x=>x.id===achId);if(!a)return;
+    a.isArchived=false;renderArchivedAchievements();scheduleSync(null);toast("Achievement restored to active.","success");
   }
 
   /* Single achievement form */
@@ -1661,7 +1895,7 @@
     ).join("");
   }
   function toggleLootForm(){
-    document.getElementById("am-loot-form").classList.toggle("hidden", !document.getElementById("am-attach-loot").checked);
+    document.getElementById("am-loot-form").classList.toggle("hidden",!document.getElementById("am-attach-loot").checked);
   }
   function createSingleAchievement(){
     const name=document.getElementById("am-name").value.trim();
@@ -1671,17 +1905,15 @@
     let loot=null;
     if(document.getElementById("am-attach-loot").checked){
       const ln=document.getElementById("am-loot-name").value.trim();
-      if(ln){loot={id:"loot_"+Date.now().toString(36),name:ln,description:document.getElementById("am-loot-desc").value.trim(),effect:document.getElementById("am-loot-effect").value.trim(),type:"wondrous_item",rarity:"uncommon"};}
+      if(ln){loot={id:"loot_"+Date.now().toString(36),name:ln,description:document.getElementById("am-loot-desc").value.trim(),effect:document.getElementById("am-loot-effect").value.trim(),type:"wondrous",rarity:"uncommon"};}
     }
     campaignState.achievements.push({
-      id:"ach_"+Date.now().toString(36),
-      name,
+      id:"ach_"+Date.now().toString(36),name,
       description:document.getElementById("am-desc").value.trim(),
       earnedBy:Object.keys(earnedBy).length?earnedBy:null,
-      acknowledgedBy:[],
+      acknowledgedBy:[],notifyPlayerAt:null,awardedAt:null,
       rewards:{gold:numVal("am-gold"),lootId:loot?loot.id:null},
-      loot,
-      isArchived:false,glow:false,createdAt:new Date().toISOString()
+      loot,isArchived:false,glow:false,createdAt:new Date().toISOString()
     });
     resetAchForm();renderAchievementList();scheduleSync(null);
     toast("Achievement created.","success");
@@ -1706,15 +1938,9 @@
     for(let i=0;i<lines.length;i++){
       const t=lines[i].trim();
       if(!t)continue;
-      // Character name: ALL CAPS word 3-12 chars alone on line
       if(/^[A-Z]{3,12}$/.test(t)){finalizeAch();curChar=t;continue;}
-      // Achievement number: "1. "Name""
       const numM=t.match(/^(\d+)\.\s*"?(.+?)"?\s*$/);
-      if(numM){
-        finalizeAch();
-        curAch={character:curChar,number:parseInt(numM[1],10),name:numM[2].replace(/^"|"$/g,"").trim(),trigger:"",reward:{name:"",description:"",effect:""},aiMessage:""};
-        continue;
-      }
+      if(numM){finalizeAch();curAch={character:curChar,number:parseInt(numM[1],10),name:numM[2].replace(/^"|"$/g,"").trim(),trigger:"",reward:{name:"",description:"",effect:""},aiMessage:""};continue;}
       if(curAch){
         if(/^Trigger:/i.test(t))curAch.trigger=t.replace(/^Trigger:\s*/i,"");
         else if(/^Reward:/i.test(t))curAch.reward.name=t.replace(/^Reward:\s*/i,"").replace(/^"|"$/g,"").trim();
@@ -1743,21 +1969,17 @@
     _bulkPreviewData.forEach((a,i)=>{
       const charId=campaignState.characters.find(c=>c.name.toUpperCase()===(a.character||"").toUpperCase())?.id;
       let loot=null;
-      if(a.reward.name){loot={id:"loot_"+Date.now().toString(36)+"_"+i,name:a.reward.name,description:a.reward.description,effect:a.reward.effect,type:"wondrous_item",rarity:"rare"};}
+      if(a.reward.name){loot={id:"loot_"+Date.now().toString(36)+"_"+i,name:a.reward.name,description:a.reward.description,effect:a.reward.effect,type:"wondrous",rarity:"rare"};}
       campaignState.achievements.push({
-        id:"ach_"+Date.now().toString(36)+"_"+i,
-        name:a.name,description:a.trigger,
+        id:"ach_"+Date.now().toString(36)+"_"+i,name:a.name,description:a.trigger,
         earnedBy:charId?{[charId]:new Date().toISOString()}:null,
-        acknowledgedBy:[],
+        acknowledgedBy:[],notifyPlayerAt:null,awardedAt:null,
         rewards:{gold:0,lootId:loot?loot.id:null},
         loot,isArchived:false,glow:false,createdAt:new Date().toISOString()
       });
       count++;
     });
-    resetBulkForm();
-    switchAchTab("active");
-    renderAchievementList();
-    scheduleSync(null);
+    resetBulkForm();switchAchTab("active");renderAchievementList();scheduleSync(null);
     toast("Imported "+count+" achievement(s).","success");
   }
   function resetBulkForm(){
@@ -1766,7 +1988,6 @@
     document.getElementById("bulk-import-btn").classList.add("hidden");
     _bulkPreviewData=[];
   }
-
   /* ============================================================
      MODAL TABS
      ============================================================ */
