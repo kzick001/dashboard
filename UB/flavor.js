@@ -2,7 +2,7 @@
 // UNDEAD BARRAGE - FLAVOR & TEXT CONTENT
 // ==========================================
 
-export const FlavorText = {
+const FlavorText = {
     // Tutorial transmissions by wave
     tutorials: {
         1: "Welcome to the apocalypse. Use WASD to move and LMB to blast the horde to pieces! Don't let them through. There are three dozen families huddled in the bunker behind you, and I am not digging any more tiny graves today. (Press [R] to reload.)",
