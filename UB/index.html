@@ -136,41 +136,68 @@
             color: #a1a1aa;
             display: none;
         }
+        /* Top bar: wave left, combo center, funds right */
         #hud-top {
             position: absolute;
-            top: 14px; left: 0; right: 0;
+            top: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 500px;
             display: flex;
             justify-content: space-between;
-            padding: 0 20px;
+            align-items: center;
+            padding: 8px 14px;
+            background: rgba(0,0,0,0.72);
+            border-bottom: 1px solid #27272a;
+            box-sizing: border-box;
         }
-        #hud-wave { font-size: 1.4em; color: #0ea5e9; letter-spacing: 2px; }
-        #hud-combo { font-size: 1.1em; color: #ffd43b; }
-        #hud-funds { font-size: 1.4em; color: #4ade80; }
-        #hud-bottom {
+        #hud-wave  { font-size: 1.1em; color: #0ea5e9; letter-spacing: 2px; }
+        #hud-combo { font-size: 0.95em; color: #ffd43b; text-align: center; flex: 1; }
+        #hud-funds { font-size: 1.1em; color: #4ade80; text-align: right; }
+
+        /* Bottom panel: centered, road-width */
+        #hud-panel {
             position: absolute;
-            bottom: 14px; left: 20px;
+            bottom: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 500px;
+            background: rgba(0,0,0,0.78);
+            border-top: 1px solid #27272a;
+            padding: 8px 14px 10px;
             display: flex;
-            flex-direction: column;
-            gap: 6px;
+            justify-content: space-between;
+            align-items: flex-end;
+            box-sizing: border-box;
+            gap: 10px;
         }
-        #hud-hp { font-size: 1.3em; color: #ef4444; }
-        #hud-armor { font-size: 1.0em; color: #60a5fa; }
-        #hud-grenades { font-size: 1.0em; color: #fb923c; }
-        #hud-weapon { position: absolute; bottom: 14px; right: 20px; text-align: right; }
-        #hud-wpn-name { font-size: 1.2em; color: #0ea5e9; }
-        #hud-ammo { font-size: 1.6em; color: #e4e4e7; }
+        #hud-left  { display: flex; flex-direction: column; gap: 3px; }
+        #hud-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+        #hud-hp       { font-size: 1.15em; color: #ef4444; }
+        #hud-armor    { font-size: 0.9em;  color: #60a5fa; min-height: 1.1em; }
+        #hud-grenades { font-size: 0.9em;  color: #fb923c; min-height: 1.1em; }
+        #hud-wpn-icon { width: 48px; height: 32px; display: block; object-fit: contain; image-rendering: pixelated; }
+        #hud-wpn-name { font-size: 1.0em; color: #0ea5e9; }
+        #hud-ammo     { font-size: 1.4em; color: #e4e4e7; line-height: 1; }
+        #hud-reload-bar {
+            height: 3px;
+            background: #0ea5e9;
+            width: 0%;
+            margin-top: 2px;
+            transition: none;
+        }
         #hud-transmission {
             position: absolute;
-            top: 60px; left: 50%;
+            top: 52px; left: 50%;
             transform: translateX(-50%);
-            max-width: 600px;
+            width: 500px;
             text-align: center;
             color: #a1a1aa;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.82);
             padding: 10px 16px;
             border: 1px solid #27272a;
+            border-top: none;
             display: none;
-            font-size: 0.95em;
+            font-size: 0.9em;
+            box-sizing: border-box;
         }
 
         /* ===== Virtual Gamepad ===== */
@@ -243,13 +270,33 @@
         #shop-tabs .btn { margin: 0; }
         #shop-body { min-height: 240px; }
         #shop-body .shop-funds { color: #4ade80; margin-bottom: 10px; }
+        #shop-operator {
+            display: flex; gap: 16px; margin-bottom: 12px;
+            padding: 8px 10px; border: 1px solid #1e293b;
+            background: rgba(0,0,0,0.4); font-size: 0.85em;
+        }
+        #shop-operator span { color: #71717a; }
+        #shop-operator strong { color: #a1a1aa; margin-left: 4px; }
         #shop-rack {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 6px;
             margin-bottom: 14px;
         }
-        #shop-rack .btn { margin: 0; padding: 8px; font-size: 0.7em; }
+        .rack-slot {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 4px; padding: 6px 4px;
+            background: rgba(0,0,0,0.4); border: 1px solid #27272a;
+            cursor: pointer; font-family: inherit; color: #0ea5e9;
+            font-size: 0.65em; text-transform: uppercase;
+            transition: 0.15s; text-align: center; min-height: 64px;
+            justify-content: center;
+        }
+        .rack-slot:hover { border-color: #0ea5e9; background: rgba(14,165,233,0.08); }
+        .rack-slot.selected { border-color: #0ea5e9; background: rgba(14,165,233,0.15); }
+        .rack-slot.locked { border-color: #27272a; color: #3f3f46; cursor: default; }
+        .rack-slot.locked:hover { border-color: #27272a; background: rgba(0,0,0,0.4); }
+        .rack-slot canvas { display: block; }
         .mastery-wrap { border: 1px solid #27272a; padding: 10px; margin-bottom: 10px; }
         .mastery-wrap .mastery-head { color: #0ea5e9; margin-bottom: 8px; }
         .mastery-row {
@@ -268,6 +315,10 @@
         .venture-locked { color: #71717a; text-align: center; padding: 40px; }
         .shop-action { margin-top: 6px; font-size: 0.85em; }
         .harvest-consolation { grid-column: 1 / 4; color: #71717a; }
+        @keyframes reloadSweep {
+            from { width: 0%; }
+            to   { width: 100%; }
+        }
 
         /* Version tag */
         #version-tag {
@@ -366,16 +417,20 @@
         <div id="hud-combo"></div>
         <div id="hud-funds"></div>
     </div>
-    <div id="hud-bottom">
-        <div id="hud-hp"></div>
-        <div id="hud-armor"></div>
-        <div id="hud-grenades"></div>
-    </div>
-    <div id="hud-weapon">
-        <div id="hud-wpn-name"></div>
-        <div id="hud-ammo"></div>
-    </div>
     <div id="hud-transmission"></div>
+    <div id="hud-panel">
+        <div id="hud-left">
+            <div id="hud-hp"></div>
+            <div id="hud-armor"></div>
+            <div id="hud-grenades"></div>
+        </div>
+        <div id="hud-right">
+            <canvas id="hud-wpn-icon" width="48" height="32"></canvas>
+            <div id="hud-wpn-name"></div>
+            <div id="hud-ammo"></div>
+            <div id="hud-reload-bar"></div>
+        </div>
+    </div>
 </div>
 
 <!-- Virtual Gamepad (mobile; toggled in settings) -->
@@ -392,7 +447,7 @@
 
 <script src="config.js"></script>
 <script src="flavor.js"></script>
-<script src="game.js" type="module"></script>
+<script src="game.js"></script>
 
 </body>
 </html>
