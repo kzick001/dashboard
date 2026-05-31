@@ -1,14 +1,14 @@
 // ==========================================
 // UNDEAD BARRAGE V16.8.0 - GLOBAL CONFIGURATION
 // ==========================================
-export const GameConfig = {
+const GameConfig = {
     
     // 1. DIRECTOR & PACING
     director: {
         budgetBase: 15,
-        budgetScaling: 1.15, // Exponential Budget = 15 * (1.15 ^ Wave)
-        spawnPauseMin: 1500,
-        spawnPauseMax: 3500,
+        budgetScaling: 1.12, // Exponential Budget = 15 * (1.12 ^ Wave)
+        spawnPauseMin: 800,
+        spawnPauseMax: 1800,
         burstClumpMin: 3,
         burstClumpMax: 12,
         burstDelay: 150,
@@ -64,8 +64,8 @@ export const GameConfig = {
     weapons: [
         { // 0: Pistol
             name: "Pistol", archetype: "precision", shape: "slug", pattern: "uniform", evolvesTo: 1, baseUpgradeCost: 150, iconId: 0,
-            damage: 25, splashRadius: 0, critChance: 20, critMult: 2.0, speed: 1000, range: 2000, rate: 400, spread: 2, multi: 1, knockback: 5, pierce: false, bloom: false,
-            magSize: 12, reloadTime: 1200, audioKey: "sfx_pistol", audioVol: 0.5, pitchVariance: 0.1, camShake: 0.002, recoilPush: 0
+            damage: 35, splashRadius: 0, critChance: 20, critMult: 2.0, speed: 1000, range: 2000, rate: 400, spread: 2, multi: 1, knockback: 5, pierce: false, bloom: false,
+            magSize: 12, reloadTime: 1200, audioKey: "sfx_pistol", audioVol: 0.5, pitchVariance: 0.1, camShake: 0, recoilPush: 0
         },
         { // 1: Revolver
             name: "Revolver", archetype: "precision", shape: "tracer", pattern: "uniform", baseUpgradeCost: 400, iconId: 0,
