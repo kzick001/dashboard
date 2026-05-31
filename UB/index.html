@@ -136,47 +136,60 @@
             color: #a1a1aa;
             display: none;
         }
-        /* Top bar: wave left, combo center, funds right */
+        /* === TOP BAR === */
         #hud-top {
             position: absolute;
             top: 0; left: 50%;
             transform: translateX(-50%);
-            width: 500px;
+            width: 560px;
+            background: rgba(0,0,0,0.80);
+            border-bottom: 1px solid #27272a;
+            padding: 8px 16px 0;
+            box-sizing: border-box;
+        }
+        #hud-top-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 14px;
-            background: rgba(0,0,0,0.72);
-            border-bottom: 1px solid #27272a;
-            box-sizing: border-box;
+            margin-bottom: 6px;
         }
-        #hud-wave  { font-size: 1.1em; color: #0ea5e9; letter-spacing: 2px; }
-        #hud-combo { font-size: 0.95em; color: #ffd43b; text-align: center; flex: 1; }
-        #hud-funds { font-size: 1.1em; color: #4ade80; text-align: right; }
+        #hud-wave { font-size: 1.15em; color: #0ea5e9; letter-spacing: 2px; }
+        #hud-combo { font-size: 0.9em; color: #ffd43b; text-align: center; flex: 1; }
+        #hud-funds { font-size: 1.15em; color: #4ade80; text-align: right; }
+        #hud-wave-progress-wrap {
+            height: 3px;
+            background: #1a1a1a;
+            margin-bottom: 0;
+        }
+        #hud-wave-progress {
+            height: 3px;
+            background: #ef4444;
+            width: 100%;
+            transition: width 0.4s linear;
+        }
 
-        /* Bottom panel: centered, road-width */
-        #hud-panel {
+        /* === BOTTOM PANEL === */
+        #hud-bottom {
             position: absolute;
             bottom: 0; left: 50%;
             transform: translateX(-50%);
-            width: 500px;
-            background: rgba(0,0,0,0.78);
+            width: 560px;
+            background: rgba(0,0,0,0.80);
             border-top: 1px solid #27272a;
-            padding: 8px 14px 10px;
+            padding: 8px 16px 10px;
+            box-sizing: border-box;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            box-sizing: border-box;
             gap: 10px;
         }
-        #hud-left  { display: flex; flex-direction: column; gap: 3px; }
+        #hud-left { display: flex; flex-direction: column; gap: 3px; }
         #hud-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
-        #hud-hp       { font-size: 1.15em; color: #ef4444; }
-        #hud-armor    { font-size: 0.9em;  color: #60a5fa; min-height: 1.1em; }
-        #hud-grenades { font-size: 0.9em;  color: #fb923c; min-height: 1.1em; }
-        #hud-wpn-icon { width: 48px; height: 32px; display: block; object-fit: contain; image-rendering: pixelated; }
+        #hud-hp { font-size: 1.15em; color: #ef4444; letter-spacing: 1px; }
+        #hud-armor { font-size: 0.9em; color: #60a5fa; min-height: 1.1em; letter-spacing: 1px; }
+        #hud-grenades { font-size: 0.9em; color: #fb923c; min-height: 1.1em; }
         #hud-wpn-name { font-size: 1.0em; color: #0ea5e9; }
-        #hud-ammo     { font-size: 1.4em; color: #e4e4e7; line-height: 1; }
+        #hud-ammo { font-size: 1.4em; color: #e4e4e7; line-height: 1; }
         #hud-reload-bar {
             height: 3px;
             background: #0ea5e9;
@@ -184,20 +197,56 @@
             margin-top: 2px;
             transition: none;
         }
+        @keyframes reloadSweep {
+            from { width: 0%; }
+            to   { width: 100%; }
+        }
+
+        /* === TRANSMISSION === */
         #hud-transmission {
             position: absolute;
-            top: 52px; left: 50%;
+            top: 50px; left: 50%;
             transform: translateX(-50%);
-            width: 500px;
+            width: 560px;
             text-align: center;
             color: #a1a1aa;
-            background: rgba(0, 0, 0, 0.82);
+            background: rgba(0, 0, 0, 0.85);
             padding: 10px 16px;
             border: 1px solid #27272a;
             border-top: none;
             display: none;
             font-size: 0.9em;
             box-sizing: border-box;
+            pointer-events: auto;
+        }
+
+        /* === BOSS HEALTH BAR === */
+        #hud-boss-bar {
+            position: absolute;
+            top: 50px; left: 50%;
+            transform: translateX(-50%);
+            width: 560px;
+            padding: 6px 14px;
+            background: rgba(0,0,0,0.85);
+            border: 1px solid #ef4444;
+            border-top: none;
+            box-sizing: border-box;
+            display: none;
+        }
+        #hud-boss-label {
+            font-size: 0.72em;
+            color: #ef4444;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+        #hud-boss-hp-track {
+            background: #1a1a1a;
+            height: 8px;
+        }
+        #hud-boss-hp-fill {
+            height: 100%;
+            background: #ef4444;
+            transition: width 0.2s;
         }
 
         /* ===== Virtual Gamepad ===== */
@@ -266,17 +315,10 @@
         }
 
         /* ===== Shop & Harvest ===== */
-        #shop-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-        #shop-tabs .btn { margin: 0; }
+        #shop-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        #shop-tabs .btn { margin: 0; flex: 1; }
         #shop-body { min-height: 240px; }
-        #shop-body .shop-funds { color: #4ade80; margin-bottom: 10px; }
-        #shop-operator {
-            display: flex; gap: 16px; margin-bottom: 12px;
-            padding: 8px 10px; border: 1px solid #1e293b;
-            background: rgba(0,0,0,0.4); font-size: 0.85em;
-        }
-        #shop-operator span { color: #71717a; }
-        #shop-operator strong { color: #a1a1aa; margin-left: 4px; }
+        #shop-body .shop-funds { color: #4ade80; margin-bottom: 10px; font-size: 1.1em; }
         #shop-rack {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -284,19 +326,29 @@
             margin-bottom: 14px;
         }
         .rack-slot {
-            display: flex; flex-direction: column; align-items: center;
-            gap: 4px; padding: 6px 4px;
-            background: rgba(0,0,0,0.4); border: 1px solid #27272a;
-            cursor: pointer; font-family: inherit; color: #0ea5e9;
-            font-size: 0.65em; text-transform: uppercase;
-            transition: 0.15s; text-align: center; min-height: 64px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 4px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid #27272a;
+            cursor: pointer;
+            font-family: inherit;
+            color: #0ea5e9;
+            font-size: 0.62em;
+            text-transform: uppercase;
+            transition: 0.15s;
+            text-align: center;
+            min-height: 64px;
             justify-content: center;
         }
         .rack-slot:hover { border-color: #0ea5e9; background: rgba(14,165,233,0.08); }
-        .rack-slot.selected { border-color: #0ea5e9; background: rgba(14,165,233,0.15); }
+        .rack-slot.selected { border-color: #0ea5e9; background: rgba(14,165,233,0.15); box-shadow: inset 0 0 8px rgba(14,165,233,0.2); }
         .rack-slot.locked { border-color: #27272a; color: #3f3f46; cursor: default; }
         .rack-slot.locked:hover { border-color: #27272a; background: rgba(0,0,0,0.4); }
-        .rack-slot canvas { display: block; }
+        .rack-slot img { width: 40px; height: 28px; object-fit: contain; image-rendering: auto; }
+        .rack-slot.locked img { opacity: 0.2; }
         .mastery-wrap { border: 1px solid #27272a; padding: 10px; margin-bottom: 10px; }
         .mastery-wrap .mastery-head { color: #0ea5e9; margin-bottom: 8px; }
         .mastery-row {
@@ -306,6 +358,10 @@
             margin-bottom: 6px;
         }
         .mastery-row .btn { width: 120px; margin: 0; padding: 4px; font-size: 0.7em; }
+        .mastery-pips { color: #27272a; font-size: 0.9em; margin: 0 8px; }
+        .mastery-pips span { color: #0ea5e9; }
+        .supply-section { margin-bottom: 14px; }
+        .supply-section-label { color: #52525b; font-size: 0.72em; letter-spacing: 3px; margin-bottom: 6px; border-bottom: 1px solid #27272a; padding-bottom: 4px; }
         #harvest-intro { color: #71717a; font-size: 0.9em; margin-bottom: 16px; }
         #harvest-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         #harvest-cards .btn { text-align: left; height: auto; padding: 14px; white-space: normal; }
@@ -313,12 +369,8 @@
         .harvest-desc { font-size: 0.8em; color: #a1a1aa; margin-bottom: 6px; }
         .harvest-quote { font-size: 0.75em; color: #71717a; font-style: italic; }
         .venture-locked { color: #71717a; text-align: center; padding: 40px; }
-        .shop-action { margin-top: 6px; font-size: 0.85em; }
+        .shop-action { margin-top: 4px; font-size: 0.82em; padding: 10px 16px; }
         .harvest-consolation { grid-column: 1 / 4; color: #71717a; }
-        @keyframes reloadSweep {
-            from { width: 0%; }
-            to   { width: 100%; }
-        }
 
         /* Version tag */
         #version-tag {
@@ -387,13 +439,22 @@
     </div>
 </div>
 
+<!-- Tutorial Gate Screen -->
+<div id="screen-tutorial" class="modal-overlay">
+    <div class="modal-panel" style="max-width: 600px; text-align: center;">
+        <div id="tutorial-wave-label" style="font-size: 0.85em; color: #52525b; letter-spacing: 4px; margin-bottom: 12px;"></div>
+        <div id="tutorial-msg" style="font-size: 1.05em; line-height: 1.85; color: #e4e4e7; margin-bottom: 28px; text-align: left;"></div>
+        <button id="btn-tutorial-ack" class="btn">[ ACKNOWLEDGE ]</button>
+    </div>
+</div>
+
 <!-- Shop Screen (populated by ShopManager) -->
 <div id="screen-shop" class="modal-overlay">
     <div class="modal-panel" style="max-width: 760px;">
         <h2 class="modal-title">THE ARMORY</h2>
         <div id="shop-tabs">
             <button class="btn shop-tab" data-tab="firearms">FIREARMS</button>
-            <button class="btn shop-tab" data-tab="logistics">LOGISTICS</button>
+            <button class="btn shop-tab" data-tab="logistics">SUPPLY</button>
             <button class="btn shop-tab" data-tab="venture">VENTURE</button>
         </div>
         <div id="shop-body"></div>
@@ -413,19 +474,27 @@
 <!-- In-Game HUD (shown while a run is active) -->
 <div id="hud-root">
     <div id="hud-top">
-        <div id="hud-wave"></div>
-        <div id="hud-combo"></div>
-        <div id="hud-funds"></div>
+        <div id="hud-top-row">
+            <div id="hud-wave"></div>
+            <div id="hud-combo"></div>
+            <div id="hud-funds"></div>
+        </div>
+        <div id="hud-wave-progress-wrap">
+            <div id="hud-wave-progress"></div>
+        </div>
+    </div>
+    <div id="hud-boss-bar">
+        <div id="hud-boss-label">BOSS</div>
+        <div id="hud-boss-hp-track"><div id="hud-boss-hp-fill"></div></div>
     </div>
     <div id="hud-transmission"></div>
-    <div id="hud-panel">
+    <div id="hud-bottom">
         <div id="hud-left">
             <div id="hud-hp"></div>
             <div id="hud-armor"></div>
             <div id="hud-grenades"></div>
         </div>
         <div id="hud-right">
-            <canvas id="hud-wpn-icon" width="48" height="32"></canvas>
             <div id="hud-wpn-name"></div>
             <div id="hud-ammo"></div>
             <div id="hud-reload-bar"></div>
@@ -443,11 +512,11 @@
 <!-- Dev Panel (buttons injected by HUDManager; toggled in settings) -->
 <div id="hud-dev"></div>
 
-<div id="version-tag">v0.5</div>
+<div id="version-tag">v1.2</div>
 
 <script src="config.js"></script>
 <script src="flavor.js"></script>
-<script src="game.js"></script>
+<script src="game.js" type="module"></script>
 
 </body>
 </html>
