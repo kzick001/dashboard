@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Launchpad V2.5</title>
+    <title>K-Zick — Development Launchpad</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -168,8 +168,7 @@
             100% { background-position: 200% 0; }
         }
 
-        /* Haptic Interaction Cues */
-        .haptic-trigger:active { transform: scale(0.95); transition: transform 0.1s; }
+        /* Haptic Interaction Cues — no visual scale, vibration only */
 
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -287,7 +286,7 @@
         
         <div class="fixed top-0 w-full px-8 py-4 flex justify-between items-center z-50 bg-black/40 backdrop-blur-2xl border-b border-white/5">
             <div class="flex items-center gap-4 font-mono text-[10px] uppercase tracking-[0.2em] cursor-default select-none text-slate-500">
-                <span>KZICK // LAUNCHPAD V2.5</span>
+                <span>K-ZICK // DEV LAUNCHPAD</span>
             </div>
             
             <div class="flex items-center gap-6">
@@ -306,7 +305,8 @@
  <div class="flex-1 flex flex-col items-center px-6 w-full pt-32 pb-32">
             
             <header class="mb-6 text-center w-full max-w-6xl">
-                <h1 class="text-6xl sm:text-8xl font-light tracking-tight mb-2 text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-500">Launchpad</h1>
+                <h1 class="text-6xl sm:text-8xl font-light tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-500">K-Zick</h1>
+                <p class="text-[10px] font-mono uppercase tracking-[0.2em] text-cyan-400 mt-2">Development Launchpad</p>
             </header>
 
             <div id="categoryBar" class="w-full max-w-5xl flex gap-2 overflow-x-auto mb-6"></div>
@@ -401,7 +401,10 @@
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="editor-label">SVG Icon Code</label>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="editor-label" style="margin-bottom:0">SVG Icon Code</label>
+                            <button id="cleanSvgBtn" type="button" class="text-[10px] font-mono text-cyan-400 hover:text-cyan-300 uppercase tracking-widest transition-colors">✦ Clean SVG</button>
+                        </div>
                         <textarea id="editorIcon" class="editor-input editor-textarea h-32" placeholder='<svg fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24">&#10;  <path .../>&#10;</svg>'></textarea>
                     </div>
                     <div>
@@ -667,6 +670,25 @@
             editingTileId = null;
         }
 
+        // SVG syntax normalizer — strips xmlns, URL-encodes, converts hardcoded colors to currentColor
+        function cleanSvgSyntax(svgString) {
+            if (!svgString) return '';
+            let s = svgString.trim();
+            // Remove xmlns
+            s = s.replace(/\s*xmlns=['"][^'"]*['"]/g, '');
+            // URL-decode %23 → # before color replacement
+            s = s.replace(/%23/g, '#');
+            // Replace hardcoded hex colors (3 or 6 digit) in fill/stroke attrs with currentColor
+            s = s.replace(/((?:fill|stroke)=['"])\s*#[0-9a-fA-F]{3,6}\s*(['"])/g, '$1currentColor$2');
+            // Remove fill="none" only from root <svg> — leave it on child elements
+            // (preserve shape outlines by keeping fill=none on paths if that's intentional)
+            // Add class="w-full h-full" to root <svg> if class is missing
+            if (/<svg(?![^>]*\bclass=)[^>]*>/.test(s)) {
+                s = s.replace(/(<svg)/, '$1 class="w-full h-full"');
+            }
+            return s;
+        }
+
         function updateSvgPreview() {
             const val = document.getElementById('editorIcon').value.trim();
             const preview = document.getElementById('svgPreview');
@@ -705,6 +727,11 @@
 
         document.getElementById('addLinkBtn').addEventListener('click', () => addLinkRow());
         document.getElementById('editorIcon').addEventListener('input', updateSvgPreview);
+        document.getElementById('cleanSvgBtn').addEventListener('click', () => {
+            const ta = document.getElementById('editorIcon');
+            ta.value = cleanSvgSyntax(ta.value);
+            updateSvgPreview();
+        });
         document.getElementById('closeEditorBtn').addEventListener('click', closeEditor);
         document.getElementById('cancelEditorBtn').addEventListener('click', closeEditor);
 
