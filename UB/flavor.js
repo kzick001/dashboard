@@ -2,7 +2,7 @@
 // UNDEAD BARRAGE - FLAVOR & TEXT CONTENT
 // ==========================================
 
-const FlavorText = {
+export const FlavorText = {
     // Tutorial transmissions by wave
     tutorials: {
         1: "Welcome to the apocalypse. Use WASD to move and LMB to blast the horde to pieces! Don't let them through. There are three dozen families huddled in the bunker behind you, and I am not digging any more tiny graves today. (Press [R] to reload.)",
@@ -129,8 +129,9 @@ const FlavorText = {
         returnToBattlefield: "RETURN TO BATTLEFIELD"
     },
 
-    // Logistics tab
+    // Supply tab (formerly Logistics)
     logistics: {
+        medkit: "Medkit — Restore 1 HP",
         consumables: "CONSUMABLES",
         kevlar: "Kevlar Plates",
         grenades: "Frag Grenades",
@@ -175,5 +176,22 @@ const FlavorText = {
     },
 
     // Wave clear message
-    waveClear: "WAVE CLEARED"
+    waveClear: "WAVE CLEARED",
+
+    // Boss phase transmissions
+    bossPhase2: "BOSS ENRAGED — PHASE 2",
+    bossPhase3: "BOSS CRITICAL — FINAL PHASE",
+    bossDefeated: "BOSS DEFEATED",
+
+    // Wave threat preview
+    incoming: "INCOMING",
+
+    // Kill milestones
+    milestones: {
+        50:   "HALF CENTURY — 50 DEAD",
+        100:  "CENTURY KILL — 100 DEAD",
+        250:  "QUARTERMASTER'S NIGHTMARE — 250 DEAD",
+        500:  "MASS EXTINCTION — 500 DEAD",
+        1000: "APOCALYPSE ACHIEVED — 1000 DEAD"
+    }
 };
