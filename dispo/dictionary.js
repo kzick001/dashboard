@@ -212,5 +212,46 @@ export const LUCID_MAP = {
   "rythm-l-orange": { "t1": "Vape", "t2": "Resin Vape", "type": "Sativa", "brand": "RYTHM", "strain": "L'Orange", "unitCount": "", "unitSize": "" },
   "rythm-la-kush-cake": { "t1": "Vape", "t2": "Resin Vape", "type": "Indica", "brand": "RYTHM", "strain": "La Kush Cake", "unitCount": "", "unitSize": "" },
   "sireel-4-frit-multi-marbles": { "t1": "Gear", "t2": "Accessories", "type": "N/A", "brand": "SirEEL", "strain": "4\" Frit & Multi Marbles", "unitCount": "", "unitSize": "" },
-  "vibes-ultra-thin-papers-1-1-4-black-50pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Vibes", "strain": "Ultra Thin Papers 1 1/4 - Black", "unitCount": 50, "unitSize": "" }
+  "vibes-ultra-thin-papers-1-1-4-black-50pk": { "t1": "Gear", "t2": "Papers / Wraps", "type": "N/A", "brand": "Vibes", "strain": "Ultra Thin Papers 1 1/4 - Black", "unitCount": 50, "unitSize": "" },
+
+  // ==========================================
+  // GREEN GOODS MISSING ENTRIES (v1.1)
+  // ==========================================
+  "simple-fried-ice-cream":      { "t1": "Flower", "t2": "Smalls", "type": "Hybrid",  "brand": "Simple", "strain": "Fried Ice Cream",      "unitCount": "", "unitSize": "" },
+  "simple-garlic-death":         { "t1": "Flower", "t2": "Smalls", "type": "Indica",  "brand": "Simple", "strain": "Garlic Death",          "unitCount": "", "unitSize": "" },
+  "simple-super-sonic-blizzard": { "t1": "Flower", "t2": "Smalls", "type": "Indica",  "brand": "Simple", "strain": "Super Sonic Blizzard",  "unitCount": "", "unitSize": "" },
+  "simple-la-kush-cake":         { "t1": "Flower", "t2": "Smalls", "type": "Indica",  "brand": "Simple", "strain": "LA Kush Cake",           "unitCount": "", "unitSize": "" },
+  "vireo-blue-dream":            { "t1": "Flower", "t2": "Mixed Bud", "type": "Sativa",  "brand": "Vireo", "strain": "Blue Dream",           "unitCount": "", "unitSize": "" },
+  "vireo-rain-drops":            { "t1": "Flower", "t2": "Mixed Bud", "type": "Hybrid",  "brand": "Vireo", "strain": "Rain Drops",           "unitCount": "", "unitSize": "" },
+  "vireo-gmo-punch":             { "t1": "Flower", "t2": "Mixed Bud", "type": "Hybrid",  "brand": "Vireo", "strain": "GMO Punch",            "unitCount": "", "unitSize": "" },
+  "vireo-sour-bubba":            { "t1": "Flower", "t2": "Mixed Bud", "type": "Indica",  "brand": "Vireo", "strain": "Sour Bubba",           "unitCount": "", "unitSize": "" },
+
+  // ==========================================
+  // RISE MISSING ENTRIES (v1.1)
+  // ==========================================
+
+  // Good Green — Rise house brand (11 entries)
+  "good-green-black-maple":   { "t1": "Flower", "t2": "Flower",             "type": "Indica",  "brand": "Good Green", "strain": "Black Maple",      "unitCount": "", "unitSize": "" },
+  "good-green-chem-n-cookies":{ "t1": "Flower", "t2": "Flower",             "type": "Hybrid",  "brand": "Good Green", "strain": "Chem 'N Cookies",  "unitCount": "", "unitSize": "" },
+  "good-green-gas-glue":      { "t1": "Flower", "t2": "Flower",             "type": "Hybrid",  "brand": "Good Green", "strain": "Gas & Glue",        "unitCount": "", "unitSize": "" },
+  "good-green-hybrid":        { "t1": "Pre-Roll", "t2": "Standard Pre-Roll","type": "Hybrid",  "brand": "Good Green", "strain": "Hybrid",            "unitCount": 1,  "unitSize": "0.5g" },
+  "good-green-indica":        { "t1": "Pre-Roll", "t2": "Standard Pre-Roll","type": "Indica",  "brand": "Good Green", "strain": "Indica",            "unitCount": 1,  "unitSize": "0.5g" },
+  "good-green-jack-s-delight":{ "t1": "Flower", "t2": "Flower",             "type": "Sativa",  "brand": "Good Green", "strain": "Jack's Delight",   "unitCount": "", "unitSize": "" },
+  "good-green-mystic-mint":   { "t1": "Flower", "t2": "Flower",             "type": "Sativa",  "brand": "Good Green", "strain": "Mystic Mint",       "unitCount": "", "unitSize": "" },
+  "good-green-omg":           { "t1": "Flower", "t2": "Flower",             "type": "Sativa",  "brand": "Good Green", "strain": "OMG",               "unitCount": "", "unitSize": "" },
+  "good-green-paradise-snacks":{ "t1": "Flower", "t2": "Flower",            "type": "Sativa",  "brand": "Good Green", "strain": "Paradise Snacks",   "unitCount": "", "unitSize": "" },
+  "good-green-sudzzz":        { "t1": "Flower", "t2": "Flower",             "type": "Indica",  "brand": "Good Green", "strain": "Sudzzz",            "unitCount": "", "unitSize": "" },
+  "good-green-zack-s-cake-11":{ "t1": "Flower", "t2": "Flower",             "type": "Hybrid",  "brand": "Good Green", "strain": "Zack's Cake 11",   "unitCount": "", "unitSize": "" },
+
+  // RYTHM (10 entries)
+  "rythm-afternoon-delight-4": { "t1": "Flower", "t2": "Flower", "type": "Hybrid",  "brand": "RYTHM", "strain": "Afternoon Delight #4", "unitCount": "", "unitSize": "" },
+  "rythm-animal-face":         { "t1": "Flower", "t2": "Flower", "type": "Hybrid",  "brand": "RYTHM", "strain": "Animal Face",          "unitCount": "", "unitSize": "" },
+  "rythm-animal-scout":        { "t1": "Flower", "t2": "Flower", "type": "Sativa",  "brand": "RYTHM", "strain": "Animal Scout",         "unitCount": "", "unitSize": "" },
+  "rythm-bananaconda":         { "t1": "Flower", "t2": "Flower", "type": "Hybrid",  "brand": "RYTHM", "strain": "Bananaconda",          "unitCount": "", "unitSize": "" },
+  "rythm-brownie-scout":       { "t1": "Flower", "t2": "Flower", "type": "Indica",  "brand": "RYTHM", "strain": "Brownie Scout",        "unitCount": "", "unitSize": "" },
+  "rythm-durban-z":            { "t1": "Flower", "t2": "Flower", "type": "Sativa",  "brand": "RYTHM", "strain": "Durban Z",             "unitCount": "", "unitSize": "" },
+  "rythm-gogurtz":             { "t1": "Flower", "t2": "Flower", "type": "Indica",  "brand": "RYTHM", "strain": "Gogurtz",              "unitCount": "", "unitSize": "" },
+  "rythm-jack-s-delight":      { "t1": "Flower", "t2": "Flower", "type": "Sativa",  "brand": "RYTHM", "strain": "Jack's Delight",      "unitCount": "", "unitSize": "" },
+  "rythm-runtz-s1":            { "t1": "Flower", "t2": "Flower", "type": "Indica",  "brand": "RYTHM", "strain": "Runtz S1",             "unitCount": "", "unitSize": "" },
+  "rythm-velcroz":             { "t1": "Flower", "t2": "Flower", "type": "Indica",  "brand": "RYTHM", "strain": "Velcroz",              "unitCount": "", "unitSize": "" }
 };
