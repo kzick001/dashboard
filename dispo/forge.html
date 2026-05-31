@@ -2,709 +2,676 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>LUCID Forge | Taxonomy Trainer v1.3.1</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LUCID Forge | Dictionary Review v2.0</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none'><path d='M32 52 L32 12 M32 52 L12 26 M32 52 L52 26' stroke='%2330d158' stroke-width='6' stroke-linecap='round'/><circle cx='32' cy='52' r='6' fill='%2330d158'/><circle cx='32' cy='12' r='6' fill='%2330d158'/><circle cx='12' cy='26' r='6' fill='%2330d158'/><circle cx='52' cy='26' r='6' fill='%2330d158'/></svg>">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0a0a0c; --glass: rgba(255, 255, 255, 0.03); --glass-hover: rgba(255, 255, 255, 0.08);
-      --glass-border: rgba(255, 255, 255, 0.06); --text-main: #f5f5f7; --text-muted: #86868b;
-      --accent: #5e5ce6; --success: #30d158; --danger: #ff453a; --warning: #ff9500;
+      --bg: #0a0a0c;
+      --glass: rgba(255,255,255,0.03);
+      --glass-hover: rgba(255,255,255,0.07);
+      --glass-border: rgba(255,255,255,0.06);
+      --text-main: #f5f5f7;
+      --text-muted: #86868b;
+      --accent: #5e5ce6;
+      --success: #30d158;
+      --danger: #ff453a;
+      --warning: #ff9500;
     }
-    * { box-sizing: border-box; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-main);
-      margin: 0; padding: 15px; -webkit-font-smoothing: antialiased;
-      display: flex; flex-direction: column; align-items: center; min-height: 100vh;
-    }
-    
-    .header { width: 100%; max-width: 1000px; text-align: center; margin-bottom: 15px; }
-    h1 { font-size: 28px; font-weight: 700; letter-spacing: 2px; margin: 0; }
-    h3 { font-size: 11px; font-weight: 300; letter-spacing: 4px; margin: 5px 0 0 0; color: var(--text-muted); text-transform: uppercase; }
-    
-    .mode-toggle { display: flex; max-width: 1000px; width: 100%; background: rgba(0,0,0,0.5); border-radius: 12px; padding: 4px; margin-bottom: 15px; border: 1px solid var(--glass-border); }
-    .mode-btn { flex: 1; padding: 10px; background: transparent; border: none; color: var(--text-muted); font-weight: 500; border-radius: 8px; cursor: pointer; transition: 0.2s; }
-    .mode-btn.active { background: var(--glass-hover); color: var(--text-main); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-
-    .panel {
-      background: var(--glass); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--glass-border); border-radius: 16px;
-      width: 100%; max-width: 1000px; padding: 20px; margin-bottom: 15px;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      padding: 20px;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
 
-    select, input, button {
-      font-family: 'Inter', sans-serif; font-size: 14px; width: 100%;
-      background: rgba(0,0,0,0.4); color: var(--text-main);
-      border: 1px solid var(--glass-border); border-radius: 10px;
-      padding: 12px; margin-bottom: 10px; outline: none; appearance: auto;
+    /* ── HEADER ── */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
     }
-    
-    button { background: var(--glass); cursor: pointer; font-weight: 500; transition: 0.2s; appearance: none; }
-    button:active { transform: scale(0.98); }
-    button.primary { background: var(--accent); color: #fff; border: none; font-size: 15px; padding: 14px; box-shadow: 0 4px 15px rgba(94, 92, 230, 0.3); }
-    button.danger { background: var(--danger); color: #fff; border: none; font-size: 15px; padding: 14px; box-shadow: 0 4px 15px rgba(255, 69, 58, 0.2); }
-    button.success { background: var(--success); color: #000; border: none; font-size: 15px; padding: 14px; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
-    button.icon-btn { width: auto; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; margin: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-    button.icon-btn.active { background: var(--accent); color: #fff; }
-    
-    /* Unsaved Export Pulse Animation */
-    @keyframes pulseWarning {
-      0% { box-shadow: 0 0 0 0 rgba(255, 149, 0, 0.6); }
-      70% { box-shadow: 0 0 0 10px rgba(255, 149, 0, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(255, 149, 0, 0); }
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .header-bar h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
-    .btn-warning { background: var(--warning) !important; color: #000 !important; animation: pulseWarning 2s infinite; font-weight: 700; border: none; }
+    .header-bar h1 span {
+      font-size: 10px;
+      background: var(--warning);
+      color: #000;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: 2px;
+      font-weight: 700;
+    }
+    .header-meta { font-size: 12px; color: var(--text-muted); }
+    .back-btn {
+      background: var(--glass);
+      color: var(--text-muted);
+      border: 1px solid var(--glass-border);
+      padding: 7px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .back-btn:hover { color: var(--text-main); background: var(--glass-hover); }
 
-    .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
-    .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; height: 100%; cursor: pointer; }
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .stat-chip {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      text-align: center;
+      flex: 1;
+      min-width: 80px;
+    }
+    .stat-chip .n { font-size: 24px; font-weight: 700; display: block; line-height: 1; margin-bottom: 4px; }
+    .stat-chip .l { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+    .stat-chip.s-high  .n { color: var(--success); }
+    .stat-chip.s-med   .n { color: var(--warning); }
+    .stat-chip.s-low   .n { color: var(--danger);  }
+    .stat-chip.s-done  .n { color: var(--accent);  }
 
-    .progress-container { width: 100%; max-width: 1000px; margin-bottom: 15px; }
-    .progress-text { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
-    .progress-bar-bg { width: 100%; height: 6px; background: var(--glass-border); border-radius: 3px; overflow: hidden; }
-    .progress-bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s ease; }
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .filter-tabs {
+      display: flex;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 3px;
+    }
+    .ftab {
+      padding: 7px 14px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.15s;
+      white-space: nowrap;
+    }
+    .ftab.active { background: var(--glass-hover); color: var(--text-main); }
+    .ftab .cnt { font-size: 10px; margin-left: 4px; opacity: 0.6; }
+    .search-input {
+      flex: 1;
+      min-width: 180px;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      color: var(--text-main);
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .search-input:focus { border-color: var(--accent); }
 
-    .scroll-box { background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px; font-size: 12px; color: #aaa; height: 100px; overflow-y: auto; margin-bottom: 15px; line-height: 1.5; word-wrap: break-word; overflow-wrap: break-word; }
-    
-    .bulk-list { height: calc(100vh - 540px); min-height: 250px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--glass-border); padding: 10px; margin-bottom: 15px; }
-    .bulk-row { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.02); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.03); transition: background-color 0.4s ease, border-color 0.4s ease; }
-    .bulk-row input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; margin: 0; accent-color: var(--accent); }
-    .bulk-row .context-col { flex: 0.4; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
-    .bulk-row .context { font-size: 12px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px; }
-    .bulk-row .input-col { flex: 0.6; }
-    .bulk-row input[type="text"] { margin-bottom: 0; padding: 8px; font-size: 14px; border-color: rgba(255,255,255,0.1); transition: background-color 0.3s ease; }
+    /* ── REVIEW ROWS ── */
+    .review-list { display: flex; flex-direction: column; gap: 10px; }
 
-    /* Taxonomy Pills */
-    .pills-container { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
-    .pill { display: inline-block; background: rgba(255,255,255,0.08); padding: 3px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; color: #bbb; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid rgba(255,255,255,0.05); }
+    .rrow {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      transition: border-color 0.2s, opacity 0.3s, max-height 0.4s;
+      overflow: hidden;
+    }
+    .rrow:hover { border-color: rgba(255,255,255,0.1); }
+    .rrow.submitting { opacity: 0.4; pointer-events: none; }
+    .rrow.flash-ok { border-color: var(--success); background: rgba(48,209,88,0.05); }
+    .rrow.collapsing { opacity: 0; max-height: 0 !important; padding: 0; margin: 0; }
 
-    .form-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
-    .form-row > div { flex: 1; min-width: 140px; }
-    
-    .label { font-size: 11px; font-weight: 500; color: var(--text-muted); margin-bottom: 4px; display: block; padding-left: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .action-bar { display: flex; gap: 10px; margin-top: 10px; }
-    .hidden { display: none !important; }
-    
-    .badge { color: var(--success); font-size: 10px; border: 1px solid var(--success); padding: 2px 6px; border-radius: 4px; font-weight: bold; background: rgba(48,209,88,0.1); }
+    /* Row top meta */
+    .rmeta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .cbadge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .cbadge.low    { background: rgba(255,69,58,0.15);  color: var(--danger);  border: 1px solid var(--danger); }
+    .cbadge.medium { background: rgba(255,149,0,0.15); color: var(--warning); border: 1px solid var(--warning); }
+    .sbadge {
+      font-size: 10px;
+      color: var(--text-muted);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--glass-border);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .rslug {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+    }
+    .rsizes {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+    .rnotes {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 12px;
+      padding-left: 2px;
+    }
+
+    /* Row fields */
+    .rfields {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .fg {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      min-width: 120px;
+    }
+    .fg.wide { flex: 2; min-width: 160px; }
+    .flabel {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 500;
+    }
+    .finput {
+      background: rgba(0,0,0,0.35);
+      border: 1px solid var(--glass-border);
+      color: var(--text-main);
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.15s;
+    }
+    .finput:focus { border-color: var(--accent); }
+    option { background: var(--bg); color: var(--text-main); }
+
+    /* Row actions */
+    .ractions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      align-items: center;
+    }
+    .rbtn {
+      padding: 8px 16px;
+      border-radius: 7px;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--glass-border);
+      transition: 0.15s;
+      background: var(--glass);
+      color: var(--text-muted);
+    }
+    .rbtn:hover { background: var(--glass-hover); color: var(--text-main); }
+    .rbtn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+    .rbtn.primary:hover { opacity: 0.85; }
+
+    /* ── EMPTY / ERROR / LOADER ── */
+    .center-state {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    .center-state .icon { font-size: 44px; margin-bottom: 14px; }
+    .center-state h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .center-state p { color: var(--text-muted); font-size: 13px; line-height: 1.6; }
+    .center-state.ok h2 { color: var(--success); }
+    .center-state.err h2 { color: var(--danger); }
+    .center-state.warn h2 { color: var(--warning); }
+
+    #loader {
+      text-align: center;
+      padding: 50px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 500;
+    }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <h1>LUCID FORGE</h1>
-    <h3>Taxonomy Trainer v1.3.1</h3>
+  <!-- HEADER -->
+  <div class="header-bar">
+    <div class="header-left">
+      <a href="index.html" class="back-btn">← Dashboard</a>
+      <h1>LUCID FORGE <span>v2.0</span></h1>
+    </div>
+    <div class="header-meta" id="headerMeta">Loading vault...</div>
   </div>
 
-  <div class="panel" id="loadPanel">
-    <p style="font-size: 14px; color: #aaa; margin-top: 0; text-align: center;">Upload a Cleaned JSON file.</p>
-    <div class="file-upload-wrapper">
-      <button>Select JSON File...</button>
-      <input type="file" id="jsonUpload" accept=".json">
+  <!-- STATS -->
+  <div class="stats-bar" id="statsBar"></div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <div class="filter-tabs">
+      <button class="ftab active" data-f="all"    onclick="setFilter('all')">All <span class="cnt" id="cAll">—</span></button>
+      <button class="ftab"        data-f="low"    onclick="setFilter('low')">Low <span class="cnt" id="cLow">—</span></button>
+      <button class="ftab"        data-f="medium" onclick="setFilter('medium')">Medium <span class="cnt" id="cMed">—</span></button>
     </div>
+    <input type="text" class="search-input" id="searchInput"
+      placeholder="Search slug, brand, or strain..."
+      oninput="applyFilters()">
   </div>
 
-  <div id="workspace" class="hidden" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-    
-    <div class="mode-toggle">
-      <button id="btnBulkMode" class="mode-btn active">Bulk Mode (A La Carte)</button>
-      <button id="btnFocusMode" class="mode-btn">Focus Mode (The 20%)</button>
-    </div>
+  <!-- CONTENT AREA -->
+  <div id="loader">Fetching vault data...</div>
+  <div id="reviewList" class="review-list"></div>
+  <div id="statusState" style="display:none;"></div>
 
-    <div class="panel" style="padding: 15px;">
-      <div class="form-row">
-        <div>
-          <select id="filterT1">
-            <option value="All">All Categories</option>
-            <option value="Flower">Flower</option>
-            <option value="Vape">Vape</option>
-            <option value="Extract">Extract</option>
-            <option value="Pre-Roll">Pre-Roll</option>
-            <option value="Edible">Edible</option>
-            <option value="Gear">Gear</option>
-          </select>
+<script>
+  const WORKER_URL = "https://dispo.askozicki.workers.dev";
+
+  const T2_OPTS = {
+    'Flower':   ['Flower','Smalls','Ground','Mini-Buds','Smalls (Sale)','Flower (Sale)','Mini-Buds (Sale)','Strain of the Week'],
+    'Pre-Roll': ['Standard Pre-Roll','Infused Pre-Roll','Pre-Roll Pack'],
+    'Vape':     ['Distillate Vape','Resin Vape','Rosin Vape','Disposable'],
+    'Extract':  ['Live Resin','Live Rosin','Distillate','Badder','Sugar','Hash'],
+    'Edible':   ['Edible','Gummy','Chocolate','Beverage','Capsule'],
+    'Tincture': ['Tincture','RSO'],
+    'Topical':  ['Topical','Lotion','Patch'],
+    'Gear':     ['Accessories','Apparel','Papers / Wraps','Other']
+  };
+
+  let allItems   = [];
+  let vaultMeta  = {};
+  let activeFilter = 'all';
+  let sessionDone  = 0;
+
+  // ── INIT ────────────────────────────────────────────────────────────
+  async function init() {
+    try {
+      const res = await fetch(`${WORKER_URL}/vault`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const vault = await res.json();
+
+      vaultMeta = {
+        timestamp:        vault.lastUpdated || vault.timestamp || null,
+        totalItems:       vault.totalItems  || 0,
+        confidenceCounts: vault.confidenceCounts || null,
+        storeCounts:      vault.storeCounts || {}
+      };
+
+      const inventory = vault.inventory || {};
+      const hasConf   = Object.values(inventory).some(i => i.confidence);
+
+      document.getElementById('loader').style.display = 'none';
+
+      if (!hasConf) {
+        showState('warn',
+          '⚠ Vault needs a refresh',
+          'This vault was captured before confidence scoring was added. Run an ingest from the Dashboard to generate new scored data, then reload this page.'
+        );
+        renderStats(null);
+        return;
+      }
+
+      allItems = processVaultData(inventory);
+      renderStats(vaultMeta.confidenceCounts);
+      updateCounts();
+      applyFilters();
+
+    } catch (err) {
+      document.getElementById('loader').style.display = 'none';
+      showState('err', 'Failed to load vault', err.message);
+    }
+  }
+
+  // ── DATA ─────────────────────────────────────────────────────────────
+  function processVaultData(inventory) {
+    const map = {};
+
+    Object.entries(inventory).forEach(([key, item]) => {
+      if (!item.confidence || item.confidence === 'high') return;
+
+      const at   = key.lastIndexOf('@');
+      const slug = at !== -1 ? key.substring(0, at) : key;
+      const size = at !== -1 ? key.substring(at + 1) : 'N/A';
+
+      if (!map[slug]) {
+        map[slug] = {
+          slug,
+          brand:      item.brand   || '',
+          strain:     item.strain  || '',
+          store:      item.store   || '',
+          confidence: item.confidence,
+          parseNotes: item.parseNotes  || '',
+          suggestedT2: item.suggestedT2 || '',
+          sizes:  [],
+          prices: [],
+          _done: false
+        };
+      } else {
+        // escalate: low beats medium
+        if (item.confidence === 'low') map[slug].confidence = 'low';
+      }
+
+      if (size && size !== 'N/A' && !map[slug].sizes.includes(size))          map[slug].sizes.push(size);
+      if (item.price && !map[slug].prices.includes(`$${item.price}`))         map[slug].prices.push(`$${item.price}`);
+    });
+
+    return Object.values(map).sort((a, b) => {
+      if (a.confidence !== b.confidence) return a.confidence === 'low' ? -1 : 1;
+      return a.brand.localeCompare(b.brand);
+    });
+  }
+
+  // ── STATS ────────────────────────────────────────────────────────────
+  function renderStats(cc) {
+    const ts  = vaultMeta.timestamp ? new Date(vaultMeta.timestamp).toLocaleString() : '—';
+    document.getElementById('headerMeta').textContent = `Last ingest: ${ts}`;
+
+    const high = cc?.high   || 0;
+    const med  = cc?.medium || 0;
+    const low  = cc?.low    || 0;
+
+    document.getElementById('statsBar').innerHTML = `
+      <div class="stat-chip">
+        <span class="n">${vaultMeta.totalItems}</span>
+        <span class="l">Total</span>
+      </div>
+      <div class="stat-chip s-high">
+        <span class="n">${high}</span>
+        <span class="l">High</span>
+      </div>
+      <div class="stat-chip s-med">
+        <span class="n">${med}</span>
+        <span class="l">Medium</span>
+      </div>
+      <div class="stat-chip s-low">
+        <span class="n">${low}</span>
+        <span class="l">Low</span>
+      </div>
+      <div class="stat-chip s-done">
+        <span class="n" id="sessionCount">0</span>
+        <span class="l">Reviewed</span>
+      </div>`;
+  }
+
+  function updateCounts() {
+    const visible = allItems.filter(i => !i._done);
+    const low     = visible.filter(i => i.confidence === 'low').length;
+    const med     = visible.filter(i => i.confidence === 'medium').length;
+    document.getElementById('cAll').textContent = visible.length;
+    document.getElementById('cLow').textContent = low;
+    document.getElementById('cMed').textContent = med;
+  }
+
+  // ── FILTER / RENDER ───────────────────────────────────────────────────
+  function setFilter(mode) {
+    activeFilter = mode;
+    document.querySelectorAll('.ftab').forEach(t =>
+      t.classList.toggle('active', t.dataset.f === mode)
+    );
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+
+    const visible = allItems.filter(item => {
+      if (item._done) return false;
+      if (activeFilter === 'low'    && item.confidence !== 'low')    return false;
+      if (activeFilter === 'medium' && item.confidence !== 'medium') return false;
+      if (q && !item.slug.includes(q)
+            && !item.brand.toLowerCase().includes(q)
+            && !item.strain.toLowerCase().includes(q)) return false;
+      return true;
+    });
+
+    const list = document.getElementById('reviewList');
+
+    if (visible.length === 0 && allItems.filter(i => !i._done).length === 0) {
+      list.innerHTML = '';
+      showState('ok', '✓ All items reviewed',
+        'No low or medium confidence items remain. Inventory taxonomy is fully verified.');
+      return;
+    }
+
+    if (visible.length === 0) {
+      list.innerHTML = `<div class="center-state"><p style="color:var(--text-muted);padding:40px 0;">No items match the current filter.</p></div>`;
+      hideState();
+      return;
+    }
+
+    hideState();
+    list.innerHTML = visible.map(renderRow).join('');
+  }
+
+  // ── ROW RENDERER ──────────────────────────────────────────────────────
+  function renderRow(item) {
+    const t1d  = guessT1(item);
+    const t2d  = item.suggestedT2 || T2_OPTS[t1d]?.[0] || '';
+    const typed = guessType(item);
+    const sizes = item.sizes.length ? item.sizes.join(', ') : 'N/A';
+    const safe  = CSS.escape(item.slug);
+
+    const t1Opts   = Object.keys(T2_OPTS).map(k =>
+      `<option value="${k}"${k === t1d ? ' selected' : ''}>${k}</option>`).join('');
+
+    const t2Opts   = (T2_OPTS[t1d] || []).map(v =>
+      `<option value="${v}"${v === t2d ? ' selected' : ''}>${v}</option>`).join('');
+
+    const typeOpts = ['Indica','Sativa','Hybrid','N/A'].map(v =>
+      `<option value="${v}"${v === typed ? ' selected' : ''}>${v}</option>`).join('');
+
+    return `
+    <div class="rrow" id="row-${safe}" data-slug="${esc(item.slug)}">
+      <div class="rmeta">
+        <span class="cbadge ${item.confidence}">${item.confidence}</span>
+        <span class="sbadge">${esc(item.store)}</span>
+        <span class="rslug">${esc(item.slug)}</span>
+        <span class="rsizes">${esc(sizes)}</span>
+      </div>
+      <div class="rnotes">⚙ ${esc(item.parseNotes || 'No parse notes')}</div>
+      <div class="rfields">
+        <div class="fg wide">
+          <span class="flabel">Brand</span>
+          <input class="finput" type="text" data-f="brand" value="${esc(item.brand)}">
         </div>
-        <div>
-          <select id="filterStatus">
-            <option value="pending">Pending Only</option>
-            <option value="all">Show All</option>
-            <option value="completed">Completed Only</option>
-          </select>
+        <div class="fg wide">
+          <span class="flabel">Strain</span>
+          <input class="finput" type="text" data-f="strain" value="${esc(item.strain)}">
         </div>
-        <div style="flex: 2;">
-          <input type="text" id="filterSearch" placeholder="Search Brand or Strain..." style="margin-bottom:0;">
+        <div class="fg">
+          <span class="flabel">T1 Category</span>
+          <select class="finput" data-f="t1"
+            onchange="syncT2(this)">${t1Opts}</select>
+        </div>
+        <div class="fg">
+          <span class="flabel">T2 Format</span>
+          <select class="finput" data-f="t2">${t2Opts}</select>
+        </div>
+        <div class="fg">
+          <span class="flabel">Genetics</span>
+          <select class="finput" data-f="type">${typeOpts}</select>
         </div>
       </div>
-    </div>
-
-    <div class="progress-container">
-      <div class="progress-text">
-        <span id="progressCount">0 / 0 Global Verifications</span>
-        <span id="progressPercent">0%</span>
+      <div class="ractions">
+        <button class="rbtn" onclick="skipRow('${esc(item.slug)}')">Skip</button>
+        <button class="rbtn primary" onclick="saveRow('${esc(item.slug)}')">Save to Dict →</button>
       </div>
-      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar"></div></div>
-    </div>
+    </div>`;
+  }
 
-    <div class="panel" id="bulkPanel">
-      <h4 style="margin:0 0 15px 0; color:var(--accent);">A La Carte Batching (Blank = Keep Existing)</h4>
-      
-      <div class="form-row">
-        <div>
-          <label class="label">Override Brand</label>
-          <input type="text" id="bulkBrand" list="brandOptions" placeholder="Keep Existing">
-        </div>
-        <div>
-          <label class="label">Master Cat</label>
-          <select id="bulkT1"></select>
-        </div>
-        <div>
-          <label class="label">Sub-Cat</label>
-          <select id="bulkT2"></select>
-        </div>
-        <div>
-          <label class="label">Type</label>
-          <select id="bulkType">
-            <option value="">-- Keep Existing --</option>
-            <option value="Indica">Indica</option><option value="Sativa">Sativa</option><option value="Hybrid">Hybrid</option><option value="N/A">N/A</option>
-          </select>
-        </div>
-        <div style="flex:0.4; min-width: 80px;">
-          <label class="label">Count</label>
-          <input type="number" id="bulkUnitCount" min="1" placeholder="Keep">
-        </div>
-        <div style="flex:0.8;">
-          <label class="label">Override Size</label>
-          <input type="text" id="bulkUnitSize" list="sizeOptions" placeholder="Keep Existing">
-        </div>
-      </div>
+  // ── T2 SYNC ───────────────────────────────────────────────────────────
+  function syncT2(t1El) {
+    const row  = t1El.closest('.rrow');
+    const t2El = row.querySelector('[data-f="t2"]');
+    const opts = (T2_OPTS[t1El.value] || []).map(v => `<option value="${v}">${v}</option>`).join('');
+    t2El.innerHTML = opts;
+  }
 
-      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
-        <h4 style="margin:0; font-size:13px; color:var(--text-main); font-weight: 500;" id="bulkCountHeader">
-          </h4>
-        
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <input type="text" id="findReplaceText" placeholder="Text to delete (e.g. '1g Vape')..." style="margin: 0; padding: 6px 10px; font-size: 12px; width: 200px;">
-          <button id="runFindReplaceBtn" class="primary" style="margin: 0; padding: 6px 12px; font-size: 12px;">Scrub Text</button>
-        </div>
-      </div>
-      
-      <div class="bulk-list" id="bulkListContainer">
-        </div>
-      
-      <button class="primary" id="commitBulkBtn">Commit 0 Selected Items</button>
-    </div>
+  // ── GUESS HELPERS ─────────────────────────────────────────────────────
+  function guessT1(item) {
+    const s = item.slug;
+    if (item.sizes.length === 1 && ['0.5g','0.75g','1.75g','4.2g'].includes(item.sizes[0])) return 'Pre-Roll';
+    if (/vape|cart|distillate/.test(s))   return 'Vape';
+    if (/edible|gummy|chocolate/.test(s)) return 'Edible';
+    if (/tincture|rso|oral/.test(s))      return 'Tincture';
+    if (/topical|lotion/.test(s))         return 'Topical';
+    if (/paper|wrap|gear|apparel/.test(s))return 'Gear';
+    return 'Flower';
+  }
 
-    <div class="panel hidden" id="focusPanel" style="max-width: 600px;">
-      <div class="scroll-box" id="cardDesc">Loading...</div>
+  function guessType(item) {
+    const s = item.strain.toLowerCase();
+    if (/indica/.test(s))                                          return 'Indica';
+    if (/sativa|jack|haze|dream|durban|orange|citrus/.test(s))    return 'Sativa';
+    return 'Hybrid';
+  }
 
-      <div class="form-row">
-        <div>
-          <label class="label">True Brand</label>
-          <input type="text" id="focusBrand" list="brandOptions">
-        </div>
-        <div>
-          <label class="label">True Strain</label>
-          <input type="text" id="focusStrain">
-        </div>
-      </div>
+  // ── ACTIONS ───────────────────────────────────────────────────────────
+  async function saveRow(slug) {
+    const rowEl = document.getElementById(`row-${CSS.escape(slug)}`);
+    if (!rowEl) return;
 
-      <div class="form-row">
-        <div>
-          <label class="label">Master Category</label>
-          <select id="focusT1"></select>
-        </div>
-        <div>
-          <label class="label">Sub-Category</label>
-          <select id="focusT2"></select>
-        </div>
-        <div style="flex:0.2; min-width: 50px;">
-           <label class="label" title="Lock Settings">📌</label>
-           <button class="icon-btn" id="lockSettingsBtn">🔓</button>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div>
-          <label class="label">Type</label>
-          <select id="focusType">
-            <option value="Indica">Indica</option><option value="Sativa">Sativa</option><option value="Hybrid">Hybrid</option><option value="N/A">N/A</option>
-          </select>
-        </div>
-        <div style="flex: 0.5; min-width: 80px;">
-          <label class="label">Count</label>
-          <input type="number" id="focusUnitCount" min="1" placeholder="API">
-        </div>
-        <div>
-          <label class="label">Per-Unit Size</label>
-          <input type="text" id="focusUnitSize" list="sizeOptions" placeholder="API Default">
-        </div>
-      </div>
-
-      <div class="action-bar">
-        <button class="danger" id="junkBtn" style="flex-basis:25%;">Junk</button>
-        <button class="primary" id="saveNextBtn" style="flex: 1; margin-bottom: 0;">Approve & Next</button>
-      </div>
-    </div>
-
-    <button class="success" id="exportBtn" style="max-width: 1000px; margin-top: 5px;">Download Master Dictionary</button>
-    
-    <datalist id="brandOptions"></datalist>
-    <datalist id="sizeOptions">
-      <option value="N/A"><option value="0.3g"><option value="0.35g"><option value="0.5g">
-      <option value="0.75g"><option value="1.0g"><option value="2.0g"><option value="3.5g">
-      <option value="7.0g"><option value="14.0g"><option value="28.0g">
-    </datalist>
-  </div>
-
-  <script>
-    // --- STATE ---
-    let fullInventory = [];
-    let workingList = [];
-    let currentIndex = 0;
-    let currentMode = 'bulk'; 
-    let isLocked = false; 
-    let hasUnsavedChanges = false;
-    let dictionary = JSON.parse(localStorage.getItem('lucid_dictionary')) || {};
-
-    const t2Map = {
-      "Flower": ["Premium", "Smalls / Popcorn", "Mixed Bud", "Grind / Shake"],
-      "Pre-Roll": ["Standard Pre-Roll", "Infused Pre-Roll", "Blunt / Cannagar"],
-      "Vape": ["Standard Vape", "Distillate Vape", "Resin Vape", "Rosin Vape"],
-      "Extract": ["Standard Extract", "Live Rosin"],
-      "Edible": ["Edible"], "Topical": ["Topical"], "Tincture": ["Tincture"],
-      "Gear": ["Apparel", "Papers / Wraps", "Accessories"], "Junk": ["Junk"], "Other": ["Other"]
+    const get = f => rowEl.querySelector(`[data-f="${f}"]`)?.value || '';
+    const payload = {
+      slug,
+      t1:     get('t1'),
+      t2:     get('t2'),
+      type:   get('type'),
+      brand:  get('brand').trim(),
+      strain: get('strain').trim()
     };
 
-    // --- AUTO SCRUBBER ---
-    function scrubItem(brand, strain) {
-      let cleanBrand = String(brand || "Unknown").trim();
-      let rawStrain = String(strain || "Unknown Product").trim();
-      let extractedSize = "";
-
-      const regex = /\s*[-|\[|\(]?\s*(\d+\.?\d*\s*(?:mg|g|pk|oz))\s*[\]|\)]?$/i;
-      const match = rawStrain.match(regex);
-      if (match) {
-        extractedSize = match[1];
-        rawStrain = rawStrain.replace(regex, '');
-      }
-      let cleanStrain = rawStrain.toLowerCase().replace(/\b[a-z]/g, letter => letter.toUpperCase()).trim();
-      return { cleanBrand, cleanStrain, extractedSize };
+    if (!payload.t1 || !payload.type) {
+      alert('T1 Category and Genetics are required.');
+      return;
     }
 
-    const generateSlug = (brand, strain) => `${brand}-${strain}`.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-    function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+    rowEl.classList.add('submitting');
 
-    // --- UNSAVED WARNING LOGIC ---
-    function setUnsaved(status) {
-      hasUnsavedChanges = status;
-      const btn = document.getElementById('exportBtn');
-      if (status) {
-        btn.classList.add('btn-warning');
-        btn.innerText = "Download Master Dictionary (Unsaved Changes)";
+    try {
+      const res    = await fetch(`${WORKER_URL}/dictionary-entry`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload)
+      });
+      const result = await res.json();
+
+      if (result.success) {
+        const item = allItems.find(i => i.slug === slug);
+        if (item) item._done = true;
+
+        rowEl.classList.remove('submitting');
+        rowEl.classList.add('flash-ok');
+
+        sessionDone++;
+        const el = document.getElementById('sessionCount');
+        if (el) el.textContent = sessionDone;
+        updateCounts();
+
+        setTimeout(() => {
+          rowEl.classList.add('collapsing');
+          setTimeout(() => applyFilters(), 420);
+        }, 700);
       } else {
-        btn.classList.remove('btn-warning');
-        btn.innerText = "Download Master Dictionary";
+        rowEl.classList.remove('submitting');
+        alert(`Save failed: ${result.message}`);
       }
+    } catch (err) {
+      rowEl.classList.remove('submitting');
+      alert(`Network error: ${err.message}`);
     }
+  }
 
-    // --- SETUP & UI RENDERING ---
-    function populateDropdowns() {
-      const bulkT1Html = '<option value="">-- Keep Existing --</option>' + Object.keys(t2Map).map(k => `<option value="${k}">${k}</option>`).join('');
-      document.getElementById('bulkT1').innerHTML = bulkT1Html;
-      
-      const focusT1Html = Object.keys(t2Map).map(k => `<option value="${k}">${k}</option>`).join('');
-      document.getElementById('focusT1').innerHTML = focusT1Html;
-      
-      const brands = new Set(fullInventory.map(i => String(i.brand || "").trim()).filter(Boolean));
-      document.getElementById('brandOptions').innerHTML = Array.from(brands).map(b => `<option value="${b}">`).join('');
+  function skipRow(slug) {
+    const rowEl = document.getElementById(`row-${CSS.escape(slug)}`);
+    const item  = allItems.find(i => i.slug === slug);
+    if (item)  item._done = true;
+    if (rowEl) {
+      rowEl.classList.add('collapsing');
+      setTimeout(() => { updateCounts(); applyFilters(); }, 280);
     }
+  }
 
-    function syncT2(modePrefix, val) {
-      const t2Select = document.getElementById(`${modePrefix}T2`);
-      
-      if (modePrefix === 'bulk') {
-        if (val === "") {
-          t2Select.innerHTML = '<option value="">-- Keep Existing --</option>';
-          return;
-        }
-        const options = t2Map[val] || ["Other"];
-        t2Select.innerHTML = '<option value="">-- Keep Existing --</option>' + options.map(o => `<option value="${o}">${o}</option>`).join('');
-      } else {
-        const options = t2Map[val] || ["Other"];
-        t2Select.innerHTML = options.map(o => `<option value="${o}">${o}</option>`).join('');
-      }
-      
-      if (['Gear', 'Tincture', 'Topical'].includes(val)) {
-        if(modePrefix === 'focus') document.getElementById('focusStrain').value = "N/A";
-        document.getElementById(`${modePrefix}Type`).value = "N/A";
-        document.getElementById(`${modePrefix}UnitSize`).value = "N/A";
-      }
-    }
+  // ── UTILS ─────────────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
 
-    document.getElementById('bulkT1').addEventListener('change', (e) => syncT2('bulk', e.target.value));
-    document.getElementById('focusT1').addEventListener('change', (e) => syncT2('focus', e.target.value));
+  function showState(type, title, body) {
+    const el = document.getElementById('statusState');
+    el.style.display = 'block';
+    el.innerHTML = `
+      <div class="center-state ${type}">
+        <div class="icon">${type === 'ok' ? '✓' : type === 'err' ? '✗' : '⚠'}</div>
+        <h2>${title}</h2>
+        <p>${body}</p>
+      </div>`;
+  }
 
-    function applyFilters() {
-      const fT1 = document.getElementById('filterT1').value;
-      const fStatus = document.getElementById('filterStatus').value;
-      const search = document.getElementById('filterSearch').value.toLowerCase();
+  function hideState() {
+    document.getElementById('statusState').style.display = 'none';
+  }
 
-      workingList = fullInventory.filter(item => {
-        const slug = generateSlug(item.brand, item.strain);
-        const isCompleted = !!dictionary[slug];
-
-        let passStatus = true;
-        if (fStatus === 'pending') passStatus = !isCompleted;
-        if (fStatus === 'completed') passStatus = isCompleted;
-        if (!passStatus) return false;
-
-        let passT1 = (fT1 === 'All' || item.t1 === fT1);
-        let passSearch = true;
-        if (search) {
-          const combo = `${item.brand} ${item.strain}`.toLowerCase();
-          passSearch = combo.includes(search);
-        }
-        return passT1 && passSearch;
-      });
-
-      currentIndex = 0;
-      updateGlobalProgress();
-      
-      if (currentMode === 'bulk') renderBulkMode();
-      else renderFocusMode();
-    }
-
-    function updateGlobalProgress() {
-      const completedCount = Object.keys(dictionary).length;
-      const totalCount = fullInventory.length;
-      const pct = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
-      document.getElementById('progressCount').innerText = `${completedCount} / ${totalCount} Global Verifications`;
-      document.getElementById('progressPercent').innerText = `${pct}%`;
-      document.getElementById('progressBar').style.width = `${pct}%`;
-    }
-
-    // --- BULK MODE LOGIC (A LA CARTE) ---
-    function renderBulkMode() {
-      const container = document.getElementById('bulkListContainer');
-      const header = document.getElementById('bulkCountHeader');
-      const btnCommit = document.getElementById('commitBulkBtn');
-
-      if (workingList.length === 0) {
-        header.innerHTML = `<span>0 Items in Queue</span>`;
-        container.innerHTML = `<p style="color:#aaa; text-align:center; padding: 40px 0;">No items match this filter.</p>`;
-        btnCommit.innerText = "Commit 0 Selected Items";
-        btnCommit.disabled = true;
-        return;
-      }
-
-      header.innerHTML = `
-        <div style="display:flex; align-items:center; gap: 15px;">
-          <label style="cursor:pointer; display:flex; align-items:center; gap:8px;">
-            <input type="checkbox" id="selectAllBulk" checked style="width:16px; height:16px; margin:0; accent-color:var(--accent);">
-            Select All
-          </label>
-          <span style="color: var(--text-muted); font-size: 11px;">(${workingList.length} in Queue)</span>
-        </div>
-      `;
-
-      // Build List Rows with Live Pills
-      let html = '';
-      workingList.forEach((item, idx) => {
-        const s = scrubItem(item.brand, item.strain);
-        const slug = generateSlug(item.brand, item.strain);
-        const saved = dictionary[slug];
-        
-        const isCompleted = !!saved;
-        const badge = isCompleted ? `<span class="badge">SAVED</span>` : '';
-        
-        // Active State for Pills
-        const activeT1 = saved ? saved.t1 : item.t1;
-        const activeT2 = saved ? saved.t2 : item.t2;
-        const activeType = saved ? saved.type : item.type;
-        const activeCount = saved && saved.unitCount ? saved.unitCount : "";
-        const activeSize = saved && saved.unitSize ? saved.unitSize : "";
-        let sizeDisp = "API Default";
-        if (activeSize) sizeDisp = activeCount > 1 ? `${activeCount}x ${activeSize}` : activeSize;
-
-        const pillsHtml = `
-          <div class="pills-container">
-            <span class="pill">${activeT1}</span>
-            <span class="pill">${activeT2}</span>
-            <span class="pill">${activeType}</span>
-            <span class="pill">${sizeDisp}</span>
-          </div>`;
-
-        html += `
-          <div class="bulk-row" id="bulkRow_${idx}">
-            <input type="checkbox" class="bulk-row-check" data-idx="${idx}" checked>
-            <div class="context-col">
-              <div class="context">${badge} ${item.brand || "?"} - ${item.strain || "?"}</div>
-              ${pillsHtml}
-            </div>
-            <div class="input-col">
-              <input type="text" id="bulkItemStrain_${idx}" data-origbrand="${item.brand}" data-origstrain="${item.strain}" value="${s.cleanStrain}">
-            </div>
-          </div>
-        `;
-      });
-      container.innerHTML = html;
-
-      updateCommitBtnText();
-
-      // Checkbox Listeners
-      document.getElementById('selectAllBulk').addEventListener('change', (e) => {
-        const isChecked = e.target.checked;
-        document.querySelectorAll('.bulk-row-check').forEach(cb => cb.checked = isChecked);
-        updateCommitBtnText();
-      });
-
-      document.querySelectorAll('.bulk-row-check').forEach(cb => {
-        cb.addEventListener('change', updateCommitBtnText);
-      });
-    }
-
-    function updateCommitBtnText() {
-      const checkedCount = document.querySelectorAll('.bulk-row-check:checked').length;
-      const btn = document.getElementById('commitBulkBtn');
-      btn.innerText = `Commit ${checkedCount} Selected Items`;
-      btn.disabled = checkedCount === 0;
-    }
-
-    // THE TYPO NUKE (Find & Replace)
-    document.getElementById('findReplaceText').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') document.getElementById('runFindReplaceBtn').click();
-    });
-
-    document.getElementById('runFindReplaceBtn').addEventListener('click', () => {
-      const findText = document.getElementById('findReplaceText').value;
-      if (!findText) return;
-      const regex = new RegExp(escapeRegExp(findText), 'gi'); 
-      
-      const checkedBoxes = document.querySelectorAll('.bulk-row-check:checked');
-      checkedBoxes.forEach(cb => {
-        const idx = cb.getAttribute('data-idx');
-        const rowInput = document.getElementById(`bulkItemStrain_${idx}`);
-        rowInput.value = rowInput.value.replace(regex, '').trim();
-        
-        rowInput.style.backgroundColor = 'rgba(94, 92, 230, 0.3)';
-        setTimeout(() => { rowInput.style.backgroundColor = 'rgba(0,0,0,0.4)'; }, 400);
-      });
-      
-      document.getElementById('findReplaceText').value = ""; // clear after run
-    });
-
-    // A LA CARTE COMMIT
-    document.getElementById('commitBulkBtn').addEventListener('click', (e) => {
-      const checkedBoxes = document.querySelectorAll('.bulk-row-check:checked');
-      if(checkedBoxes.length === 0) return;
-      
-      const btn = e.target;
-      const originalText = btn.innerText;
-      btn.disabled = true;
-      btn.innerText = "Committing...";
-
-      const mBrand = document.getElementById('bulkBrand').value.trim();
-      const mT1 = document.getElementById('bulkT1').value;
-      const mT2 = document.getElementById('bulkT2').value;
-      const mType = document.getElementById('bulkType').value;
-      const mCountRaw = document.getElementById('bulkUnitCount').value;
-      const mSize = document.getElementById('bulkUnitSize').value.trim();
-      const keepCount = (mCountRaw === "");
-
-      const rowsToFlash = [];
-
-      checkedBoxes.forEach(cb => {
-        const idx = cb.getAttribute('data-idx');
-        const rowInput = document.getElementById(`bulkItemStrain_${idx}`);
-        const item = workingList[idx]; 
-        const rowDiv = document.getElementById(`bulkRow_${idx}`);
-        
-        const origBrand = rowInput.getAttribute('data-origbrand');
-        const origStrain = rowInput.getAttribute('data-origstrain');
-        const slug = generateSlug(origBrand, origStrain);
-        const finalStrain = rowInput.value.trim();
-        
-        const saved = dictionary[slug];
-
-        // Resolving A La Carte Options
-        const finalBrand = mBrand !== "" ? mBrand : (saved ? saved.brand : item.brand);
-        const finalT1 = mT1 !== "" ? mT1 : (saved ? saved.t1 : item.t1);
-        const finalT2 = mT2 !== "" ? mT2 : (saved ? saved.t2 : item.t2);
-        const finalType = mType !== "" ? mType : (saved ? saved.type : item.type);
-        const finalCount = keepCount ? (saved ? saved.unitCount : "") : parseInt(mCountRaw);
-        const finalSize = mSize !== "" ? mSize : (saved ? saved.unitSize : "");
-
-        dictionary[slug] = {
-          t1: finalT1, t2: finalT2, type: finalType, 
-          brand: finalBrand, strain: finalStrain, 
-          unitCount: finalCount, unitSize: finalSize
-        };
-        
-        rowsToFlash.push(rowDiv);
-      });
-
-      localStorage.setItem('lucid_dictionary', JSON.stringify(dictionary));
-      setUnsaved(true);
-
-      // Reset Master Form after successful commit
-      document.getElementById('bulkBrand').value = "";
-      document.getElementById('bulkT1').value = "";
-      syncT2('bulk', "");
-      document.getElementById('bulkType').value = "";
-      document.getElementById('bulkUnitCount').value = "";
-      document.getElementById('bulkUnitSize').value = "";
-      
-      rowsToFlash.forEach(row => {
-        row.style.backgroundColor = 'rgba(48, 209, 88, 0.2)'; 
-        row.style.borderColor = 'var(--success)';
-      });
-
-      // Timeout fires applyFilters() which rebuilds the DOM safely
-      setTimeout(() => {
-        applyFilters(); 
-      }, 350);
-    });
-
-    // --- FOCUS MODE LOGIC ---
-    function renderFocusMode() {
-      const btnApprove = document.getElementById('saveNextBtn');
-      const btnJunk = document.getElementById('junkBtn');
-
-      if (workingList.length === 0 || currentIndex >= workingList.length) {
-        document.getElementById('cardDesc').innerText = "All items in this filter are verified! 🎉";
-        btnApprove.disabled = true;
-        btnJunk.disabled = true;
-        return;
-      }
-
-      btnApprove.disabled = false;
-      btnJunk.disabled = false;
-
-      const item = workingList[currentIndex];
-      const scrubbed = scrubItem(item.brand, item.strain);
-      const saved = dictionary[generateSlug(item.brand, item.strain)];
-      
-      let descText = `Original: ${item.brand} - ${item.strain}\nAI Guess: ${item.t1} -> ${item.t2}\n\n`;
-      descText += item.deepData?.desc || "No description.";
-      document.getElementById('cardDesc').innerText = descText;
-
-      if (!isLocked) {
-        document.getElementById('focusBrand').value = scrubbed.cleanBrand;
-        document.getElementById('focusT1').value = Object.keys(t2Map).includes(item.t1) ? item.t1 : "Other";
-        syncT2('focus', document.getElementById('focusT1').value);
-        document.getElementById('focusT2').value = item.t2;
-        document.getElementById('focusType').value = item.type;
-        
-        // Populate blanks or pre-existing
-        document.getElementById('focusUnitSize').value = saved?.unitSize || scrubbed.extractedSize || "";
-        document.getElementById('focusUnitCount').value = saved?.unitCount || "";
-      }
-      
-      document.getElementById('focusStrain').value = scrubbed.cleanStrain;
-    }
-
-    document.getElementById('saveNextBtn').addEventListener('click', () => {
-      const item = workingList[currentIndex];
-      const slug = generateSlug(item.brand, item.strain);
-      const rawCount = document.getElementById('focusUnitCount').value;
-
-      dictionary[slug] = {
-        t1: document.getElementById('focusT1').value,
-        t2: document.getElementById('focusT2').value,
-        type: document.getElementById('focusType').value,
-        brand: document.getElementById('focusBrand').value.trim(),
-        strain: document.getElementById('focusStrain').value.trim(),
-        unitCount: rawCount === "" ? "" : parseInt(rawCount),
-        unitSize: document.getElementById('focusUnitSize').value.trim()
-      };
-
-      localStorage.setItem('lucid_dictionary', JSON.stringify(dictionary));
-      setUnsaved(true);
-      currentIndex++;
-      renderFocusMode();
-      updateGlobalProgress();
-    });
-
-    document.getElementById('junkBtn').addEventListener('click', () => {
-      const item = workingList[currentIndex];
-      dictionary[generateSlug(item.brand, item.strain)] = { t1: "Junk" };
-      localStorage.setItem('lucid_dictionary', JSON.stringify(dictionary));
-      setUnsaved(true);
-      currentIndex++;
-      renderFocusMode();
-      updateGlobalProgress();
-    });
-
-    document.getElementById('lockSettingsBtn').addEventListener('click', (e) => {
-      isLocked = !isLocked;
-      e.target.innerText = isLocked ? "🔒" : "🔓";
-      e.target.classList.toggle('active');
-    });
-
-    // Mode Toggles
-    document.getElementById('btnBulkMode').addEventListener('click', () => {
-      currentMode = 'bulk';
-      document.getElementById('btnBulkMode').classList.add('active');
-      document.getElementById('btnFocusMode').classList.remove('active');
-      document.getElementById('bulkPanel').classList.remove('hidden');
-      document.getElementById('focusPanel').classList.add('hidden');
-      applyFilters();
-    });
-
-    document.getElementById('btnFocusMode').addEventListener('click', () => {
-      currentMode = 'focus';
-      document.getElementById('btnFocusMode').classList.add('active');
-      document.getElementById('btnBulkMode').classList.remove('active');
-      document.getElementById('focusPanel').classList.remove('hidden');
-      document.getElementById('bulkPanel').classList.add('hidden');
-      applyFilters();
-    });
-
-    // Event Listeners
-    document.getElementById('jsonUpload').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          fullInventory = JSON.parse(event.target.result);
-          document.getElementById('loadPanel').classList.add('hidden');
-          document.getElementById('workspace').classList.remove('hidden');
-          populateDropdowns();
-          applyFilters();
-        } catch (err) { 
-          alert("Error parsing JSON file. Please check the file formatting."); 
-          e.target.value = ''; 
-        }
-      };
-      reader.readAsText(file);
-    });
-
-    document.getElementById('filterT1').addEventListener('change', applyFilters);
-    document.getElementById('filterStatus').addEventListener('change', applyFilters);
-    
-    // Debounced search input
-    let searchTimeout;
-    document.getElementById('filterSearch').addEventListener('input', () => {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(applyFilters, 300);
-    });
-
-    // Handle Unsaved Export Reset
-    document.getElementById('exportBtn').addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify(dictionary, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.setAttribute("href", url);
-      anchor.setAttribute("download", `lucid_master_dictionary.json`);
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(url);
-      
-      setUnsaved(false); // Reset the warning pulse
-    });
-
-  </script>
+  init();
+</script>
 </body>
 </html>
