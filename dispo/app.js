@@ -136,6 +136,31 @@ addGhostBtn.addEventListener('click', () => {
 syncCloudBtn.addEventListener('click', syncCloudAlerts);
 
 // ==========================================
+// DICTIONARY SUBMISSION (FORGE → WORKER)
+// ==========================================
+window.submitDictionaryEntry = async (slug, t1, t2, type, brand, strain) => {
+    try {
+        const res = await fetch(`${BASE_WORKER_URL}/dictionary-entry`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug, t1, t2, type, brand, strain })
+        });
+        const result = await res.json();
+        if (result.success) {
+            lowConfidenceItems = lowConfidenceItems.filter(i => i.key.split('@')[0] !== slug);
+            confidenceItemCount = lowConfidenceItems.length;
+            updateForgeButton();
+            return { success: true };
+        }
+        return { success: false, message: result.message || 'Failed' };
+    } catch (err) {
+        return { success: false, message: 'Network error: ' + err.message };
+    }
+};
+
+window.getLowConfidenceItems = () => lowConfidenceItems;
+
+// ==========================================
 // DATA INGESTION & THE DIFF ENGINE
 // ==========================================
 async function fetchData(config, normalizerFn, storeName) {
@@ -351,5 +376,38 @@ document.getElementById('btnExport').addEventListener('click', async () => {
   }
 });
 
+// ==========================================
+// LOW-CONFIDENCE BADGE (FORGE BUTTON)
+// ==========================================
+let lowConfidenceItems = [];
+let confidenceItemCount = 0;
+
+async function loadLowConfidenceItems() {
+    try {
+        const res = await fetch(`${BASE_WORKER_URL}/vault`);
+        if (!res.ok) return;
+        const vault = await res.json();
+        const inventory = vault.inventory || {};
+
+        lowConfidenceItems = Object.entries(inventory)
+            .filter(([, item]) => item.confidence && item.confidence !== 'high')
+            .map(([key, item]) => ({ key, ...item }));
+
+        confidenceItemCount = lowConfidenceItems.length;
+        updateForgeButton();
+    } catch (err) {
+        console.warn('Could not load confidence data:', err);
+    }
+}
+
+function updateForgeButton() {
+    const btn = document.getElementById('btnForge');
+    if (!btn) return;
+    btn.textContent = confidenceItemCount > 0
+        ? `Open Forge (${confidenceItemCount})`
+        : 'Open Forge';
+}
+
 // Boot Process
 loadCloudState();
+loadLowConfidenceItems();
