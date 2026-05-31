@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Launchpad V2.4</title>
+    <title>Launchpad V2.5</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -175,6 +175,107 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+
+        /* EDIT MODE */
+        body.edit-mode #springboard [data-tile-id] {
+            cursor: grab;
+        }
+        body.edit-mode #springboard [data-tile-id]:active {
+            cursor: grabbing;
+        }
+        /* PIN Modal & Toast transitions */
+        #pinModal, #tileEditorModal, #deleteConfirmModal {
+            transition: opacity 0.25s ease;
+        }
+        #saveStatus {
+            transition: opacity 0.3s ease;
+            z-index: 200;
+        }
+
+        /* CATEGORY BAR */
+        .category-pill {
+            flex-shrink: 0;
+            padding: 0.375rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            font-weight: 500;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: rgb(100,116,139);
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            white-space: nowrap;
+        }
+        .category-pill:hover {
+            color: rgb(203,213,225);
+            border-color: rgba(255,255,255,0.2);
+        }
+        .category-pill.active {
+            color: rgb(34,211,238);
+            border-color: rgba(6,182,212,0.5);
+            background: rgba(6,182,212,0.08);
+        }
+        #categoryBar { -ms-overflow-style: none; scrollbar-width: none; }
+        #categoryBar::-webkit-scrollbar { display: none; }
+
+        /* TILE EDIT CONTROLS — visible only in edit-mode */
+        .tile-edit-controls {
+            display: none;
+            position: absolute;
+            top: 0.6rem;
+            right: 0.6rem;
+            gap: 0.35rem;
+            z-index: 30;
+        }
+        body.edit-mode .app-tile:hover .tile-edit-controls {
+            display: flex;
+        }
+        .tile-edit-controls button {
+            padding: 0.35rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        /* DRAG-TO-REORDER — edit mode only */
+        body.edit-mode .app-tile[draggable="true"] { cursor: grab; }
+        body.edit-mode .app-tile[draggable="true"]:active { cursor: grabbing; }
+        .app-tile.drag-over {
+            border-color: rgba(6, 182, 212, 0.6) !important;
+            box-shadow: var(--depth-3), 0 0 24px rgba(6, 182, 212, 0.25) !important;
+            transform: scale(1.02);
+        }
+
+        /* TILE EDITOR MODAL INPUTS */
+        .editor-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+        }
+        .editor-input:focus {
+            outline: none;
+            border-color: rgba(6,182,212,0.5);
+        }
+        .editor-input::placeholder { color: rgb(71,85,105); }
+        .editor-textarea { resize: none; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+        .editor-label {
+            display: block;
+            font-size: 0.65rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: rgb(100,116,139);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 0.5rem;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col text-slate-300 antialiased selection:bg-brand-500/30 selection:text-white">
@@ -186,7 +287,7 @@
         
         <div class="fixed top-0 w-full px-8 py-4 flex justify-between items-center z-50 bg-black/40 backdrop-blur-2xl border-b border-white/5">
             <div class="flex items-center gap-4 font-mono text-[10px] uppercase tracking-[0.2em] cursor-default select-none text-slate-500">
-                <span>KZICK // LAUNCHPAD V2.3.1</span>
+                <span>KZICK // LAUNCHPAD V2.5</span>
             </div>
             
             <div class="flex items-center gap-6">
@@ -197,90 +298,21 @@
                         <label for="overrideToggle" class="toggle-label block overflow-hidden h-4 rounded-full bg-white/5 shadow-inner cursor-pointer transition-all duration-300"></label>
                     </div>
                 </div>
+                <button id="newTileBtn" style="display:none;" class="haptic-trigger px-4 py-1.5 text-[10px] font-mono uppercase tracking-widest text-white bg-cyan-500/20 hover:bg-cyan-500/30 transition-all border border-cyan-500/40 rounded-lg">+ New Tile</button>
+                <button id="editModeToggle" class="haptic-trigger px-4 py-1.5 text-[10px] font-mono uppercase tracking-widest text-slate-400 hover:text-white transition-all border border-white/10 hover:border-white/30 rounded-lg">Edit</button>
             </div>
         </div>
 
  <div class="flex-1 flex flex-col items-center px-6 w-full pt-32 pb-32">
             
-            <header class="mb-12 text-center w-full max-w-6xl">
+            <header class="mb-6 text-center w-full max-w-6xl">
                 <h1 class="text-6xl sm:text-8xl font-light tracking-tight mb-2 text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-500">Launchpad</h1>
             </header>
 
-            <main id="springboard" class="w-full max-w-5xl grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8 mb-8">
-                
-                <a href="https://mail.google.com/" data-id="email" target="_blank" draggable="true" class="app-tile glass-panel group flex flex-col items-center justify-center p-6 rounded-[2rem] overflow-hidden aspect-square haptic-trigger">
-                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
-                        <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                        <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">Email</span>
-                    </div>
-                </a>
+            <div id="categoryBar" class="w-full max-w-5xl flex gap-2 overflow-x-auto mb-6"></div>
 
-                <a href="https://calendar.google.com/" data-id="calendar" target="_blank" draggable="true" class="app-tile glass-panel group flex flex-col items-center justify-center p-6 rounded-[2rem] overflow-hidden aspect-square haptic-trigger">
-                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
-                        <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">Calendar</span>
-                    </div>
-                </a>
-
-                <a href="live-forge/index.html" data-id="liveforge" draggable="true" class="app-tile glass-panel group flex flex-col items-center justify-center p-6 rounded-[2rem] overflow-hidden aspect-square haptic-trigger">
-                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
-                        <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
-                        <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">LiveForge</span>
-                    </div>
-                </a>
-
-                <a href="/sports/index.html" data-id="sports" draggable="true" class="app-tile glass-panel group flex flex-col items-center justify-center p-6 rounded-[2rem] overflow-hidden aspect-square haptic-trigger">
-                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
-                        <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
-                            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-                            <path d="M4 22h16"/>
-                            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
-                            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
-                            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
-                        </svg>
-                        <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">Sports</span>
-                    </div>
-                </a>
-
-                <a href="flow-lab/index.html" data-id="sonicforge" draggable="true" class="app-tile glass-panel group flex flex-col items-center justify-center p-6 rounded-[2rem] overflow-hidden aspect-square haptic-trigger">
-                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
-                        <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
-                        <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">Visualizer</span>
-                    </div>
-                </a>
-
-                <div data-id="vault" draggable="true" class="app-tile glass-panel group flex flex-col items-center justify-center p-6 rounded-[2rem] aspect-square haptic-trigger">
-                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full pointer-events-none">
-                        <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"></path></svg>
-                        <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">Code Vault</span>
-                    </div>
-                </div>
-
-                <div data-id="gems" data-folder="multiplexer" draggable="true" class="app-tile glass-panel group flex flex-col items-center justify-center p-6 rounded-[2rem] overflow-hidden aspect-square haptic-trigger">
-                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
-                        <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                            <path d="M6 2L2 8l10 14L22 8l-4-6H6z"/>
-                            <path d="M2 8h20M12 22V8M6 2l6 6M18 2l-6 6"/>
-                        </svg>
-                        <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">Links</span>
-                    </div>
-                </div>
-
-                <a href="weather/index.html" data-id="weather" draggable="true" class="app-tile glass-panel group flex flex-col items-center justify-center p-6 rounded-[2rem] overflow-hidden aspect-square haptic-trigger">
-                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full">
-                        <svg class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                            <path d="M12 2v2"/>
-                            <path d="m4.93 4.93 1.41 1.41"/>
-                            <path d="M20 12h2"/>
-                            <path d="m19.07 4.93-1.41 1.41"/>
-                            <path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/>
-                            <path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/>
-                        </svg>
-                        <span class="text-base font-medium text-slate-400 group-hover:text-white transition-colors duration-500 tracking-wide">Weather</span>
-                    </div>
-                </a>
-
+            <main id="springboard" class="w-full max-w-5xl grid gap-6 sm:gap-8 mb-8">
+                <!-- tiles rendered dynamically by renderTiles() -->
             </main>
 
             <div id="weather-anchor" class="w-full max-w-5xl glass-panel rounded-[2rem] p-6 sm:p-8 cursor-default flex flex-col">
@@ -348,6 +380,84 @@
         </div>
     </div>
 
+    <!-- TILE EDITOR MODAL -->
+    <div id="tileEditorModal" class="fixed inset-0 z-[110] bg-black/80 backdrop-blur-sm flex items-start justify-center opacity-0 pointer-events-none overflow-y-auto py-8">
+        <div class="glass-panel p-8 rounded-3xl max-w-2xl w-full mx-4 my-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="editorTitle" class="text-xl font-mono text-white tracking-tight">New Tile</h2>
+                <button id="closeEditorBtn" class="p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/5">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="space-y-5">
+                <div>
+                    <label class="editor-label">Tile Name</label>
+                    <input type="text" id="editorName" class="editor-input" placeholder="e.g. Dev Tools">
+                </div>
+                <div>
+                    <label class="editor-label">Category</label>
+                    <input type="text" id="editorCategory" class="editor-input" placeholder="e.g. Primary">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="editor-label">SVG Icon Code</label>
+                        <textarea id="editorIcon" class="editor-input editor-textarea h-32" placeholder='<svg fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24">&#10;  <path .../>&#10;</svg>'></textarea>
+                    </div>
+                    <div>
+                        <label class="editor-label">Preview</label>
+                        <div id="svgPreview" class="w-full h-32 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-600 overflow-hidden">
+                            <span class="text-xs font-mono text-slate-600">No preview</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <label class="editor-label" style="margin-bottom:0">Links</label>
+                        <button id="addLinkBtn" type="button" class="text-[10px] font-mono text-cyan-400 hover:text-cyan-300 uppercase tracking-widest transition-colors">+ Add Link</button>
+                    </div>
+                    <div id="linksContainer" class="space-y-2"></div>
+                </div>
+                <div class="flex gap-3 pt-4 border-t border-white/10">
+                    <button id="cancelEditorBtn" type="button" class="haptic-trigger flex-1 px-4 py-2.5 text-xs font-mono rounded-xl bg-white/5 text-slate-400 hover:bg-white/10 transition-colors">Cancel</button>
+                    <button id="saveTileBtn" type="button" class="haptic-trigger flex-1 px-4 py-2.5 text-xs font-mono rounded-xl bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 transition-colors border border-cyan-500/20">Save Tile</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE CONFIRM MODAL -->
+    <div id="deleteConfirmModal" class="fixed inset-0 z-[120] bg-black/80 backdrop-blur-sm flex items-center justify-center opacity-0 pointer-events-none">
+        <div class="glass-panel p-8 rounded-3xl max-w-sm w-full mx-4">
+            <h2 class="text-lg font-mono text-white mb-2">Delete Tile?</h2>
+            <p class="text-xs font-mono text-slate-500 mb-6">This removes it from KV permanently.</p>
+            <div class="flex gap-3">
+                <button id="deleteCancelBtn" class="haptic-trigger flex-1 px-4 py-2.5 text-xs font-mono rounded-xl bg-white/5 text-slate-400 hover:bg-white/10 transition-colors">Cancel</button>
+                <button id="deleteConfirmBtn" class="haptic-trigger flex-1 px-4 py-2.5 text-xs font-mono rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors border border-red-500/20">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIN MODAL -->
+    <div id="pinModal" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center opacity-0 pointer-events-none">
+        <div class="glass-panel p-8 rounded-3xl max-w-sm w-full mx-4">
+            <h2 class="text-xl font-mono text-white mb-2 tracking-tight">EDIT MODE</h2>
+            <p class="text-xs font-mono text-slate-500 uppercase tracking-widest mb-6">Enter PIN to unlock editing</p>
+            <input type="password" id="pinInput" maxlength="6" placeholder="••••••" autocomplete="off"
+                class="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-600 text-center font-mono text-2xl tracking-widest mb-2 focus:outline-none focus:border-cyan-400/50 transition-colors">
+            <div id="pinError" class="text-red-400 text-xs font-mono mb-4 h-4"></div>
+            <div class="flex gap-3">
+                <button id="pinCancel" class="haptic-trigger flex-1 px-4 py-2.5 text-xs font-mono rounded-xl bg-white/5 text-slate-400 hover:bg-white/10 transition-colors">Cancel</button>
+                <button id="pinSubmit" class="haptic-trigger flex-1 px-4 py-2.5 text-xs font-mono rounded-xl bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 transition-colors border border-cyan-500/20">Unlock</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SAVE STATUS TOAST -->
+    <div id="saveStatus" class="fixed bottom-8 left-1/2 -translate-x-1/2 px-5 py-3 rounded-2xl glass-panel text-xs font-mono uppercase tracking-widest opacity-0 pointer-events-none border border-white/10 whitespace-nowrap">
+        <span id="saveStatusText">Saving...</span>
+    </div>
+
     <script>
         // Haptic Engine
         const triggerHaptic = (type = 'light') => {
@@ -356,30 +466,432 @@
             if (type === 'heavy') navigator.vibrate([60]);
         };
 
-        // --- 0. HYDRATE LAYOUT ---
-        (function() {
-            const savedLayout = localStorage.getItem('kzick_layout_v2.3');
-            if (savedLayout) {
-                try {
-                    const order = JSON.parse(savedLayout);
-                    const board = document.getElementById('springboard');
-                    if(board) {
-                        const tiles = Array.from(board.children);
-                        const tileMap = {};
-                        tiles.forEach(t => tileMap[t.getAttribute('data-id')] = t);
-                        
-                        order.forEach(id => {
-                            if (tileMap[id]) board.appendChild(tileMap[id]);
-                        });
-                        tiles.forEach(t => {
-                            if (!order.includes(t.getAttribute('data-id'))) {
-                                board.appendChild(t);
-                            }
-                        });
-                    }
-                } catch(e) { console.error("Grid Restore Failed", e); }
+        // ============================================================
+        // --- PHASE A: EDIT MODE FOUNDATION ---
+        // ============================================================
+
+        // Global edit state
+        let editMode = false;
+        let authPin = null;
+        const API_BASE = 'https://kzick.askozicki.workers.dev';
+
+        // Save Status Toast
+        function showSaveStatus(message, type = 'info') {
+            const toast = document.getElementById('saveStatus');
+            const text = document.getElementById('saveStatusText');
+            if (!toast || !text) return;
+            text.textContent = message;
+
+            toast.style.borderColor = type === 'error'
+                ? 'rgba(239, 68, 68, 0.35)'
+                : type === 'success'
+                    ? 'rgba(6, 182, 212, 0.35)'
+                    : 'rgba(255,255,255,0.1)';
+            text.style.color = type === 'error'
+                ? 'rgb(248,113,113)'
+                : type === 'success'
+                    ? 'rgb(34,211,238)'
+                    : 'rgb(148,163,184)';
+
+            toast.style.opacity = '1';
+            clearTimeout(toast._toastTimer);
+            toast._toastTimer = setTimeout(() => { toast.style.opacity = '0'; }, 3000);
+        }
+
+        // Authenticated API wrapper
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            const options = {
+                method,
+                headers: { 'Content-Type': 'application/json', 'X-PIN': authPin || '' }
+            };
+            if (body) options.body = JSON.stringify(body);
+            const res = await fetch(`${API_BASE}${endpoint}`, options);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+            return data;
+        }
+
+        // ============================================================
+        // --- PHASE B: TILE RENDERING ENGINE ---
+        // ============================================================
+
+        // Static fallback tiles — used when KV is empty or Worker unreachable
+        const STATIC_TILES = [
+            { id: 'email', name: 'Email', category: 'Primary', order: 0,
+              icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>',
+              links: [{ text: 'Email', url: 'https://mail.google.com/' }] },
+            { id: 'calendar', name: 'Calendar', category: 'Primary', order: 1,
+              icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>',
+              links: [{ text: 'Calendar', url: 'https://calendar.google.com/' }] },
+            { id: 'liveforge', name: 'LiveForge', category: 'Primary', order: 2,
+              icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>',
+              links: [{ text: 'LiveForge', url: 'live-forge/index.html' }] },
+            { id: 'sports', name: 'Sports', category: 'Primary', order: 3,
+              icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>',
+              links: [{ text: 'Sports', url: '/sports/index.html' }] },
+            { id: 'visualizer', name: 'Visualizer', category: 'Primary', order: 4,
+              icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>',
+              links: [{ text: 'Flow Lab', url: 'flow-lab/index.html' }] },
+            { id: 'vault', name: 'Code Vault', category: 'Dev', order: 5,
+              icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"/></svg>',
+              links: [
+                { text: 'Cloudflare', url: 'https://dash.cloudflare.com' },
+                { text: 'Code Snippets', url: 'https://kzick001.github.io/fragment/' },
+                { text: 'GitHub Repos', url: 'https://github.com/kzick' },
+                { text: 'UB Game', url: 'https://kzick001.github.io/undead-barrage/ub-v12' },
+                { text: 'UB Masterfile Creator', url: 'https://kzick001.github.io/undead-barrage/master-file-creator.html' },
+                { text: 'API Reference (MagTag)', url: 'https://docs.circuitpython.org/projects/magtag/en/latest/api.html' }
+              ] },
+            { id: 'links', name: 'Links', category: 'Primary', order: 6,
+              icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M6 2L2 8l10 14L22 8l-4-6H6z"/><path d="M2 8h20M12 22V8M6 2l6 6M18 2l-6 6"/></svg>',
+              links: [
+                { text: 'DM Asst DCW', url: 'https://gemini.google.com/gem/d7aa441f9adf' },
+                { text: 'D&D Room Descriptions', url: 'https://docs.google.com/document/d/1Cb9z_aPEQ9kYAEfObuDkGV7Sh7OQAHQ7hjKdu6-lld0/edit?usp=sharing' },
+                { text: 'Loot Tables', url: 'https://docs.google.com/document/d/1a3jOUm6RPf9ZlQhw_t5uBR_qJrjpnrN7JGj_G_UcKdw/edit?usp=sharing' },
+                { text: 'Roll20-DCW', url: 'https://app.roll20.net/campaigns/details/18992588/dungeon-crawler-world-earth' },
+                { text: 'Image Gen V2', url: 'https://gemini.google.com/gem/a70141b1339a' }
+              ] },
+            { id: 'weather', name: 'Weather', category: 'Primary', order: 7,
+              icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></svg>',
+              links: [{ text: 'Weather', url: 'weather/index.html' }] }
+        ];
+
+        // Module-level tile cache
+        let currentTiles = [];
+
+        // Load tiles — KV first, STATIC_TILES fallback
+        async function loadTiles() {
+            try {
+                const tiles = await apiCall('/api/tiles', 'GET');
+                currentTiles = (Array.isArray(tiles) && tiles.length > 0) ? tiles : STATIC_TILES;
+            } catch(e) {
+                currentTiles = STATIC_TILES;
             }
+            renderTiles(currentTiles);
+        }
+
+        // Responsive grid — 2 cols mobile, 3 cols desktop
+        function setGridColumns() {
+            const grid = document.getElementById('springboard');
+            if (!grid) return;
+            grid.style.gridTemplateColumns = window.innerWidth < 768
+                ? 'repeat(2, minmax(0, 1fr))'
+                : 'repeat(3, minmax(0, 1fr))';
+        }
+        window.addEventListener('resize', setGridColumns);
+
+        // Render category filter pills
+        function renderCategoryBar(tiles) {
+            const bar = document.getElementById('categoryBar');
+            if (!bar) return;
+            const cats = [...new Set(tiles.map(t => t.category || 'Primary'))].sort();
+            let html = `<button class="category-pill active" data-cat="*">All (${tiles.length})</button>`;
+            cats.forEach(cat => {
+                const n = tiles.filter(t => (t.category || 'Primary') === cat).length;
+                html += `<button class="category-pill" data-cat="${cat}">${cat} (${n})</button>`;
+            });
+            bar.innerHTML = html;
+            bar.querySelectorAll('.category-pill').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    bar.querySelectorAll('.category-pill').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    filterTiles(btn.dataset.cat);
+                    triggerHaptic('light');
+                });
+            });
+        }
+
+        // Filter visible tiles by category
+        function filterTiles(cat) {
+            document.querySelectorAll('#springboard [data-tile-id]').forEach(el => {
+                el.style.display = (cat === '*' || el.dataset.tileCategory === cat) ? '' : 'none';
+            });
+        }
+
+        // Render all tiles into #springboard
+        function renderTiles(tiles) {
+            const board = document.getElementById('springboard');
+            if (!board) return;
+            board.innerHTML = '';
+            [...tiles].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).forEach(tile => {
+                const el = document.createElement('div');
+                el.className = 'app-tile glass-panel group flex flex-col items-center justify-center p-6 rounded-[2rem] overflow-hidden aspect-square haptic-trigger relative';
+                el.setAttribute('data-tile-id', tile.id);
+                el.setAttribute('data-tile-category', tile.category || 'Primary');
+                el.setAttribute('data-id', tile.id); // keep for drag compat
+                el.setAttribute('draggable', 'true');
+                el.innerHTML = `
+                    <div class="tile-edit-controls">
+                        <button class="tile-edit-btn bg-cyan-500/20 hover:bg-cyan-500/40" data-id="${tile.id}" title="Edit">
+                            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        </button>
+                        <button class="tile-delete-btn bg-red-500/20 hover:bg-red-500/40" data-id="${tile.id}" title="Delete">
+                            <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                    <div class="relative z-10 text-slate-400 group-hover:text-white transition-colors duration-500 flex flex-col items-center w-full pointer-events-none">
+                        <div class="w-20 h-20 sm:w-24 sm:h-24 mb-4 drop-shadow-md flex items-center justify-center">${tile.icon || ''}</div>
+                        <span class="text-base font-medium tracking-wide">${tile.name}</span>
+                        ${tile.links.length > 1 ? `<span class="text-[9px] font-mono text-slate-600 mt-1 uppercase tracking-widest">${tile.links.length} links</span>` : ''}
+                    </div>`;
+                board.appendChild(el);
+            });
+            renderCategoryBar(tiles);
+            setGridColumns();
+        }
+
+        // ============================================================
+        // --- TILE EDITOR ---
+        // ============================================================
+
+        let editingTileId = null;
+
+        function openTileEditor(tile = null) {
+            editingTileId = tile?.id || null;
+            document.getElementById('editorTitle').textContent = tile ? `Edit: ${tile.name}` : 'New Tile';
+            document.getElementById('editorName').value = tile?.name || '';
+            document.getElementById('editorCategory').value = tile?.category || 'Primary';
+            document.getElementById('editorIcon').value = tile?.icon || '';
+            updateSvgPreview();
+            renderLinksEditor(tile?.links || []);
+            const modal = document.getElementById('tileEditorModal');
+            modal.style.opacity = '1';
+            modal.style.pointerEvents = 'auto';
+            requestAnimationFrame(() => document.getElementById('editorName').focus());
+        }
+
+        function closeEditor() {
+            const modal = document.getElementById('tileEditorModal');
+            modal.style.opacity = '0';
+            modal.style.pointerEvents = 'none';
+            editingTileId = null;
+        }
+
+        function updateSvgPreview() {
+            const val = document.getElementById('editorIcon').value.trim();
+            const preview = document.getElementById('svgPreview');
+            if (!val) {
+                preview.innerHTML = '<span class="text-xs font-mono text-slate-600">No preview</span>';
+                return;
+            }
+            try {
+                preview.innerHTML = `<div class="w-16 h-16 text-slate-300">${val}</div>`;
+                const svg = preview.querySelector('svg');
+                if (svg) { svg.style.width = '100%'; svg.style.height = '100%'; }
+            } catch(e) {
+                preview.innerHTML = '<span class="text-xs font-mono text-red-400">Invalid SVG</span>';
+            }
+        }
+
+        function renderLinksEditor(links) {
+            const container = document.getElementById('linksContainer');
+            container.innerHTML = '';
+            links.forEach((link, i) => addLinkRow(link.text || '', link.url || ''));
+        }
+
+        function addLinkRow(text = '', url = '') {
+            const container = document.getElementById('linksContainer');
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 items-center';
+            row.innerHTML = `
+                <input type="text" class="editor-input flex-1" placeholder="Link text" value="${text.replace(/"/g, '&quot;')}">
+                <input type="url" class="editor-input flex-1" placeholder="https://..." value="${url.replace(/"/g, '&quot;')}">
+                <button type="button" class="remove-link-btn p-2 rounded-lg bg-red-500/15 hover:bg-red-500/30 transition-colors flex-shrink-0">
+                    <svg class="w-3.5 h-3.5 text-red-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                </button>`;
+            row.querySelector('.remove-link-btn').addEventListener('click', () => row.remove());
+            container.appendChild(row);
+        }
+
+        document.getElementById('addLinkBtn').addEventListener('click', () => addLinkRow());
+        document.getElementById('editorIcon').addEventListener('input', updateSvgPreview);
+        document.getElementById('closeEditorBtn').addEventListener('click', closeEditor);
+        document.getElementById('cancelEditorBtn').addEventListener('click', closeEditor);
+
+        document.getElementById('saveTileBtn').addEventListener('click', async () => {
+            const name = document.getElementById('editorName').value.trim();
+            const category = document.getElementById('editorCategory').value.trim() || 'Primary';
+            const icon = document.getElementById('editorIcon').value.trim();
+            if (!name) { showSaveStatus('✗ Name required', 'error'); return; }
+
+            const links = [];
+            document.querySelectorAll('#linksContainer > div').forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                const text = inputs[0]?.value.trim();
+                const url = inputs[1]?.value.trim();
+                if (text && url) links.push({ text, url });
+            });
+
+            showSaveStatus('Saving...', 'info');
+            try {
+                if (editingTileId) {
+                    await apiCall(`/api/tiles/${editingTileId}`, 'PATCH', { name, category, icon, links });
+                    showSaveStatus('✓ Tile updated', 'success');
+                } else {
+                    await apiCall('/api/tiles', 'POST', { name, category, icon, links });
+                    showSaveStatus('✓ Tile created', 'success');
+                }
+                closeEditor();
+                loadTiles();
+            } catch(e) {
+                showSaveStatus('✗ Save failed — check auth', 'error');
+            }
+        });
+
+        // ============================================================
+        // --- DELETE CONFIRM ---
+        // ============================================================
+
+        let pendingDeleteId = null;
+
+        function showDeleteConfirm(tileId) {
+            pendingDeleteId = tileId;
+            const modal = document.getElementById('deleteConfirmModal');
+            modal.style.opacity = '1';
+            modal.style.pointerEvents = 'auto';
+        }
+
+        function closeDeleteConfirm() {
+            pendingDeleteId = null;
+            const modal = document.getElementById('deleteConfirmModal');
+            modal.style.opacity = '0';
+            modal.style.pointerEvents = 'none';
+        }
+
+        document.getElementById('deleteCancelBtn').addEventListener('click', closeDeleteConfirm);
+        document.getElementById('deleteConfirmBtn').addEventListener('click', async () => {
+            if (!pendingDeleteId) return;
+            showSaveStatus('Deleting...', 'info');
+            try {
+                await apiCall(`/api/tiles/${pendingDeleteId}`, 'DELETE');
+                showSaveStatus('✓ Tile deleted', 'success');
+                closeDeleteConfirm();
+                loadTiles();
+            } catch(e) {
+                showSaveStatus('✗ Delete failed', 'error');
+                closeDeleteConfirm();
+            }
+        });
+
+        // Global Escape + Ctrl+N shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeEditor();
+                closeDeleteConfirm();
+                const pin = document.getElementById('pinModal');
+                pin.style.opacity = '0'; pin.style.pointerEvents = 'none';
+            }
+            if (e.ctrlKey && e.key === 'n' && editMode) {
+                e.preventDefault();
+                openTileEditor(null);
+            }
+        });
+
+        // PIN Modal Logic
+        (function initPinModal() {
+            const modal   = document.getElementById('pinModal');
+            const input   = document.getElementById('pinInput');
+            const submit  = document.getElementById('pinSubmit');
+            const cancel  = document.getElementById('pinCancel');
+            const errEl   = document.getElementById('pinError');
+            const toggle  = document.getElementById('editModeToggle');
+            const newBtn  = document.getElementById('newTileBtn');
+
+            function openModal() {
+                errEl.textContent = '';
+                input.value = '';
+                modal.style.opacity = '1';
+                modal.style.pointerEvents = 'auto';
+                requestAnimationFrame(() => input.focus());
+            }
+
+            function closeModal() {
+                modal.style.opacity = '0';
+                modal.style.pointerEvents = 'none';
+                input.value = '';
+                errEl.textContent = '';
+            }
+
+            function enterEditMode(pin) {
+                authPin = pin;
+                editMode = true;
+                toggle.textContent = 'Exit Edit';
+                toggle.classList.remove('text-slate-400', 'border-white/10', 'hover:border-white/30');
+                toggle.classList.add('text-cyan-400', 'border-cyan-400/40');
+                newBtn.style.display = 'inline-block';
+                document.body.classList.add('edit-mode');
+                showSaveStatus('✓ Edit mode unlocked', 'success');
+                loadTiles(); // Re-render to show edit/delete controls
+            }
+
+            function exitEditMode() {
+                editMode = false;
+                authPin = null;
+                toggle.textContent = 'Edit';
+                toggle.classList.add('text-slate-400', 'border-white/10', 'hover:border-white/30');
+                toggle.classList.remove('text-cyan-400', 'border-cyan-400/40');
+                newBtn.style.display = 'none';
+                document.body.classList.remove('edit-mode');
+                showSaveStatus('Edit mode off', 'info');
+                loadTiles(); // Re-render to hide edit/delete controls
+            }
+
+            toggle.addEventListener('click', () => {
+                if (editMode) { exitEditMode(); return; }
+                openModal();
+            });
+
+            cancel.addEventListener('click', closeModal);
+
+            submit.addEventListener('click', async () => {
+                const pin = input.value.trim();
+                if (pin.length < 4) {
+                    errEl.textContent = 'PIN must be 4+ digits';
+                    return;
+                }
+                submit.textContent = '...';
+                submit.disabled = true;
+                try {
+                    // Validate PIN by hitting the read endpoint
+                    const res = await fetch(`${API_BASE}/api/tiles`, {
+                        headers: { 'X-PIN': pin }
+                    });
+                    if (res.ok) {
+                        closeModal();
+                        enterEditMode(pin);
+                    } else {
+                        errEl.textContent = 'Incorrect PIN';
+                        input.value = '';
+                        input.focus();
+                    }
+                } catch(e) {
+                    errEl.textContent = 'Network error — check connection';
+                } finally {
+                    submit.textContent = 'Unlock';
+                    submit.disabled = false;
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') submit.click();
+                if (e.key === 'Escape') closeModal();
+            });
+
+            // Keyboard shortcut: Ctrl+E
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 'e') {
+                    e.preventDefault();
+                    toggle.click();
+                }
+            });
+
+            // New Tile button
+            newBtn.addEventListener('click', () => openTileEditor(null));
         })();
+
+        // --- 0. HYDRATE LAYOUT ---
+        // Replaced by KV-driven renderTiles() in Phase B.
+        // localStorage order is no longer the source of truth.
 
         // --- 1. LOCAL CHRONOMETER & DATE ---
         const dateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
@@ -496,44 +1008,25 @@
         document.addEventListener('visibilitychange', () => { if (document.hidden) clearTimeout(ghostTimer); else resetGhostTimer(); });
 
         // --- 4. MODAL UI ---
-        const folderData = {
-            'multiplexer': {
-                title: 'LINKS', 
-                links: [
-                    { name: 'DM Asst DCW', url: 'https://gemini.google.com/gem/d7aa441f9adf' },
-                    { name: 'D&D Room Descriptions', url: 'https://docs.google.com/document/d/1Cb9z_aPEQ9kYAEfObuDkGV7Sh7OQAHQ7hjKdu6-lld0/edit?usp=sharing' },
-                    { name: 'Loot Tables', url: 'https://docs.google.com/document/d/1a3jOUm6RPf9ZlQhw_t5uBR_qJrjpnrN7JGj_G_UcKdw/edit?usp=sharing' },
-                    { name: 'Roll20-DCW', url: 'https://app.roll20.net/campaigns/details/18992588/dungeon-crawler-world-earth' },
-                    { name: 'Image Gen V2', url: 'https://gemini.google.com/gem/a70141b1339a' },
-                ]
-            }
-        };
-
         const modal = document.getElementById('folderModal');
         const modalContent = document.getElementById('modalContent');
         const modalTitle = document.getElementById('modalTitle');
         const modalLinks = document.getElementById('modalLinks');
         
-        function openModal(folderId) {
+        function openTileModal(tileData) {
             triggerHaptic('light');
-            const data = folderData[folderId];
-            if (!data) return;
-            
-            modalTitle.textContent = data.title;
-            modalLinks.innerHTML = data.links.map(link => `
+            modalTitle.textContent = tileData.name;
+            modalLinks.innerHTML = tileData.links.map(link => `
                 <a href="${link.url}" target="_blank" class="px-4 py-3 rounded-xl text-base font-medium text-slate-300 bg-white/5 hover:bg-white/10 hover:text-white transition-all flex items-center justify-between border border-white/5 hover:border-white/20 haptic-trigger">
-                    ${link.name} <span class="text-slate-500 text-xs">↗</span>
+                    ${link.text} <span class="text-slate-500 text-xs">↗</span>
                 </a>
             `).join('');
-            
             modal.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    modal.classList.remove('opacity-0');
-                    modalContent.classList.remove('scale-95');
-                    modalContent.classList.add('scale-100');
-                });
-            });
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            }));
         }
 
         function closeModal() {
@@ -553,108 +1046,117 @@
 
         board.addEventListener('dragstart', e => {
             const tile = e.target.closest('.app-tile');
-            if(!tile) return;
+            if (!tile) return;
+            if (!editMode) { e.preventDefault(); return; } // reorder only in edit mode
             triggerHaptic('light');
             isDragging = true;
             draggedItem = tile;
             e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', tile.getAttribute('data-id') || 'tile'); 
-            setTimeout(() => draggedItem.style.opacity = '0.4', 0);
+            e.dataTransfer.setData('text/plain', tile.getAttribute('data-tile-id') || 'tile');
+            setTimeout(() => { if (draggedItem) draggedItem.style.opacity = '0.4'; }, 0);
         });
 
-        board.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
-
-        board.addEventListener('drop', e => {
+        board.addEventListener('dragover', e => {
             e.preventDefault();
+            if (!editMode) return;
+            e.dataTransfer.dropEffect = 'move';
+            const target = e.target.closest('.app-tile');
+            board.querySelectorAll('.drag-over').forEach(el => {
+                if (el !== target) el.classList.remove('drag-over');
+            });
+            if (target && target !== draggedItem) target.classList.add('drag-over');
+        });
+
+        board.addEventListener('dragleave', e => {
+            const target = e.target.closest('.app-tile');
+            if (target) target.classList.remove('drag-over');
+        });
+
+        board.addEventListener('drop', async e => {
+            e.preventDefault();
+            board.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
             const targetItem = e.target.closest('.app-tile');
-            if (targetItem && draggedItem && targetItem !== draggedItem) {
-                const nodes = Array.from(board.children);
-                const draggedIdx = nodes.indexOf(draggedItem);
-                const targetIdx = nodes.indexOf(targetItem);
-                
-                if (draggedIdx < targetIdx) targetItem.after(draggedItem);
-                else targetItem.before(draggedItem);
-                
-                const newOrder = Array.from(board.children).map(t => t.getAttribute('data-id'));
-                localStorage.setItem('kzick_layout_v2.3', JSON.stringify(newOrder));
+            if (!targetItem || !draggedItem || targetItem === draggedItem) {
+                if (draggedItem) draggedItem.style.opacity = '1';
+                triggerHaptic('heavy');
+                return;
             }
-            if(draggedItem) draggedItem.style.opacity = '1';
+
+            // Reorder DOM
+            const nodes = Array.from(board.children);
+            const draggedIdx = nodes.indexOf(draggedItem);
+            const targetIdx  = nodes.indexOf(targetItem);
+            if (draggedIdx < targetIdx) targetItem.after(draggedItem);
+            else targetItem.before(draggedItem);
+
+            if (draggedItem) draggedItem.style.opacity = '1';
             triggerHaptic('heavy');
+
+            // Build new order and update in-memory cache
+            const newIdOrder = Array.from(board.querySelectorAll('[data-tile-id]'))
+                .map(t => t.getAttribute('data-tile-id'));
+            newIdOrder.forEach((id, idx) => {
+                const tile = currentTiles.find(t => t.id === id);
+                if (tile) tile.order = idx;
+            });
+
+            // Persist to KV
+            showSaveStatus('Saving order...', 'info');
+            try {
+                await apiCall('/api/tiles/reorder', 'POST', {
+                    orders: newIdOrder.map((id, idx) => ({ id, order: idx }))
+                });
+                showSaveStatus('✓ Order saved', 'success');
+            } catch(err) {
+                showSaveStatus('✗ Reorder failed', 'error');
+            }
         });
 
         board.addEventListener('dragend', () => {
-            if(draggedItem) draggedItem.style.opacity = '1';
+            board.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            if (draggedItem) draggedItem.style.opacity = '1';
             draggedItem = null;
             setTimeout(() => { isDragging = false; }, 100);
         });
 
+        // Unified tile click handler — routes to edit, delete, nav, or modal
         board.addEventListener('click', e => {
-            if (isDragging) return; 
-            const folderTile = e.target.closest('[data-folder]');
-            if (folderTile) openModal(folderTile.getAttribute('data-folder'));
+            if (isDragging) return;
+            const tileEl = e.target.closest('[data-tile-id]');
+            if (!tileEl) return;
+            const tileId = tileEl.dataset.tileId;
+            const tileData = currentTiles.find(t => t.id === tileId);
+
+            // Edit mode: intercept edit/delete buttons
+            if (editMode) {
+                if (e.target.closest('.tile-edit-btn')) {
+                    e.stopPropagation();
+                    if (tileData) openTileEditor(tileData);
+                    return;
+                }
+                if (e.target.closest('.tile-delete-btn')) {
+                    e.stopPropagation();
+                    showDeleteConfirm(tileId);
+                    return;
+                }
+                return; // Don't navigate in edit mode
+            }
+
+            // Normal mode: single link → navigate, multi-link → open modal
+            if (!tileData) return;
+            triggerHaptic('light');
+            if (tileData.links.length === 1) {
+                window.open(tileData.links[0].url, '_blank');
+            } else if (tileData.links.length > 1) {
+                openTileModal(tileData);
+            }
         });
 
        // --- 5.5 DYNAMIC VAULT ENGINE ---
-        (function initDynamicVault() {
-            if (!window.KzickVaultManifest) return;
-            const vaultTile = document.querySelector('[data-id="vault"]');
-            if (!vaultTile) return;
+        // Replaced in Phase B — vault links now rendered via KV tile data + openTileModal.
 
-            let payload = `
-            <div id="vault-dropdown" class="absolute top-[105%] left-0 w-64 sm:w-72 z-50 grid transition-all duration-500 origin-top" style="grid-template-rows: 0fr; opacity: 0; pointer-events: none; transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.1);">
-                <div class="glass-panel overflow-hidden min-h-0 rounded-2xl flex flex-col text-left">
-                    <div class="p-3">`;
-
-            window.KzickVaultManifest.forEach(group => {
-                payload += `
-                    <div class="mb-3 last:mb-0">
-                        <span class="block px-3 py-1 text-[10px] font-mono text-cyan-400/80 uppercase tracking-widest">${group.category}</span>
-                        <div class="flex flex-col gap-1 mt-1">
-                            ${group.links.map(link => `
-                                <a href="${link.url}" target="_blank" class="haptic-trigger px-3 py-2.5 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/15 hover:border-brand-500/30 rounded-lg transition-all flex justify-between items-center group/link border border-transparent duration-200 shadow-sm hover:shadow-md">
-                                    ${link.text}
-                                    <span class="text-slate-600 group-hover/link:text-cyan-400 transition-colors text-xs">↗</span>
-                                </a>
-                            `).join('')}
-                        </div>
-                    </div>`;
-            });
-
-            payload += `</div></div></div>`;
-            vaultTile.insertAdjacentHTML('beforeend', payload);
-
-            const dropdown = document.getElementById('vault-dropdown');
-            let isVaultOpen = false;
-
-            vaultTile.addEventListener('click', (e) => {
-                if (typeof isDragging !== 'undefined' && isDragging) return; 
-                if (e.target.closest('a')) return; 
-
-                triggerHaptic('light');
-                isVaultOpen = !isVaultOpen;
-                if (isVaultOpen) {
-                    dropdown.style.gridTemplateRows = '1fr';
-                    dropdown.style.opacity = '1';
-                    dropdown.style.pointerEvents = 'auto';
-                    vaultTile.style.borderColor = 'rgba(6, 182, 212, 0.5)'; 
-                } else {
-                    dropdown.style.gridTemplateRows = '0fr';
-                    dropdown.style.opacity = '0';
-                    dropdown.style.pointerEvents = 'none';
-                    vaultTile.style.borderColor = ''; 
-                }
-            });
-
-            document.addEventListener('click', (e) => {
-                if (isVaultOpen && !vaultTile.contains(e.target)) {
-                    isVaultOpen = false;
-                    dropdown.style.gridTemplateRows = '0fr';
-                    dropdown.style.opacity = '0';
-                    dropdown.style.pointerEvents = 'none';
-                    vaultTile.style.borderColor = '';
-                }
-            });
-        })();
+        // --- INIT: Load tiles from KV on page load ---
+        loadTiles();
 
         // --- 6. SECURE ATMOS PROTOCOL PIPELINE ---
         (async function initWeatherPipeline() {
