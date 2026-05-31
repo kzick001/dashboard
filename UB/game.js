@@ -4,7 +4,8 @@
 //   Mutation/Venture hooks, Spitter/Barricade, Supply Drops, Audio scaffold
 // ==========================================
 
-// GameConfig loaded from config.js | FlavorText loaded from flavor.js (globals)
+import { GameConfig } from './config.js';
+import { FlavorText } from './flavor.js';
 
 // Mastery track definitions now live in GameConfig.mastery (config.js).
 
@@ -140,7 +141,7 @@ class GameScene extends Phaser.Scene {
 
         // Projectiles
         this.load.svg('bullet', 'assets/svgs/bullet.svg');
-        this.load.svg('grenade_proj', 'assets/svgs/grenade_proj.svg');
+        this.load.svg('grenade_proj', 'assets/svgs/grenade.svg');
 
         // Items
         this.load.svg('coin', 'assets/svgs/coin.svg');
@@ -164,8 +165,8 @@ class GameScene extends Phaser.Scene {
             .setDisplaySize(1000, cam.height)
             .setDepth(0);
 
-        // World bounds set large; road confinement enforced by player clamp in Player.tick()
-        this.physics.world.setBounds(-9999, -9999, 99999, 99999);
+        // World bounds = camera bounds (arena is the visible screen)
+        this.physics.world.setBounds(0, 0, cam.width, cam.height);
 
         // ----- Object pools -----
         this.projectilePool = this.physics.add.group({
@@ -192,6 +193,7 @@ class GameScene extends Phaser.Scene {
         this.player = new Player(this, cam.centerX, cam.height - 120);
         this.add.existing(this.player);
         this.physics.add.existing(this.player);
+        this.player.body.setCollideWorldBounds(true);
 
         // ----- Collisions -----
         this.physics.add.overlap(this.projectilePool, this.enemyGroup, this.onProjectileHitEnemy, null, this);
@@ -208,10 +210,6 @@ class GameScene extends Phaser.Scene {
         this.hud = new HUDManager(this);
         this.shop = new ShopManager(this);
         this.harvest = new HarvestManager(this);
-
-        // Build weapon icon data-URL cache for HUD + shop (renders each wpn_side_N texture)
-        this.wpnIconCache = {};
-        this.time.delayedCall(100, () => this.buildWpnIconCache());
 
         // ----- Input -----
         this.setupInputHandlers();
@@ -240,34 +238,19 @@ class GameScene extends Phaser.Scene {
         GameState.inShop = false;
         GameState.inHarvest = false;
         GameState.wave = 1;
-        GameState.maxHp = 5;
-        GameState.hp = 5;
+        GameState.hp = GameState.maxHp;
         GameState.armor = 0;
         GameState.funds = 0;
         GameState.grenades = 0;
         GameState.combo = 0;
-        GameState.maxCombo = 0;
         GameState.kills = 0;
         GameState.primaryWeapon = 0;
         GameState.secondaryWeapon = null;
         GameState.activeSlot = 'primary';
-        GameState.mutations = [];
-        GameState.unlockedWeapons = [0];
-        GameState.ventureInvestments = {};
-        GameState.defenses = [];
-        GameState.barricades = [null, null, null, null, null, null];
-        GameConfig.weapons.forEach((wpn, idx) => {
-            GameState.ammo[idx] = wpn.magSize;
-            GameState.weaponMastery[idx] = { track1: 0, track2: 0, track3: 0 };
-        });
-
-        // Clear any leftover barricades and turrets from prior run
-        this.barricadeGroup.clear(true, true);
-        GameState.defenses.forEach(d => { if (d.entity && d.entity.sprite) d.entity.sprite.destroy(); });
+        GameConfig.weapons.forEach((wpn, idx) => { GameState.ammo[idx] = wpn.magSize; });
 
         this.player.respawn();
         this.physics.world.resume();
-        this.shop.selectedWeapon = 0;
         this.hud.show();
         // Phase 2: freeze before first wave until the player acknowledges the transmission
         this.showTutorialGate(GameState.wave, () => {
@@ -289,17 +272,25 @@ class GameScene extends Phaser.Scene {
     onWaveCleared(detail) {
         // Wave-end payout + venture interest
         this.applyWaveEndEconomy();
-        this.hud.flashWaveClear();
+        const isBossWave = GameState.wave % 10 === 0;
+        if (isBossWave) {
+            this.hud.showTransmission(FlavorText.bossDefeated);
+            this.hud.hideBossBar();
+        } else {
+            this.hud.flashWaveClear();
+        }
+
+        const delay = isBossWave ? 3500 : 1400;
 
         // Every 5 waves => harvest; otherwise => shop
         if (GameState.wave % 5 === 0) {
-            this.time.delayedCall(1400, () => {
+            this.time.delayedCall(delay, () => {
                 GameState.inHarvest = true;
                 this.onPauseGame();
                 this.harvest.open();
             });
         } else {
-            this.time.delayedCall(1400, () => {
+            this.time.delayedCall(delay, () => {
                 GameState.inShop = true;
                 this.onPauseGame();
                 this.shop.open();
@@ -333,7 +324,7 @@ class GameScene extends Phaser.Scene {
         const title = document.getElementById('game-over-title');
         const stats = document.getElementById('game-over-stats');
         if (title) title.textContent = FlavorText.gameOver.titleDead;
-        if (stats) stats.innerHTML = `${FlavorText.gameOver.survived} ${GameState.wave} WAVES<br>KILLS: ${GameState.kills} &nbsp;|&nbsp; BEST COMBO: x${GameState.maxCombo}`;
+        if (stats) stats.textContent = `${FlavorText.gameOver.survived} ${GameState.wave} WAVES`;
         this.showModal('screen-game-over');
     }
 
@@ -562,26 +553,6 @@ class GameScene extends Phaser.Scene {
         });
     }
 
-    // buildWpnIconCache() — render each wpn_side_N texture to a data URL for DOM use
-    buildWpnIconCache() {
-        const rt = this.add.renderTexture(0, 0, 64, 40).setVisible(false);
-        for (let i = 0; i < 8; i++) {
-            const key = `wpn_side_${i}`;
-            if (!this.textures.exists(key)) continue;
-            rt.clear();
-            rt.draw(key, 32, 20);
-            rt.snapshot((img) => {
-                this.wpnIconCache[i] = img.src;
-                // Refresh HUD icon if this is the active weapon's icon
-                const wpnId = activeWeaponId();
-                if (GameConfig.weapons[wpnId] && GameConfig.weapons[wpnId].iconId === i) {
-                    this.hud.refreshWeapon();
-                }
-            });
-        }
-        rt.destroy();
-    }
-
     // ---------- DOM modal handling ----------
     setupInputHandlers() {
         const click = (id, fn) => {
@@ -692,6 +663,8 @@ class Player extends Phaser.GameObjects.Image {
         if (this.scavengerTimer > 0) this.scavengerTimer -= delta;
         if (this.payItForwardTimer > 0) this.payItForwardTimer -= delta;
 
+        if (GameState.tutorialPending) { this.body.setVelocity(0, 0); return; }
+
         // --- Movement ---
         let speed = GameConfig.player.baseSpeed;
         if (this.scavengerTimer > 0) speed *= GameConfig.mutations['Scavenger'].speedMult; // Scavenger speed boost
@@ -726,15 +699,10 @@ class Player extends Phaser.GameObjects.Image {
             (GameState.virtualGamepad && this.scene.hud.firePressed);
         if (wantFire) this.tryFire(time);
         if (!ptr.isDown) this.firing = false;
-
-        // Clamp player to road + vertical arena bounds
-        const cam = this.scene.cameras.main;
-        this.x = Phaser.Math.Clamp(this.x, cam.centerX - 240, cam.centerX + 240);
-        this.y = Phaser.Math.Clamp(this.y, 60, cam.height - 60);
     }
 
     tryFire(time) {
-        if (GameState.isReloading) return;
+        if (GameState.isReloading || GameState.tutorialPending) return;
         const wpnId = activeWeaponId();
         const stats = getModifiedStats(wpnId);
 
@@ -827,12 +795,7 @@ class Player extends Phaser.GameObjects.Image {
             eventBus.emit('PLAYER_HIT', { new: GameState.hp, old });
         }
 
-        // Taking a hit breaks the flawless combo
-        GameState.combo = 0;
-        eventBus.emit('COMBO_CHANGED', { combo: 0 });
-
         this.invulnTimer = GameConfig.combat.hitInvulnMs;
-        if (GameState.screenShake) this.scene.cameras.main.shake(150, 0.02);
         this.scene.tweens.add({ targets: this, alpha: 0.3, duration: 100, yoyo: true, repeat: 3,
             onComplete: () => this.setAlpha(1) });
 
@@ -851,7 +814,7 @@ class Projectile extends Phaser.GameObjects.Image {
     fire(x, y, vx, vy, damage, stats, dirX, dirY) {
         this.setActive(true).setVisible(true);
         this.setPosition(x, y);
-        this.rotation = Math.atan2(vy, vx);
+        this.rotation = Math.atan2(vy, vx) + Math.PI / 2;
         this.damage = damage;
         this.stats = stats;
         this.dirX = dirX; this.dirY = dirY;
@@ -977,18 +940,30 @@ class Enemy extends Phaser.GameObjects.Image {
             this.maxHp = def.hp;
             this.hp = def.hp;
             this.speed = def.speed;
+            this.baseSpeed = def.speed;
             this.contactDamage = def.power;
             this.setScale(def.scale * 0.5);
+            // Boss phase state
+            this.phase = 1;
+            this.chargeTimer = 0;
+            this.chargeCooldown = 8000;
+            this.addTimer = 0;
+            this.addInterval = 15000;
+            this.isCharging = false;
+            this.isTelegraphing = false;
+            this.chargeVx = 0;
+            this.chargeVy = 0;
+            this.chargeTimeLeft = 0;
         } else {
             const def = GameConfig.mobs[type];
             this.maxHp = def.baseHp + def.hpPerWave * (wave - 1);
             this.hp = this.maxHp;
             this.speed = def.baseSpeed + def.speedPerWave * (wave - 1);
             this.contactDamage = 1;
-            this.setScale(1.5);
+            this.setScale(1);
         }
 
-        if (this.body) { this.body.enable = true; this.body.setVelocity(0, 0); this.body.setMaxVelocity(600, 600); }
+        if (this.body) { this.body.enable = true; this.body.setVelocity(0, 0); }
 
         // Burrower: invulnerable while "digging" for first 2s
         if (type === 'burrower') {
@@ -1004,6 +979,74 @@ class Enemy extends Phaser.GameObjects.Image {
         if (!this.active) return;
         const p = this.scene.player;
         if (!p.active) { this.body.setVelocity(0, 0); return; }
+
+        // Boss phase logic
+        if (this.isBoss) {
+            const hpPct = this.hp / this.maxHp;
+            const ang = Phaser.Math.Angle.Between(this.x, this.y, p.x, p.y);
+
+            // Phase transitions
+            if (hpPct < 0.3 && this.phase < 3) {
+                this.phase = 3;
+                this.chargeCooldown = 4000;
+                this.addInterval = 8000;
+                this.setTint(0xff4444);
+                if (GameState.screenShake) this.scene.cameras.main.flash(400, 255, 50, 50);
+                this.scene.hud.showTransmission(FlavorText.bossPhase3);
+            } else if (hpPct < 0.6 && this.phase < 2) {
+                this.phase = 2;
+                this.scene.hud.showTransmission(FlavorText.bossPhase2);
+            }
+
+            const speedMult = this.phase === 3 ? 1.5 : this.phase >= 2 ? 1.3 : 1.0;
+
+            // Charge attack (phase 2+)
+            if (this.isCharging) {
+                this.chargeTimeLeft -= delta;
+                if (this.chargeTimeLeft <= 0) {
+                    this.isCharging = false;
+                    this.clearTint();
+                    if (this.phase === 3) this.setTint(0xff4444);
+                }
+            } else if (!this.isTelegraphing) {
+                this.chargeTimer += delta;
+                if (this.phase >= 2 && this.chargeTimer >= this.chargeCooldown) {
+                    this.chargeTimer = 0;
+                    this.isTelegraphing = true;
+                    this.setTint(0xffff00);
+                    this.body.setVelocity(0, 0);
+                    this.scene.time.delayedCall(600, () => {
+                        if (!this.active) return;
+                        this.isTelegraphing = false;
+                        this.isCharging = true;
+                        this.chargeTimeLeft = 800;
+                        const cAng = Phaser.Math.Angle.Between(this.x, this.y, p.x, p.y);
+                        this.chargeVx = Math.cos(cAng) * this.baseSpeed * 3;
+                        this.chargeVy = Math.sin(cAng) * this.baseSpeed * 3;
+                        this.clearTint();
+                        if (this.phase === 3) this.setTint(0xff4444);
+                    });
+                }
+            }
+
+            // Add spawning
+            this.addTimer += delta;
+            if (this.addTimer >= this.addInterval) {
+                this.addTimer = 0;
+                this.scene.director.spawnAdd('grunt', this.x + Phaser.Math.Between(-60, 60), this.y + Phaser.Math.Between(-60, 60));
+                if (this.phase === 3) this.scene.director.spawnAdd('grunt', this.x + Phaser.Math.Between(-60, 60), this.y + Phaser.Math.Between(-60, 60));
+            }
+
+            if (this.isCharging) {
+                this.body.setVelocity(this.chargeVx, this.chargeVy);
+            } else if (this.isTelegraphing) {
+                this.body.setVelocity(0, 0);
+            } else {
+                this.body.setVelocity(Math.cos(ang) * this.speed * speedMult, Math.sin(ang) * this.speed * speedMult);
+            }
+            this.rotation = ang + Math.PI;
+            return;
+        }
 
         // Phase 5: Spitter — ranged kiter. Hold range, back away straight, spit on cd.
         if (this.type === 'spitter') {
@@ -1027,7 +1070,7 @@ class Enemy extends Phaser.GameObjects.Image {
 
         const ang = Phaser.Math.Angle.Between(this.x, this.y, p.x, p.y);
         this.body.setVelocity(Math.cos(ang) * this.speed, Math.sin(ang) * this.speed);
-        this.rotation = ang + Math.PI;
+        this.rotation = ang + Math.PI / 2;
     }
 
     // fireAcid(angle) — Phase 5: launch an acid glob at the player
@@ -1043,6 +1086,9 @@ class Enemy extends Phaser.GameObjects.Image {
         if (this.invulnerable || !this.active) return;
         this.hp -= dmg;
         this.lastHitWasCrit = !!crit; // Phase 4: Spare Change crit-kill gating
+        if (this.isBoss) {
+            eventBus.emit('BOSS_HIT', { hpPct: Math.max(0, this.hp / this.maxHp) });
+        }
         // Explosion path prints its own orange number in explode(); skip the white one here
         if (!this.lastDeathWasExplosion) {
             this.scene.floatingText(this.x, this.y - 20, Math.round(dmg), crit ? '#ffd43b' : '#ffffff');
@@ -1076,12 +1122,16 @@ class Enemy extends Phaser.GameObjects.Image {
             this.scene.explode(x, y, cc.radius, this.maxHp * cc.hpDamageMult);
         }
 
-        // Combo + kill accounting
+        // Kill accounting (combo system stubbed for v1.3 shot-accuracy implementation)
         GameState.kills += 1;
-        GameState.combo += 1;
-        if (GameState.combo > GameState.maxCombo) GameState.maxCombo = GameState.combo;
-        eventBus.emit('COMBO_CHANGED', { combo: GameState.combo });
         eventBus.emit('ENEMY_DIED', { type: this.type, x, y });
+
+        // Kill milestone popups
+        const milestones = [50, 100, 250, 500, 1000];
+        if (milestones.includes(GameState.kills)) {
+            const msg = FlavorText.milestones[GameState.kills];
+            if (msg) this.scene.hud.showTransmission(msg);
+        }
 
         // Coin drop (tiered by enemy value; Spare Change mutation boosts on crit/explosive deaths)
         this.dropLoot(x, y);
@@ -1357,11 +1407,9 @@ class DirectorAI {
     startWave(wave) {
         this.waveActive = true;
         this.alive = 0;
-        this.queue = [];
-        this.phases = [];
-        this.currentPhase = 0;
         this.lastPhaseType = null;
         eventBus.emit('WAVE_STARTED', { wave });
+        this._previewWave(wave);
 
         let totalBudget = this.mobBudget(wave);
         if (wave % 10 === 0) {
@@ -1444,6 +1492,15 @@ class DirectorAI {
         if (!e) return;
         e.spawn(cam.centerX, -80, 'boss', wave);
         this.alive += 1;
+        if (GameState.screenShake) this.scene.cameras.main.shake(500, 0.03);
+        eventBus.emit('BOSS_SPAWNED', { wave, maxHp: e.maxHp });
+    }
+
+    spawnAdd(type, x, y) {
+        const e = this.scene.enemyGroup.get(x, y);
+        if (!e) return;
+        e.spawn(x, y, type, GameState.wave);
+        this.alive += 1;
     }
 
     tick(time) {
@@ -1481,6 +1538,27 @@ class DirectorAI {
             GameConfig.director.spawnPauseMin, GameConfig.director.spawnPauseMax);
     }
 
+    _previewWave(wave) {
+        const pool = this.availableMobs(wave);
+        const counts = {};
+        pool.forEach(t => { counts[t] = 0; });
+        const budget = Math.floor(this.mobBudget(wave) * (wave % 10 === 0 ? 0.5 : 1));
+        let spent = 0, guard = 0;
+        while (spent < budget && guard < 500) {
+            guard++;
+            const t = Phaser.Utils.Array.GetRandom(pool);
+            const cost = GameConfig.mobs[t].cost;
+            if (spent + cost > budget && spent > 0) break;
+            counts[t] = (counts[t] || 0) + 1;
+            spent += cost;
+        }
+        const parts = Object.entries(counts).filter(([, n]) => n > 0)
+            .map(([t, n]) => `${t.toUpperCase()}S ×${n}`);
+        if (wave % 10 === 0) parts.unshift('BOSS');
+        const msg = `${FlavorText.incoming}: ${parts.join(' · ')}`;
+        this.scene.hud.showTransmission(msg);
+    }
+
     // spawnSupplyCrate() — Phase 6: drop a stationary crate at a random road X
     spawnSupplyCrate() {
         const cam = this.scene.cameras.main;
@@ -1511,8 +1589,8 @@ class DirectorAI {
     }
 
     notifyKill() {
-        this.alive = Math.max(0, this.alive - 1);
-        if (this.alive === 0 && !this.spawning && this.queue.length === 0 && this.waveActive) {
+        this.alive -= 1;
+        if (this.alive <= 0 && !this.spawning && this.queue.length === 0) {
             this.waveActive = false;
             eventBus.emit('WAVE_CLEARED', { wave: GameState.wave });
         }
@@ -1591,61 +1669,87 @@ class HUDManager {
 
     bindEvents() {
         const $ = (id) => document.getElementById(id);
-        eventBus.on('WAVE_STARTED', (d) => { $('hud-wave').textContent = `${FlavorText.hud.wave} ${d.wave}`; this.refreshAll(); });
-        eventBus.on('FUNDS_CHANGED', (d) => { $('hud-funds').textContent = `$${d.new}`; });
+        eventBus.on('WAVE_STARTED', (d) => {
+            $('hud-wave').textContent = `${FlavorText.hud.wave} ${d.wave}`;
+            this.refreshAll();
+            this.resetWaveProgress();
+        });
+        eventBus.on('FUNDS_CHANGED', (d) => {
+            $('hud-funds').textContent = '$' + d.new.toLocaleString();
+        });
         eventBus.on('PLAYER_HIT', () => this.refreshHP());
         eventBus.on('ARMOR_CHANGED', () => this.refreshArmor());
         eventBus.on('GRENADES_CHANGED', () => this.refreshGrenades());
-        eventBus.on('AMMO_CHANGED', () => { this.refreshWeapon(); this.cancelReloadBar(); });
+        eventBus.on('AMMO_CHANGED', () => this.refreshWeapon());
         eventBus.on('WEAPON_SWAPPED', () => this.refreshWeapon());
         eventBus.on('WEAPON_EQUIPPED', () => this.refreshWeapon());
-        eventBus.on('RELOAD_START', (d) => {
-            document.getElementById('hud-ammo').textContent = 'RELOADING';
-            const stats = getModifiedStats(d.wpnId);
-            this.startReloadBar(stats.reloadTime);
+        eventBus.on('RELOAD_START', () => {
+            $('hud-ammo').textContent = 'RELOAD...';
+            const bar = $('hud-reload-bar');
+            if (bar) {
+                bar.style.animation = 'none';
+                bar.style.width = '0%';
+                const wpnId = activeWeaponId();
+                const ms = getModifiedStats(wpnId).reloadTime;
+                requestAnimationFrame(() => {
+                    bar.style.animation = `reloadSweep ${ms}ms linear forwards`;
+                });
+            }
         });
-        eventBus.on('COMBO_CHANGED', (d) => {
-            $('hud-combo').textContent = d.combo > GameConfig.combat.comboDisplayMin ? `${FlavorText.hud.combo} x${d.combo}` : '';
-        });
+        eventBus.on('ENEMY_DIED', () => this.updateWaveProgress());
+        eventBus.on('BOSS_SPAWNED', (d) => this.showBossBar(d));
+        eventBus.on('BOSS_HIT', (d) => this.updateBossBar(d));
     }
 
-    refreshAll() { this.refreshHP(); this.refreshArmor(); this.refreshGrenades(); this.refreshWeapon();
-        document.getElementById('hud-funds').textContent = `$${GameState.funds}`; }
-    refreshHP() { document.getElementById('hud-hp').textContent = `${FlavorText.hud.hp} ` + '♥'.repeat(Math.max(0, GameState.hp)); }
-    refreshArmor() { document.getElementById('hud-armor').textContent = GameState.armor > 0 ? `${FlavorText.hud.armor} ` + '▮'.repeat(GameState.armor) : ''; }
-    refreshGrenades() { document.getElementById('hud-grenades').textContent = GameState.grenades > 0 ? `${FlavorText.hud.grenades} ${GameState.grenades}` : ''; }
+    refreshAll() {
+        this.refreshHP(); this.refreshArmor(); this.refreshGrenades(); this.refreshWeapon();
+        document.getElementById('hud-funds').textContent = '$' + GameState.funds.toLocaleString();
+    }
+    refreshHP() {
+        const filled = Math.max(0, GameState.hp);
+        const empty = Math.max(0, GameState.maxHp - filled);
+        document.getElementById('hud-hp').textContent = '♥'.repeat(filled) + '♡'.repeat(empty);
+    }
+    refreshArmor() {
+        const el = document.getElementById('hud-armor');
+        el.textContent = GameState.armor > 0 ? '▮'.repeat(GameState.armor) + '▯'.repeat(Math.max(0, GameState.maxArmor - GameState.armor)) : '';
+    }
+    refreshGrenades() {
+        document.getElementById('hud-grenades').textContent = GameState.grenades > 0 ? `⬡ ×${GameState.grenades}` : '';
+    }
     refreshWeapon() {
         const wpnId = activeWeaponId();
         const wpn = GameConfig.weapons[wpnId];
         document.getElementById('hud-wpn-name').textContent = wpn.name;
-        document.getElementById('hud-ammo').textContent = GameState.isReloading ? 'RELOADING' : `${GameState.ammo[wpnId]} / ${Math.round(getModifiedStats(wpnId).magSize)}`;
-        // Draw weapon side icon onto HUD canvas
-        const iconCanvas = document.getElementById('hud-wpn-icon');
-        if (iconCanvas) {
-            const ctx = iconCanvas.getContext('2d');
-            ctx.clearRect(0, 0, iconCanvas.width, iconCanvas.height);
-            const cache = this.scene.wpnIconCache;
-            if (cache && cache[wpn.iconId]) {
-                const img = new Image();
-                img.onload = () => { ctx.clearRect(0,0,48,32); ctx.drawImage(img, 0, 0, 48, 32); };
-                img.src = cache[wpn.iconId];
-            }
-        }
+        document.getElementById('hud-ammo').textContent = GameState.isReloading ? 'RELOAD...' : `${GameState.ammo[wpnId]} / ${Math.round(getModifiedStats(wpnId).magSize)}`;
     }
 
-    startReloadBar(durationMs) {
-        const bar = document.getElementById('hud-reload-bar');
-        if (!bar) return;
-        bar.style.animation = 'none';
-        bar.offsetHeight; // force reflow
-        bar.style.animation = `reloadSweep ${durationMs}ms linear forwards`;
+    resetWaveProgress() {
+        const bar = document.getElementById('hud-wave-progress');
+        if (bar) bar.style.width = '100%';
+        this._waveTotal = this.scene.director ? this.scene.director.toSpawn + this.scene.director.alive : 1;
+        this._waveKilled = 0;
+    }
+    updateWaveProgress() {
+        this._waveKilled = (this._waveKilled || 0) + 1;
+        const total = Math.max(1, this._waveTotal || 1);
+        const pct = Math.max(0, 100 - Math.round((this._waveKilled / total) * 100));
+        const bar = document.getElementById('hud-wave-progress');
+        if (bar) bar.style.width = pct + '%';
     }
 
-    cancelReloadBar() {
-        const bar = document.getElementById('hud-reload-bar');
-        if (!bar) return;
-        bar.style.animation = 'none';
-        bar.style.width = '0%';
+    showBossBar(d) {
+        const el = document.getElementById('hud-boss-bar');
+        if (el) el.style.display = 'block';
+        document.getElementById('hud-boss-hp-fill').style.width = '100%';
+    }
+    updateBossBar(d) {
+        const fill = document.getElementById('hud-boss-hp-fill');
+        if (fill) fill.style.width = Math.max(0, Math.round(d.hpPct * 100)) + '%';
+    }
+    hideBossBar() {
+        const el = document.getElementById('hud-boss-bar');
+        if (el) el.style.display = 'none';
     }
 
     showTransmission(msg) {
@@ -1656,44 +1760,29 @@ class HUDManager {
         this._txTimer = setTimeout(() => { t.style.display = 'none'; }, 8000);
     }
 
-    // showTutorialGate(msg, onDismiss) — Phase 2: persistent transmission with an
-    // ACKNOWLEDGE button. No auto-dismiss; click or SPACE/ENTER resumes the wave.
+    // showTutorialGate — full-screen modal that blocks all gameplay until acknowledged
     showTutorialGate(msg, onDismiss) {
-        const t = document.getElementById('hud-transmission');
-        clearTimeout(this._txTimer);
-        t.style.display = 'block';
-        t.innerHTML = '';
+        const modal = document.getElementById('screen-tutorial');
+        const msgEl = document.getElementById('tutorial-msg');
+        const waveEl = document.getElementById('tutorial-wave-label');
+        const btn = document.getElementById('btn-tutorial-ack');
+        if (!modal) { onDismiss(); return; }
 
-        const body = document.createElement('div');
-        body.textContent = msg;
-        body.style.marginBottom = '12px';
-        t.appendChild(body);
-
-        const btn = document.createElement('button');
-        btn.className = 'btn';
-        btn.textContent = '[ ACKNOWLEDGE ]';
-        btn.style.margin = '0';
-        btn.style.padding = '8px 16px';
-        btn.style.fontSize = '0.9em';
-        btn.style.pointerEvents = 'auto';
-        t.appendChild(btn);
-
-        const prevPE = t.style.pointerEvents;
-        t.style.pointerEvents = 'auto';
+        waveEl.textContent = `WAVE ${this.scene.constructor ? '' : ''}TRANSMISSION`;
+        msgEl.textContent = msg;
+        modal.classList.add('active');
 
         this._gateDone = false;
         const dismiss = () => {
             if (this._gateDone) return;
             this._gateDone = true;
             window.removeEventListener('keydown', onKey);
-            t.style.pointerEvents = prevPE;
-            t.style.display = 'none';
-            t.innerHTML = '';
+            modal.classList.remove('active');
             onDismiss();
         };
         const onKey = (e) => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); dismiss(); } };
 
-        btn.addEventListener('click', dismiss);
+        btn.onclick = dismiss;
         window.addEventListener('keydown', onKey);
     }
 
@@ -1704,8 +1793,13 @@ class HUDManager {
         setTimeout(() => { t.style.display = 'none'; }, 1300);
     }
 
-    show() { this.root.style.display = 'block'; this.refreshAll();
-        document.getElementById('hud-wave').textContent = `${FlavorText.hud.wave} ${GameState.wave}`; }
+    show() {
+        this.root.style.display = 'block';
+        this.refreshAll();
+        document.getElementById('hud-wave').textContent = `${FlavorText.hud.wave} ${GameState.wave}`;
+        this.hideBossBar();
+        this._waveTotal = 1; this._waveKilled = 0;
+    }
     hide() { this.root.style.display = 'none'; }
     setGamepadVisible(v) { this.gamepad.style.display = v ? 'block' : 'none'; if (v) this.joyVector = { x: 0, y: 0 }; }
     setDevPanelVisible(v) { this.devPanel.style.display = v ? 'flex' : 'none'; }
@@ -1737,61 +1831,30 @@ class ShopManager {
 
     render() {
         const body = this.body;
-        body.innerHTML = `<div class="shop-funds">FUNDS: $${GameState.funds}</div>`;
+        body.innerHTML = `<div class="shop-funds">FUNDS: $${GameState.funds.toLocaleString()}</div>`;
         if (this.activeTab === 'firearms') this.renderFirearms(body);
         else if (this.activeTab === 'logistics') this.renderLogistics(body);
         else this.renderVenture(body);
     }
 
     renderFirearms(body) {
-        // Operator status bio-monitor
-        const opDiv = document.createElement('div');
-        opDiv.id = 'shop-operator';
-        opDiv.innerHTML = `<span>MAX HP</span><strong>${GameState.maxHp}</strong>
-            <span>ARMOR</span><strong>${GameState.maxArmor}</strong>
-            <span>BASE SPD</span><strong>${GameConfig.player.baseSpeed}</strong>
-            <span>PRIMARY</span><strong>${GameConfig.weapons[GameState.primaryWeapon].name}</strong>
-            <span>SECONDARY</span><strong>${GameState.secondaryWeapon !== null ? GameConfig.weapons[GameState.secondaryWeapon].name : '—'}</strong>`;
-        body.appendChild(opDiv);
-
-        // Weapon rack: only show unlocked + directly purchasable base tiers
-        // Evolution-only weapons (chassisConversionCosts but no baseBuyInCosts) stay hidden until evolved
+        // Weapon rack: 15 slots
         const rack = document.createElement('div');
         rack.id = 'shop-rack';
         GameConfig.weapons.forEach((w, i) => {
             const unlocked = GameState.unlockedWeapons.includes(i);
-            const isBuyable = GameConfig.economy.baseBuyInCosts[i] !== undefined;
-            const isEvolutionOnly = !isBuyable && GameConfig.economy.chassisConversionCosts[i] !== undefined;
-            // Hide evolution-only entries entirely unless already unlocked
-            if (isEvolutionOnly && !unlocked) return;
+            const isEvolution = GameConfig.economy.chassisConversionCosts[i] !== undefined;
+            const isSelected = this.selectedWeapon === i;
+            const slot = document.createElement('button');
+            slot.className = 'rack-slot' + (unlocked ? '' : ' locked') + (isSelected ? ' selected' : '');
 
-            const slot = document.createElement('div');
-            slot.className = 'rack-slot' + (unlocked ? '' : ' locked') + (this.selectedWeapon === i ? ' selected' : '');
+            const img = document.createElement('img');
+            img.src = `assets/svgs/wpn_side_${w.iconId}.svg`;
+            img.alt = w.name;
+            slot.appendChild(img);
 
-            // Icon canvas
-            const iconCanvas = document.createElement('canvas');
-            iconCanvas.width = 48; iconCanvas.height = 28;
-            slot.appendChild(iconCanvas);
-            // Draw icon async from cache
-            const cache = this.scene.wpnIconCache;
-            if (cache && cache[w.iconId]) {
-                const img = new Image();
-                img.onload = () => {
-                    const ctx = iconCanvas.getContext('2d');
-                    ctx.clearRect(0, 0, 48, 28);
-                    ctx.drawImage(img, 0, 0, 48, 28);
-                };
-                img.src = cache[w.iconId];
-            }
-
-            // Label
-            const label = document.createElement('div');
-            if (unlocked) {
-                label.textContent = w.name;
-            } else {
-                label.textContent = `$${GameConfig.economy.baseBuyInCosts[i]}`;
-                label.style.color = '#52525b';
-            }
+            const label = document.createElement('span');
+            label.textContent = unlocked ? w.name : (isEvolution ? '🔒' : `$${GameConfig.economy.baseBuyInCosts[i] || '—'}`);
             slot.appendChild(label);
 
             slot.addEventListener('click', () => {
@@ -1858,17 +1921,37 @@ class ShopManager {
         const wave = GameState.wave;
         const sc = GameConfig.economy.supplyCosts;
 
-        // Helper: only renders if wave gate met — hides entirely otherwise
-        const add = (label, cost, fn, minWave = 1) => {
-            if (wave < minWave) return; // hidden until unlocked
-            const b = this._mkBtn(`${label} ($${cost})`, fn);
-            if (GameState.funds < cost) b.classList.add('locked');
-            body.appendChild(b);
+        const addSection = (label) => {
+            const s = document.createElement('div');
+            s.className = 'supply-section';
+            const h = document.createElement('div');
+            h.className = 'supply-section-label';
+            h.textContent = label;
+            s.appendChild(h);
+            body.appendChild(s);
+            return s;
         };
 
-        // Max HP upgrade ($400, cap 10)
+        const addBtn = (section, label, cost, fn, enabled = true) => {
+            const b = this._mkBtn(`${label} ($${cost})`, fn);
+            if (!enabled || GameState.funds < cost) b.classList.add('locked');
+            section.appendChild(b);
+        };
+
+        // --- MEDICAL ---
+        const medSection = addSection('MEDICAL');
+        const medCost = sc.medkit;
+        addBtn(medSection, `MEDKIT — Restore 1 HP [${GameState.hp}/${GameState.maxHp}]`, medCost, () => {
+            if (GameState.funds >= medCost && GameState.hp < GameState.maxHp) {
+                this.scene.addFunds(-medCost);
+                GameState.hp = Math.min(GameState.hp + 1, GameState.maxHp);
+                eventBus.emit('PLAYER_HIT', { new: GameState.hp, old: GameState.hp - 1 });
+                this.render();
+            }
+        }, GameState.hp < GameState.maxHp);
+
         const hpCost = 400;
-        const hpBtn = this._mkBtn(`Max HP +1 ($${hpCost}) [${GameState.maxHp}/10]`, () => {
+        addBtn(medSection, `MAX HP +1 [${GameState.maxHp}/10]`, hpCost, () => {
             if (GameState.funds >= hpCost && GameState.maxHp < 10) {
                 this.scene.addFunds(-hpCost);
                 GameState.maxHp += 1;
@@ -1876,24 +1959,32 @@ class ShopManager {
                 eventBus.emit('PLAYER_HIT', { new: GameState.hp, old: GameState.hp - 1 });
                 this.render();
             }
-        });
-        if (GameState.funds < hpCost || GameState.maxHp >= 10) hpBtn.classList.add('locked');
-        body.appendChild(hpBtn);
+        }, GameState.maxHp < 10);
 
-        add(FlavorText.logistics.kevlar, sc.armor, () => {
+        addBtn(medSection, FlavorText.logistics.kevlar, sc.armor, () => {
             if (GameState.funds >= sc.armor && GameState.armor < GameState.maxArmor) {
                 this.scene.addFunds(-sc.armor); GameState.armor += 1;
                 eventBus.emit('ARMOR_CHANGED', { new: GameState.armor, old: GameState.armor - 1 }); this.render();
             }
-        });
-        add(FlavorText.logistics.grenades, sc.grenade, () => {
-            if (GameState.funds >= sc.grenade) {
-                this.scene.addFunds(-sc.grenade); GameState.grenades += 1;
-                eventBus.emit('GRENADES_CHANGED', { grenades: GameState.grenades }); this.render();
-            }
-        }, 5);
-        add(FlavorText.logistics.barricade, sc.buildBarricade, () => this.tryBuildBarricade(), 12);
-        add(FlavorText.logistics.turret, GameConfig.economy.upgradeBaseCosts.turret, () => this.tryBuildTurret(), 20);
+        }, GameState.armor < GameState.maxArmor);
+
+        // --- ORDNANCE ---
+        const ordSection = addSection('ORDNANCE');
+        if (wave >= 5) {
+            addBtn(ordSection, FlavorText.logistics.grenades, sc.grenade, () => {
+                if (GameState.funds >= sc.grenade) {
+                    this.scene.addFunds(-sc.grenade); GameState.grenades += 1;
+                    eventBus.emit('GRENADES_CHANGED', { grenades: GameState.grenades }); this.render();
+                }
+            });
+        }
+
+        // --- ENGINEERING ---
+        if (wave >= 12 || wave >= 20) {
+            const engSection = addSection('ENGINEERING');
+            if (wave >= 12) addBtn(engSection, FlavorText.logistics.barricade, sc.buildBarricade, () => this.tryBuildBarricade());
+            if (wave >= 20) addBtn(engSection, FlavorText.logistics.turret, GameConfig.economy.upgradeBaseCosts.turret, () => this.tryBuildTurret());
+        }
     }
 
     renderVenture(body) {
