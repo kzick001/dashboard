@@ -4,8 +4,7 @@
 //   Mutation/Venture hooks, Spitter/Barricade, Supply Drops, Audio scaffold
 // ==========================================
 
-import { GameConfig } from './config.js';
-import { FlavorText } from './flavor.js';
+// GameConfig loaded from config.js | FlavorText loaded from flavor.js (globals)
 
 // Mastery track definitions now live in GameConfig.mastery (config.js).
 
@@ -141,7 +140,7 @@ class GameScene extends Phaser.Scene {
 
         // Projectiles
         this.load.svg('bullet', 'assets/svgs/bullet.svg');
-        this.load.svg('grenade_proj', 'assets/svgs/grenade.svg');
+        this.load.svg('grenade_proj', 'assets/svgs/grenade_proj.svg');
 
         // Items
         this.load.svg('coin', 'assets/svgs/coin.svg');
@@ -165,8 +164,8 @@ class GameScene extends Phaser.Scene {
             .setDisplaySize(1000, cam.height)
             .setDepth(0);
 
-        // World bounds = camera bounds (arena is the visible screen)
-        this.physics.world.setBounds(0, 0, cam.width, cam.height);
+        // World bounds set large; road confinement enforced by player clamp in Player.tick()
+        this.physics.world.setBounds(-9999, -9999, 99999, 99999);
 
         // ----- Object pools -----
         this.projectilePool = this.physics.add.group({
@@ -193,7 +192,6 @@ class GameScene extends Phaser.Scene {
         this.player = new Player(this, cam.centerX, cam.height - 120);
         this.add.existing(this.player);
         this.physics.add.existing(this.player);
-        this.player.body.setCollideWorldBounds(true);
 
         // ----- Collisions -----
         this.physics.add.overlap(this.projectilePool, this.enemyGroup, this.onProjectileHitEnemy, null, this);
@@ -210,6 +208,10 @@ class GameScene extends Phaser.Scene {
         this.hud = new HUDManager(this);
         this.shop = new ShopManager(this);
         this.harvest = new HarvestManager(this);
+
+        // Build weapon icon data-URL cache for HUD + shop (renders each wpn_side_N texture)
+        this.wpnIconCache = {};
+        this.time.delayedCall(100, () => this.buildWpnIconCache());
 
         // ----- Input -----
         this.setupInputHandlers();
@@ -238,19 +240,34 @@ class GameScene extends Phaser.Scene {
         GameState.inShop = false;
         GameState.inHarvest = false;
         GameState.wave = 1;
-        GameState.hp = GameState.maxHp;
+        GameState.maxHp = 5;
+        GameState.hp = 5;
         GameState.armor = 0;
         GameState.funds = 0;
         GameState.grenades = 0;
         GameState.combo = 0;
+        GameState.maxCombo = 0;
         GameState.kills = 0;
         GameState.primaryWeapon = 0;
         GameState.secondaryWeapon = null;
         GameState.activeSlot = 'primary';
-        GameConfig.weapons.forEach((wpn, idx) => { GameState.ammo[idx] = wpn.magSize; });
+        GameState.mutations = [];
+        GameState.unlockedWeapons = [0];
+        GameState.ventureInvestments = {};
+        GameState.defenses = [];
+        GameState.barricades = [null, null, null, null, null, null];
+        GameConfig.weapons.forEach((wpn, idx) => {
+            GameState.ammo[idx] = wpn.magSize;
+            GameState.weaponMastery[idx] = { track1: 0, track2: 0, track3: 0 };
+        });
+
+        // Clear any leftover barricades and turrets from prior run
+        this.barricadeGroup.clear(true, true);
+        GameState.defenses.forEach(d => { if (d.entity && d.entity.sprite) d.entity.sprite.destroy(); });
 
         this.player.respawn();
         this.physics.world.resume();
+        this.shop.selectedWeapon = 0;
         this.hud.show();
         // Phase 2: freeze before first wave until the player acknowledges the transmission
         this.showTutorialGate(GameState.wave, () => {
@@ -316,7 +333,7 @@ class GameScene extends Phaser.Scene {
         const title = document.getElementById('game-over-title');
         const stats = document.getElementById('game-over-stats');
         if (title) title.textContent = FlavorText.gameOver.titleDead;
-        if (stats) stats.textContent = `${FlavorText.gameOver.survived} ${GameState.wave} WAVES`;
+        if (stats) stats.innerHTML = `${FlavorText.gameOver.survived} ${GameState.wave} WAVES<br>KILLS: ${GameState.kills} &nbsp;|&nbsp; BEST COMBO: x${GameState.maxCombo}`;
         this.showModal('screen-game-over');
     }
 
@@ -545,6 +562,26 @@ class GameScene extends Phaser.Scene {
         });
     }
 
+    // buildWpnIconCache() — render each wpn_side_N texture to a data URL for DOM use
+    buildWpnIconCache() {
+        const rt = this.add.renderTexture(0, 0, 64, 40).setVisible(false);
+        for (let i = 0; i < 8; i++) {
+            const key = `wpn_side_${i}`;
+            if (!this.textures.exists(key)) continue;
+            rt.clear();
+            rt.draw(key, 32, 20);
+            rt.snapshot((img) => {
+                this.wpnIconCache[i] = img.src;
+                // Refresh HUD icon if this is the active weapon's icon
+                const wpnId = activeWeaponId();
+                if (GameConfig.weapons[wpnId] && GameConfig.weapons[wpnId].iconId === i) {
+                    this.hud.refreshWeapon();
+                }
+            });
+        }
+        rt.destroy();
+    }
+
     // ---------- DOM modal handling ----------
     setupInputHandlers() {
         const click = (id, fn) => {
@@ -689,6 +726,11 @@ class Player extends Phaser.GameObjects.Image {
             (GameState.virtualGamepad && this.scene.hud.firePressed);
         if (wantFire) this.tryFire(time);
         if (!ptr.isDown) this.firing = false;
+
+        // Clamp player to road + vertical arena bounds
+        const cam = this.scene.cameras.main;
+        this.x = Phaser.Math.Clamp(this.x, cam.centerX - 240, cam.centerX + 240);
+        this.y = Phaser.Math.Clamp(this.y, 60, cam.height - 60);
     }
 
     tryFire(time) {
@@ -943,10 +985,10 @@ class Enemy extends Phaser.GameObjects.Image {
             this.hp = this.maxHp;
             this.speed = def.baseSpeed + def.speedPerWave * (wave - 1);
             this.contactDamage = 1;
-            this.setScale(1);
+            this.setScale(1.5);
         }
 
-        if (this.body) { this.body.enable = true; this.body.setVelocity(0, 0); }
+        if (this.body) { this.body.enable = true; this.body.setVelocity(0, 0); this.body.setMaxVelocity(600, 600); }
 
         // Burrower: invulnerable while "digging" for first 2s
         if (type === 'burrower') {
@@ -975,7 +1017,7 @@ class Enemy extends Phaser.GameObjects.Image {
             } else {
                 this.body.setVelocity(0, 0);
             }
-            this.rotation = ang + Math.PI / 2;
+            this.rotation = ang + Math.PI;
             if (time - (this.lastSpitAt || 0) > def.spitRate && dist <= def.spitRange + 40) {
                 this.fireAcid(ang);
                 this.lastSpitAt = time;
@@ -985,7 +1027,7 @@ class Enemy extends Phaser.GameObjects.Image {
 
         const ang = Phaser.Math.Angle.Between(this.x, this.y, p.x, p.y);
         this.body.setVelocity(Math.cos(ang) * this.speed, Math.sin(ang) * this.speed);
-        this.rotation = ang + Math.PI / 2;
+        this.rotation = ang + Math.PI;
     }
 
     // fireAcid(angle) — Phase 5: launch an acid glob at the player
@@ -1315,6 +1357,9 @@ class DirectorAI {
     startWave(wave) {
         this.waveActive = true;
         this.alive = 0;
+        this.queue = [];
+        this.phases = [];
+        this.currentPhase = 0;
         this.lastPhaseType = null;
         eventBus.emit('WAVE_STARTED', { wave });
 
@@ -1466,8 +1511,8 @@ class DirectorAI {
     }
 
     notifyKill() {
-        this.alive -= 1;
-        if (this.alive <= 0 && !this.spawning && this.queue.length === 0) {
+        this.alive = Math.max(0, this.alive - 1);
+        if (this.alive === 0 && !this.spawning && this.queue.length === 0 && this.waveActive) {
             this.waveActive = false;
             eventBus.emit('WAVE_CLEARED', { wave: GameState.wave });
         }
@@ -1551,10 +1596,14 @@ class HUDManager {
         eventBus.on('PLAYER_HIT', () => this.refreshHP());
         eventBus.on('ARMOR_CHANGED', () => this.refreshArmor());
         eventBus.on('GRENADES_CHANGED', () => this.refreshGrenades());
-        eventBus.on('AMMO_CHANGED', () => this.refreshWeapon());
+        eventBus.on('AMMO_CHANGED', () => { this.refreshWeapon(); this.cancelReloadBar(); });
         eventBus.on('WEAPON_SWAPPED', () => this.refreshWeapon());
         eventBus.on('WEAPON_EQUIPPED', () => this.refreshWeapon());
-        eventBus.on('RELOAD_START', () => { $('hud-ammo').textContent = 'RELOAD...'; });
+        eventBus.on('RELOAD_START', (d) => {
+            document.getElementById('hud-ammo').textContent = 'RELOADING';
+            const stats = getModifiedStats(d.wpnId);
+            this.startReloadBar(stats.reloadTime);
+        });
         eventBus.on('COMBO_CHANGED', (d) => {
             $('hud-combo').textContent = d.combo > GameConfig.combat.comboDisplayMin ? `${FlavorText.hud.combo} x${d.combo}` : '';
         });
@@ -1569,7 +1618,34 @@ class HUDManager {
         const wpnId = activeWeaponId();
         const wpn = GameConfig.weapons[wpnId];
         document.getElementById('hud-wpn-name').textContent = wpn.name;
-        document.getElementById('hud-ammo').textContent = GameState.isReloading ? 'RELOAD...' : `${GameState.ammo[wpnId]} / ${Math.round(getModifiedStats(wpnId).magSize)}`;
+        document.getElementById('hud-ammo').textContent = GameState.isReloading ? 'RELOADING' : `${GameState.ammo[wpnId]} / ${Math.round(getModifiedStats(wpnId).magSize)}`;
+        // Draw weapon side icon onto HUD canvas
+        const iconCanvas = document.getElementById('hud-wpn-icon');
+        if (iconCanvas) {
+            const ctx = iconCanvas.getContext('2d');
+            ctx.clearRect(0, 0, iconCanvas.width, iconCanvas.height);
+            const cache = this.scene.wpnIconCache;
+            if (cache && cache[wpn.iconId]) {
+                const img = new Image();
+                img.onload = () => { ctx.clearRect(0,0,48,32); ctx.drawImage(img, 0, 0, 48, 32); };
+                img.src = cache[wpn.iconId];
+            }
+        }
+    }
+
+    startReloadBar(durationMs) {
+        const bar = document.getElementById('hud-reload-bar');
+        if (!bar) return;
+        bar.style.animation = 'none';
+        bar.offsetHeight; // force reflow
+        bar.style.animation = `reloadSweep ${durationMs}ms linear forwards`;
+    }
+
+    cancelReloadBar() {
+        const bar = document.getElementById('hud-reload-bar');
+        if (!bar) return;
+        bar.style.animation = 'none';
+        bar.style.width = '0%';
     }
 
     showTransmission(msg) {
@@ -1668,15 +1744,56 @@ class ShopManager {
     }
 
     renderFirearms(body) {
-        // Weapon rack: 15 slots
+        // Operator status bio-monitor
+        const opDiv = document.createElement('div');
+        opDiv.id = 'shop-operator';
+        opDiv.innerHTML = `<span>MAX HP</span><strong>${GameState.maxHp}</strong>
+            <span>ARMOR</span><strong>${GameState.maxArmor}</strong>
+            <span>BASE SPD</span><strong>${GameConfig.player.baseSpeed}</strong>
+            <span>PRIMARY</span><strong>${GameConfig.weapons[GameState.primaryWeapon].name}</strong>
+            <span>SECONDARY</span><strong>${GameState.secondaryWeapon !== null ? GameConfig.weapons[GameState.secondaryWeapon].name : '—'}</strong>`;
+        body.appendChild(opDiv);
+
+        // Weapon rack: only show unlocked + directly purchasable base tiers
+        // Evolution-only weapons (chassisConversionCosts but no baseBuyInCosts) stay hidden until evolved
         const rack = document.createElement('div');
         rack.id = 'shop-rack';
         GameConfig.weapons.forEach((w, i) => {
             const unlocked = GameState.unlockedWeapons.includes(i);
-            const isEvolution = GameConfig.economy.chassisConversionCosts[i] !== undefined;
-            const slot = document.createElement('button');
-            slot.className = 'btn' + (unlocked ? '' : ' locked');
-            slot.textContent = unlocked ? w.name : (isEvolution ? FlavorText.shop.classifiedWeapon : `$${GameConfig.economy.baseBuyInCosts[i] || '—'}`);
+            const isBuyable = GameConfig.economy.baseBuyInCosts[i] !== undefined;
+            const isEvolutionOnly = !isBuyable && GameConfig.economy.chassisConversionCosts[i] !== undefined;
+            // Hide evolution-only entries entirely unless already unlocked
+            if (isEvolutionOnly && !unlocked) return;
+
+            const slot = document.createElement('div');
+            slot.className = 'rack-slot' + (unlocked ? '' : ' locked') + (this.selectedWeapon === i ? ' selected' : '');
+
+            // Icon canvas
+            const iconCanvas = document.createElement('canvas');
+            iconCanvas.width = 48; iconCanvas.height = 28;
+            slot.appendChild(iconCanvas);
+            // Draw icon async from cache
+            const cache = this.scene.wpnIconCache;
+            if (cache && cache[w.iconId]) {
+                const img = new Image();
+                img.onload = () => {
+                    const ctx = iconCanvas.getContext('2d');
+                    ctx.clearRect(0, 0, 48, 28);
+                    ctx.drawImage(img, 0, 0, 48, 28);
+                };
+                img.src = cache[w.iconId];
+            }
+
+            // Label
+            const label = document.createElement('div');
+            if (unlocked) {
+                label.textContent = w.name;
+            } else {
+                label.textContent = `$${GameConfig.economy.baseBuyInCosts[i]}`;
+                label.style.color = '#52525b';
+            }
+            slot.appendChild(label);
+
             slot.addEventListener('click', () => {
                 if (!unlocked) { this.tryBuyWeapon(i); }
                 else { this.selectedWeapon = i; this.render(); }
@@ -1740,11 +1857,29 @@ class ShopManager {
     renderLogistics(body) {
         const wave = GameState.wave;
         const sc = GameConfig.economy.supplyCosts;
-        const add = (label, cost, fn, enabled = true) => {
+
+        // Helper: only renders if wave gate met — hides entirely otherwise
+        const add = (label, cost, fn, minWave = 1) => {
+            if (wave < minWave) return; // hidden until unlocked
             const b = this._mkBtn(`${label} ($${cost})`, fn);
-            if (!enabled || GameState.funds < cost) b.classList.add('locked');
+            if (GameState.funds < cost) b.classList.add('locked');
             body.appendChild(b);
         };
+
+        // Max HP upgrade ($400, cap 10)
+        const hpCost = 400;
+        const hpBtn = this._mkBtn(`Max HP +1 ($${hpCost}) [${GameState.maxHp}/10]`, () => {
+            if (GameState.funds >= hpCost && GameState.maxHp < 10) {
+                this.scene.addFunds(-hpCost);
+                GameState.maxHp += 1;
+                GameState.hp = Math.min(GameState.hp + 1, GameState.maxHp);
+                eventBus.emit('PLAYER_HIT', { new: GameState.hp, old: GameState.hp - 1 });
+                this.render();
+            }
+        });
+        if (GameState.funds < hpCost || GameState.maxHp >= 10) hpBtn.classList.add('locked');
+        body.appendChild(hpBtn);
+
         add(FlavorText.logistics.kevlar, sc.armor, () => {
             if (GameState.funds >= sc.armor && GameState.armor < GameState.maxArmor) {
                 this.scene.addFunds(-sc.armor); GameState.armor += 1;
@@ -1756,9 +1891,9 @@ class ShopManager {
                 this.scene.addFunds(-sc.grenade); GameState.grenades += 1;
                 eventBus.emit('GRENADES_CHANGED', { grenades: GameState.grenades }); this.render();
             }
-        }, wave >= 5);
-        add(FlavorText.logistics.barricade, sc.buildBarricade, () => this.tryBuildBarricade(), wave >= 12);
-        add(FlavorText.logistics.turret, GameConfig.economy.upgradeBaseCosts.turret, () => this.tryBuildTurret(), wave >= 20);
+        }, 5);
+        add(FlavorText.logistics.barricade, sc.buildBarricade, () => this.tryBuildBarricade(), 12);
+        add(FlavorText.logistics.turret, GameConfig.economy.upgradeBaseCosts.turret, () => this.tryBuildTurret(), 20);
     }
 
     renderVenture(body) {
