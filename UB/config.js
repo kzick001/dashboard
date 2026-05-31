@@ -1,14 +1,14 @@
 // ==========================================
 // UNDEAD BARRAGE V16.8.0 - GLOBAL CONFIGURATION
 // ==========================================
-const GameConfig = {
+export const GameConfig = {
     
     // 1. DIRECTOR & PACING
     director: {
         budgetBase: 15,
-        budgetScaling: 1.12, // Exponential Budget = 15 * (1.12 ^ Wave)
-        spawnPauseMin: 800,
-        spawnPauseMax: 1800,
+        budgetScaling: 1.15, // Exponential Budget = 15 * (1.15 ^ Wave)
+        spawnPauseMin: 1500,
+        spawnPauseMax: 3500,
         burstClumpMin: 3,
         burstClumpMax: 12,
         burstDelay: 150,
@@ -52,6 +52,7 @@ const GameConfig = {
             turret: 1500
         },
         supplyCosts: {
+            medkit: 75,
             grenade: 100,
             armor: 150,
             buildBarricade: 300,
@@ -64,13 +65,13 @@ const GameConfig = {
     weapons: [
         { // 0: Pistol
             name: "Pistol", archetype: "precision", shape: "slug", pattern: "uniform", evolvesTo: 1, baseUpgradeCost: 150, iconId: 0,
-            damage: 35, splashRadius: 0, critChance: 20, critMult: 2.0, speed: 1000, range: 2000, rate: 400, spread: 2, multi: 1, knockback: 5, pierce: false, bloom: false,
+            damage: 25, splashRadius: 0, critChance: 20, critMult: 2.0, speed: 1000, range: 2000, rate: 400, spread: 2, multi: 1, knockback: 5, pierce: false, bloom: false,
             magSize: 12, reloadTime: 1200, audioKey: "sfx_pistol", audioVol: 0.5, pitchVariance: 0.1, camShake: 0, recoilPush: 0
         },
         { // 1: Revolver
             name: "Revolver", archetype: "precision", shape: "tracer", pattern: "uniform", baseUpgradeCost: 400, iconId: 0,
             damage: 75, splashRadius: 0, critChance: 20, critMult: 3.0, speed: 1500, range: 2000, rate: 500, spread: 2, multi: 1, knockback: 50, pierce: true, bloom: false,
-            magSize: 6, reloadTime: 2500, audioKey: "sfx_pistol", audioVol: 0.8, pitchVariance: -0.2, camShake: 0.008, recoilPush: 5
+            magSize: 6, reloadTime: 2500, audioKey: "sfx_pistol", audioVol: 0.8, pitchVariance: -0.2, camShake: 0, recoilPush: 5
         },
         { // 2: Shotgun
             name: "Shotgun", archetype: "scatter", shape: "pellet", pattern: "random", evolvesTo: 3, baseUpgradeCost: 250, iconId: 2,
@@ -85,42 +86,42 @@ const GameConfig = {
         { // 4: Uzi
             name: "Uzi", archetype: "auto", shape: "pellet", pattern: "uniform", evolvesTo: 5, baseUpgradeCost: 500, iconId: 1,
             damage: 20, splashRadius: 0, critChance: 5, critMult: 2.0, speed: 1200, range: 2000, rate: 75, spread: 5, multi: 1, knockback: 5, pierce: false, bloom: false,
-            magSize: 50, reloadTime: 1200, audioKey: "sfx_smg", audioVol: 0.4, pitchVariance: 0.2, camShake: 0.003, recoilPush: 1
+            magSize: 50, reloadTime: 1200, audioKey: "sfx_smg", audioVol: 0.4, pitchVariance: 0.2, camShake: 0, recoilPush: 1
         },
         { // 5: Dual Uzi
             name: "Dual Uzi", archetype: "auto", shape: "pellet", pattern: "parallel", baseUpgradeCost: 1200, iconId: 1,
             damage: 25, splashRadius: 0, critChance: 5, critMult: 2.0, speed: 1200, range: 2000, rate: 60, spread: 15, multi: 2, knockback: 5, pierce: false, bloom: false,
-            magSize: 100, reloadTime: 1500, audioKey: "sfx_smg", audioVol: 0.5, pitchVariance: 0.3, camShake: 0.005, recoilPush: 2
+            magSize: 100, reloadTime: 1500, audioKey: "sfx_smg", audioVol: 0.5, pitchVariance: 0.3, camShake: 0, recoilPush: 2
         },
         { // 6: AK-47
             name: "AK-47", archetype: "auto", shape: "tracer", pattern: "random", evolvesTo: 7, baseUpgradeCost: 500, iconId: 3,
             damage: 40, splashRadius: 0, critChance: 10, critMult: 2.0, speed: 1500, range: 2000, rate: 125, spread: 4, multi: 1, knockback: 15, pierce: false, bloom: true,
-            magSize: 40, reloadTime: 1800, audioKey: "sfx_rifle", audioVol: 0.6, pitchVariance: 0.1, camShake: 0.005, recoilPush: 5
+            magSize: 40, reloadTime: 1800, audioKey: "sfx_rifle", audioVol: 0.6, pitchVariance: 0.1, camShake: 0, recoilPush: 5
         },
         { // 7: M4 Carbine
             name: "M4 Carbine", archetype: "auto", shape: "tracer", pattern: "uniform", evolvesTo: 8, baseUpgradeCost: 1500, iconId: 4,
             damage: 60, splashRadius: 0, critChance: 12, critMult: 2.0, speed: 1800, range: 2500, rate: 100, spread: 2, multi: 1, knockback: 18, pierce: false, bloom: false,
-            magSize: 60, reloadTime: 1600, audioKey: "sfx_assault", audioVol: 0.6, pitchVariance: 0.05, camShake: 0.004, recoilPush: 4
+            magSize: 60, reloadTime: 1600, audioKey: "sfx_assault", audioVol: 0.6, pitchVariance: 0.05, camShake: 0, recoilPush: 4
         },
         { // 8: M7 Carbine
             name: "M7 Carbine", archetype: "auto", shape: "tracer", pattern: "uniform", baseUpgradeCost: 3000, iconId: 4,
             damage: 110, splashRadius: 0, critChance: 15, critMult: 2.5, speed: 2000, range: 3000, rate: 85, spread: 1, multi: 1, knockback: 25, pierce: true, bloom: false,
-            magSize: 80, reloadTime: 1400, audioKey: "sfx_assault", audioVol: 0.8, pitchVariance: -0.1, camShake: 0.006, recoilPush: 6
+            magSize: 80, reloadTime: 1400, audioKey: "sfx_assault", audioVol: 0.8, pitchVariance: -0.1, camShake: 0, recoilPush: 6
         },
         { // 9: LMG
             name: "LMG", archetype: "auto", shape: "tracer", pattern: "random", evolvesTo: 10, baseUpgradeCost: 1000, iconId: 5,
             damage: 40, splashRadius: 0, critChance: 10, critMult: 2.0, speed: 1800, range: 3000, rate: 60, spread: 8, multi: 1, knockback: 15, pierce: false, bloom: true,
-            magSize: 100, reloadTime: 2500, audioKey: "sfx_lmg", audioVol: 0.8, pitchVariance: 0.15, camShake: 0.008, recoilPush: 8
+            magSize: 100, reloadTime: 2500, audioKey: "sfx_lmg", audioVol: 0.8, pitchVariance: 0.15, camShake: 0, recoilPush: 8
         },
         { // 10: Minigun
             name: "Minigun", archetype: "auto", shape: "pellet", pattern: "uniform", evolvesTo: 11, baseUpgradeCost: 3000, iconId: 5,
             damage: 65, splashRadius: 0, critChance: 10, critMult: 3.0, speed: 2500, range: 2000, rate: 40, spread: 4, multi: 1, knockback: 15, pierce: true, bloom: true,
-            magSize: 200, reloadTime: 4000, audioKey: "sfx_lmg", audioVol: 0.9, pitchVariance: 0.3, camShake: 0.010, recoilPush: 10
+            magSize: 200, reloadTime: 4000, audioKey: "sfx_lmg", audioVol: 0.9, pitchVariance: 0.3, camShake: 0, recoilPush: 10
         },
         { // 11: Eradicator
             name: "Eradicator", archetype: "auto", shape: "tracer", pattern: "parallel", baseUpgradeCost: 6000, iconId: 7,
             damage: 187, splashRadius: 0, critChance: 10, critMult: 5.0, speed: 3000, range: 1500, rate: 50, spread: 2, multi: 2, knockback: 20, pierce: true, bloom: true,
-            magSize: 400, reloadTime: 5000, audioKey: "sfx_eradicator", audioVol: 0.9, pitchVariance: 0.1, camShake: 0.020, recoilPush: 20
+            magSize: 400, reloadTime: 5000, audioKey: "sfx_eradicator", audioVol: 0.9, pitchVariance: 0.1, camShake: 0, recoilPush: 20
         },
         { // 12: Grenade Launcher
             name: "Grenade Launcher", archetype: "explosive", shape: "slug", pattern: "uniform", evolvesTo: 13, baseUpgradeCost: 1500, iconId: 6,
@@ -130,12 +131,12 @@ const GameConfig = {
         { // 13: Plasma Cannon
             name: "Plasma Cannon", archetype: "energy", shape: "plasma", pattern: "uniform", evolvesTo: 14, baseUpgradeCost: 3500, iconId: 6,
             damage: 350, splashRadius: 150, critChance: 10, critMult: 3.0, speed: 600, range: 1500, rate: 745, spread: 1, multi: 1, knockback: 75, pierce: false, bloom: false,
-            magSize: 10, reloadTime: 2900, audioKey: "sfx_cryo", audioVol: 0.7, pitchVariance: -0.2, camShake: 0.018, recoilPush: 10
+            magSize: 10, reloadTime: 2900, audioKey: "sfx_cryo", audioVol: 0.7, pitchVariance: -0.2, camShake: 0, recoilPush: 10
         },
         { // 14: Arc Welder
             name: "Arc Welder 9000", archetype: "energy", shape: "plasma", pattern: "beam", baseUpgradeCost: 6000, iconId: 6,
             damage: 500, splashRadius: 0, critChance: 15, critMult: 2.0, speed: 2000, range: 1000, rate: 20, spread: 0, multi: 1, knockback: 5, pierce: true, bloom: false,
-            magSize: 200, reloadTime: 1500, audioKey: "sfx_cryo", audioVol: 0.5, pitchVariance: 0.5, camShake: 0.005, recoilPush: 2
+            magSize: 200, reloadTime: 1500, audioKey: "sfx_cryo", audioVol: 0.5, pitchVariance: 0.5, camShake: 0, recoilPush: 2
         }
     ],
 
