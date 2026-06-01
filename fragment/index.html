@@ -193,10 +193,10 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
 .hidden-file{display:none;}
 
 /* Icon grid */
-.icon-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 16px;}
-@media(min-width:480px){.icon-grid{grid-template-columns:repeat(4,1fr);}}
-@media(min-width:768px){.icon-grid{grid-template-columns:repeat(6,1fr);}}
-@media(min-width:1100px){.icon-grid{grid-template-columns:repeat(8,1fr);}}
+.icon-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:0 16px;}
+@media(min-width:480px){.icon-grid{grid-template-columns:repeat(4,1fr);gap:14px;}}
+@media(min-width:768px){.icon-grid{grid-template-columns:repeat(4,1fr);gap:16px;}}
+@media(min-width:1100px){.icon-grid{grid-template-columns:repeat(5,1fr);gap:18px;}}
 .icon-card{background:var(--glass);border:1px solid var(--glass-b);border-radius:var(--r16);overflow:hidden;animation:fadeUp .3s ease both;transition:transform .15s,border-color .15s;cursor:pointer;}
 .icon-card:active{transform:scale(.96);}
 .icon-card:hover{border-color:rgba(79,195,247,.25);}
@@ -263,6 +263,17 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
 .svg-preview-mini svg{width:28px;height:28px;color:var(--ion);}
 .svg-input-row{display:flex;gap:10px;align-items:flex-start;}
 .svg-input-row .form-textarea{flex:1;}
+
+/* Snippet create modal */
+.create-snippet-modal{max-width:640px;width:100%;}
+.snippet-form-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+@media(max-width:540px){.snippet-form-cols{grid-template-columns:1fr;}}
+.snippet-form-left{overflow-y:auto;max-height:62vh;padding-right:4px;}
+.snippet-preview-pane{background:var(--glass);border:1px solid var(--glass-b);border-radius:var(--r12);padding:12px;display:flex;flex-direction:column;min-height:240px;}
+.snippet-preview-pane-label{font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;}
+.snippet-preview-frame{flex:1;position:relative;overflow:hidden;border-radius:8px;background:#03040a;border:1px solid var(--glass-b);}
+.snippet-preview-frame iframe{width:100%;height:100%;border:none;display:block;}
+.snippet-preview-empty{display:flex;align-items:center;justify-content:center;height:100%;min-height:160px;color:var(--t3);font-size:12px;}
 </style>
 </head>
 <body>
@@ -365,7 +376,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
           <div class="settings-group-label">About</div>
           <div class="settings-row">
             <div class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
-            <div class="settings-text"><div class="settings-label">Fragment</div><div class="settings-sub">v1.1.0 · KV-backed · sovereign</div></div>
+            <div class="settings-text"><div class="settings-label">Fragment</div><div class="settings-sub">v1.1.1 · KV-backed · sovereign</div></div>
           </div>
         </div>
       </div>
@@ -395,6 +406,9 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
 
 <!-- FAB: Add Icon (visible on Icons tab only) -->
 <button class="fab" id="addIconFab" onclick="openCreateIconModal()" title="Add new icon">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+<button class="fab" id="addSnippetFab" onclick="openCreateSnippetModal()" title="Add new snippet">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 </button>
 
@@ -519,6 +533,54 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
     <div class="modal-actions">
       <button class="modal-btn" onclick="closeCreateIconModal()">Cancel</button>
       <button class="modal-btn primary" id="ciSubmitBtn" onclick="submitCreateIcon()">Create Icon</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Snippet Modal -->
+<div class="modal-bg" id="createSnippetModal">
+  <div class="modal create-snippet-modal">
+    <div class="modal-title">Add New Snippet</div>
+    <div class="snippet-form-cols">
+      <div class="snippet-form-left">
+        <div class="form-field">
+          <div class="form-label">Title <span class="req">*</span></div>
+          <input type="text" id="csTitle" class="form-input" placeholder="My CSS Grid Layout" autocomplete="off">
+          <div class="form-err" id="csTitleErr"></div>
+        </div>
+        <div class="form-field">
+          <div class="form-label">Category <span class="req">*</span></div>
+          <select id="csCategory" class="form-select">
+            <option value="">— select —</option>
+            <option value="html">HTML</option>
+            <option value="css">CSS</option>
+            <option value="javascript">JavaScript</option>
+            <option value="react">React</option>
+            <option value="other">Other</option>
+          </select>
+          <div class="form-err" id="csCategoryErr"></div>
+        </div>
+        <div class="form-field">
+          <div class="form-label">Description <span style="font-size:11px;color:var(--t3)">(optional)</span></div>
+          <input type="text" id="csDesc" class="form-input" placeholder="Flexible grid with auto-fit">
+        </div>
+        <div class="form-field">
+          <div class="form-label">Code <span class="req">*</span></div>
+          <textarea id="csCode" class="form-textarea" rows="8" placeholder="<div>...</div>" oninput="onCsCodeInput()"></textarea>
+          <div class="form-err" id="csCodeErr"></div>
+        </div>
+      </div>
+      <div class="snippet-preview-pane">
+        <div class="snippet-preview-pane-label">Live Preview</div>
+        <div class="snippet-preview-frame" id="csPreviewFrame">
+          <div class="snippet-preview-empty">Enter code to preview</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-err" id="csGlobalErr"></div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeCreateSnippetModal()">Cancel</button>
+      <button class="modal-btn primary" id="csSubmitBtn" onclick="submitCreateSnippet()">Create Snippet</button>
     </div>
   </div>
 </div>
@@ -754,9 +816,11 @@ function switchTab(name) {
   state.activeTab = name;
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.screen === name));
   document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === "screen-" + name));
-  // FAB only visible on icons tab
-  const fab = document.getElementById("addIconFab");
-  if (fab) fab.classList.toggle("visible", name === "icons");
+  // Show appropriate FAB per tab
+  const iconFab = document.getElementById("addIconFab");
+  const snippetFab = document.getElementById("addSnippetFab");
+  if (iconFab) iconFab.classList.toggle("visible", name === "icons");
+  if (snippetFab) snippetFab.classList.toggle("visible", name === "active");
 }
 
 // ── Load + render ───────────────────────────────────────
@@ -1165,16 +1229,27 @@ async function loadIconSvgInto(id, previewId, isArchived, archiveKey) {
         icon = await apiGet("/api/icon/" + encodeURIComponent(id));
       }
       iconCache[cacheKey] = icon;
-    } catch (e) { return; }
+    } catch (e) {
+      console.warn("[Fragment] Icon fetch failed for '" + id + "':", e.message);
+      return;
+    }
   }
   const slot = document.getElementById("svg-" + previewId);
-  if (slot && icon.svg) {
-    // Inject SVG, replace currentColor with ion color for preview
-    const previewSvg = icon.svg.replace(/currentColor/g, "var(--ion)");
-    slot.innerHTML = previewSvg;
-    // Ensure preview svg is sized correctly
-    const svgEl = slot.querySelector("svg");
-    if (svgEl) { svgEl.style.width = "32px"; svgEl.style.height = "32px"; }
+  if (slot && icon && icon.svg) {
+    try {
+      const previewSvg = icon.svg.replace(/currentColor/g, "var(--ion)");
+      slot.innerHTML = previewSvg;
+      const svgEl = slot.querySelector("svg");
+      if (svgEl) {
+        svgEl.setAttribute("width", "32");
+        svgEl.setAttribute("height", "32");
+        svgEl.style.width = "32px";
+        svgEl.style.height = "32px";
+      }
+    } catch (e) {
+      console.warn("[Fragment] SVG inject failed for '" + id + "':", e.message);
+      slot.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>';
+    }
   }
 }
 
@@ -1608,6 +1683,70 @@ function onCiSvgInput() {
 
 function closeCreateIconModal() {
   document.getElementById("createIconModal").classList.remove("open");
+}
+
+// ── Snippet Creation Modal ──────────────────────────────────────────────────
+function openCreateSnippetModal() {
+  if (state.locked) { toast("Unlock first to add snippets", false); openPinModal(); return; }
+  document.getElementById("csTitle").value = "";
+  document.getElementById("csCategory").value = "";
+  document.getElementById("csDesc").value = "";
+  document.getElementById("csCode").value = "";
+  document.getElementById("csTitleErr").textContent = "";
+  document.getElementById("csCategoryErr").textContent = "";
+  document.getElementById("csCodeErr").textContent = "";
+  document.getElementById("csGlobalErr").textContent = "";
+  document.getElementById("csPreviewFrame").innerHTML = '<div class="snippet-preview-empty">Enter code to preview</div>';
+  document.getElementById("csSubmitBtn").disabled = false;
+  document.getElementById("createSnippetModal").classList.add("open");
+  setTimeout(() => document.getElementById("csTitle").focus(), 260);
+}
+
+function closeCreateSnippetModal() {
+  document.getElementById("createSnippetModal").classList.remove("open");
+}
+
+function onCsCodeInput() {
+  const code = document.getElementById("csCode").value;
+  const frame = document.getElementById("csPreviewFrame");
+  if (!code.trim()) {
+    frame.innerHTML = '<div class="snippet-preview-empty">Enter code to preview</div>';
+    return;
+  }
+  const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:system-ui,sans-serif;font-size:14px;line-height:1.5;padding:14px;background:#f5f5f5;color:#333;}</style></head><body>' + code + '</body></html>';
+  try {
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    frame.innerHTML = '<iframe src="' + url + '" sandbox="allow-scripts" style="width:100%;height:100%;border:none;display:block;min-height:180px;"></iframe>';
+    setTimeout(() => URL.revokeObjectURL(url), 200);
+  } catch (e) {
+    frame.innerHTML = '<div class="snippet-preview-empty" style="color:var(--ember)">Preview error</div>';
+  }
+}
+
+async function submitCreateSnippet() {
+  const title = document.getElementById("csTitle").value.trim();
+  const cat   = document.getElementById("csCategory").value.trim();
+  const desc  = document.getElementById("csDesc").value.trim();
+  const code  = document.getElementById("csCode").value.trim();
+  let valid = true;
+
+  if (!title) { document.getElementById("csTitleErr").textContent = "Title is required"; valid = false; }
+  if (!cat)   { document.getElementById("csCategoryErr").textContent = "Category is required"; valid = false; }
+  if (!code)  { document.getElementById("csCodeErr").textContent = "Code is required"; valid = false; }
+  if (!valid) return;
+
+  document.getElementById("csSubmitBtn").disabled = true;
+  try {
+    const id = Math.random().toString(36).substring(2, 11);
+    await apiSend("/api/snippet/" + encodeURIComponent(id), "POST", { id, name: title, category: cat, description: desc, code });
+    closeCreateSnippetModal();
+    await loadIndex();
+    toast("Snippet created!");
+  } catch (e) {
+    document.getElementById("csGlobalErr").textContent = e.message;
+    document.getElementById("csSubmitBtn").disabled = false;
+  }
 }
 
 function getCiCategory() {
