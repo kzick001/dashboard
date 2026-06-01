@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sovereign Designer</title>
+    <title>Wireframer v1.3</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300aaff' stroke-width='1.5' stroke-linejoin='round'%3E%3Cpolygon points='12 12 20 8 12 4 4 8 12 12'/%3E%3Cpolyline points='4 8 4 18 12 22 20 18 20 8'/%3E%3Cline x1='12' y1='12' x2='12' y2='22'/%3E%3Cpolyline points='8 4 6 0 12 2 18 0 16 4'/%3E%3C/svg%3E">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
@@ -99,9 +99,127 @@
         .x-ray [data-type] { outline: 1px solid rgba(0,170,255,0.25); }
 
         .insp-select, .insp-input { width: 100%; background: var(--bg-panel); color: #eee; border: 1px solid #444; padding: 6px; margin-bottom: 10px; outline: none; font-family: inherit; }
-        .insp-group { border-top: 1px solid #444; padding-top: 15px; margin-bottom: 15px; }
-        .insp-group strong { color: #fff; font-size: 0.8rem; display: block; margin-bottom: 10px; }
+        .insp-group { border-top: 1px solid #444; margin-bottom: 0; overflow: hidden; }
+        .insp-group-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 0 10px 0; cursor: pointer; user-select: none;
+        }
+        .insp-group-header:hover { color: #fff; }
+        .insp-group-header strong { color: #fff; font-size: 0.8rem; }
+        .insp-group-chevron {
+            color: #666; font-size: 0.6rem; transition: transform 0.18s ease;
+            display: inline-block; margin-left: 6px;
+        }
+        .insp-group.collapsed .insp-group-chevron { transform: rotate(-90deg); }
+        .insp-group-body { padding-bottom: 12px; }
+        .insp-group.collapsed .insp-group-body { display: none; }
         .insp-label { display: block; margin-bottom: 5px; color: #aaa; font-size: 0.72rem; }
+
+        /* ── Search bar ── */
+        #search-bar {
+            display: flex; align-items: center; gap: 6px;
+            background: var(--bg-base); border: 1px solid #444; border-radius: 3px;
+            padding: 4px 8px; height: 30px;
+        }
+        #search-bar:focus-within { border-color: var(--accent); }
+        #search-input {
+            background: transparent; border: none; color: #eee; outline: none;
+            font-size: 0.8rem; width: 160px; font-family: inherit;
+        }
+        #search-input::placeholder { color: #555; }
+        #search-clear {
+            background: none; border: none; color: #555; cursor: pointer;
+            font-size: 0.85rem; padding: 0; line-height: 1;
+        }
+        #search-clear:hover { color: #aaa; }
+        .search-highlight { box-shadow: 0 0 0 2px #f0a500 !important; z-index: 3; }
+        .search-dim { opacity: 0.25; }
+
+        /* ── Help drawer ── */
+        #help-drawer {
+            position: fixed; top: 0; right: 0; height: 100vh; width: 320px;
+            background: var(--bg-panel); border-left: 1px solid var(--border-color);
+            z-index: 95; transform: translateX(100%); transition: transform 0.22s ease;
+            overflow-y: auto; display: flex; flex-direction: column;
+        }
+        #help-drawer.open { transform: translateX(0); }
+        #help-drawer-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 16px; background: var(--bg-header);
+            border-bottom: 1px solid var(--border-color); flex-shrink: 0;
+        }
+        #help-drawer-header span { font-weight: 700; font-size: 0.85rem; letter-spacing: 1px; color: var(--accent); text-transform: uppercase; }
+        #help-close { background: none; border: none; color: #888; cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 2px 6px; }
+        #help-close:hover { color: #fff; }
+        .help-section { padding: 14px 16px; border-bottom: 1px solid #333; }
+        .help-section h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #aaa; margin-bottom: 10px; }
+        .help-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; font-size: 0.8rem; line-height: 1.45; }
+        .help-key { background: #333; border: 1px solid #555; border-radius: 3px; padding: 1px 6px; font-family: monospace; font-size: 0.7rem; color: #ccc; white-space: nowrap; flex-shrink: 0; }
+        .help-tip { color: #aaa; }
+        .help-tip strong { color: #ddd; }
+
+        /* ── Code toolbar ── */
+        #code-toolbar {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 10px; background: var(--bg-header);
+            border-bottom: 1px solid var(--border-color); flex-shrink: 0;
+        }
+        #code-toolbar button {
+            background: #3c3c3c; color: #ccc; border: 1px solid #555;
+            border-radius: 3px; padding: 4px 10px; font-size: 0.75rem;
+            cursor: pointer; white-space: nowrap;
+        }
+        #code-toolbar button:hover { background: #555; }
+        #sync-status {
+            margin-left: auto; font-size: 0.7rem; display: flex;
+            align-items: center; gap: 4px; color: #666;
+        }
+        #sync-status .sync-dot {
+            width: 7px; height: 7px; border-radius: 50%; background: #666;
+            flex-shrink: 0;
+        }
+        #sync-status.synced { color: var(--good); }
+        #sync-status.synced .sync-dot { background: var(--good); }
+        #sync-status.modified { color: #f0a500; }
+        #sync-status.modified .sync-dot { background: #f0a500; }
+
+        .node-btn-bar {
+            display: none; /* shown via media query */
+            gap: 4px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+        .node-btn-bar button {
+            flex: 1;
+            min-width: 36px;
+            min-height: 32px;
+            padding: 4px 6px;
+            font-size: 0.72rem;
+            background: #2a2a2a;
+            color: #bbb;
+            border: 1px solid #444;
+            border-radius: 3px;
+            cursor: pointer;
+            white-space: nowrap;
+            pointer-events: all;
+        }
+        .node-btn-bar button:hover { background: #3a3a3a; color: #fff; }
+        .node-btn-bar button.bar-add  { border-color: #2b5a2b; color: var(--good); }
+        .node-btn-bar button.bar-del  { border-color: #5a2b2b; color: var(--danger); }
+        .node-btn-bar button.bar-up,
+        .node-btn-bar button.bar-dn   { color: #aaa; }
+
+        /* ── Mobile inspector overrides ── */
+        @media (max-width: 900px) {
+            #inspector { padding: 10px; font-size: 0.75rem; }
+            .insp-select, .insp-input { font-size: 0.75rem; padding: 5px; min-height: 38px; }
+            .insp-label { font-size: 0.68rem; }
+            .insp-group-header { padding: 8px 0; }
+            .insp-group-header strong { font-size: 0.75rem; }
+            #inspector button { min-height: 40px; font-size: 0.78rem; }
+            .node-btn-bar { display: flex; }
+            [data-id] { cursor: default !important; }
+        }
 
         #code-engine .tabs { display: flex; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
         #code-engine .tabs button { flex: 1; background: var(--bg-header); color: #888; border: none; padding: 10px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; font-weight: bold; }
@@ -119,6 +237,7 @@
         .toast.ok { border-color: var(--good); }
         .toast.err { border-color: var(--danger); }
 
+        /* ── Modal base ── */
         .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 90; }
         .modal-bg.open { display: flex; }
         .modal { background: var(--bg-panel); border: 1px solid #555; border-radius: 8px; padding: 24px; width: 320px; max-width: 90vw; }
@@ -130,11 +249,66 @@
         .modal-actions { display: flex; gap: 10px; }
         .modal-actions button { flex: 1; padding: 10px; border-radius: 4px; border: 1px solid #555; background: #3c3c3c; color: #ccc; cursor: pointer; font-size: 0.85rem; }
         .modal-actions button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+        /* ── Import modal ── */
+        #import-modal .modal { width: 520px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
+        .import-tabs { display: flex; border-bottom: 1px solid var(--border-color); margin: -24px -24px 16px -24px; }
+        .import-tabs button { flex: 1; padding: 10px; background: var(--bg-header); color: #888; border: none; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; }
+        .import-tabs button.active { color: var(--accent); background: var(--bg-panel); border-bottom: 2px solid var(--accent); }
+        .import-pane { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+        .import-pane.active { display: flex; }
+        #import-paste-area {
+            flex: 1;
+            min-height: 200px;
+            background: var(--bg-base);
+            border: 1px solid #444;
+            color: #eee;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            resize: none;
+            outline: none;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        #import-paste-area:focus { border-color: var(--accent); }
+        .import-err { color: var(--danger); font-size: 0.75rem; min-height: 18px; margin-bottom: 8px; line-height: 1.4; }
+        .import-ok { color: var(--good); font-size: 0.75rem; min-height: 18px; margin-bottom: 8px; }
+        .upload-zone {
+            flex: 1;
+            min-height: 160px;
+            border: 2px dashed #444;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            margin-bottom: 8px;
+            color: #666;
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 20px;
+        }
+        .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: rgba(0,170,255,0.05); color: #aaa; }
+        .upload-zone .upload-icon { font-size: 2rem; color: #555; }
+        .upload-zone .upload-filename { color: var(--good); font-family: monospace; font-size: 0.8rem; margin-top: 4px; }
+        #import-file-input { display: none; }
+        .import-format-hint { font-size: 0.7rem; color: #555; margin-bottom: 10px; }
+        .import-modal-actions { display: flex; gap: 10px; margin-top: 4px; }
+        .import-modal-actions button { flex: 1; padding: 10px; border-radius: 4px; border: 1px solid #555; background: #3c3c3c; color: #ccc; cursor: pointer; font-size: 0.85rem; }
+        .import-modal-actions button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .import-modal-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ── Confirm modal ── */
+        #confirm-modal .modal { width: 360px; }
     </style>
 </head>
 <body>
     <div id="global-header">
-        <div class="branding">DESIGNER // V1.3.0</div>
+        <div class="branding">WIREFRAMER // V1.4.0</div>
         <input class="design-name" id="design-name" placeholder="Untitled Design" spellcheck="false">
         <button id="btn-undo">Undo</button>
         <button id="btn-redo">Redo</button>
@@ -142,6 +316,13 @@
         <button id="btn-save" class="accent">Save</button>
         <button id="btn-new">New</button>
         <div style="flex:1;"></div>
+        <div id="search-bar" title="Search nodes by alias or type">
+            <span style="color:#555; font-size:0.75rem;">⌕</span>
+            <input id="search-input" type="text" placeholder="Search nodes…" autocomplete="off" spellcheck="false">
+            <button id="search-clear" title="Clear search">✕</button>
+        </div>
+        <button id="btn-help" title="Help">?</button>
+        <button id="btn-import">Import</button>
         <button id="btn-export-yaml">Export YAML</button>
         <button id="btn-export-html">Export HTML</button>
         <button id="btn-to-fragment" class="accent">→ Fragment</button>
@@ -183,6 +364,14 @@
                 <button id="tab-html">Output (HTML)</button>
             </div>
         </header>
+        <div id="code-toolbar">
+            <button id="btn-copy-code" title="Copy to clipboard">Copy</button>
+            <button id="btn-import-from-code" title="Import YAML/HTML into canvas">Import</button>
+            <div id="sync-status" title="Sync status">
+                <div class="sync-dot"></div>
+                <span id="sync-label">—</span>
+            </div>
+        </div>
         <div id="code-editor-container">
             <textarea id="yaml-input" spellcheck="false"></textarea>
             <pre id="yaml-highlight"><code class="language-yaml" id="yaml-code"></code></pre>
@@ -190,6 +379,7 @@
         </div>
     </div>
 
+    <!-- PIN Modal -->
     <div class="modal-bg" id="pin-modal">
         <div class="modal">
             <h3>Unlock writes</h3>
@@ -203,6 +393,7 @@
         </div>
     </div>
 
+    <!-- Fragment Modal -->
     <div class="modal-bg" id="fragment-modal">
         <div class="modal">
             <h3>Push to Fragment</h3>
@@ -221,12 +412,107 @@
         </div>
     </div>
 
+    <!-- Import Modal -->
+    <div class="modal-bg" id="import-modal">
+        <div class="modal">
+            <div class="import-tabs">
+                <button id="import-tab-paste" class="active" onclick="switchImportTab('paste')">Paste</button>
+                <button id="import-tab-upload" onclick="switchImportTab('upload')">Upload File</button>
+            </div>
+
+            <!-- Paste pane -->
+            <div class="import-pane active" id="import-pane-paste">
+                <div class="import-format-hint">Accepts YAML tree (array root) or full HTML document</div>
+                <textarea id="import-paste-area" placeholder="Paste YAML or HTML here…" spellcheck="false"></textarea>
+                <div class="import-err" id="import-paste-err"></div>
+                <div class="import-modal-actions">
+                    <button onclick="closeModal('import-modal')">Cancel</button>
+                    <button class="primary" id="btn-import-paste-confirm" onclick="triggerImportFromPaste()">Import</button>
+                </div>
+            </div>
+
+            <!-- Upload pane -->
+            <div class="import-pane" id="import-pane-upload">
+                <div class="import-format-hint">Accepts .yaml, .yml, .html — max 10 MB</div>
+                <div class="upload-zone" id="upload-zone" onclick="document.getElementById('import-file-input').click()">
+                    <div class="upload-icon">↑</div>
+                    <div>Click or drag a file here</div>
+                    <div class="upload-filename" id="upload-filename"></div>
+                </div>
+                <input type="file" id="import-file-input" accept=".yaml,.yml,.html">
+                <div class="import-err" id="import-upload-err"></div>
+                <div class="import-modal-actions">
+                    <button onclick="closeModal('import-modal')">Cancel</button>
+                    <button class="primary" id="btn-import-upload-confirm" onclick="triggerImportFromFile()" disabled>Import</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Replace Modal -->
+    <div class="modal-bg" id="confirm-modal">
+        <div class="modal">
+            <h3>Replace current design?</h3>
+            <p>This will replace the canvas with the imported tree. Current unsaved changes will be lost.</p>
+            <div class="modal-actions">
+                <button id="confirm-cancel">Cancel</button>
+                <button class="primary" id="confirm-ok">Replace</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Drawer -->
+    <div id="help-drawer">
+        <div id="help-drawer-header">
+            <span>Wireframer Help</span>
+            <button id="help-close" title="Close">✕</button>
+        </div>
+        <div class="help-section">
+            <h4>Workflow</h4>
+            <div class="help-row"><span class="help-tip"><strong>Drag</strong> primitives from the left panel onto the canvas or into containers.</span></div>
+            <div class="help-row"><span class="help-tip"><strong>Click</strong> any node to select it and edit its properties in the Inspector.</span></div>
+            <div class="help-row"><span class="help-tip"><strong>Nest</strong> nodes by dropping onto a Container (dashed border turns green).</span></div>
+            <div class="help-row"><span class="help-tip">Use <strong>X-Ray</strong> to reveal all container boundaries.</span></div>
+        </div>
+        <div class="help-section">
+            <h4>Shortcuts</h4>
+            <div class="help-row"><span class="help-key">Ctrl+S</span><span class="help-tip">Save design to Fragment KV</span></div>
+            <div class="help-row"><span class="help-key">Ctrl+Z</span><span class="help-tip">Undo</span></div>
+            <div class="help-row"><span class="help-key">Ctrl+Shift+Z</span><span class="help-tip">Redo</span></div>
+            <div class="help-row"><span class="help-key">Ctrl+D</span><span class="help-tip">Duplicate selected node</span></div>
+        </div>
+        <div class="help-section">
+            <h4>Node Search</h4>
+            <div class="help-row"><span class="help-tip">Type in the search bar and press <strong>Enter</strong> to find nodes by alias or type. Matching nodes highlight in amber; non-matching nodes dim. Press <strong>Enter again</strong> to cycle through results. <strong>✕</strong> or Escape clears.</span></div>
+        </div>
+        <div class="help-section">
+            <h4>Import / Export</h4>
+            <div class="help-row"><span class="help-tip"><strong>Import</strong> — paste or upload a <code style="font-family:monospace;color:#aaa;">.yaml</code> or <code style="font-family:monospace;color:#aaa;">.html</code> file to replace the canvas.</span></div>
+            <div class="help-row"><span class="help-tip"><strong>Export YAML</strong> — downloads the raw tree as a YAML file. Re-importable.</span></div>
+            <div class="help-row"><span class="help-tip"><strong>Export HTML</strong> — generates semantic HTML5 at the current frame width.</span></div>
+            <div class="help-row"><span class="help-tip"><strong>→ Fragment</strong> — pushes exported HTML directly to your Fragment KV library (requires unlock).</span></div>
+        </div>
+        <div class="help-section">
+            <h4>Inspector Sections</h4>
+            <div class="help-row"><span class="help-tip">Click any section header to <strong>collapse or expand</strong> it. Useful on small screens.</span></div>
+        </div>
+        <div class="help-section">
+            <h4>Node Types</h4>
+            <div class="help-row"><span class="help-key">▢ Container</span><span class="help-tip">Flexbox wrapper. Only type that holds children.</span></div>
+            <div class="help-row"><span class="help-key">T Text</span><span class="help-tip">h1–h3, p, span, label. Set tag for semantic HTML.</span></div>
+            <div class="help-row"><span class="help-key">▣ Button</span><span class="help-tip">Primary, secondary, or disabled weight.</span></div>
+            <div class="help-row"><span class="help-key">▭ Input</span><span class="help-tip">Text, email, password, number, search, tel.</span></div>
+            <div class="help-row"><span class="help-key">― Divider</span><span class="help-tip">Semantic &lt;hr&gt; separator.</span></div>
+        </div>
+    </div>
+
     <div class="toast" id="toast"></div>
 
     <script>
         // ── Config ──────────────────────────────────────────
         const API = "https://fragment.askozicki.workers.dev";
         const FRAME_PRESETS = { mobile: 375, tablet: 768, desktop: 1100 };
+        const MAX_IMPORT_BYTES = 10 * 1024 * 1024; // 10 MB
         const generateUUID = () => crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
 
         // ── Toast ───────────────────────────────────────────
@@ -238,6 +524,10 @@
             clearTimeout(toastTimer);
             toastTimer = setTimeout(() => { t.className = "toast"; }, 2600);
         }
+
+        // ── Modal helpers ───────────────────────────────────
+        function openModal(id) { document.getElementById(id).classList.add("open"); }
+        function closeModal(id) { document.getElementById(id).classList.remove("open"); }
 
         // ── Lock state ──────────────────────────────────────
         const lockState = { locked: true, unlockedUntil: null };
@@ -275,21 +565,393 @@
                 setTimeout(() => input.classList.remove("error"), 400);
             }
         }
-
-        function openModal(id) { document.getElementById(id).classList.add("open"); }
-        function closeModal(id) { document.getElementById(id).classList.remove("open"); }
         function requireUnlock() {
             if (lockState.locked) { toast("Unlock first", false); openModal("pin-modal"); setTimeout(() => document.getElementById("pin-input").focus(), 100); return false; }
             return true;
         }
 
-        // ── Semantic HTML generator (Phase 3) ───────────────
+        // ── HTML → Tree parser ──────────────────────────────
         function htmlEscape(s) {
             return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         }
         function gapPx(g) { return g === "sm" ? "8px" : g === "lg" ? "24px" : "15px"; }
         function padPx(p) { return p === "sm" ? "8px" : p === "lg" ? "24px" : "15px"; }
 
+        /**
+         * Parse an HTML string into a Wireframer YAML tree.
+         * Walks the DOM body and maps semantic elements to node types.
+         */
+        function parseHTMLToTree(htmlString) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlString, "text/html");
+            const body = doc.body;
+            if (!body || body.childElementCount === 0) {
+                throw new Error("No elements found in HTML body.");
+            }
+
+            function tagToNodeType(el) {
+                const tag = el.tagName.toLowerCase();
+                if (["section", "div", "main", "article", "aside", "header", "footer", "nav", "form", "ul", "ol", "li"].includes(tag)) return "container";
+                if (["h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "label", "a", "strong", "em"].includes(tag)) return "text";
+                if (tag === "button" || (tag === "input" && el.type === "button") || (tag === "input" && el.type === "submit")) return "button";
+                if (tag === "input" || tag === "textarea" || tag === "select") return "input";
+                if (tag === "hr") return "divider";
+                // If it has children, treat as container
+                if (el.children.length > 0) return "container";
+                // Default to text for anything with text content
+                const text = el.textContent.trim();
+                if (text) return "text";
+                return null;
+            }
+
+            function detectInputType(el) {
+                const t = el.getAttribute("type") || "text";
+                const allowed = ["text", "email", "password", "number", "search", "tel"];
+                return allowed.includes(t) ? t : "text";
+            }
+
+            function getAlias(el) {
+                return el.getAttribute("data-alias") || el.getAttribute("id") || el.getAttribute("aria-label") || "";
+            }
+
+            function walkEl(el) {
+                const nodeType = tagToNodeType(el);
+                if (!nodeType) return null;
+
+                const tag = el.tagName.toLowerCase();
+                const alias = getAlias(el);
+
+                if (nodeType === "container") {
+                    const children = [];
+                    for (const child of el.children) {
+                        const childNode = walkEl(child);
+                        if (childNode) children.push(childNode);
+                    }
+                    // Detect flex direction from inline style
+                    const style = el.getAttribute("style") || "";
+                    const isRow = style.includes("flex-direction:row") || style.includes("flex-direction: row");
+                    return {
+                        id: generateUUID(),
+                        type: "container",
+                        props: {
+                            alias,
+                            notes: "",
+                            direction: isRow ? "row" : "column",
+                            justify: "flex-start",
+                            align: "stretch",
+                            wrap: "nowrap",
+                            gap: "md",
+                            spacing: "md",
+                            sizing: "hug",
+                            overflow: "visible"
+                        },
+                        children
+                    };
+                }
+
+                if (nodeType === "text") {
+                    const headingTags = ["h1", "h2", "h3", "h4", "h5", "h6"];
+                    const textTag = headingTags.includes(tag) ? tag.replace("h4", "h3").replace("h5", "h3").replace("h6", "h3") : (tag === "label" ? "label" : "p");
+                    return {
+                        id: generateUUID(),
+                        type: "text",
+                        props: {
+                            alias,
+                            notes: "",
+                            label: el.textContent.trim() || "Text",
+                            tag: textTag,
+                            spacing: "md",
+                            sizing: "hug"
+                        }
+                    };
+                }
+
+                if (nodeType === "button") {
+                    const label = el.textContent.trim() || el.getAttribute("value") || "Button";
+                    const cls = el.className || "";
+                    const weight = cls.includes("secondary") ? "secondary" : cls.includes("disabled") || el.hasAttribute("disabled") ? "disabled" : "primary";
+                    return {
+                        id: generateUUID(),
+                        type: "button",
+                        props: { alias, notes: "", label, weight, spacing: "md", sizing: "hug" }
+                    };
+                }
+
+                if (nodeType === "input") {
+                    return {
+                        id: generateUUID(),
+                        type: "input",
+                        props: {
+                            alias,
+                            notes: "",
+                            label: el.getAttribute("placeholder") || "",
+                            inputType: detectInputType(el),
+                            spacing: "md",
+                            sizing: "hug"
+                        }
+                    };
+                }
+
+                if (nodeType === "divider") {
+                    return { id: generateUUID(), type: "divider", props: { alias, notes: "", spacing: "sm", sizing: "hug" } };
+                }
+
+                return null;
+            }
+
+            const nodes = [];
+            for (const child of body.children) {
+                const node = walkEl(child);
+                if (node) nodes.push(node);
+            }
+
+            if (nodes.length === 0) throw new Error("No recognizable wireframe elements found in HTML.");
+            return nodes;
+        }
+
+        // ── Import orchestration ────────────────────────────
+        let _pendingImportTree = null;
+
+        function switchImportTab(tab) {
+            document.getElementById("import-tab-paste").classList.toggle("active", tab === "paste");
+            document.getElementById("import-tab-upload").classList.toggle("active", tab === "upload");
+            document.getElementById("import-pane-paste").classList.toggle("active", tab === "paste");
+            document.getElementById("import-pane-upload").classList.toggle("active", tab === "upload");
+        }
+
+        function detectAndParseContent(raw) {
+            const trimmed = raw.trim();
+            if (!trimmed) throw new Error("Content is empty.");
+
+            // Detect HTML by doctype or opening tag
+            const looksLikeHTML = /^<!doctype\s+html/i.test(trimmed) || /^<html/i.test(trimmed) || /^<body/i.test(trimmed);
+
+            if (looksLikeHTML) {
+                return parseHTMLToTree(trimmed);
+            }
+
+            // Try YAML
+            let parsed;
+            try {
+                parsed = jsyaml.load(trimmed);
+            } catch (e) {
+                // js-yaml error messages include line/col info
+                throw new Error("YAML parse error: " + e.message.split("\n")[0]);
+            }
+
+            if (!Array.isArray(parsed)) {
+                throw new Error("YAML root must be an array. Got: " + typeof parsed);
+            }
+            if (parsed.length === 0) {
+                throw new Error("YAML parsed to an empty array.");
+            }
+
+            // Basic node validation: each root item must have a type
+            parsed.forEach((node, i) => {
+                if (!node || typeof node !== "object") throw new Error(`Node at index ${i} is not an object.`);
+                if (!node.type) throw new Error(`Node at index ${i} is missing a 'type' field.`);
+                const validTypes = ["container", "text", "button", "input", "divider"];
+                if (!validTypes.includes(node.type)) throw new Error(`Node at index ${i} has unknown type: "${node.type}".`);
+            });
+
+            return parsed;
+        }
+
+        function triggerImportFromPaste() {
+            const raw = document.getElementById("import-paste-area").value;
+            const errEl = document.getElementById("import-paste-err");
+            errEl.textContent = "";
+            try {
+                const tree = detectAndParseContent(raw);
+                _pendingImportTree = tree;
+                closeModal("import-modal");
+                openConfirmAndImport();
+            } catch (e) {
+                errEl.textContent = e.message;
+            }
+        }
+
+        let _pendingFileContent = null;
+        function setupFileUpload() {
+            const zone = document.getElementById("upload-zone");
+            const input = document.getElementById("import-file-input");
+            const confirmBtn = document.getElementById("btn-import-upload-confirm");
+            const errEl = document.getElementById("import-upload-err");
+            const filenameEl = document.getElementById("upload-filename");
+
+            const handleFile = (file) => {
+                errEl.textContent = "";
+                filenameEl.textContent = "";
+                confirmBtn.disabled = true;
+                _pendingFileContent = null;
+
+                if (!file) return;
+                const ext = file.name.split(".").pop().toLowerCase();
+                if (!["yaml", "yml", "html"].includes(ext)) {
+                    errEl.textContent = "Unsupported file type. Use .yaml, .yml, or .html.";
+                    return;
+                }
+                if (file.size > MAX_IMPORT_BYTES) {
+                    errEl.textContent = `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max is 10 MB.`;
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    _pendingFileContent = e.target.result;
+                    filenameEl.textContent = file.name + " (" + (file.size / 1024).toFixed(1) + " KB)";
+                    confirmBtn.disabled = false;
+                };
+                reader.onerror = () => { errEl.textContent = "Failed to read file."; };
+                reader.readAsText(file);
+            };
+
+            input.addEventListener("change", (e) => handleFile(e.target.files[0]));
+
+            zone.addEventListener("dragover", (e) => { e.preventDefault(); zone.classList.add("dragover"); });
+            zone.addEventListener("dragleave", () => zone.classList.remove("dragover"));
+            zone.addEventListener("drop", (e) => {
+                e.preventDefault();
+                zone.classList.remove("dragover");
+                handleFile(e.dataTransfer.files[0]);
+            });
+        }
+
+        function triggerImportFromFile() {
+            const errEl = document.getElementById("import-upload-err");
+            errEl.textContent = "";
+            if (!_pendingFileContent) { errEl.textContent = "No file loaded."; return; }
+            try {
+                const tree = detectAndParseContent(_pendingFileContent);
+                _pendingImportTree = tree;
+                closeModal("import-modal");
+                openConfirmAndImport();
+            } catch (e) {
+                errEl.textContent = e.message;
+            }
+        }
+
+        function openConfirmAndImport() {
+            openModal("confirm-modal");
+            const okBtn = document.getElementById("confirm-ok");
+            const cancelBtn = document.getElementById("confirm-cancel");
+            // One-time listeners
+            const onOk = () => {
+                okBtn.removeEventListener("click", onOk);
+                cancelBtn.removeEventListener("click", onCancel);
+                closeModal("confirm-modal");
+                if (_pendingImportTree) {
+                    appState.activeNodeId = null;
+                    appState.update(_pendingImportTree);
+                    appState.buildInspector();
+                    toast("Imported — " + _pendingImportTree.length + " root node(s)");
+                    _pendingImportTree = null;
+                }
+            };
+            const onCancel = () => {
+                okBtn.removeEventListener("click", onOk);
+                cancelBtn.removeEventListener("click", onCancel);
+                closeModal("confirm-modal");
+                _pendingImportTree = null;
+            };
+            okBtn.addEventListener("click", onOk);
+            cancelBtn.addEventListener("click", onCancel);
+        }
+
+        function openImportModal() {
+            // Reset state
+            document.getElementById("import-paste-area").value = "";
+            document.getElementById("import-paste-err").textContent = "";
+            document.getElementById("import-upload-err").textContent = "";
+            document.getElementById("upload-filename").textContent = "";
+            document.getElementById("btn-import-upload-confirm").disabled = true;
+            document.getElementById("import-file-input").value = "";
+            _pendingFileContent = null;
+            switchImportTab("paste");
+            openModal("import-modal");
+        }
+
+        // ── Inspector section collapse ──────────────────────
+        function toggleInspSection(id) {
+            const group = document.getElementById(id);
+            if (group) group.classList.toggle('collapsed');
+        }
+
+        // ── Mobile detection ────────────────────────────────
+        function isMobile() {
+            return window.matchMedia('(max-width: 900px)').matches;
+        }
+
+        // ── Node search ─────────────────────────────────────
+        const searchState = { query: '', results: [], cursor: -1 };
+
+        function collectAllNodes(tree) {
+            const flat = [];
+            const walk = (nodes) => {
+                nodes.forEach(n => {
+                    flat.push(n);
+                    if (n.children) walk(n.children);
+                });
+            };
+            walk(tree);
+            return flat;
+        }
+
+        function runSearch(query, tree) {
+            clearSearchHighlights();
+            searchState.query = query;
+            searchState.cursor = -1;
+            if (!query.trim()) { searchState.results = []; return; }
+            const q = query.trim().toLowerCase();
+            const all = collectAllNodes(tree);
+            searchState.results = all.filter(n =>
+                (n.props.alias && n.props.alias.toLowerCase().includes(q)) ||
+                n.type.toLowerCase().includes(q) ||
+                (n.props.label && n.props.label.toLowerCase().includes(q))
+            ).map(n => n.id);
+            applySearchHighlights();
+        }
+
+        function clearSearchHighlights() {
+            document.querySelectorAll('.search-highlight').forEach(el => el.classList.remove('search-highlight'));
+            document.querySelectorAll('.search-dim').forEach(el => el.classList.remove('search-dim'));
+        }
+
+        function applySearchHighlights() {
+            if (!searchState.results.length) return;
+            const resultSet = new Set(searchState.results);
+            document.querySelectorAll('[data-id]').forEach(el => {
+                if (resultSet.has(el.dataset.id)) {
+                    el.classList.add('search-highlight');
+                } else {
+                    el.classList.add('search-dim');
+                }
+            });
+        }
+
+        function cycleSearchResult() {
+            if (!searchState.results.length) return;
+            searchState.cursor = (searchState.cursor + 1) % searchState.results.length;
+            const targetId = searchState.results[searchState.cursor];
+            const el = document.querySelector(`[data-id="${targetId}"]`);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                appState.activeNodeId = targetId;
+                appState.render();
+                appState.buildInspector();
+                applySearchHighlights(); // re-apply after render
+            }
+        }
+
+        function clearSearch() {
+            searchState.query = '';
+            searchState.results = [];
+            searchState.cursor = -1;
+            clearSearchHighlights();
+            const input = document.getElementById('search-input');
+            if (input) input.value = '';
+        }
+
+        // ── Semantic HTML generator ─────────────────────────
         function nodeToHTML(node, depth) {
             const pad = "  ".repeat(depth);
             const alias = node.props.alias ? ` data-alias="${htmlEscape(node.props.alias)}"` : "";
@@ -382,6 +1044,7 @@ ${body}
                 this.designId = null;
                 this.designName = "";
                 this.codeView = "yaml";
+                this._savedTreeSnapshot = null; // for sync status tracking
             }
 
             init(initialTree) {
@@ -436,6 +1099,7 @@ ${body}
                 this.designId = null;
                 this.designName = "";
                 document.getElementById("design-name").value = "";
+                clearSearch();
                 this.update([{
                     id: generateUUID(), type: 'container',
                     props: { alias: 'Root Frame', notes: '', spacing: 'lg', sizing: 'hug', direction: 'column', justify: 'flex-start', align: 'stretch', wrap: 'nowrap', gap: 'md', overflow: 'visible' },
@@ -528,13 +1192,15 @@ ${body}
                     this.tree.forEach(node => canvas.appendChild(this.buildDOMNode(node)));
                 }
                 this.syncCode();
+                // Re-apply any active search highlights after DOM rebuild
+                if (searchState.results.length) applySearchHighlights();
             }
 
             buildDOMNode(node) {
                 const el = document.createElement('div');
                 el.dataset.id = node.id;
                 el.dataset.type = node.type;
-                el.draggable = true;
+                el.draggable = !isMobile();
                 if (this.activeNodeId === node.id) el.classList.add('active-node');
 
                 el.style.flexGrow = node.props.sizing === 'fill' ? '1' : '0';
@@ -588,6 +1254,68 @@ ${body}
                     node.children.forEach(child => el.appendChild(this.buildDOMNode(child)));
                 }
 
+                // ── Mobile button bar ──
+                const bar = document.createElement('div');
+                bar.className = 'node-btn-bar';
+                bar.addEventListener('click', e => e.stopPropagation()); // prevent node select on bar clicks
+
+                const mkBarBtn = (cls, text, handler) => {
+                    const b = document.createElement('button');
+                    b.className = 'bar-' + cls;
+                    b.textContent = text;
+                    b.addEventListener('click', (e) => { e.stopPropagation(); handler(); });
+                    return b;
+                };
+
+                // Add child — only on containers
+                if (node.type === 'container') {
+                    bar.appendChild(mkBarBtn('add', '+ Child', () => {
+                        const newTree = structuredClone(this.tree);
+                        const ni = this.findNodeInfo(node.id, newTree);
+                        if (!ni) return;
+                        const child = this.makeNode('text');
+                        ni.node.children.push(child);
+                        this.activeNodeId = child.id;
+                        this.update(newTree);
+                        this.buildInspector();
+                    }));
+                }
+
+                bar.appendChild(mkBarBtn('up', '↑', () => {
+                    const newTree = structuredClone(this.tree);
+                    const ni = this.findNodeInfo(node.id, newTree);
+                    if (ni && ni.index > 0) {
+                        [ni.parentArray[ni.index - 1], ni.parentArray[ni.index]] = [ni.parentArray[ni.index], ni.parentArray[ni.index - 1]];
+                        this.activeNodeId = node.id;
+                        this.update(newTree);
+                        this.buildInspector();
+                    }
+                }));
+
+                bar.appendChild(mkBarBtn('dn', '↓', () => {
+                    const newTree = structuredClone(this.tree);
+                    const ni = this.findNodeInfo(node.id, newTree);
+                    if (ni && ni.index < ni.parentArray.length - 1) {
+                        [ni.parentArray[ni.index], ni.parentArray[ni.index + 1]] = [ni.parentArray[ni.index + 1], ni.parentArray[ni.index]];
+                        this.activeNodeId = node.id;
+                        this.update(newTree);
+                        this.buildInspector();
+                    }
+                }));
+
+                bar.appendChild(mkBarBtn('del', '✕', () => {
+                    const newTree = structuredClone(this.tree);
+                    const ni = this.findNodeInfo(node.id, newTree);
+                    if (ni) {
+                        ni.parentArray.splice(ni.index, 1);
+                        if (this.activeNodeId === node.id) this.activeNodeId = null;
+                        this.update(newTree);
+                        this.buildInspector();
+                    }
+                }));
+
+                el.appendChild(bar);
+
                 el.addEventListener('dragstart', (e) => {
                     e.stopPropagation();
                     e.dataTransfer.setData('text/plain', JSON.stringify({ action: 'move', id: node.id }));
@@ -614,87 +1342,125 @@ ${body}
                 const isContainer = type === 'container';
 
                 let html = `
-                    <div style="margin-bottom:15px; color:#fff;">Type: <strong>${type.toUpperCase()}</strong><br><span style="font-size:0.7rem; color:#666;">ID: ${info.node.id.substring(0,8)}</span></div>
-                    <div class="insp-group" style="border-top:none; padding-top:0;">
-                        <strong>Semantics</strong>
-                        <label class="insp-label">Semantic Name (Alias)</label>
-                        <input type="text" id="prop-alias" spellcheck="false" placeholder="e.g. login-btn" class="insp-input" style="color:var(--accent); font-family:monospace;">
-                        <label class="insp-label">Documentation Notes</label>
-                        <textarea id="prop-notes" spellcheck="false" class="insp-input" style="height:70px; resize:vertical;"></textarea>
+                    <div style="margin-bottom:12px; color:#fff; padding-bottom:10px; border-bottom:1px solid #444;">Type: <strong>${type.toUpperCase()}</strong><br><span style="font-size:0.7rem; color:#666;">ID: ${info.node.id.substring(0,8)}</span></div>
+                    <div class="insp-group" id="igrp-semantics" style="border-top:none;">
+                        <div class="insp-group-header" onclick="toggleInspSection('igrp-semantics')">
+                            <strong>Semantics</strong><span class="insp-group-chevron">▼</span>
+                        </div>
+                        <div class="insp-group-body">
+                            <label class="insp-label">Semantic Name (Alias)</label>
+                            <input type="text" id="prop-alias" spellcheck="false" placeholder="e.g. login-btn" class="insp-input" style="color:var(--accent); font-family:monospace;">
+                            <label class="insp-label">Documentation Notes</label>
+                            <textarea id="prop-notes" spellcheck="false" class="insp-input" style="height:60px; resize:vertical;"></textarea>
+                        </div>
                     </div>`;
 
-                // Type-specific visual group
                 if (type === 'text') {
-                    html += `<div class="insp-group"><strong>Text</strong>
-                        <label class="insp-label">Content</label>
-                        <input type="text" id="prop-label" class="insp-input">
-                        <label class="insp-label">Tag (semantic)</label>
-                        <select id="prop-tag" class="insp-select">
-                            <option value="h1">Heading 1</option><option value="h2">Heading 2</option>
-                            <option value="h3">Heading 3</option><option value="p">Paragraph</option>
-                            <option value="span">Span</option><option value="label">Label</option>
-                        </select></div>`;
+                    html += `<div class="insp-group" id="igrp-type">
+                        <div class="insp-group-header" onclick="toggleInspSection('igrp-type')">
+                            <strong>Text</strong><span class="insp-group-chevron">▼</span>
+                        </div>
+                        <div class="insp-group-body">
+                            <label class="insp-label">Content</label>
+                            <input type="text" id="prop-label" class="insp-input">
+                            <label class="insp-label">Tag (semantic)</label>
+                            <select id="prop-tag" class="insp-select">
+                                <option value="h1">Heading 1</option><option value="h2">Heading 2</option>
+                                <option value="h3">Heading 3</option><option value="p">Paragraph</option>
+                                <option value="span">Span</option><option value="label">Label</option>
+                            </select>
+                        </div>
+                    </div>`;
                 } else if (type === 'button') {
-                    html += `<div class="insp-group"><strong>Button</strong>
-                        <label class="insp-label">Label</label>
-                        <input type="text" id="prop-label" class="insp-input">
-                        <label class="insp-label">Visual Weight</label>
-                        <select id="prop-weight" class="insp-select">
-                            <option value="primary">Primary (Filled)</option>
-                            <option value="secondary">Secondary (Outline)</option>
-                            <option value="disabled">Disabled (Faded)</option>
-                        </select></div>`;
+                    html += `<div class="insp-group" id="igrp-type">
+                        <div class="insp-group-header" onclick="toggleInspSection('igrp-type')">
+                            <strong>Button</strong><span class="insp-group-chevron">▼</span>
+                        </div>
+                        <div class="insp-group-body">
+                            <label class="insp-label">Label</label>
+                            <input type="text" id="prop-label" class="insp-input">
+                            <label class="insp-label">Visual Weight</label>
+                            <select id="prop-weight" class="insp-select">
+                                <option value="primary">Primary (Filled)</option>
+                                <option value="secondary">Secondary (Outline)</option>
+                                <option value="disabled">Disabled (Faded)</option>
+                            </select>
+                        </div>
+                    </div>`;
                 } else if (type === 'input') {
-                    html += `<div class="insp-group"><strong>Input</strong>
-                        <label class="insp-label">Placeholder</label>
-                        <input type="text" id="prop-label" class="insp-input">
-                        <label class="insp-label">Input Type</label>
-                        <select id="prop-inputType" class="insp-select">
-                            <option value="text">Text</option><option value="email">Email</option>
-                            <option value="password">Password</option><option value="number">Number</option>
-                            <option value="search">Search</option><option value="tel">Tel</option>
-                        </select></div>`;
+                    html += `<div class="insp-group" id="igrp-type">
+                        <div class="insp-group-header" onclick="toggleInspSection('igrp-type')">
+                            <strong>Input</strong><span class="insp-group-chevron">▼</span>
+                        </div>
+                        <div class="insp-group-body">
+                            <label class="insp-label">Placeholder</label>
+                            <input type="text" id="prop-label" class="insp-input">
+                            <label class="insp-label">Input Type</label>
+                            <select id="prop-inputType" class="insp-select">
+                                <option value="text">Text</option><option value="email">Email</option>
+                                <option value="password">Password</option><option value="number">Number</option>
+                                <option value="search">Search</option><option value="tel">Tel</option>
+                            </select>
+                        </div>
+                    </div>`;
                 }
 
-                // Item properties (all nodes)
-                html += `<div class="insp-group"><strong>Item Properties</strong>
-                    <label class="insp-label">Sizing Behavior</label>
-                    <select id="prop-sizing" class="insp-select">
-                        <option value="hug">Hug Content (Auto)</option>
-                        <option value="fill">Fill Available Space (Grow)</option>
-                    </select>
-                    <label class="insp-label">Internal Padding</label>
-                    <select id="prop-spacing" class="insp-select">
-                        <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option>
-                    </select></div>`;
+                html += `<div class="insp-group" id="igrp-item">
+                    <div class="insp-group-header" onclick="toggleInspSection('igrp-item')">
+                        <strong>Item Properties</strong><span class="insp-group-chevron">▼</span>
+                    </div>
+                    <div class="insp-group-body">
+                        <label class="insp-label">Sizing Behavior</label>
+                        <select id="prop-sizing" class="insp-select">
+                            <option value="hug">Hug Content (Auto)</option>
+                            <option value="fill">Fill Available Space (Grow)</option>
+                        </select>
+                        <label class="insp-label">Internal Padding</label>
+                        <select id="prop-spacing" class="insp-select">
+                            <option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option>
+                        </select>
+                    </div>
+                </div>`;
 
                 if (isContainer) {
-                    html += `<div class="insp-group"><strong>Flex Layout Engine</strong>
-                        <label class="insp-label">Direction</label>
-                        <select id="prop-direction" class="insp-select"><option value="column">Column (Stack)</option><option value="row">Row (Horizontal)</option></select>
-                        <label class="insp-label">Justify (Main Axis)</label>
-                        <select id="prop-justify" class="insp-select"><option value="flex-start">Start</option><option value="center">Center</option><option value="space-between">Space Between</option></select>
-                        <label class="insp-label">Align (Cross Axis)</label>
-                        <select id="prop-align" class="insp-select"><option value="stretch">Stretch</option><option value="flex-start">Start</option><option value="center">Center</option></select>
-                        <label class="insp-label">Wrap & Gap</label>
-                        <div style="display:flex; gap:5px;">
-                            <select id="prop-wrap" class="insp-select" style="flex:1;"><option value="nowrap">No Wrap</option><option value="wrap">Wrap</option></select>
-                            <select id="prop-gap" class="insp-select" style="flex:1;"><option value="sm">Gap: Sm</option><option value="md">Gap: Md</option><option value="lg">Gap: Lg</option></select>
+                    html += `<div class="insp-group" id="igrp-layout">
+                        <div class="insp-group-header" onclick="toggleInspSection('igrp-layout')">
+                            <strong>Flex Layout Engine</strong><span class="insp-group-chevron">▼</span>
                         </div>
-                        <label class="insp-label">Overflow Content</label>
-                        <select id="prop-overflow" class="insp-select"><option value="visible">Visible (Spill Out)</option><option value="hidden">Hidden (Clip)</option><option value="auto">Scroll (Auto)</option></select></div>`;
+                        <div class="insp-group-body">
+                            <label class="insp-label">Direction</label>
+                            <select id="prop-direction" class="insp-select"><option value="column">Column (Stack)</option><option value="row">Row (Horizontal)</option></select>
+                            <label class="insp-label">Justify (Main Axis)</label>
+                            <select id="prop-justify" class="insp-select"><option value="flex-start">Start</option><option value="center">Center</option><option value="space-between">Space Between</option></select>
+                            <label class="insp-label">Align (Cross Axis)</label>
+                            <select id="prop-align" class="insp-select"><option value="stretch">Stretch</option><option value="flex-start">Start</option><option value="center">Center</option></select>
+                            <label class="insp-label">Wrap & Gap</label>
+                            <div style="display:flex; gap:5px;">
+                                <select id="prop-wrap" class="insp-select" style="flex:1;"><option value="nowrap">No Wrap</option><option value="wrap">Wrap</option></select>
+                                <select id="prop-gap" class="insp-select" style="flex:1;"><option value="sm">Gap: Sm</option><option value="md">Gap: Md</option><option value="lg">Gap: Lg</option></select>
+                            </div>
+                            <label class="insp-label">Overflow Content</label>
+                            <select id="prop-overflow" class="insp-select"><option value="visible">Visible (Spill Out)</option><option value="hidden">Hidden (Clip)</option><option value="auto">Scroll (Auto)</option></select>
+                        </div>
+                    </div>`;
                 }
 
-                html += `<div style="display:flex; gap:5px; margin-bottom:15px;">
-                        <button id="btn-up" style="flex:1; padding:6px; background:#333; color:#fff; border:none; border-radius:3px; cursor:pointer;">↑ Up</button>
-                        <button id="btn-down" style="flex:1; padding:6px; background:#333; color:#fff; border:none; border-radius:3px; cursor:pointer;">↓ Down</button>
-                        <button id="btn-duplicate" style="flex:1; padding:6px; background:#2b4a6f; color:#fff; border:none; border-radius:3px; cursor:pointer;">Copy</button>
+                html += `<div class="insp-group" id="igrp-actions">
+                    <div class="insp-group-header" onclick="toggleInspSection('igrp-actions')">
+                        <strong>Actions</strong><span class="insp-group-chevron">▼</span>
                     </div>
-                    <button id="btn-delete" style="width:100%; background:#6b2a2a; color:#fff; border:none; padding:12px; cursor:pointer; border-radius:3px;">Destroy Node</button>`;
+                    <div class="insp-group-body">
+                        <div style="display:flex; gap:5px; margin-bottom:8px;">
+                            <button id="btn-up" style="flex:1; padding:6px; min-height:40px; background:#333; color:#fff; border:none; border-radius:3px; cursor:pointer;">↑ Up</button>
+                            <button id="btn-down" style="flex:1; padding:6px; min-height:40px; background:#333; color:#fff; border:none; border-radius:3px; cursor:pointer;">↓ Down</button>
+                            <button id="btn-duplicate" style="flex:1; padding:6px; min-height:40px; background:#2b4a6f; color:#fff; border:none; border-radius:3px; cursor:pointer;">Copy</button>
+                        </div>
+                        <button id="btn-delete" style="width:100%; background:#6b2a2a; color:#fff; border:none; padding:10px; min-height:40px; cursor:pointer; border-radius:3px;">Destroy Node</button>
+                    </div>
+                </div>`;
 
                 panel.innerHTML = html;
 
-                // Data binding
                 document.getElementById('prop-alias').value = info.node.props.alias || '';
                 document.getElementById('prop-notes').value = info.node.props.notes || '';
                 document.getElementById('prop-spacing').value = info.node.props.spacing || 'md';
@@ -773,7 +1539,6 @@ ${body}
             }
 
             syncCode() {
-                // YAML
                 try {
                     const yamlString = jsyaml.dump(this.tree, { indent: 2 });
                     const input = document.getElementById('yaml-input');
@@ -786,12 +1551,27 @@ ${body}
                     }
                     Prism.highlightElement(codeBlock);
                 } catch { console.error("YAML parser failed."); }
-                // HTML preview
                 if (this.codeView === 'html') {
                     const htmlBlock = document.getElementById('html-code');
                     htmlBlock.textContent = generateHTML(this.tree, this.frame);
                     Prism.highlightElement(htmlBlock);
                 }
+                this.updateSyncStatus();
+            }
+
+            updateSyncStatus() {
+                const el = document.getElementById('sync-status');
+                const label = document.getElementById('sync-label');
+                if (!el || !label) return;
+                if (this._savedTreeSnapshot === null) {
+                    el.className = '';
+                    label.textContent = 'unsaved';
+                    return;
+                }
+                const current = JSON.stringify(this.tree);
+                const isSynced = current === this._savedTreeSnapshot;
+                el.className = isSynced ? 'synced' : 'modified';
+                label.textContent = isSynced ? '✓ synced' : '⚠ modified';
             }
 
             setFrame(frame) {
@@ -809,7 +1589,6 @@ ${body}
                 this.syncCode();
             }
 
-            // ── Persistence (Phase 1 KV adapter) ────────────
             async loadDrafts() {
                 const wrap = document.getElementById('drafts');
                 try {
@@ -844,6 +1623,7 @@ ${body}
                     this.activeNodeId = null;
                     this.history = []; this.currentIndex = -1;
                     this.update(Array.isArray(d.tree) ? d.tree : []);
+                    this._savedTreeSnapshot = JSON.stringify(this.tree);
                     this.setFrame(this.frame);
                     this.buildInspector();
                     toast("Loaded: " + d.name);
@@ -863,6 +1643,7 @@ ${body}
                     if (!r.ok) throw new Error(d.error || "Save failed");
                     this.designId = id;
                     this.designName = name;
+                    this._savedTreeSnapshot = JSON.stringify(this.tree);
                     toast("Saved: " + name);
                     this.loadDrafts();
                 } catch (e) { toast(e.message, false); }
@@ -881,7 +1662,6 @@ ${body}
                 } catch (e) { toast(e.message, false); }
             }
 
-            // ── Push to Fragment (Phase 3) ──────────────────
             async pushToFragment() {
                 if (!requireUnlock()) return;
                 const name = document.getElementById('frag-name').value.trim();
@@ -894,7 +1674,7 @@ ${body}
                         method: "POST", headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             name, category, htmlContent,
-                            description: "Generated by Sovereign Designer",
+                            description: "Generated by Wireframer",
                             tags: ["html", "wireframe", "generated"]
                         })
                     });
@@ -907,9 +1687,9 @@ ${body}
 
             wireEvents() {
                 const canvas = document.getElementById('canvas');
-                canvas.addEventListener('dragover', (e) => { e.preventDefault(); if (e.target === canvas || e.target.id === 'canvas-container') canvas.classList.add('drop-target'); });
-                canvas.addEventListener('dragleave', (e) => { if (e.target === canvas || e.target.id === 'canvas-container') canvas.classList.remove('drop-target'); });
-                canvas.addEventListener('drop', (e) => { if (e.target === canvas || e.target.id === 'canvas-container') this.handleDrop(e, 'root'); });
+                canvas.addEventListener('dragover', (e) => { if (isMobile()) return; e.preventDefault(); if (e.target === canvas || e.target.id === 'canvas-container') canvas.classList.add('drop-target'); });
+                canvas.addEventListener('dragleave', (e) => { if (isMobile()) return; if (e.target === canvas || e.target.id === 'canvas-container') canvas.classList.remove('drop-target'); });
+                canvas.addEventListener('drop', (e) => { if (isMobile()) return; if (e.target === canvas || e.target.id === 'canvas-container') this.handleDrop(e, 'root'); });
 
                 document.querySelectorAll('.primitive').forEach(prim => {
                     prim.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', JSON.stringify({ action: 'create', type: e.currentTarget.dataset.type })));
@@ -940,6 +1720,26 @@ ${body}
                 document.getElementById('btn-redo').addEventListener('click', () => { this.redo(); this.buildInspector(); });
                 document.getElementById('btn-new').addEventListener('click', () => this.newDesign());
                 document.getElementById('btn-save').addEventListener('click', () => this.saveDesign());
+                document.getElementById('btn-import').addEventListener('click', openImportModal);
+                document.getElementById('btn-help').addEventListener('click', () => document.getElementById('help-drawer').classList.toggle('open'));
+                document.getElementById('help-close').addEventListener('click', () => document.getElementById('help-drawer').classList.remove('open'));
+
+                // Node search
+                const searchInput = document.getElementById('search-input');
+                searchInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (searchState.query === searchInput.value.trim() && searchState.results.length) {
+                            cycleSearchResult();
+                        } else {
+                            runSearch(searchInput.value, this.tree);
+                            if (searchState.results.length) cycleSearchResult();
+                            else toast('No results for "' + searchInput.value + '"', false);
+                        }
+                    }
+                    if (e.key === 'Escape') { clearSearch(); searchInput.blur(); }
+                });
+                document.getElementById('search-clear').addEventListener('click', () => { clearSearch(); searchInput.focus(); });
 
                 document.getElementById('btn-mobile').addEventListener('click', () => this.setFrame('mobile'));
                 document.getElementById('btn-tablet').addEventListener('click', () => this.setFrame('tablet'));
@@ -949,20 +1749,40 @@ ${body}
                 document.getElementById('tab-yaml').addEventListener('click', () => this.setCodeView('yaml'));
                 document.getElementById('tab-html').addEventListener('click', () => this.setCodeView('html'));
 
+                // Code toolbar
+                document.getElementById('btn-copy-code').addEventListener('click', () => {
+                    const content = this.codeView === 'yaml'
+                        ? document.getElementById('yaml-input').value
+                        : generateHTML(this.tree, this.frame);
+                    navigator.clipboard.writeText(content)
+                        .then(() => toast('Copied to clipboard'))
+                        .catch(() => toast('Copy failed', false));
+                });
+                document.getElementById('btn-import-from-code').addEventListener('click', () => {
+                    // Pre-fill paste tab with current code-view content then open modal
+                    const content = this.codeView === 'yaml'
+                        ? document.getElementById('yaml-input').value
+                        : generateHTML(this.tree, this.frame);
+                    openImportModal();
+                    setTimeout(() => {
+                        document.getElementById('import-paste-area').value = content;
+                    }, 20);
+                });
+
                 document.getElementById('design-name').addEventListener('input', (e) => { this.designName = e.target.value; });
 
                 document.getElementById('btn-export-yaml').addEventListener('click', () => {
                     const blob = new Blob([jsyaml.dump(this.tree)], { type: 'text/yaml' });
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
-                    a.download = (this.designName || 'sovereign-layout').replace(/[^a-z0-9]+/gi, '-') + '.yaml';
+                    a.download = (this.designName || 'wireframer-layout').replace(/[^a-z0-9]+/gi, '-') + '.yaml';
                     a.click();
                 });
                 document.getElementById('btn-export-html').addEventListener('click', () => {
                     const blob = new Blob([generateHTML(this.tree, this.frame)], { type: 'text/html' });
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
-                    a.download = (this.designName || 'sovereign-export').replace(/[^a-z0-9]+/gi, '-') + '.html';
+                    a.download = (this.designName || 'wireframer-export').replace(/[^a-z0-9]+/gi, '-') + '.html';
                     a.click();
                 });
                 document.getElementById('btn-to-fragment').addEventListener('click', () => {
@@ -998,6 +1818,9 @@ ${body}
                         this.update(parsed);
                     } catch { container.style.borderLeft = '4px solid #ff4444'; }
                 }, 500));
+
+                // File upload setup
+                setupFileUpload();
             }
         }
 
