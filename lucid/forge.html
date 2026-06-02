@@ -301,6 +301,8 @@
       <h1>LUCID FORGE <span>v2.0</span></h1>
     </div>
     <div class="header-meta" id="headerMeta">Loading vault...</div>
+    <button class="rbtn" onclick="document.getElementById('csvExportModal').style.display='flex'" style="margin-left:10px;">Export CSV</button>
+    <button class="rbtn" onclick="document.getElementById('csvImportModal').style.display='flex'" style="margin-left:5px;">Import CSV</button>
   </div>
 
   <!-- STATS -->
@@ -320,6 +322,29 @@
 
   <!-- CONTENT AREA -->
   <div id="loader">Fetching vault data...</div>
+  <div id="bulkBar" style="display:none;padding:12px;background:var(--glass);border:1px solid var(--glass-border);border-radius:8px;margin-bottom:16px;flex-wrap:wrap;gap:10px;align-items:center;">
+    <span style="font-size:12px;color:var(--text-muted);"><span id="bulkCount">0</span> items selected</span>
+    <select class="finput" id="bulkT1" style="flex:0;width:120px;padding:6px;">
+      <option value="">T1: (no change)</option>
+      <option value="Flower">Flower</option>
+      <option value="Pre-Roll">Pre-Roll</option>
+      <option value="Vape">Vape</option>
+      <option value="Extract">Extract</option>
+      <option value="Edible">Edible</option>
+      <option value="Tincture">Tincture</option>
+      <option value="Topical">Topical</option>
+      <option value="Gear">Gear</option>
+    </select>
+    <select class="finput" id="bulkType" style="flex:0;width:120px;padding:6px;">
+      <option value="">Genetics: (no change)</option>
+      <option value="Indica">Indica</option>
+      <option value="Sativa">Sativa</option>
+      <option value="Hybrid">Hybrid</option>
+      <option value="N/A">N/A</option>
+    </select>
+    <button class="rbtn primary" onclick="applyBulk()" style="margin-left:auto;">Apply to selected →</button>
+    <button class="rbtn" onclick="clearBulkSelection()">Clear</button>
+  </div>
   <div id="reviewList" class="review-list"></div>
   <div id="statusState" style="display:none;"></div>
 
@@ -327,7 +352,7 @@
   const WORKER_URL = "https://dispo.askozicki.workers.dev";
 
   const T2_OPTS = {
-    'Flower':   ['Flower','Smalls','Ground','Mini-Buds','Smalls (Sale)','Flower (Sale)','Mini-Buds (Sale)','Strain of the Week'],
+    'Flower':   ['Flower','Smalls','Ground','Mini-Buds','Premium','Mixed','Strain of the Week'],
     'Pre-Roll': ['Standard Pre-Roll','Infused Pre-Roll','Pre-Roll Pack'],
     'Vape':     ['Distillate Vape','Resin Vape','Rosin Vape','Disposable'],
     'Extract':  ['Live Resin','Live Rosin','Distillate','Badder','Sugar','Hash'],
@@ -343,6 +368,130 @@
   let sessionDone  = 0;
 
   // ── INIT ────────────────────────────────────────────────────────────
+  let bulkSelected = new Set();
+
+  function updateBulkBar() {
+    bulkSelected.clear();
+    document.querySelectorAll('.bulk-check:checked').forEach(cb => {
+      bulkSelected.add(cb.dataset.slug);
+    });
+    const bar = document.getElementById('bulkBar');
+    bar.style.display = bulkSelected.size > 0 ? 'flex' : 'none';
+    document.getElementById('bulkCount').textContent = bulkSelected.size;
+  }
+
+  function applyBulk() {
+    const t1Val   = document.getElementById('bulkT1').value;
+    const typeVal = document.getElementById('bulkType').value;
+    if (!t1Val && !typeVal) { alert('Select at least one field to apply.'); return; }
+    bulkSelected.forEach(slug => {
+      const row = document.getElementById(`row-${CSS.escape(slug)}`);
+      if (row) {
+        if (t1Val)   row.querySelector('[data-f="t1"]').value   = t1Val;
+        if (typeVal) row.querySelector('[data-f="type"]').value = typeVal;
+      }
+    });
+    alert(`Applied to ${bulkSelected.size} items.`);
+    clearBulkSelection();
+  }
+
+  function clearBulkSelection() {
+    document.querySelectorAll('.bulk-check').forEach(cb => cb.checked = false);
+    updateBulkBar();
+  }
+
+  // ── CSV EXPORT (v2.0.1) ───────────────────────────────────────────────
+  function exportDictionaryCSV() {
+    const headers = ['slug','brand','strain','t1','t2','type','unitSize','unitCount','onSale','normalPrice','lastReviewedDate'];
+    const rows = [headers.join(',')];
+
+    allItems.forEach(item => {
+      const values = [
+        item.slug,
+        item.brand,
+        item.strain,
+        '',                              // t1 — user fills from Forge
+        item.suggestedT2 || '',
+        '',                              // type — user fills
+        '',
+        '',
+        'false',
+        '',
+        new Date().toISOString()
+      ];
+      rows.push(values.map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(','));
+    });
+
+    const csv  = rows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `lucid-dictionary-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    document.getElementById('csvExportModal').style.display = 'none';
+  }
+
+  // ── CSV IMPORT (v2.0.1) ───────────────────────────────────────────────
+  async function importDictionaryCSV() {
+    const csv = document.getElementById('csvInput').value.trim();
+    if (!csv) { alert('Paste CSV content first.'); return; }
+
+    const lines   = csv.split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^"(.*)"$/, '$1'));
+    const slugIdx  = headers.indexOf('slug');
+    const t1Idx    = headers.indexOf('t1');
+    const t2Idx    = headers.indexOf('t2');
+    const typeIdx  = headers.indexOf('type');
+    const saleIdx  = headers.indexOf('onSale');
+    const priceIdx = headers.indexOf('normalPrice');
+
+    if (slugIdx === -1) { alert('CSV must have a "slug" column.'); return; }
+
+    const updates = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cells = lines[i].split(',').map(c => c.trim().replace(/^"(.*)"$/, '$1'));
+      const slug  = cells[slugIdx];
+      if (!slug) continue;
+
+      const update = { slug };
+      if (t1Idx    !== -1 && cells[t1Idx])    update.t1          = cells[t1Idx];
+      if (t2Idx    !== -1 && cells[t2Idx])    update.t2          = cells[t2Idx];
+      if (typeIdx  !== -1 && cells[typeIdx])  update.type        = cells[typeIdx];
+      if (saleIdx  !== -1 && cells[saleIdx])  update.onSale      = cells[saleIdx].toLowerCase() === 'true';
+      if (priceIdx !== -1 && cells[priceIdx]) update.normalPrice = parseFloat(cells[priceIdx]);
+      updates.push(update);
+    }
+
+    if (!updates.length) { alert('No valid rows found in CSV.'); return; }
+
+    const statusEl = document.getElementById('csvImportStatus');
+    statusEl.textContent = `Processing ${updates.length} entries…`;
+
+    let successCount = 0;
+    for (const update of updates) {
+      try {
+        const res = await fetch(`${WORKER_URL}/dictionary-entry`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(update)
+        });
+        if (res.ok) successCount++;
+      } catch (e) {
+        console.error(`Failed to import ${update.slug}:`, e);
+      }
+    }
+
+    statusEl.textContent = `✓ Imported ${successCount}/${updates.length} entries.`;
+    setTimeout(() => {
+      document.getElementById('csvImportModal').style.display = 'none';
+      document.getElementById('csvInput').value = '';
+      statusEl.textContent = '';
+      applyFilters();
+    }, 1500);
+  }
+
   async function init() {
     try {
       const res = await fetch(`${WORKER_URL}/vault`);
@@ -521,14 +670,28 @@
 
     return `
     <div class="rrow" id="row-${safe}" data-slug="${esc(item.slug)}">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+        <input type="checkbox" class="bulk-check" data-slug="${esc(item.slug)}" onchange="updateBulkBar()">
+        <span style="font-size:11px;color:var(--text-muted);">Select for bulk apply</span>
+      </div>
       <div class="rmeta">
         <span class="cbadge ${item.confidence}">${item.confidence}</span>
         <span class="sbadge">${esc(item.store)}</span>
         <span class="rslug">${esc(item.slug)}</span>
         <span class="rsizes">${esc(sizes)}</span>
       </div>
-      <div class="rnotes">⚙ ${esc(item.parseNotes || 'No parse notes')}</div>
+      <div class="rnotes">⚙ ${esc(item.parseNotes || 'No parse notes')}${item.parseNotes && item.parseNotes.includes('SALE DETECTED') ? ' <span style="color:var(--warning);">⚠ Sale detected</span>' : ''}</div>
+      ${item.parseNotes && item.parseNotes.includes('SALE DETECTED') ? `
+        <div style="margin-bottom:12px;padding:8px;background:rgba(255,149,0,0.1);border:1px solid var(--warning);border-radius:6px;font-size:11px;">
+          <input type="checkbox" data-f="onSale" id="sale-${safe}"> <label for="sale-${safe}">Mark as on sale</label>
+          <input class="finput" style="margin-left:8px;width:120px;" type="number" data-f="normalPrice" placeholder="Base price (optional)" min="0" step="0.01">
+        </div>
+      ` : ''}
       <div class="rfields">
+        <div class="fg wide">
+          <span class="flabel">Size (edit if wrong)</span>
+          <input class="finput" type="text" data-f="size" value="${esc(item.sizes[0] || 'N/A')}" placeholder="e.g. 3.5g, 7g, 1.75g-5pk">
+        </div>
         <div class="fg wide">
           <span class="flabel">Brand</span>
           <input class="finput" type="text" data-f="brand" value="${esc(item.brand)}">
@@ -590,18 +753,34 @@
     const rowEl = document.getElementById(`row-${CSS.escape(slug)}`);
     if (!rowEl) return;
 
-    const get = f => rowEl.querySelector(`[data-f="${f}"]`)?.value || '';
+    const get      = f => rowEl.querySelector(`[data-f="${f}"]`)?.value || '';
+    const getCheck = f => rowEl.querySelector(`[data-f="${f}"]`)?.checked || false;
+
     const payload = {
       slug,
-      t1:     get('t1'),
-      t2:     get('t2'),
-      type:   get('type'),
-      brand:  get('brand').trim(),
-      strain: get('strain').trim()
+      t1:              get('t1'),
+      t2:              get('t2'),
+      type:            get('type'),
+      brand:           get('brand').trim(),
+      strain:          get('strain').trim(),
+      unitSize:        get('size'),
+      onSale:          getCheck('onSale'),
+      normalPrice:     get('normalPrice') ? parseFloat(get('normalPrice')) : null,
+      schemaVersion:   2,
+      lastReviewedDate: new Date().toISOString()
     };
 
     if (!payload.t1 || !payload.type) {
       alert('T1 Category and Genetics are required.');
+      return;
+    }
+
+    // Slug collision detection
+    const existingSlugs = allItems
+      .filter(i => i.slug !== slug && !i._done)
+      .map(i => i.slug);
+    if (existingSlugs.includes(slug)) {
+      alert('⚠ Slug collision: another product already has this slug. Review brand/strain spelling.');
       return;
     }
 
@@ -673,5 +852,32 @@
 
   init();
 </script>
+
+<!-- CSV EXPORT MODAL (v2.0.1) -->
+<div id="csvExportModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;flex-direction:column;justify-content:center;align-items:center;">
+  <div style="background:var(--bg);border:1px solid var(--glass-border);border-radius:12px;padding:24px;max-width:500px;width:90%;">
+    <h2 style="margin:0 0 10px;font-size:16px;">Export Dictionary as CSV</h2>
+    <p style="color:var(--text-muted);font-size:12px;margin-bottom:16px;">Download the entire dictionary for editing in Excel or Google Sheets.</p>
+    <div style="display:flex;gap:8px;">
+      <button class="rbtn primary" onclick="exportDictionaryCSV()" style="flex:1;">Download CSV</button>
+      <button class="rbtn" onclick="document.getElementById('csvExportModal').style.display='none'" style="flex:1;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CSV IMPORT MODAL (v2.0.1) -->
+<div id="csvImportModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;flex-direction:column;justify-content:center;align-items:center;">
+  <div style="background:var(--bg);border:1px solid var(--glass-border);border-radius:12px;padding:24px;max-width:600px;width:90%;">
+    <h2 style="margin:0 0 10px;font-size:16px;">Import Dictionary from CSV</h2>
+    <p style="color:var(--text-muted);font-size:12px;margin-bottom:12px;">Paste CSV content below. Only existing slugs will be updated. Empty cells are skipped.</p>
+    <textarea id="csvInput" style="width:100%;height:200px;font-family:'JetBrains Mono',monospace;font-size:11px;margin-bottom:12px;background:rgba(0,0,0,0.4);color:var(--text-main);border:1px solid var(--glass-border);border-radius:8px;padding:10px;resize:vertical;outline:none;"></textarea>
+    <div style="display:flex;gap:8px;">
+      <button class="rbtn primary" onclick="importDictionaryCSV()" style="flex:1;">Validate & Import</button>
+      <button class="rbtn" onclick="document.getElementById('csvImportModal').style.display='none'" style="flex:1;">Cancel</button>
+    </div>
+    <div id="csvImportStatus" style="margin-top:12px;font-size:11px;color:var(--text-muted);"></div>
+  </div>
+</div>
+
 </body>
 </html>
