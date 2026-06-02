@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Dashboard V5.2</title>
+  <title>Showrunner | Dashboard V5.3</title>
 
   <script>
     const WORKER_URL = "https://dmscreen.askozicki.workers.dev";
@@ -57,6 +57,7 @@
       if (typeof c.sessionTitle !== 'string') c.sessionTitle = "";
       if (typeof c.sessionNotes !== 'string') c.sessionNotes = "";
       if (typeof c.isArchived !== 'boolean') c.isArchived = false;
+      if (!Array.isArray(campaignState.customConditions)) campaignState.customConditions = [];
       if (!campaignState.loot || typeof campaignState.loot !== 'object') campaignState.loot = { active: [], archived: [] };
       if (!campaignState.lootTables || typeof campaignState.lootTables !== 'object') campaignState.lootTables = { tiers: { bronze: [], silver: [], gold: [], platinum: [] }, personal: {}, custom: {}, allItems: [] };
     }
@@ -74,6 +75,7 @@
       --subtle-dark: #1a1f3a; --card-bg: rgba(20,24,48,0.85);
       --beat: #74b9ff; --encounter: #f87171; --loot: #ffd700;
       --npc: #4ade80; --quest: #bb86fc; --readaloud: #facc15;
+      --font-scale: 1;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
@@ -83,7 +85,7 @@
                   var(--bg-dark);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      font-size: 14px; overflow-x: hidden;
+      font-size: calc(14px * var(--font-scale)); overflow-x: hidden;
     }
     body { display: flex; flex-direction: column; min-height: 100vh; }
 
@@ -101,6 +103,13 @@
     .nav-link { color: var(--text); text-decoration: none; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; padding: 6px 12px; border-radius: 20px; border: 1px solid transparent; transition: 0.3s; }
     .nav-link:hover { background: rgba(255,255,255,0.05); border-color: var(--glass-border); color: #fff; }
     .nav-link.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(187,134,252,0.2); }
+    /* ---- Navbar Controls (font scale + sidebar toggle) ---- */
+    .nav-controls { display: flex; align-items: center; gap: 0.6rem; }
+    .font-scale-controls { display: flex; align-items: center; gap: 0.25rem; }
+    .font-scale-label { font-size: 0.68rem; color: var(--text-muted); min-width: 34px; text-align: center; letter-spacing: 0.5px; }
+    .btn-font { background: transparent; color: var(--text-muted); border: 1px solid var(--glass-border); border-radius: 4px; padding: 0.22rem 0.5rem; font-size: 0.8rem; font-weight: bold; line-height: 1; transition: all 0.2s ease; cursor: pointer; font-family: inherit; }
+    .btn-font:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .btn-font:disabled { opacity: 0.3; cursor: default; }
     .heartbeat { width: 9px; height: 9px; border-radius: 50%; background: var(--success); display: inline-block; box-shadow: 0 0 8px var(--success); transition: all 0.3s ease; }
     .heartbeat.syncing { background: var(--warning); box-shadow: 0 0 8px var(--warning); animation: pulse 1s infinite; }
     .heartbeat.error   { background: var(--danger);  box-shadow: 0 0 8px var(--danger); }
@@ -137,7 +146,9 @@
     .dashboard-layout { flex: 1; display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; max-width: 1600px; width: 100%; margin: 0 auto; }
 
     /* ---- Sidebar ---- */
-    .cards-sidebar { width: 230px; flex-shrink: 0; position: sticky; top: 72px; max-height: calc(100vh - 88px); overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; }
+    .cards-sidebar { width: 230px; flex-shrink: 0; position: sticky; top: 72px; max-height: calc(100vh - 88px); overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; z-index: 150; }
+    .cards-sidebar.sidebar-hidden { display: none; }
+    .dashboard-layout.sidebar-collapsed { gap: 0; }
     .sidebar-title { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; letter-spacing: 1px; color: var(--text-muted); padding: 0 0.2rem; }
     .player-card { background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem; transition: border-color 0.2s ease; }
     .player-card:hover { border-color: rgba(187,134,252,0.4); }
@@ -160,6 +171,7 @@
     .cond-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.15rem 0.4rem; }
     .cond-grid label { display: flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; color: var(--text); margin: 0; cursor: pointer; }
     .cond-grid input { width: auto; margin: 0; accent-color: var(--accent); }
+    .cond-add-btn { padding: 0.12rem 0.45rem; font-size: 0.67rem; min-height: unset; border-radius: 3px; line-height: 1.4; }
     .pc-actions { display: flex; gap: 0.4rem; margin-top: 0.6rem; }
     .pc-actions button { flex: 1; }
     .sidebar-actions { margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.4rem; }
@@ -172,7 +184,7 @@
     .section-head h2 { font-size: 1.05rem; letter-spacing: 1px; margin: 0; }
     .section-head .meta { color: var(--text-muted); font-size: 0.8rem; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 0.3rem; }
     .section-head .meta:hover { color: var(--accent); }
-    .session-num-input { width: 52px !important; padding: 0.2rem 0.3rem !important; font-size: 0.85rem !important; text-align: center; }
+    /* .session-num-input removed V5.1.3 */
     .section-head .spacer { flex: 1; }
     .section-body { padding: 1.1rem; }
     .section-card.collapsed .section-body { display: none; }
@@ -184,6 +196,9 @@
     .rendered h4:first-child { margin-top: 0; }
     .rendered p { margin: 0 0 0.6rem; white-space: pre-wrap; }
     .rendered .empty-hint { color: var(--text-muted); font-style: italic; }
+    .rendered-list { margin: 0.4rem 0 0.6rem 1.4rem; padding: 0; list-style-type: disc; }
+    .rendered-list li { margin-bottom: 0.3rem; line-height: 1.55; }
+    .rendered-list-nested { margin: 0.25rem 0 0.25rem 1.2rem; list-style-type: circle; }
     .editor-area textarea { min-height: 240px; resize: vertical; line-height: 1.5; }
     .editor-actions { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
     .hidden { display: none !important; }
@@ -204,9 +219,9 @@
     .accordion { display: flex; flex-direction: column; gap: 0.4rem; }
     .acc-section { border-radius: 8px; overflow: hidden; background: rgba(255,255,255,0.02); }
     .acc-section[data-level="1"] { border: 1px solid var(--glass-border); }
-    .acc-section[data-level="2"] { border: 1px solid rgba(116,185,255,0.25); margin-left: 1.4rem; }
-    .acc-section[data-level="3"] { border: 1px solid rgba(74,222,128,0.25);  margin-left: 2.8rem; }
-    .acc-section[data-level="4"] { border: 1px solid rgba(250,204,21,0.25);  margin-left: 4.2rem; }
+    .acc-section[data-level="2"] { border: 1px solid rgba(116,185,255,0.25); margin-left: 0.8rem; }
+    .acc-section[data-level="3"] { border: 1px solid rgba(74,222,128,0.25);  margin-left: 1.6rem; }
+    .acc-section[data-level="4"] { border: 1px solid rgba(250,204,21,0.25);  margin-left: 2.4rem; }
     .acc-head { display: flex; align-items: center; gap: 0.4rem; padding: 0.6rem 0.75rem; cursor: pointer; user-select: none; transition: background 0.15s ease; }
     .acc-head:hover { background: rgba(255,255,255,0.04); }
     .acc-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -249,13 +264,7 @@
     .fmt-btn:active { transform: scale(0.95); }
     /* Loot edit panel */
     #ach-loot-panel { z-index: 960; width: min(380px, 94vw); overflow-y: auto; }
-    /* Session title row */
-    .session-title-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--glass-border); flex-wrap: wrap; }
-    .session-title-row input { flex: 1; min-width: 160px; font-size: 0.9rem; }
-    .session-title-row input[readonly] { opacity: 0.65; cursor: default; background: transparent; border-color: transparent; }
-    .session-title-row input[readonly]:hover { border-color: var(--glass-border); }
-    #session-title-actions { display: none; gap: 0.4rem; align-items: center; }
-    .session-title-badge { font-size: 0.68rem; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; white-space: nowrap; }
+    /* session-title-row removed V5.1.3 — edit via header click modal */
     /* Archived session banner */
     .archived-banner { background: rgba(250,204,21,0.08); border: 1px solid rgba(250,204,21,0.25); border-radius: 6px; padding: 0.5rem 0.9rem; font-size: 0.82rem; color: var(--warning); display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.85rem; }
     .archived-banner button { background: none; border: 1px solid rgba(250,204,21,0.4); color: var(--warning); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.78rem; cursor: pointer; }
@@ -453,13 +462,32 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="22" height="22" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-      SHOWRUNNER // DASHBOARD V5.2
+      SHOWRUNNER // DASHBOARD V5.3
       <span id="sync-heartbeat" class="heartbeat" title="Live database connection"></span>
+    </div>
+    <div class="nav-controls">
+      <div class="font-scale-controls">
+        <button class="btn-font" id="font-scale-down" onclick="fontScaleDown()" title="Decrease font size">A−</button>
+        <span id="font-scale-label" class="font-scale-label">100%</span>
+        <button class="btn-font" id="font-scale-up"   onclick="fontScaleUp()"   title="Increase font size">A+</button>
+      </div>
+      <button class="btn-ghost" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle player cards panel">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+        <span id="sidebar-toggle-label">Hide Party</span>
+      </button>
     </div>
     <div class="nav-links">
       <a href="index.html" class="nav-link active">Dashboard</a>
       <a href="loot.html" class="nav-link">Loot</a>
       <a href="data-forge.html" class="nav-link">Data Forge</a>
+      <button class="nav-link" onclick="exportCampaignState()" title="Export campaign state as JSON">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:3px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export
+      </button>
+      <button class="nav-link" onclick="openSendMessageModal()" title="Send message to player(s)">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:3px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Message
+      </button>
     </div>
   </nav>
 
@@ -490,13 +518,11 @@
       <section class="section-card" id="prep-card">
         <div class="section-head">
           <h2>SESSION PREP</h2>
-          <!-- Clickable session number (Phase 4) -->
-          <span class="meta" onclick="editSessionNumber()" title="Click to edit session number">
-            Session #<span id="session-num-label">1</span>
+          <!-- Session number — click to open title/number modal (V5.1.3) -->
+          <span class="meta" onclick="openSessionTitleModal()" title="Click to edit session number and title">
+            Session <span id="session-num-label">1</span>
             <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </span>
-          <input type="number" id="session-num-input" class="hidden session-num-input" min="1" max="999"
-            onblur="saveSessionNumber()" onkeydown="if(event.key==='Enter')saveSessionNumber();if(event.key==='Escape')cancelSessionNumber()">
           <span class="spacer"></span>
           <span class="save-state" id="notes-save-state"></span>
           <!-- Desktop-only buttons -->
@@ -531,17 +557,7 @@
 
         <div class="section-body">
 
-          <!-- Session title row -->
-          <div class="session-title-row" id="session-title-row">
-            <span class="session-title-badge">Session Title</span>
-            <input type="text" id="session-title-input" placeholder="e.g., The Collapse Begins"
-              readonly style="flex:1;min-width:160px;" />
-            <button class="btn-ghost" id="session-title-edit-btn" onclick="startSessionTitleEdit()" style="white-space:nowrap;flex-shrink:0;">Edit</button>
-            <div id="session-title-actions" style="display:none;gap:0.4rem;align-items:center;flex-shrink:0;">
-              <button class="btn-primary" onclick="saveSessionTitle()" style="padding:0.4rem 0.8rem;font-size:0.8rem;">Save</button>
-              <button class="btn-secondary" onclick="cancelSessionTitleEdit()" style="padding:0.4rem 0.8rem;font-size:0.8rem;">Cancel</button>
-            </div>
-          </div>
+          <!-- Session title row removed V5.1.3 — edit via header click modal -->
           <!-- Archived session banner (hidden by default) -->
           <div class="archived-banner hidden" id="archived-banner">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
@@ -808,6 +824,77 @@
     </div>
   </div>
 
+  <!-- SESSION INFO MODAL (V5.1.3) -->
+  <div id="session-title-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeSessionTitleModal()">
+    <div class="modal-panel" style="max-width:420px;">
+      <div class="modal-head">
+        <h2>Session Info</h2>
+        <button class="modal-close" onclick="closeSessionTitleModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Session #</label>
+          <input type="number" id="st-num" min="1" max="999" style="width:100px;">
+        </div>
+        <div class="form-group">
+          <label>Title <span style="color:var(--text-muted);font-size:0.75rem;">(optional)</span></label>
+          <input type="text" id="st-title" placeholder="e.g., The Collapse Begins">
+        </div>
+        <div class="editor-actions">
+          <button class="btn-primary" onclick="saveSessionTitleModal()">Save</button>
+          <button class="btn-secondary" onclick="closeSessionTitleModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEND PLAYER MESSAGE MODAL (V5.1.3) -->
+  <div id="send-message-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeSendMessageModal()">
+    <div class="modal-panel" style="max-width:440px;">
+      <div class="modal-head">
+        <h2>Send Player Message</h2>
+        <button class="modal-close" onclick="closeSendMessageModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Recipient</label>
+          <select id="msg-player">
+            <option value="">— All Players —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Message</label>
+          <textarea id="msg-text" style="min-height:100px;" placeholder="Enter message text…"></textarea>
+        </div>
+        <div class="editor-actions">
+          <button class="btn-primary" onclick="sendPlayerMessage()">Send</button>
+          <button class="btn-secondary" onclick="closeSendMessageModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM CONDITION MODAL (V5.3) -->
+  <div id="custom-cond-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeCustomCondModal()">
+    <div class="modal-panel" style="max-width:380px;">
+      <div class="modal-head">
+        <h2>Custom Conditions</h2>
+        <button class="modal-close" onclick="closeCustomCondModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>New Condition Name</label>
+          <input type="text" id="custom-cond-input" placeholder="e.g., Cursed by Thalassa" maxlength="48">
+        </div>
+        <div class="editor-actions" style="margin-bottom:0.9rem;">
+          <button class="btn-primary" onclick="saveCustomCond()">Add</button>
+          <button class="btn-secondary" onclick="closeCustomCondModal()">Done</button>
+        </div>
+        <div id="custom-cond-list"></div>
+      </div>
+    </div>
+  </div>
+
   <div id="toast-container"></div>
 
   <script>
@@ -858,6 +945,66 @@
   }
 
   /* ============================================================
+     FONT SCALE (V5.1.3)
+     ============================================================ */
+  const FONT_SCALES = [0.85, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4];
+  let _fontScaleIdx = 2; // default: 1.0 (index 2)
+
+  function initFontScale() {
+    try {
+      const s = parseInt(localStorage.getItem("showrunner_font_scale_idx"), 10);
+      if (!isNaN(s) && s >= 0 && s < FONT_SCALES.length) _fontScaleIdx = s;
+    } catch(e) {}
+    applyFontScale();
+  }
+  function applyFontScale() {
+    document.documentElement.style.setProperty("--font-scale", FONT_SCALES[_fontScaleIdx]);
+    const label = document.getElementById("font-scale-label");
+    const down  = document.getElementById("font-scale-down");
+    const up    = document.getElementById("font-scale-up");
+    if (label) label.textContent = Math.round(FONT_SCALES[_fontScaleIdx] * 100) + "%";
+    if (down)  down.disabled = (_fontScaleIdx <= 0);
+    if (up)    up.disabled   = (_fontScaleIdx >= FONT_SCALES.length - 1);
+  }
+  function fontScaleDown() {
+    if (_fontScaleIdx <= 0) return;
+    _fontScaleIdx--;
+    applyFontScale();
+    try { localStorage.setItem("showrunner_font_scale_idx", _fontScaleIdx); } catch(e) {}
+  }
+  function fontScaleUp() {
+    if (_fontScaleIdx >= FONT_SCALES.length - 1) return;
+    _fontScaleIdx++;
+    applyFontScale();
+    try { localStorage.setItem("showrunner_font_scale_idx", _fontScaleIdx); } catch(e) {}
+  }
+
+  /* ============================================================
+     SIDEBAR TOGGLE (V5.1.3)
+     ============================================================ */
+  let _sidebarHidden = false;
+
+  function initSidebar() {
+    try { _sidebarHidden = localStorage.getItem("showrunner_sidebar_hidden") === "true"; } catch(e) {}
+    applySidebar();
+  }
+  function toggleSidebar() {
+    _sidebarHidden = !_sidebarHidden;
+    applySidebar();
+    try { localStorage.setItem("showrunner_sidebar_hidden", _sidebarHidden); } catch(e) {}
+  }
+  function applySidebar() {
+    const sidebar = document.querySelector(".cards-sidebar");
+    const layout  = document.querySelector(".dashboard-layout");
+    const label   = document.getElementById("sidebar-toggle-label");
+    const btn     = document.getElementById("sidebar-toggle-btn");
+    if (sidebar) sidebar.classList.toggle("sidebar-hidden", _sidebarHidden);
+    if (layout)  layout.classList.toggle("sidebar-collapsed", _sidebarHidden);
+    if (label)   label.textContent = _sidebarHidden ? "Show Party" : "Hide Party";
+    if (btn)     btn.classList.toggle("active", _sidebarHidden);
+  }
+
+  /* ============================================================
      KV SYNC
      ============================================================ */
   let _syncInFlight = false, _syncQueued = false;
@@ -876,7 +1023,7 @@
         setHeartbeat("error"); toast("Sync conflict — reloaded latest state.", "warn");
       } else if (res.ok) {
         const d = await res.json();
-        if (typeof d.new_version === "number") campaignState.version = d.new_version;
+        if (typeof d.version === "number") campaignState.version = d.version;
         setHeartbeat("ok");
       } else { setHeartbeat("error"); toast("Save failed (" + res.status + ").", "error"); }
     } catch (e) {
@@ -906,33 +1053,27 @@
   }
 
   /* ============================================================
-     SESSION NUMBER (Phase 4)
+     SESSION INFO MODAL (V5.1.3 — replaces inline session-num edit)
      ============================================================ */
-  function editSessionNumber() {
-    const label = document.getElementById("session-num-label");
-    const input = document.getElementById("session-num-input");
-    label.parentElement.style.pointerEvents = "none";
-    input.value = campaignState.campaign.sessionNumber || 1;
-    input.classList.remove("hidden");
-    label.parentElement.classList.add("hidden");
-    input.focus(); input.select();
+  function openSessionTitleModal() {
+    document.getElementById("st-num").value   = campaignState.campaign.sessionNumber || 1;
+    document.getElementById("st-title").value = campaignState.campaign.sessionTitle  || "";
+    document.getElementById("session-title-modal").classList.remove("hidden");
+    setTimeout(() => document.getElementById("st-num").focus(), 50);
   }
-  function saveSessionNumber() {
-    const input = document.getElementById("session-num-input");
-    let v = parseInt(input.value, 10);
-    if (isNaN(v) || v < 1) v = 1;
-    if (v > 999) v = 999;
-    campaignState.campaign.sessionNumber = v;
-    document.getElementById("session-num-label").textContent = v;
-    input.classList.add("hidden");
-    const meta = document.querySelector(".section-head .meta");
-    meta.classList.remove("hidden"); meta.style.pointerEvents = "";
+  function closeSessionTitleModal() {
+    document.getElementById("session-title-modal").classList.add("hidden");
+  }
+  function saveSessionTitleModal() {
+    let num = parseInt(document.getElementById("st-num").value, 10);
+    if (isNaN(num) || num < 1) num = 1;
+    if (num > 999) num = 999;
+    campaignState.campaign.sessionNumber = num;
+    campaignState.campaign.sessionTitle  = document.getElementById("st-title").value.trim();
+    closeSessionTitleModal();
+    renderNotes();
     scheduleSync(document.getElementById("notes-save-state"));
-  }
-  function cancelSessionNumber() {
-    document.getElementById("session-num-input").classList.add("hidden");
-    const meta = document.querySelector(".section-head .meta");
-    meta.classList.remove("hidden"); meta.style.pointerEvents = "";
+    toast("Session info saved.", "success");
   }
 
   /* ============================================================
@@ -953,8 +1094,18 @@
   /* ============================================================
      ROOM TEXT
      ============================================================ */
+  function isBulletLine(line) {
+    // Matches "- text", "* text", or "  - text", "  * text" (up to 4 leading spaces)
+    return /^(\s{0,4})[\-\*]\s+.+/.test(line);
+  }
+  function getBulletDepth(line) {
+    // 0 = top-level (0–1 leading spaces), 1 = nested (2+ leading spaces)
+    const m = line.match(/^(\s*)/);
+    return (m && m[1].length >= 2) ? 1 : 0;
+  }
   function isCapsHeader(line) {
     const t = line.trim();
+    if (isBulletLine(line)) return false;      // never treat bullet as header
     if (t.length < 2 || t.length > 48) return false;
     if (!/:\s*$/.test(t)) return false;
     if (!/[A-Z]/.test(t) || /[a-z]/.test(t)) return false;
@@ -963,14 +1114,44 @@
   function renderRichText(raw) {
     if (!raw || !raw.trim()) return '<p class="empty-hint">Nothing here yet. Click Edit to add content.</p>';
     const lines = raw.replace(/\r\n/g,"\n").split("\n");
-    let html = "", buf = [];
-    const flush = () => { if (buf.length) { html += "<p>" + esc(buf.join("\n")) + "</p>"; buf = []; } };
+    let html = "", buf = [], listStack = [];
+
+    const flushBuf = () => {
+      if (buf.length) { html += "<p>" + esc(buf.join("\n")) + "</p>"; buf = []; }
+    };
+    const flushList = () => {
+      while (listStack.length) { html += "</ul>"; listStack.pop(); }
+    };
+    const flushAll = () => { flushBuf(); flushList(); };
+
     for (const line of lines) {
-      if (isCapsHeader(line)) { flush(); html += "<h4>" + esc(line.trim()) + "</h4>"; }
-      else if (!line.trim()) flush();
-      else buf.push(line);
+      if (isCapsHeader(line)) {
+        flushAll();
+        html += "<h4>" + esc(line.trim()) + "</h4>";
+      } else if (isBulletLine(line)) {
+        flushBuf();
+        const depth = getBulletDepth(line);
+        const text  = line.trim().replace(/^[\-\*]\s+/, "");
+        if (listStack.length === 0) {
+          // Open top-level list
+          html += '<ul class="rendered-list">'; listStack.push(0);
+        }
+        if (depth === 1 && listStack[listStack.length - 1] === 0) {
+          // Descend into nested list
+          html += '<ul class="rendered-list rendered-list-nested">'; listStack.push(1);
+        } else if (depth === 0 && listStack[listStack.length - 1] === 1) {
+          // Return to top-level list
+          html += "</ul>"; listStack.pop();
+        }
+        html += "<li>" + esc(text) + "</li>";
+      } else if (!line.trim()) {
+        flushAll();
+      } else {
+        flushList();
+        buf.push(line);
+      }
     }
-    flush();
+    flushAll();
     return html || '<p class="empty-hint">Nothing here yet.</p>';
   }
 
@@ -1096,8 +1277,6 @@
     document.getElementById("session-num-label").textContent = sessionTitle
       ? sessionNum + " \u2014 " + sessionTitle
       : sessionNum;
-    const sessionTitleEl = document.getElementById("session-title-input");
-    if (sessionTitleEl) sessionTitleEl.value = campaignState.campaign.sessionTitle || "";
     // Archive banner
     const banner = document.getElementById("archived-banner");
     const archBtn = document.getElementById("archive-session-btn");
@@ -1506,45 +1685,7 @@
     }).join("");
   }
 
-  /* ============================================================
-     SESSION TITLE
-     ============================================================ */
-  let _sessionTitleSnapshot = "";
-
-  function startSessionTitleEdit() {
-    _sessionTitleSnapshot = campaignState.campaign.sessionTitle || "";
-    const input   = document.getElementById("session-title-input");
-    const editBtn = document.getElementById("session-title-edit-btn");
-    const actions = document.getElementById("session-title-actions");
-    input.removeAttribute("readonly");
-    input.focus();
-    input.select();
-    editBtn.style.display = "none";
-    actions.style.display = "flex";
-  }
-
-  function saveSessionTitle() {
-    const val = document.getElementById("session-title-input").value.trim();
-    campaignState.campaign.sessionTitle = val;
-    _endSessionTitleEdit();
-    renderNotes();
-    scheduleSync(document.getElementById("notes-save-state"));
-    toast("Session title saved.", "success");
-  }
-
-  function cancelSessionTitleEdit() {
-    document.getElementById("session-title-input").value = _sessionTitleSnapshot;
-    _endSessionTitleEdit();
-  }
-
-  function _endSessionTitleEdit() {
-    const input   = document.getElementById("session-title-input");
-    const editBtn = document.getElementById("session-title-edit-btn");
-    const actions = document.getElementById("session-title-actions");
-    input.setAttribute("readonly", "");
-    editBtn.style.display = "";
-    actions.style.display = "none";
-  }
+  /* SESSION TITLE: replaced by openSessionTitleModal() in V5.1.3 */
 
   /* ============================================================
      ARCHIVE SESSION
@@ -1643,7 +1784,9 @@
       const conds=Array.isArray(ch.conditions)?ch.conditions:[];
       const card=document.createElement("div");
       card.className="player-card";card.dataset.id=ch.id;
-      const condChecks=CONDITIONS.map(name=>{const key=name.toLowerCase(),checked=conds.includes(key)?"checked":"";return '<label><input type="checkbox" '+checked+' onchange="toggleCondition(\''+ch.id+'\',\''+key+'\',this.checked)">'+name+'</label>';}).join("");
+      const _customConds=(campaignState.customConditions||[]).map(c=>c.name);
+      const condChecks=[...CONDITIONS,..._customConds].map(name=>{const key=name.toLowerCase(),checked=conds.includes(key)?"checked":"";return '<label><input type="checkbox" '+checked+' onchange="toggleCondition(\''+ch.id+'\',\''+key+'\',this.checked)">'+esc(name)+'</label>';}).join("")+
+        '<label style="grid-column:1/-1;margin-top:0.15rem;"><button class="btn-ghost cond-add-btn" onclick="event.stopPropagation();openCustomCondModal()">+ Custom</button></label>';
       card.innerHTML=
         '<div class="pc-head" onclick="toggleCardExpand(this)">'+
           '<img class="pc-portrait" src="'+(AVATAR_URLS[ch.name]||esc(ch.profileImage||DEFAULT_PORTRAIT))+'" onerror="this.src=\''+DEFAULT_PORTRAIT+'\'" alt="">'+
@@ -2236,8 +2379,127 @@
     if(!document.getElementById("char-modal").classList.contains("hidden"))closeCharModal();
     if(_inlineEditId)cancelInlineEdit();
     if(!document.getElementById("raw-editor-container").classList.contains("hidden"))cancelRawEdit();
-    cancelSessionNumber();
+    if (!document.getElementById("session-title-modal").classList.contains("hidden"))closeSessionTitleModal();
+    if (!document.getElementById("send-message-modal").classList.contains("hidden"))closeSendMessageModal();
+    if (!document.getElementById("custom-cond-modal").classList.contains("hidden"))closeCustomCondModal();
   });
+
+  /* ============================================================
+     PLAYER MESSAGING (V5.1.3)
+     ============================================================ */
+  function openSendMessageModal() {
+    const sel = document.getElementById("msg-player");
+    sel.innerHTML = '<option value="">— All Players —</option>';
+    (campaignState.characters || []).forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c.name; opt.textContent = c.name;
+      sel.appendChild(opt);
+    });
+    document.getElementById("msg-text").value = "";
+    document.getElementById("send-message-modal").classList.remove("hidden");
+    setTimeout(() => document.getElementById("msg-text").focus(), 50);
+  }
+  function closeSendMessageModal() {
+    document.getElementById("send-message-modal").classList.add("hidden");
+  }
+  async function sendPlayerMessage() {
+    const targetName = document.getElementById("msg-player").value.trim();
+    const text       = document.getElementById("msg-text").value.trim();
+    if (!text) { toast("Message cannot be empty.", "warn"); return; }
+    const targets = targetName
+      ? [targetName]
+      : (campaignState.characters || []).map(c => c.name);
+    if (!targets.length) { toast("No players found in campaign.", "warn"); return; }
+    let failures = 0;
+    for (const name of targets) {
+      try {
+        const r = await fetch(WORKER_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "add_player_message", playerName: name, messageText: text, timestamp: Date.now() })
+        });
+        if (!r.ok) failures++;
+      } catch (e) { failures++; }
+    }
+    closeSendMessageModal();
+    if (failures === 0) {
+      toast("Message sent to " + (targetName || "all players") + ".", "success");
+    } else {
+      toast(failures + " message(s) failed to send.", "error");
+    }
+  }
+
+  /* ============================================================
+     CUSTOM CONDITIONS (V5.3)
+     ============================================================ */
+  function openCustomCondModal() {
+    renderCustomCondList();
+    document.getElementById("custom-cond-input").value = "";
+    document.getElementById("custom-cond-modal").classList.remove("hidden");
+    setTimeout(() => document.getElementById("custom-cond-input").focus(), 50);
+  }
+  function closeCustomCondModal() {
+    document.getElementById("custom-cond-modal").classList.add("hidden");
+  }
+  function renderCustomCondList() {
+    const list = document.getElementById("custom-cond-list");
+    const conds = campaignState.customConditions || [];
+    if (!conds.length) { list.innerHTML = '<p class="empty-hint" style="font-size:0.78rem;">No custom conditions yet.</p>'; return; }
+    list.innerHTML = '<div style="font-size:0.7rem;letter-spacing:1px;color:var(--text-muted);margin-bottom:0.4rem;">EXISTING</div>' +
+      conds.map(c =>
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--glass-border);">' +
+          '<span style="font-size:0.82rem;">' + esc(c.name) + '</span>' +
+          '<button class="btn-icon-danger" onclick="deleteCustomCond(\'' + esc(c.id) + '\')" title="Remove">' + SVG_X + '</button>' +
+        '</div>'
+      ).join("");
+  }
+  function saveCustomCond() {
+    const name = document.getElementById("custom-cond-input").value.trim();
+    if (!name) { toast("Condition name required.", "warn"); return; }
+    if ((campaignState.customConditions || []).some(c => c.name.toLowerCase() === name.toLowerCase())) {
+      toast("Condition already exists.", "warn"); return;
+    }
+    if (!Array.isArray(campaignState.customConditions)) campaignState.customConditions = [];
+    campaignState.customConditions.push({ id: "cond_" + Date.now().toString(36), name, createdAt: Date.now() });
+    document.getElementById("custom-cond-input").value = "";
+    renderCustomCondList();
+    renderCards();
+    scheduleSync(null);
+    toast("Custom condition added.", "success");
+  }
+  function deleteCustomCond(condId) {
+    const cond = (campaignState.customConditions || []).find(c => c.id === condId);
+    if (!cond) return;
+    const removedKey = cond.name.toLowerCase();
+    campaignState.customConditions = campaignState.customConditions.filter(c => c.id !== condId);
+    (campaignState.characters || []).forEach(ch => {
+      if (Array.isArray(ch.conditions)) ch.conditions = ch.conditions.filter(k => k !== removedKey);
+    });
+    renderCustomCondList();
+    renderCards();
+    scheduleSync(null);
+    toast("Custom condition removed.", "success");
+  }
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("custom-cond-input")?.addEventListener("keydown", e => { if (e.key === "Enter") saveCustomCond(); });
+  });
+
+  /* ============================================================
+     CAMPAIGN EXPORT (V5.3)
+     ============================================================ */
+  function exportCampaignState() {
+    if (!campaignState) { toast("No state to export.", "warn"); return; }
+    const ts = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
+    const filename = "campaign_export_" + ts + ".json";
+    const blob = new Blob([JSON.stringify({ ...campaignState, exportedAt: Date.now(), exportedBy: "Showrunner V5.3" }, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast("Exported: " + filename, "success");
+  }
 
   /* ============================================================
      RENDER ALL + INIT
@@ -2255,6 +2517,8 @@
       if (!campaignState) normalizeState();
     }
     wireCharModalInputs();
+    initFontScale();
+    initSidebar();
     renderAll();
     setHeartbeat("ok");
   });
