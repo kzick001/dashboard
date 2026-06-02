@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Fragment">
-<title>Fragment</title>
+<title>Fragment // v1.1.3</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%234fc3f7;stop-opacity:1'/><stop offset='100%25' style='stop-color:%23b39ddb;stop-opacity:1'/></linearGradient></defs><rect width='100' height='100' fill='%23030410'/><path d='M 30 25 L 70 25 L 70 75 L 30 75 Z' fill='none' stroke='url(%23g)' stroke-width='3' stroke-linejoin='round'/><circle cx='40' cy='45' r='4' fill='%234fc3f7'/><circle cx='60' cy='55' r='4' fill='%23b39ddb'/><line x1='40' y1='45' x2='60' y2='55' stroke='url(%23g)' stroke-width='2' opacity='0.6'/></svg>" type="image/svg+xml">
 <style>
@@ -231,6 +231,12 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
 .icon-color-swatch{width:36px;height:36px;border-radius:10px;border:2px solid var(--glass-b);cursor:pointer;flex-shrink:0;position:relative;overflow:hidden;}
 .icon-color-swatch input[type="color"]{position:absolute;inset:-4px;width:calc(100%+8px);height:calc(100%+8px);opacity:0;cursor:pointer;border:none;padding:0;}
 .icon-color-hex{font-family:var(--mono);font-size:13px;color:var(--t2);flex:1;}
+.icon-stroke-row{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.icon-stroke-label{font-size:12px;color:var(--t3);flex-shrink:0;width:46px;}
+.icon-stroke-slider{flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:var(--glass-b);outline:none;cursor:pointer;}
+.icon-stroke-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;background:var(--ion);border:2px solid var(--deep);cursor:pointer;}
+.icon-stroke-slider::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--ion);border:2px solid var(--deep);cursor:pointer;}
+.icon-stroke-val{font-family:var(--mono);font-size:12px;color:var(--t2);flex-shrink:0;width:28px;text-align:right;}
 .icon-action-row{display:flex;gap:8px;margin-bottom:4px;}
 .size-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
 .size-preset-btn{height:30px;padding:0 12px;border-radius:8px;border:1px solid var(--glass-b);background:var(--glass);color:var(--t2);font-family:var(--mono);font-size:12px;cursor:pointer;transition:background .12s,color .12s,border-color .12s;}
@@ -396,7 +402,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
           <div class="settings-group-label">About</div>
           <div class="settings-row">
             <div class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
-            <div class="settings-text"><div class="settings-label">Fragment</div><div class="settings-sub">v1.1.2 · KV-backed · sovereign</div></div>
+            <div class="settings-text"><div class="settings-label">Fragment</div><div class="settings-sub">v1.1.3 · KV-backed · sovereign</div></div>
           </div>
         </div>
       </div>
@@ -440,6 +446,11 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
           <input type="color" id="iconColorPicker" value="#4fc3f7" oninput="onIconColorChange(this.value)">
         </div>
         <span class="icon-color-hex" id="iconColorHex">#4fc3f7</span>
+      </div>
+      <div class="icon-stroke-row">
+        <span class="icon-stroke-label">Stroke</span>
+        <input type="range" class="icon-stroke-slider" id="iconStrokeWidthSlider" min="0.5" max="5" step="0.5" value="2" oninput="onIconStrokeWidthChange(this.value)">
+        <span class="icon-stroke-val" id="iconStrokeWidthValue">2px</span>
       </div>
       <div class="icon-action-row">
         <button class="card-btn" onclick="copyIconSvg()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy SVG</button>
@@ -679,6 +690,35 @@ const ICON = {
   alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
   download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
 };
+
+// ── SVG Normalization ───────────────────────────────────
+/**
+ * Normalize SVG for display or export.
+ * Injects color (replaces currentColor + fill) and stroke-width.
+ * Non-destructive — never modifies stored records.
+ * @param {string} svgString - Raw SVG markup
+ * @param {Object} options - { color, strokeWidth }
+ * @returns {string} Normalized SVG
+ */
+function normalizeIconSvg(svgString, { color = "#4fc3f7", strokeWidth = 2 } = {}) {
+  if (!svgString) return svgString;
+  let result = svgString;
+  // 1. Replace currentColor with provided hex color
+  result = result.replace(/currentColor/g, color);
+  // 2. Replace explicit fill values (except "none") with the color
+  result = result.replace(/fill="(?!none)[^"]*"/g, 'fill="' + color + '"');
+  // 3. Inject or override stroke-width on the svg tag and all child elements
+  if (!result.includes('stroke-width')) {
+    result = result.replace(/(<svg[^>]*)(>)/i, '$1 stroke-width="' + strokeWidth + '"$2');
+  } else {
+    result = result.replace(/stroke-width="[^"]*"/g, 'stroke-width="' + strokeWidth + '"');
+  }
+  // 4. Ensure viewBox fallback if missing
+  if (!result.includes('viewBox')) {
+    result = result.replace(/(<svg[^>]*)(>)/i, '$1 viewBox="0 0 24 24"$2');
+  }
+  return result;
+}
 
 // ── API helpers ─────────────────────────────────────────
 async function apiGet(path) {
@@ -1385,6 +1425,7 @@ async function doIconImport(icons, overwrite) {
 let iconDetailState = {
   icon: null,
   color: "#4fc3f7",
+  strokeWidth: 2,
 };
 
 async function openIconDetail(encodedId, isArchived, encodedArchiveKey) {
@@ -1414,6 +1455,14 @@ async function openIconDetail(encodedId, isArchived, encodedArchiveKey) {
   picker.value = "#4fc3f7";
   document.getElementById("iconColorSwatch").style.background = "#4fc3f7";
   document.getElementById("iconColorHex").textContent = "#4fc3f7";
+
+  // Reset stroke width to default
+  iconDetailState.strokeWidth = 2;
+  const strokeSlider = document.getElementById("iconStrokeWidthSlider");
+  if (strokeSlider) {
+    strokeSlider.value = 2;
+    document.getElementById("iconStrokeWidthValue").textContent = "2px";
+  }
 
   // Render initial preview + code
   renderIconPreview();
@@ -1448,12 +1497,19 @@ function onIconColorChange(hex) {
   renderIconCode();
 }
 
+function onIconStrokeWidthChange(val) {
+  iconDetailState.strokeWidth = parseFloat(val) || 2;
+  document.getElementById("iconStrokeWidthValue").textContent = iconDetailState.strokeWidth + "px";
+  renderIconPreview();
+  renderIconCode();
+}
+
 function renderIconPreview() {
-  const { icon, color } = iconDetailState;
+  const { icon, color, strokeWidth } = iconDetailState;
   if (!icon) return;
-  const coloredSvg = icon.svg.replace(/currentColor/g, color);
+  const normalizedSvg = normalizeIconSvg(icon.svg, { color, strokeWidth });
   const slot = document.getElementById("iconPreviewSvg");
-  slot.innerHTML = coloredSvg;
+  slot.innerHTML = normalizedSvg;
   const svgEl = slot.querySelector("svg");
   if (svgEl) {
     svgEl.style.width = "96px";
@@ -1551,7 +1607,7 @@ function closeSizePicker() {
 }
 
 function doDownloadIcon() {
-  const { icon, color } = iconDetailState;
+  const { icon, color, strokeWidth } = iconDetailState;
   if (!icon) return;
 
   const customVal = parseInt(document.getElementById("sizeCustomInput").value);
@@ -1562,19 +1618,18 @@ function doDownloadIcon() {
     return;
   }
 
-  // Build standalone SVG with XML declaration + size attrs
-  let svgCode = icon.svg.replace(/currentColor/g, color);
-  // Inject width + height onto the svg tag
+  // Normalize SVG with user's color + stroke width, then inject size attrs
+  let svgCode = normalizeIconSvg(icon.svg, { color, strokeWidth });
   svgCode = svgCode.replace(/^<svg/, '<svg width="' + size + '" height="' + size + '"');
   const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' + svgCode;
 
   const blob = new Blob([xml], { type: "image/svg+xml" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  // Filename: {id}-{hex without #}-{size}px.svg
+  // Filename: {id}-{hex without #}-{strokewidth}w-{size}px.svg
   const hexClean = color.replace("#", "");
   a.href = url;
-  a.download = icon.id + "-" + hexClean + "-" + size + "px.svg";
+  a.download = icon.id + "-" + hexClean + "-" + strokeWidth + "w-" + size + "px.svg";
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
