@@ -190,6 +190,17 @@ a { color:var(--accent-primary); text-decoration:none; }
 .xp-bar-track { height:5px; background:var(--bg-elevated); border-radius:var(--radius-pill); overflow:hidden; }
 .xp-bar-fill  { height:100%; background:linear-gradient(90deg,var(--accent-primary),var(--accent-success)); border-radius:var(--radius-pill); transition:width 0.8s cubic-bezier(0.4,0,0.2,1); will-change:width; }
 .xp-bar-meta  { display:flex; justify-content:space-between; align-items:center; padding-top:0.2rem; }
+/* House XP bar */
+.house-bar-wrap { padding:0.35rem 1rem 0; display:flex; flex-direction:column; gap:0.25rem; }
+.house-bar-track { height:3px; background:var(--bg-elevated); border-radius:var(--radius-pill); overflow:hidden; }
+.house-bar-fill { height:100%; background:linear-gradient(90deg,var(--accent-gold),var(--accent-warn)); border-radius:var(--radius-pill); transition:width 0.8s cubic-bezier(0.4,0,0.2,1); will-change:width; }
+.house-bar-meta { display:flex; justify-content:space-between; align-items:center; }
+/* Quest section */
+.quest-section { padding:0.85rem 1rem 0; }
+.quest-section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem; }
+.quest-label { display:inline-flex; align-items:center; gap:0.3rem; }
+.quest-badge { display:inline-flex; align-items:center; gap:0.3rem; background:rgba(240,192,64,0.1); color:var(--accent-gold); font-size:0.68rem; font-weight:600; padding:0.18rem 0.5rem; border-radius:var(--radius-pill); border:1px solid rgba(240,192,64,0.25); text-transform:uppercase; letter-spacing:0.05em; }
+.task-card.status-quest { border-left-color:var(--accent-gold); }
 .weekly-strip { display:flex; align-items:center; justify-content:space-between; padding:0.85rem 1rem; border-bottom:1px solid var(--border); }
 .dot-progress { display:flex; gap:5px; flex-wrap:wrap; max-width:200px; }
 .dot-pip      { width:9px; height:9px; border-radius:50%; background:var(--bg-elevated); border:1px solid var(--border); transition:background 0.2s; }
@@ -359,6 +370,17 @@ a { color:var(--accent-primary); text-decoration:none; }
 .settings-status-error   { color:var(--accent-danger); }
 .settings-player-row     { display:flex; align-items:center; gap:0.75rem; padding:0.5rem 0 0.85rem; }
 .settings-player-avatar  { width:40px; height:40px; border-radius:50%; background:var(--bg-elevated); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--text-muted); flex-shrink:0; }
+/* Setup screen */
+.setup-step { display:none; flex-direction:column; gap:0; }
+.setup-step.active { display:flex; }
+.setup-progress { display:flex; gap:0.4rem; padding:0 1.5rem; margin-bottom:1.5rem; }
+.setup-pip { flex:1; height:3px; background:var(--border); border-radius:2px; transition:background 0.2s; }
+.setup-pip.done { background:var(--accent-primary); }
+.setup-hero { text-align:center; padding:2rem 1.5rem 1.5rem; }
+.setup-card { margin:0 1rem 1rem; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-card); padding:1.25rem; display:flex; flex-direction:column; gap:0.75rem; }
+.setup-footer { padding:0 1rem calc(2rem + var(--safe-bottom)); display:flex; gap:0.75rem; }
+.setup-footer .btn-primary,.setup-footer .btn-secondary { flex:1; }
+.setup-error { color:var(--accent-danger); font-size:0.78rem; min-height:1.1em; margin-top:0.25rem; }
 .settings-app-info { text-align:center; padding:1rem 0 2rem; color:var(--text-muted); font-size:0.65rem; }
 
 /* =========================================================
@@ -449,113 +471,7 @@ a { color:var(--accent-primary); text-decoration:none; }
 <nav id="bottom-nav" class="hidden"></nav>
 
 <script type="module">
-// =========================================================
-// MOCK DATA — runs entirely in-browser, no backend needed
-// =========================================================
-const MOCK_PLAYERS = {
-  andy: {
-    id:'andy', callsign:'Viking', rank:5, totalPoints:4820, weeklyPoints:1240,
-    currentStreak:5, longestStreak:14, sessionTasks:1, lastActive: new Date(Date.now()-3600000).toISOString(),
-    weeklyHistory:[320,890,1100,1240]
-  },
-  chelsea: {
-    id:'chelsea', callsign:'Doc', rank:4, totalPoints:3210, weeklyPoints:680,
-    currentStreak:3, longestStreak:9, sessionTasks:0, lastActive: new Date(Date.now()-7200000).toISOString(),
-    weeklyHistory:[210,540,720,680]
-  }
-};
 
-const now = Date.now();
-let MOCK_TASKS = [
-  { id:'t1', title:'Deep clean bathrooms', difficulty:'hard',   basePoints:120, assignee:'andy',    status:'pending',  dueAt: new Date(now - 7200000).toISOString(),   recurring:'weekly',  completedAt:null, pointsAwarded:null, bonusesApplied:[] },
-  { id:'t2', title:'Take trash to curb',   difficulty:'easy',   basePoints:30,  assignee:'andy',    status:'pending',  dueAt: new Date(now + 3600000).toISOString(),   recurring:'weekly',  completedAt:null, pointsAwarded:null, bonusesApplied:[] },
-  { id:'t3', title:'Vacuum living room',   difficulty:'medium', basePoints:60,  assignee:'andy',    status:'done',     dueAt: new Date(now - 86400000).toISOString(),  recurring:'none',    completedAt: new Date(now - 3000000).toISOString(), pointsAwarded:75, bonusesApplied:['On Time'] },
-  { id:'t4', title:'Grocery run',          difficulty:'medium', basePoints:60,  assignee:'chelsea', status:'pending',  dueAt: new Date(now + 7200000).toISOString(),   recurring:'none',    completedAt:null, pointsAwarded:null, bonusesApplied:[] },
-  { id:'t5', title:'Mop kitchen floor',    difficulty:'medium', basePoints:60,  assignee:'chelsea', status:'pending',  dueAt: new Date(now - 1800000).toISOString(),   recurring:'weekly',  completedAt:null, pointsAwarded:null, bonusesApplied:[] },
-  { id:'t6', title:'Laundry',              difficulty:'easy',   basePoints:30,  assignee:'either',  status:'pending',  dueAt: new Date(now + 86400000).toISOString(),  recurring:'weekly',  completedAt:null, pointsAwarded:null, bonusesApplied:[] },
-  { id:'t7', title:'Clean gutters',        difficulty:'epic',   basePoints:250, assignee:'andy',    status:'pending',  dueAt: new Date(now + 172800000).toISOString(), recurring:'none',    completedAt:null, pointsAwarded:null, bonusesApplied:[] },
-];
-
-// Intercept all fetch calls and serve mock data
-const origFetch = window.fetch.bind(window);
-window.fetch = async (url, opts={}) => {
-  const u = typeof url === 'string' ? url : url.url;
-  const method = (opts.method||'GET').toUpperCase();
-
-  if (u.endsWith('/api/households') && method==='GET') {
-    return mockResponse({ households:[{id:'hh_andy1',name:'Andy & Chelsea'},{id:'hh_test1',name:'Test House'}] });
-  }
-  if (u.includes('/players') && !u.includes('/push') && method==='GET') {
-    const safe = {};
-    Object.entries(MOCK_PLAYERS).forEach(([id,p])=>{ const {pinHash:_,...s}=p; safe[id]={...s,id}; });
-    return mockResponse({ players:safe });
-  }
-  if (u.includes('/auth') && method==='POST') {
-    const body = JSON.parse(opts.body||'{}');
-    const p = MOCK_PLAYERS[body.playerId];
-    if (!p) return mockResponse({success:false,error:'Not found'});
-    const {pinHash:_,...safe} = p;
-    return mockResponse({success:true, player:{...safe}});
-  }
-  if (u.endsWith('/tasks') && method==='GET') {
-    return mockResponse({ tasks: MOCK_TASKS });
-  }
-  if (u.endsWith('/tasks') && method==='POST') {
-    const body = JSON.parse(opts.body||'{}');
-    const BASE = {easy:30,medium:60,hard:120,epic:250};
-    const t = {
-      id:'t_'+Date.now(), title:body.title, difficulty:body.difficulty,
-      basePoints:BASE[body.difficulty]||60, assignee:body.assignee||'either',
-      status:'pending', dueAt:body.dueAt||new Date(now+86400000).toISOString(),
-      recurring:body.recurring||'none', completedAt:null, pointsAwarded:null, bonusesApplied:[], createdAt:new Date().toISOString()
-    };
-    MOCK_TASKS.push(t);
-    return mockResponse({success:true,task:t});
-  }
-  if (u.match(/\/tasks\/[^/]+$/) && method==='PATCH') {
-    const body = JSON.parse(opts.body||'{}');
-    const id = u.split('/').pop();
-    const t = MOCK_TASKS.find(x=>x.id===id);
-    if (t) Object.assign(t, body);
-    return mockResponse({success:true,task:t});
-  }
-  if (u.includes('/complete') && method==='POST') {
-    const body = JSON.parse(opts.body||'{}');
-    const taskId = u.split('/').slice(-2)[0];
-    const t = MOCK_TASKS.find(x=>x.id===taskId);
-    const playerId = (opts.headers||{})['X-Player-ID'] || 'andy';
-    if (t) { t.status='done'; t.completedAt=new Date().toISOString(); t.pointsAwarded=body.pointsAwarded||t.basePoints; t.bonusesApplied=body.bonusesApplied||[]; }
-    const p = MOCK_PLAYERS[playerId];
-    if (p) {
-      p.totalPoints  = (p.totalPoints||0)  + (body.pointsAwarded||0);
-      p.weeklyPoints = (p.weeklyPoints||0) + (body.pointsAwarded||0);
-      p.currentStreak= body.newStreak||1;
-      p.longestStreak= Math.max(p.longestStreak||0,p.currentStreak);
-      p.sessionTasks = (p.sessionTasks||0)+1;
-      p.lastActive   = new Date().toISOString();
-      p.weeklyHistory[3]=p.weeklyPoints;
-    }
-    const {pinHash:_,...safe}=p||{};
-    return mockResponse({success:true,task:t,player:{id:playerId,...safe}});
-  }
-  if (u.includes('/push') && method==='POST') {
-    return mockResponse({success:true});
-  }
-  if (u.includes('/config') && method==='GET') {
-    return mockResponse({config:{name:'Andy & Chelsea',webhookUrl:'',webhookSecret:''}});
-  }
-  if (u.includes('/config') && method==='PATCH') {
-    return mockResponse({success:true});
-  }
-  if (u.includes('/webhook/test') && method==='POST') {
-    return mockResponse({success:true});
-  }
-  // Fallthrough to real fetch (Google Fonts etc)
-  return origFetch(url, opts);
-};
-function mockResponse(data,status=200) {
-  return new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json'}});
-}
 
 // =========================================================
 // ICONS
@@ -590,19 +506,88 @@ function icon(name,size=20,cls='') {
 // RANKS DATA & HELPERS
 // =========================================================
 const RANKS=[
-  {level:1,name:'Recruit',minPoints:0},{level:2,name:'Private',minPoints:500},
-  {level:3,name:'Specialist',minPoints:1200},{level:4,name:'Corporal',minPoints:2500},
-  {level:5,name:'Sergeant',minPoints:4500},{level:6,name:'Staff Sergeant',minPoints:7500},
-  {level:7,name:'Sergeant First Class',minPoints:12000},{level:8,name:'Master Sergeant',minPoints:18000},
-  {level:9,name:'Warrant Officer',minPoints:26000},{level:10,name:'Lieutenant',minPoints:36000},
-  {level:11,name:'Captain',minPoints:50000},{level:12,name:'Major',minPoints:68000},
-  {level:13,name:'Lieutenant Colonel',minPoints:90000},{level:14,name:'Colonel',minPoints:120000},
-  {level:15,name:'Brigadier General',minPoints:155000},{level:16,name:'Major General',minPoints:200000},
-  {level:17,name:'Lieutenant General',minPoints:260000},{level:18,name:'General',minPoints:330000},
-  {level:19,name:'General of the Army',minPoints:420000},{level:20,name:'Supreme Commander',minPoints:525000},
+  {level:1,name:'Newcomer',minPoints:0},
+  {level:2,name:'Helper',minPoints:300},
+  {level:3,name:'Contributor',minPoints:800},
+  {level:4,name:'Apprentice',minPoints:1800},
+  {level:5,name:'Journeyman',minPoints:3500},
+  {level:6,name:'Craftsman',minPoints:6000},
+  {level:7,name:'Artisan',minPoints:9500},
+  {level:8,name:'Master',minPoints:14500},
+  {level:9,name:'Expert',minPoints:21000},
+  {level:10,name:'Specialist',minPoints:29000},
+  {level:11,name:'Architect',minPoints:39000},
+  {level:12,name:'Builder',minPoints:52000},
+  {level:13,name:'Foreman',minPoints:68000},
+  {level:14,name:'Superintendent',minPoints:88000},
+  {level:15,name:'Director',minPoints:112000},
+  {level:16,name:'Visionary',minPoints:142000},
+  {level:17,name:'Principal',minPoints:178000},
+  {level:18,name:'Founder',minPoints:222000},
+  {level:19,name:'Luminary',minPoints:275000},
+  {level:20,name:'Legend',minPoints:340000},
 ];
 function getRankForPoints(pts){let r=RANKS[0];for(const x of RANKS){if((pts||0)>=x.minPoints)r=x;else break;}return r;}
 function getProgressToNext(pts){const r=getRankForPoints(pts);const n=RANKS[r.level]||null;if(!n)return{pct:100,pointsLeft:0,nextName:'MAX RANK'};const into=(pts||0)-r.minPoints;const span=n.minPoints-r.minPoints;return{pct:Math.min(100,Math.floor((into/span)*100)),pointsLeft:n.minPoints-(pts||0),nextName:n.name};}
+
+// =========================================================
+// HOUSE LEVELS
+// =========================================================
+const HOUSE_LEVELS=[
+  {level:1,name:'Basecamp',minXP:0},
+  {level:2,name:'Outpost',minXP:500},
+  {level:3,name:'Waystation',minXP:1500},
+  {level:4,name:'Homestead',minXP:3000},
+  {level:5,name:'Settlement',minXP:5500},
+  {level:6,name:'Township',minXP:9000},
+  {level:7,name:'Borough',minXP:14000},
+  {level:8,name:'District',minXP:21000},
+  {level:9,name:'Municipality',minXP:30000},
+  {level:10,name:'Stronghold',minXP:42000},
+];
+function getHouseLevel(xp){let h=HOUSE_LEVELS[0];for(const x of HOUSE_LEVELS){if((xp||0)>=x.minXP)h=x;else break;}return h;}
+function getHouseProgress(xp){const h=getHouseLevel(xp);const n=HOUSE_LEVELS[h.level]||null;if(!n)return{pct:100,xpLeft:0,nextName:'MAX'};const into=(xp||0)-h.minXP,span=n.minXP-h.minXP;return{pct:Math.min(100,Math.floor((into/span)*100)),xpLeft:n.minXP-(xp||0),nextName:n.name};}
+
+// =========================================================
+// SESSION (localStorage, 7-day TTL)
+// =========================================================
+const SESSION_KEY='homeops_session';
+const SESSION_TTL=7*24*60*60*1000;
+function getSession(){
+  try{
+    const raw=localStorage.getItem(SESSION_KEY);
+    if(!raw)return{authenticated:false};
+    const s=JSON.parse(raw);
+    if(Date.now()>new Date(s.expiresAt).getTime()){localStorage.removeItem(SESSION_KEY);return{authenticated:false};}
+    return{...s,authenticated:true,household:{id:s.householdId,name:s.householdName},player:s.playerData};
+  }catch{return{authenticated:false};}
+}
+function setSession(household,player){
+  const s={householdId:household.id,householdName:household.name,playerId:player.id,playerData:player,token:player.token||'',expiresAt:new Date(Date.now()+SESSION_TTL).toISOString()};
+  localStorage.setItem(SESSION_KEY,JSON.stringify(s));
+}
+function updateSessionPlayer(p){
+  const s=getSession();if(!s.authenticated)return;
+  const updated={...s,playerData:{...s.playerData,...p},expiresAt:new Date(Date.now()+SESSION_TTL).toISOString()};
+  delete updated.authenticated;delete updated.household;delete updated.player;
+  localStorage.setItem(SESSION_KEY,JSON.stringify(updated));
+}
+function clearSession(){localStorage.removeItem(SESSION_KEY);}
+
+// =========================================================
+// API HELPER
+// =========================================================
+const API_BASE='https://homeops.askozicki.workers.dev';
+async function api(path,opts={}){
+  const s=getSession();
+  const headers={'Content-Type':'application/json',...(opts.headers||{})};
+  if(s.token)headers['Authorization']=`Bearer ${s.token}`;
+  if(s.householdId)headers['X-Household-ID']=s.householdId;
+  if(s.playerId)headers['X-Player-ID']=s.playerId;
+  const res=await fetch(`${API_BASE}${path}`,{...opts,headers});
+  if(!res.ok)throw new Error(`API ${res.status}`);
+  return res.json();
+}
 
 // =========================================================
 // POINTS ENGINE
@@ -631,14 +616,6 @@ function computeStreakUpdate(player){
   return{currentStreak:1,streakExtended:false,streakBroken:(player.currentStreak||0)>1};
 }
 
-// =========================================================
-// SESSION
-// =========================================================
-let _session={household:null,player:null,authenticated:false};
-function getSession(){return _session;}
-function setSession(h,p){_session={household:h,player:p,authenticated:true};}
-function clearSession(){_session={household:null,player:null,authenticated:false};}
-function updateSessionPlayer(p){_session.player={..._session.player,...p};}
 async function hashPIN(pin){
   const d=new TextEncoder().encode(pin);
   const h=await crypto.subtle.digest('SHA-256',d);
@@ -694,6 +671,17 @@ function fireRankUpBurst({rankName,rank}){
   });
 }
 
+function fireHouseLevelBurst({levelName,level}){
+  return new Promise(res=>{
+    const l=document.getElementById('burst-layer');if(!l){res();return;}
+    l.innerHTML=`<div class="confetti-container">${makeConfetti(32)}</div><div class="burst-screen burst-rankup"><div class="rankup-badge" style="border-color:var(--accent-gold);color:var(--accent-gold)">HOUSE UPGRADE</div><div class="rankup-name display-xl" style="color:var(--accent-gold)">${esc(levelName)}</div><div class="rankup-number label text-secondary">House Level ${level}</div><div class="rankup-stars">${[...Array(5)].map(()=>`<span class="rankup-star">${icon('home',28)}</span>`).join('')}</div><div class="burst-dismiss-hint" style="margin-top:2rem">Tap to continue</div></div>`;
+    l.classList.add('active');
+    let done=false;
+    const dismiss=()=>{if(done)return;done=true;l.classList.remove('active');l.removeEventListener('click',dismiss);setTimeout(()=>{l.innerHTML='';res();},150);};
+    const t=setTimeout(dismiss,3500);l.addEventListener('click',()=>{clearTimeout(t);dismiss();});
+  });
+}
+
 // =========================================================
 // TOAST
 // =========================================================
@@ -726,21 +714,28 @@ function fmtDate(ts){return new Date(ts).toLocaleDateString([],{weekday:'short',
 async function renderBoard(appEl,session){
   const{household,player}=session;
   appEl.innerHTML=`<div class="screen screen-board board-loading"><div class="board-loading-inner"><div class="board-loading-icon">${icon('bolt',32)}</div><div class="label text-muted">Loading ops...</div></div></div>`;
-  const[tr,pr]=await Promise.all([fetch(`/api/households/${household.id}/tasks`,{headers:{'X-Household-ID':household.id,'X-Player-ID':player.id}}),fetch(`/api/households/${household.id}/players`,{headers:{'X-Household-ID':household.id}})]);
-  const allTasks=(await tr.json()).tasks||[];
-  const players=(await pr.json()).players||{};
+  const[tr,pr,hr]=await Promise.all([api(`/api/households/${household.id}/tasks`),api(`/api/households/${household.id}/players`),api(`/api/households/${household.id}/house`)]);
+  const allTasks=tr.tasks||[];
+  const players=pr.players||{};
+  const house=hr.house||{level:1,totalXP:0};
+  const houseLevel=getHouseLevel(house.totalXP||0),houseProg=getHouseProgress(house.totalXP||0);
   const me=players[player.id]||player;
   const partner=Object.values(players).find(p=>p.id!==player.id)||null;
-  const myTasks=allTasks.filter(t=>t.status!=='done'&&(t.assignee===player.id||t.assignee==='either'));
-  const myDone=allTasks.filter(t=>t.status==='done'&&(t.assignee===player.id||t.assignee==='either'));
+  const myTasks=allTasks.filter(t=>t.status!=='done'&&(t.assignee===player.id));
+  const myDone=allTasks.filter(t=>t.status==='done'&&(t.assignee===player.id));
+  const questTasks=allTasks.filter(t=>t.status!=='done'&&t.assignee==='unassigned');
   const pPending=partner?allTasks.filter(t=>t.status!=='done'&&t.assignee===partner.id):[];
   const pDone=partner?allTasks.filter(t=>t.status==='done'&&t.assignee===partner.id):[];
   const rank=getRankForPoints(me.totalPoints||0),prog=getProgressToNext(me.totalPoints||0);
   const weekTotal=[...myTasks,...myDone].length,weekDone=myDone.length,streak=me.currentStreak||0;
   const pOverdue=pPending.filter(t=>new Date(t.dueAt).getTime()<Date.now()).length;
-  function tCard(t,isMine){
-    const s=getTaskStatus(t),pts=t.pointsAwarded??t.basePoints??0,done=t.status==='done';
-    return `<div class="task-card status-${s.key}" data-id="${esc(t.id)}"><div class="task-card-top"><span class="status-badge badge-${s.key}">${s.label}</span><span class="difficulty-badge diff-badge-${t.difficulty}">${t.difficulty}</span></div><div class="task-title body-lg">${esc(t.title)}</div><div class="task-card-bottom"><span class="task-pts">${icon('bolt',13)} ${pts.toLocaleString()} pts</span>${t.recurring&&t.recurring!=='none'?`<span class="task-repeat" title="Repeats">${icon('repeat',13)}</span>`:''} ${isMine&&!done?`<button class="complete-btn">${icon('check',15)} Complete</button>`:''} ${!isMine&&!done&&t.assignee==='either'?`<button class="claim-btn">Claim</button>`:''} ${done?`<span class="done-label">${icon('check',13)} Done · +${(t.pointsAwarded||0).toLocaleString()} pts</span>`:''}</div></div>`;
+  function tCard(t,mode){
+    // mode: 'mine' | 'quest' | 'partner'
+    const s=getTaskStatus(t),done=t.status==='done';
+    const isQuest=mode==='quest';
+    const displayPts=isQuest?Math.round((t.basePoints||60)*1.25):(t.pointsAwarded??t.basePoints??0);
+    const cardCls=isQuest?'status-quest':'status-'+s.key;
+    return `<div class="task-card ${cardCls}" data-id="${esc(t.id)}" data-quest="${isQuest}"><div class="task-card-top"><span class="status-badge badge-${s.key}">${s.label}</span><span class="difficulty-badge diff-badge-${t.difficulty}">${t.difficulty}</span>${isQuest?`<span class="quest-badge">Quest</span>`:''}</div><div class="task-title body-lg">${esc(t.title)}</div><div class="task-card-bottom"><span class="task-pts">${icon('bolt',13)} ${displayPts.toLocaleString()} pts${isQuest?'<span style="color:var(--accent-gold);font-size:0.65rem;margin-left:2px">+25%</span>':''}</span>${t.recurring&&t.recurring!=='none'?`<span class="task-repeat" title="Repeats">${icon('repeat',13)}</span>`:''} ${mode==='mine'&&!done?`<button class="complete-btn">${icon('check',15)} Complete</button>`:''} ${isQuest&&!done?`<button class="claim-btn">Claim Quest</button>`:''} ${done?`<span class="done-label">${icon('check',13)} Done · +${(t.pointsAwarded||0).toLocaleString()} pts</span>`:''}</div></div>`;
   }
   appEl.innerHTML=`<div class="screen screen-board">
   <header class="board-header">
@@ -748,9 +743,11 @@ async function renderBoard(appEl,session){
     <div class="header-actions"><button class="icon-btn" id="notif-btn">${icon('bell',22)}</button></div>
   </header>
   <div class="xp-bar-wrap"><div class="xp-bar-track"><div class="xp-bar-fill" style="width:${prog.pct}%"></div></div><div class="xp-bar-meta"><span class="label text-secondary">${(me.weeklyPoints||0).toLocaleString()} pts this week</span><span class="label text-muted">${prog.pointsLeft.toLocaleString()} to ${esc(prog.nextName)}</span></div></div>
+  <div class="house-bar-wrap"><div class="house-bar-track"><div class="house-bar-fill" id="house-bar-fill" style="width:0%" data-pct="${houseProg.pct}"></div></div><div class="house-bar-meta"><span class="label text-muted">${icon('home',11)} ${esc(houseLevel.name)} · Lv.${houseLevel.level}</span><span class="label text-muted">${houseProg.xpLeft.toLocaleString()} xp to ${esc(houseProg.nextName)}</span></div></div>
   <div class="weekly-strip"><div class="dot-progress">${weekTotal===0?`<span class="label text-muted">No tasks yet</span>`:Array.from({length:weekTotal},(_,i)=>`<span class="dot-pip${i<weekDone?' done':''}"></span>`).join('')}</div><div class="weekly-meta"><span class="body-md text-secondary">${weekDone}/${weekTotal} done</span>${streak>0?`<span class="streak-badge">${icon('fire',14)} ${streak}</span>`:''}</div></div>
-  <section class="task-section"><div class="section-header"><span class="label">Your Tasks</span><button class="add-task-btn" id="add-task-btn">${icon('plus',16)} Add</button></div><div class="task-list" id="my-task-list">${myTasks.length===0&&myDone.length===0?`<div class="empty-state body-md">No tasks. Add one or claim from partner.</div>`:''} ${myTasks.map(t=>tCard(t,true)).join('')} ${myDone.map(t=>tCard(t,true)).join('')}</div></section>
-  ${partner?`<section class="task-section partner-section"><div class="section-header"><span class="label">${esc(partner.callsign)}'s Tasks</span><button class="expand-btn" id="partner-expand"><span>${pPending.length} remaining${pOverdue>0?`<span class="badge-overdue-sm">${pOverdue} overdue</span>`:''}</span><span class="expand-chevron">${icon('chevronDown',16)}</span></button></div><div class="task-list hidden" id="partner-task-list">${pPending.map(t=>tCard(t,false)).join('')} ${pDone.map(t=>tCard(t,false)).join('')}</div></section>`:''}
+  <section class="task-section"><div class="section-header"><span class="label">Your Tasks</span><button class="add-task-btn" id="add-task-btn">${icon('plus',16)} Add</button></div><div class="task-list" id="my-task-list">${myTasks.length===0&&myDone.length===0?`<div class="empty-state body-md">No tasks. Add one or claim a quest.</div>`:''} ${myTasks.map(t=>tCard(t,'mine')).join('')} ${myDone.map(t=>tCard(t,'mine')).join('')}</div></section>
+  ${questTasks.length>0?`<section class="quest-section"><div class="quest-section-header"><span class="label quest-label">${icon('star',14)} House Quests <span class="quest-badge">+25% bonus</span></span></div><div class="task-list" id="quest-task-list">${questTasks.map(t=>tCard(t,'quest')).join('')}</div></section>`:''}
+  ${partner?`<section class="task-section partner-section"><div class="section-header"><span class="label">${esc(partner.callsign)}'s Tasks</span><button class="expand-btn" id="partner-expand"><span>${pPending.length} remaining${pOverdue>0?`<span class="badge-overdue-sm">${pOverdue} overdue</span>`:''}</span><span class="expand-chevron">${icon('chevronDown',16)}</span></button></div><div class="task-list hidden" id="partner-task-list">${pPending.map(t=>tCard(t,'partner')).join('')} ${pDone.map(t=>tCard(t,'partner')).join('')}</div></section>`:''}
   </div>`;
   document.getElementById('notif-btn').addEventListener('click',()=>showToast('Push notifications require deployment.'));
   document.getElementById('add-task-btn').addEventListener('click',()=>openAddTaskSheet(household,player,partner,()=>renderBoard(appEl,session)));
@@ -769,22 +766,28 @@ async function renderBoard(appEl,session){
   appEl.querySelectorAll('.claim-btn').forEach(btn=>{
     btn.addEventListener('click',async()=>{
       if(btn.disabled)return;btn.disabled=true;
-      const taskId=btn.closest('.task-card').dataset.id;
-      await fetch(`/api/households/${household.id}/tasks/${taskId}`,{method:'PATCH',headers:{'Content-Type':'application/json','X-Player-ID':player.id},body:JSON.stringify({assignee:player.id})});
-      renderBoard(appEl,session);
+      const card=btn.closest('.task-card');
+      const taskId=card.dataset.id,isQuest=card.dataset.quest==='true';
+      await api(`/api/households/${household.id}/tasks/${taskId}`,{method:'PATCH',body:JSON.stringify({assignee:player.id,questBonus:isQuest})});
+      if(isQuest)showToast('Quest claimed! +25% bonus locked in.');
+      renderBoard(appEl,{...session});
     });
   });
-  requestAnimationFrame(()=>{document.querySelector('.xp-bar-fill')&&(document.querySelector('.xp-bar-fill').style.transition='width 0.8s cubic-bezier(0.4,0,0.2,1)');});
+  requestAnimationFrame(()=>{
+    document.querySelector('.xp-bar-fill')&&(document.querySelector('.xp-bar-fill').style.transition='width 0.8s cubic-bezier(0.4,0,0.2,1)');
+    const hbf=document.getElementById('house-bar-fill');
+    if(hbf)setTimeout(()=>{hbf.style.width=hbf.dataset.pct+'%';},200);
+  });
 }
 
 async function handleComplete(task,session,appEl){
   const{household,player}=session;
   const result=calculatePoints(task,player),streak=computeStreakUpdate(player);
   const oldRank=getRankForPoints(player.totalPoints||0),newTotal=(player.totalPoints||0)+result.total,newRank=getRankForPoints(newTotal),isRankUp=newRank.level>oldRank.level;
+  const houseXP=Math.floor(result.total*0.1);
   let sr;
   try{
-    const resp=await fetch(`/api/households/${household.id}/tasks/${task.id}/complete`,{method:'POST',headers:{'Content-Type':'application/json','X-Household-ID':household.id,'X-Player-ID':player.id},body:JSON.stringify({pointsAwarded:result.total,bonusesApplied:result.bonuses.map(b=>b.label),newStreak:streak.currentStreak})});
-    sr=await resp.json();
+    sr=await api(`/api/households/${household.id}/tasks/${task.id}/complete`,{method:'POST',body:JSON.stringify({pointsAwarded:result.total,bonusesApplied:result.bonuses.map(b=>b.label),newStreak:streak.currentStreak,houseXP:Math.floor(result.total*0.1)})});
   }catch(e){showToast('Could not save.');renderBoard(appEl,session);return;}
   const sp=sr.player||{};
   const up={...player,totalPoints:sp.totalPoints??newTotal,weeklyPoints:sp.weeklyPoints??((player.weeklyPoints||0)+result.total),rank:newRank.level,currentStreak:sp.currentStreak??streak.currentStreak,longestStreak:sp.longestStreak??Math.max(player.longestStreak||0,streak.currentStreak),sessionTasks:(player.sessionTasks||0)+1,lastActive:new Date().toISOString()};
@@ -796,6 +799,11 @@ async function handleComplete(task,session,appEl){
     if(l){l.innerHTML=`<div class="burst-screen"><div class="burst-streak-icon">${icon('fire',40)}</div><div class="display-md" style="color:var(--text-secondary)">Streak Ended</div><div class="body-md text-muted" style="margin-top:0.5rem">${player.currentStreak}-day run</div><div class="burst-dismiss-hint">Tap to continue</div></div>`;l.classList.add('active');await new Promise(r=>{const t=setTimeout(()=>{l.classList.remove('active');l.innerHTML='';r();},1800);l.addEventListener('click',()=>{clearTimeout(t);l.classList.remove('active');l.innerHTML='';r();},{once:true});});}
   }
   if(isRankUp)await fireRankUpBurst({rankName:newRank.name,rank:newRank.level});
+  // Check house level-up from server response
+  if(sr.houseLevelUp&&sr.house){
+    const newHL=getHouseLevel(sr.house.totalXP||0);
+    await fireHouseLevelBurst({levelName:newHL.name,level:newHL.level});
+  }
   renderBoard(appEl,{household,player:up});
 }
 
@@ -808,7 +816,7 @@ function openAddTaskSheet(household,player,partner,onSuccess){
   overlay.innerHTML=`<div class="bottom-sheet"><div class="sheet-handle"></div><h2 class="display-md sheet-title">New Task</h2>
   <label class="field-label label">Task Name</label><input class="field-input" type="text" id="task-title-input" placeholder="e.g. Vacuum living room" maxlength="80" autocomplete="off"/>
   <span class="field-label label">Difficulty</span><div class="chip-group" id="diff-group">${[{v:'easy',p:30},{v:'medium',p:60},{v:'hard',p:120},{v:'epic',p:250}].map(d=>`<button class="chip diff-${d.v}${d.v==='medium'?' selected':''}" data-diff="${d.v}" aria-pressed="${d.v==='medium'}">${d.v} · ${d.p}pts</button>`).join('')}</div>
-  <span class="field-label label">Assign To</span><div class="chip-group" id="assign-group"><button class="chip selected" data-assign="${player.id}" aria-pressed="true">Me</button><button class="chip" data-assign="${pid}" aria-pressed="false">${esc(pcallsign)}</button><button class="chip" data-assign="either" aria-pressed="false">Either</button></div>
+  <span class="field-label label">Assign To</span><div class="chip-group" id="assign-group"><button class="chip selected" data-assign="${player.id}" aria-pressed="true">Me</button><button class="chip" data-assign="${pid}" aria-pressed="false">${esc(pcallsign)}</button><button class="chip" data-assign="unassigned" aria-pressed="false">${icon('star',12)} House Quest</button></div>
   <span class="field-label label">Due</span><div class="chip-group" id="due-group"><button class="chip selected" data-due="today" aria-pressed="true">Today</button><button class="chip" data-due="tomorrow" aria-pressed="false">Tomorrow</button><button class="chip" data-due="pick" aria-pressed="false">Pick date</button></div>
   <input class="field-input hidden" type="datetime-local" id="due-picker" style="margin-top:0.5rem"/>
   <span class="field-label label">Repeats</span><div class="repeat-row"><label class="toggle-label"><input type="checkbox" id="repeat-toggle"/><span class="toggle-track"></span><span class="body-md">Recurring</span></label><select class="field-select hidden" id="repeat-freq" style="margin-top:0.5rem"><option value="daily">Daily</option><option value="weekly" selected>Weekly</option><option value="monthly">Monthly</option></select></div>
@@ -841,7 +849,7 @@ function openAddTaskSheet(household,player,partner,onSuccess){
     else{const pv=document.getElementById('due-picker')?.value;dueAt=pv?new Date(pv).toISOString():d.toISOString();}
     const rec=document.getElementById('repeat-toggle')?.checked?(document.getElementById('repeat-freq')?.value||'weekly'):'none';
     try{
-      await fetch(`/api/households/${household.id}/tasks`,{method:'POST',headers:{'Content-Type':'application/json','X-Player-ID':player.id},body:JSON.stringify({title,difficulty:diff,assignee:assign,dueAt,recurring:rec})});
+      await api(`/api/households/${household.id}/tasks`,{method:'POST',body:JSON.stringify({title,difficulty:diff,assignee:assign,dueAt,recurring:rec})});
       closeSheet(overlay);onSuccess();
     }catch(e){if(sb){sb.disabled=false;sb.textContent='Add Task';}showToast('Could not save task.');}
   });
@@ -854,8 +862,8 @@ function closeSheet(overlay){overlay.classList.remove('open');setTimeout(()=>{ov
 async function renderStats(appEl,session){
   const{household,player}=session;
   appEl.innerHTML=`<div class="screen screen-stats"><h2 class="display-lg screen-title">Intel</h2><div class="body-md text-muted" style="padding:1rem">Loading...</div></div>`;
-  const[tr,pr]=await Promise.all([fetch(`/api/households/${household.id}/tasks`,{headers:{'X-Household-ID':household.id,'X-Player-ID':player.id}}),fetch(`/api/households/${household.id}/players`,{headers:{'X-Household-ID':household.id}})]);
-  const tasks=(await tr.json()).tasks||[],players=(await pr.json()).players||{};
+  const[tr,pr]=await Promise.all([api(`/api/households/${household.id}/tasks`),api(`/api/households/${household.id}/players`)]);
+  const tasks=tr.tasks||[],players=pr.players||{};
   const me=players[player.id]||player,partner=Object.values(players).find(p=>p.id!==player.id)||null;
   const now=new Date(),wStart=new Date(now);wStart.setDate(now.getDate()-now.getDay());wStart.setHours(0,0,0,0);
   const weekTasks=tasks.filter(t=>new Date(t.dueAt)>=wStart);
@@ -915,8 +923,8 @@ function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y)
 async function renderRanks(appEl,session){
   const{household,player}=session;
   appEl.innerHTML=`<div class="screen screen-ranks"><h2 class="display-lg screen-title">Ranks</h2><div class="body-md text-muted" style="padding:1rem">Loading...</div></div>`;
-  const pr=await fetch(`/api/households/${household.id}/players`,{headers:{'X-Household-ID':household.id}});
-  const players=(await pr.json()).players||{};
+  const pr=await api(`/api/households/${household.id}/players`);
+  const players=pr.players||{};
   const me=players[player.id]||player,partner=Object.values(players).find(p=>p.id!==player.id)||null;
   const plist=[me,partner].filter(Boolean).map(p=>({...p,rank:getRankForPoints(p.totalPoints||0),prog:getProgressToNext(p.totalPoints||0),isMe:p.id===player.id}));
   const myPd=plist[0],pPd=plist[1]||null;
@@ -945,18 +953,64 @@ async function renderSettings(appEl,session){
   const{household,player}=session;
   const push='Notification' in window?Notification.permission:'unsupported';
   const granted=push==='granted',denied=push==='denied',noSupport=push==='unsupported';
+  const rank=getRankForPoints(player.totalPoints||0);
   appEl.innerHTML=`<div class="screen screen-settings">
   <h2 class="display-lg screen-title">Settings</h2>
-  <div class="settings-section"><div class="settings-section-title label text-secondary">Notifications</div>${noSupport?`<div class="settings-note body-md text-muted">Push notifications not supported in this browser.</div>`:denied?`<div class="settings-note body-md text-muted">Push blocked by browser. Enable in browser settings.</div>`:`<div class="settings-push-row"><div class="settings-push-info"><div class="body-md">Push Notifications</div><div class="label text-muted">${granted?'Active on this device':'Not enabled'}</div></div><button class="settings-toggle-btn${granted?' active':''}" id="push-toggle-btn" aria-pressed="${granted}"><span class="toggle-track"></span></button></div>${granted?`<div class="settings-push-types"><div class="label text-muted settings-push-types-title">You will receive:</div><div class="push-type-row"><span class="push-type-label label">Due Soon</span><span class="push-type-desc label text-muted">1 hour before</span></div><div class="push-type-row"><span class="push-type-label label">Overdue</span><span class="push-type-desc label text-muted">15 min after</span></div><div class="push-type-row"><span class="push-type-label label">Streak Alert</span><span class="push-type-desc label text-muted">Before midnight</span></div><div class="push-type-row"><span class="push-type-label label">Load Alert</span><span class="push-type-desc label text-muted">65%+ imbalance</span></div></div>`:''}`}</div>
-  <div class="settings-section"><div class="settings-section-title label text-secondary">Webhook</div><div class="settings-note body-md text-muted" style="margin-bottom:0.75rem">Every task event fires a POST to this URL. Supports Discord webhooks automatically.</div><label class="field-label label">Webhook URL</label><input class="field-input" type="url" id="webhook-url-input" placeholder="https://webhook.site/… or Discord webhook" autocomplete="off" spellcheck="false"/><label class="field-label label">Secret Header</label><input class="field-input" type="text" id="webhook-secret-input" placeholder="Optional — sent as X-HH-Ops-Secret" autocomplete="off"/><div class="settings-btn-row"><button class="btn-primary" id="save-webhook-btn">Save</button><button class="btn-secondary" id="test-webhook-btn" disabled>Send Test</button></div><div class="settings-webhook-status label" id="webhook-status"></div></div>
-  <div class="settings-section"><div class="settings-section-title label text-secondary">Account</div><div class="settings-player-row"><div class="settings-player-avatar">${icon('user',22)}</div><div><div class="body-lg">${esc(player.callsign||'Unknown')}</div><div class="label text-muted">${esc(household.name||'')}</div></div></div><button class="btn-danger" id="switch-household-btn" style="width:100%">${icon('lock',16)} Switch Household</button></div>
-  <div class="settings-app-info label text-muted">Household Ops &middot; All data stored in Cloudflare KV &middot; No ads, no tracking</div>
+  <div class="settings-section">
+    <div class="settings-section-title label text-secondary">Account</div>
+    <div class="settings-player-row">
+      <div class="settings-player-avatar">${icon('user',22)}</div>
+      <div>
+        <div class="body-lg">${esc(player.callsign||'Unknown')}</div>
+        <div class="label text-muted">${esc(rank.name)} · Lv.${rank.level} · ${esc(household.name||'')}</div>
+      </div>
+    </div>
+  </div>
+  <div class="settings-section">
+    <div class="settings-section-title label text-secondary">Notifications</div>
+    ${noSupport?`<div class="settings-note body-md text-muted">Push notifications not supported in this browser.</div>`
+    :denied?`<div class="settings-note body-md text-muted">Push blocked. Enable in your browser settings, then reload.</div>`
+    :`<div class="settings-push-row">
+        <div class="settings-push-info">
+          <div class="body-md">Push Notifications</div>
+          <div class="label text-muted" id="push-status-label">${granted?'Active on this device':'Not enabled'}</div>
+        </div>
+        <button class="settings-toggle-btn${granted?' active':''}" id="push-toggle-btn" aria-pressed="${granted}"><span class="toggle-track"></span></button>
+      </div>
+      ${granted?`<div class="settings-push-types">
+        <div class="label text-muted settings-push-types-title">You will receive:</div>
+        <div class="push-type-row"><span class="push-type-label label">Task Completed</span><span class="push-type-desc label text-muted">Partner finishes a task</span></div>
+        <div class="push-type-row"><span class="push-type-label label">Streak Alert</span><span class="push-type-desc label text-muted">Before midnight</span></div>
+        <div class="push-type-row"><span class="push-type-label label">House Level Up</span><span class="push-type-desc label text-muted">Instant</span></div>
+      </div>`:''}`}
+  </div>
+  <div class="settings-section">
+    <div class="settings-section-title label text-secondary">Household</div>
+    <div class="label text-muted" style="margin-bottom:0.5rem">${esc(household.name)}</div>
+    <button class="btn-danger" id="switch-household-btn" style="width:100%">${icon('lock',16)} Switch Account</button>
+  </div>
+  <div class="settings-app-info label text-muted">Household Ops · All data in Cloudflare KV · No ads</div>
   </div>`;
-  document.getElementById('push-toggle-btn')?.addEventListener('click',()=>{showToast('Push notifications require live deployment.');});
-  document.getElementById('webhook-url-input')?.addEventListener('input',e=>{const tb=document.getElementById('test-webhook-btn');if(tb)tb.disabled=!e.target.value.trim();});
-  document.getElementById('save-webhook-btn')?.addEventListener('click',async()=>{const btn=document.getElementById('save-webhook-btn');if(btn){btn.disabled=true;btn.textContent='Saving...';}try{await fetch(`/api/households/${household.id}/config`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({webhookUrl:document.getElementById('webhook-url-input')?.value||'',webhookSecret:document.getElementById('webhook-secret-input')?.value||''})});const st=document.getElementById('webhook-status');if(st){st.textContent='Saved.';st.className='settings-webhook-status label settings-status-success';setTimeout(()=>{if(st.textContent==='Saved.')st.textContent='';},4000);}}finally{if(btn){btn.disabled=false;btn.textContent='Save';}}});
-  document.getElementById('test-webhook-btn')?.addEventListener('click',()=>showToast('Test webhook — requires live deployment.'));
-  document.getElementById('switch-household-btn')?.addEventListener('click',()=>{clearSession();window.App.navigate('auth');});
+  document.getElementById('push-toggle-btn')?.addEventListener('click',async()=>{
+    if(Notification.permission==='granted'){showToast('To disable, revoke permission in browser settings.');return;}
+    const perm=await Notification.requestPermission();
+    if(perm==='granted'){
+      try{
+        const reg=await navigator.serviceWorker.ready;
+        const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array('BEablsxHTJtGNls5Sdo7VayFjZeZzfywHZlVec47RsN3TUQURt-sAyiZm0GL7HPTcHALcmsCBYFqH4t2RMi37jM')});
+        await api(`/api/households/${household.id}/players/${player.id}/push`,{method:'POST',body:JSON.stringify(sub)});
+        showToast('Notifications enabled!');renderSettings(appEl,session);
+      }catch(e){showToast('Could not enable notifications.');}
+    }else{showToast('Permission denied.');}
+  });
+  document.getElementById('switch-household-btn')?.addEventListener('click',()=>{clearSession();App.navigate('auth');});
+}
+
+function urlBase64ToUint8Array(base64String){
+  const padding='='.repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=window.atob(base64);
+  return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
 }
 
 // =========================================================
@@ -970,14 +1024,134 @@ function renderNav(active){
   navEl.innerHTML=NAV.map(n=>`<button class="nav-btn${n.id===active?' active':''}" onclick="App.navigate('${n.id}')" aria-label="${n.label}">${icon(n.ic,22)}<span class="nav-label">${n.label}</span></button>`).join('');
 }
 
+// =========================================================
+// SETUP SCREEN (first-time household + player creation)
+// =========================================================
+async function renderSetup(){
+  navEl.classList.add('hidden');
+  appEl.innerHTML=`<div class="screen screen-auth">
+  <div class="auth-hero"><div class="app-logo-icon">${icon('shield',48)}</div><h1 class="display-lg auth-title">HOUSEHOLD<br>OPS</h1><p class="body-md text-secondary">Set up your household</p></div>
+  <div class="setup-progress"><span class="setup-pip done" id="pip-0"></span><span class="setup-pip" id="pip-1"></span><span class="setup-pip" id="pip-2"></span></div>
+
+  <!-- Step 1: Household Name -->
+  <div class="setup-step active" id="step-0">
+    <div class="setup-card">
+      <div class="body-lg">What do you call your place?</div>
+      <input class="field-input" type="text" id="setup-hh-name" placeholder="e.g. The Ozicki House" maxlength="40" autocomplete="off"/>
+      <div class="setup-error" id="setup-hh-err"></div>
+    </div>
+    <div class="setup-footer"><button class="btn-primary" id="setup-step0-next">Next</button></div>
+  </div>
+
+  <!-- Step 2: Player 1 callsign + PIN -->
+  <div class="setup-step" id="step-1">
+    <div class="setup-card">
+      <div class="body-lg">Player 1 callsign</div>
+      <input class="field-input" type="text" id="setup-p1-callsign" placeholder="e.g. Viking" maxlength="20" autocomplete="off"/>
+      <div class="body-md text-secondary" style="margin-top:0.75rem">Set a 4-digit PIN</div>
+      <div class="pin-dots" id="setup-p1-dots" style="justify-content:flex-start;gap:0.75rem;margin-top:0.5rem">
+        <span class="pin-dot" id="s1d0"></span><span class="pin-dot" id="s1d1"></span><span class="pin-dot" id="s1d2"></span><span class="pin-dot" id="s1d3"></span>
+      </div>
+      <div class="numpad" style="max-width:280px;padding:0.75rem 0 0" id="setup-p1-numpad">
+        ${[1,2,3,4,5,6,7,8,9,'',0,'del'].map(k=>`<button class="numpad-key${k===''?' numpad-empty':''}" data-key="${k}" ${k===''?'aria-hidden="true" tabindex="-1"':''}>${k==='del'?icon('trash',16):k===''?'':k}</button>`).join('')}
+      </div>
+      <div class="setup-error" id="setup-p1-err"></div>
+    </div>
+    <div class="setup-footer"><button class="btn-secondary" id="setup-step1-back">Back</button><button class="btn-primary" id="setup-step1-next">Next</button></div>
+  </div>
+
+  <!-- Step 3: Player 2 callsign + PIN -->
+  <div class="setup-step" id="step-2">
+    <div class="setup-card">
+      <div class="body-lg">Player 2 callsign</div>
+      <input class="field-input" type="text" id="setup-p2-callsign" placeholder="e.g. Doc" maxlength="20" autocomplete="off"/>
+      <div class="body-md text-secondary" style="margin-top:0.75rem">Set a 4-digit PIN</div>
+      <div class="pin-dots" id="setup-p2-dots" style="justify-content:flex-start;gap:0.75rem;margin-top:0.5rem">
+        <span class="pin-dot" id="s2d0"></span><span class="pin-dot" id="s2d1"></span><span class="pin-dot" id="s2d2"></span><span class="pin-dot" id="s2d3"></span>
+      </div>
+      <div class="numpad" style="max-width:280px;padding:0.75rem 0 0" id="setup-p2-numpad">
+        ${[1,2,3,4,5,6,7,8,9,'',0,'del'].map(k=>`<button class="numpad-key${k===''?' numpad-empty':''}" data-key="${k}" ${k===''?'aria-hidden="true" tabindex="-1"':''}>${k==='del'?icon('trash',16):k===''?'':k}</button>`).join('')}
+      </div>
+      <div class="setup-error" id="setup-p2-err"></div>
+    </div>
+    <div class="setup-footer"><button class="btn-secondary" id="setup-step2-back">Back</button><button class="btn-primary" id="setup-step2-finish">Create Household</button></div>
+  </div>
+  </div>`;
+
+  let hhName='',p1={callsign:'',digits:[]},p2={callsign:'',digits:[]};
+
+  function showStep(n){
+    document.querySelectorAll('.setup-step').forEach((el,i)=>{el.classList.toggle('active',i===n);});
+    document.querySelectorAll('.setup-pip').forEach((el,i)=>{el.classList.toggle('done',i<=n);});
+  }
+
+  function bindNumpad(numpadId,dotsPrefix,playerObj,errId){
+    document.getElementById(numpadId)?.querySelectorAll('.numpad-key').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const k=btn.dataset.key;if(!k||k==='undefined')return;
+        if(k==='del'){playerObj.digits.pop();}
+        else if(playerObj.digits.length<4){playerObj.digits.push(k);}
+        [0,1,2,3].forEach(i=>{const d=document.getElementById(`${dotsPrefix}${i}`);if(d)d.classList.toggle('filled',i<playerObj.digits.length);});
+        document.getElementById(errId).textContent='';
+      });
+    });
+  }
+
+  bindNumpad('setup-p1-numpad','s1d',p1,'setup-p1-err');
+  bindNumpad('setup-p2-numpad','s2d',p2,'setup-p2-err');
+
+  document.getElementById('setup-step0-next').addEventListener('click',()=>{
+    hhName=document.getElementById('setup-hh-name')?.value.trim()||'';
+    if(!hhName){document.getElementById('setup-hh-err').textContent='Please enter a household name.';return;}
+    showStep(1);setTimeout(()=>document.getElementById('setup-p1-callsign')?.focus(),200);
+  });
+  document.getElementById('setup-hh-name').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('setup-step0-next').click();});
+  document.getElementById('setup-step1-back').addEventListener('click',()=>showStep(0));
+  document.getElementById('setup-step1-next').addEventListener('click',()=>{
+    p1.callsign=document.getElementById('setup-p1-callsign')?.value.trim()||'';
+    if(!p1.callsign){document.getElementById('setup-p1-err').textContent='Enter a callsign.';return;}
+    if(p1.digits.length<4){document.getElementById('setup-p1-err').textContent='Enter a 4-digit PIN.';return;}
+    showStep(2);setTimeout(()=>document.getElementById('setup-p2-callsign')?.focus(),200);
+  });
+  document.getElementById('setup-step2-back').addEventListener('click',()=>showStep(1));
+  document.getElementById('setup-step2-finish').addEventListener('click',async()=>{
+    p2.callsign=document.getElementById('setup-p2-callsign')?.value.trim()||'';
+    if(!p2.callsign){document.getElementById('setup-p2-err').textContent='Enter a callsign.';return;}
+    if(p2.digits.length<4){document.getElementById('setup-p2-err').textContent='Enter a 4-digit PIN.';return;}
+    if(p2.callsign.toLowerCase()===p1.callsign.toLowerCase()){document.getElementById('setup-p2-err').textContent='Callsigns must be different.';return;}
+    const btn=document.getElementById('setup-step2-finish');btn.disabled=true;btn.textContent='Creating...';
+    try{
+      const p1hash=await hashPIN(p1.digits.join(''));
+      const p2hash=await hashPIN(p2.digits.join(''));
+      const res=await api('/api/setup',{method:'POST',body:JSON.stringify({householdName:hhName,players:[{callsign:p1.callsign,pinHash:p1hash},{callsign:p2.callsign,pinHash:p2hash}]})});
+      if(res.success){
+        showToast(`${hhName} created! Log in to start.`);
+        setTimeout(()=>renderHouseholdSelect(),1200);
+      }else{
+        document.getElementById('setup-p2-err').textContent=res.error||'Could not create household.';
+        btn.disabled=false;btn.textContent='Create Household';
+      }
+    }catch(e){
+      document.getElementById('setup-p2-err').textContent='Connection error. Try again.';
+      btn.disabled=false;btn.textContent='Create Household';
+    }
+  });
+}
+
 async function renderHouseholdSelect(){
   navEl.classList.add('hidden');
   appEl.innerHTML=`<div class="screen screen-auth"><div class="auth-hero"><div class="app-logo-icon">${icon('shield',48)}</div><h1 class="display-lg auth-title">HOUSEHOLD<br>OPS</h1><p class="body-md text-secondary auth-subtitle">Select your household</p></div><div class="auth-card" id="household-list"><div class="loading-row body-md text-muted">Loading...</div></div></div>`;
   try{
-    const r=await fetch('/api/households');const{households}=await r.json();
+    const r=await api('/api/households');const{households}=r;
     const el=document.getElementById('household-list');
-    el.innerHTML=households.map(h=>`<button class="household-btn" data-id="${h.id}" data-name="${esc(h.name)}"><span class="household-btn-icon">${icon('home',20)}</span><span class="display-md household-btn-name">${esc(h.name)}</span><span class="household-btn-arrow">${icon('chevronRight',18)}</span></button>`).join('');
-    el.querySelectorAll('.household-btn').forEach(b=>b.addEventListener('click',()=>renderPlayerSelect({id:b.dataset.id,name:b.dataset.name})));
+    const hhHtml=households.length===0
+      ?`<div class="empty-state body-md">No households yet.</div>`
+      :households.map(h=>`<button class="household-btn" data-id="${h.id}" data-name="${esc(h.name)}"><span class="household-btn-icon">${icon('home',20)}</span><span class="display-md household-btn-name">${esc(h.name)}</span><span class="household-btn-arrow">${icon('chevronRight',18)}</span></button>`).join('');
+    el.innerHTML=hhHtml+`<button class="household-btn" id="create-new-hh"><span class="household-btn-icon" style="color:var(--accent-primary)">${icon('plus',20)}</span><span class="display-md household-btn-name" style="color:var(--accent-primary)">Create New Household</span><span class="household-btn-arrow">${icon('chevronRight',18)}</span></button>`;
+    el.querySelectorAll('.household-btn').forEach(b=>{
+      if(b.id==='create-new-hh'){b.addEventListener('click',()=>renderSetup());return;}
+      b.addEventListener('click',()=>renderPlayerSelect({id:b.dataset.id,name:b.dataset.name}));
+    });
   }catch(e){document.getElementById('household-list').innerHTML=`<p class="body-md text-danger" style="padding:1rem">Could not load. Check connection.</p>`;}
 }
 
@@ -985,7 +1159,7 @@ async function renderPlayerSelect(household){
   appEl.innerHTML=`<div class="screen screen-auth"><div class="auth-back-row"><button class="back-btn" id="back-hh">${icon('chevronLeft',18)} <span class="body-md">${esc(household.name)}</span></button></div><div class="auth-hero auth-hero--compact"><p class="body-md text-secondary">Who's playing?</p></div><div class="auth-card player-list" id="player-list"><div class="loading-row body-md text-muted">Loading...</div></div></div>`;
   document.getElementById('back-hh').addEventListener('click',renderHouseholdSelect);
   try{
-    const r=await fetch(`/api/households/${household.id}/players`);const{players}=await r.json();
+    const r=await api(`/api/households/${household.id}/players`);const{players}=r;
     const pl=Object.entries(players||{}).map(([id,p])=>({id,...p}));
     const el=document.getElementById('player-list');
     el.innerHTML=pl.map(p=>`<button class="player-btn" data-id="${p.id}" data-callsign="${esc(p.callsign)}"><div class="player-btn-avatar">${icon('user',28)}</div><span class="display-md">${esc(p.callsign)}</span></button>`).join('');
@@ -1003,9 +1177,8 @@ function renderPINEntry(household,player){
     if(pending)return;pending=true;stat('Checking...');
     const pin=digits.join(''),ph=await hashPIN(pin);
     try{
-      const r=await fetch(`/api/households/${household.id}/auth`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({playerId:player.id,pinHash:ph})});
-      const d=await r.json();
-      if(d.success){stat('Authenticated');setSession(household,d.player);App.navigate('board');}
+      const d=await api(`/api/households/${household.id}/auth`,{method:'POST',body:JSON.stringify({playerId:player.id,pinHash:ph})});
+      if(d.success){stat('Authenticated');setSession(household,{...d.player,token:d.token||''});App.navigate('board');}
       else{digits=[];pending=false;dots();stat('Incorrect PIN. Try again.',true);const pd=document.getElementById('pin-dots');if(pd){pd.classList.add('shake');setTimeout(()=>pd.classList.remove('shake'),500);}}
     }catch(e){digits=[];pending=false;dots();stat('Connection error.',true);}
   }
@@ -1039,8 +1212,17 @@ window.App={
   logout(){clearSession();navEl.classList.add('hidden');renderHouseholdSelect();}
 };
 
-// Boot
-App.navigate('board');
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+}
+
+// Boot — check session validity
+(function boot(){
+  const s=getSession();
+  if(s.authenticated){App.navigate('board');}
+  else{App.navigate('auth');}
+})();
 </script>
 </body>
 </html>
