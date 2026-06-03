@@ -125,7 +125,10 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
 .lock-dot.open{background:var(--green);box-shadow:0 0 8px var(--green);}
 
 /* Tab bar */
-.tabbar{flex-shrink:0;position:fixed;top:var(--topbar-h);left:0;right:0;height:var(--tabbar-h);background:rgba(7,9,15,.88);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border-bottom:1px solid var(--glass-b);display:flex;align-items:flex-start;justify-content:space-around;padding-top:8px;z-index:30;}
+.tabbar{flex-shrink:0;position:fixed;top:var(--topbar-h);left:0;right:0;height:var(--tabbar-h);background:rgba(7,9,15,.88);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border-bottom:1px solid var(--glass-b);display:flex;align-items:flex-start;justify-content:center;padding-top:8px;z-index:30;}
+.tabbar::before{content:'';flex:1;}
+.tabbar::after{content:'';flex:1;}
+@media(min-width:768px){.tabbar{max-width:500px;margin:0 auto;left:50%;transform:translateX(-50%);justify-content:space-around;border-left:1px solid var(--glass-b);border-right:1px solid var(--glass-b);}}
 .tab{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:0 16px;transition:opacity .15s;}
 .tab:active{opacity:.6;}
 .tab-icon{width:26px;height:26px;display:flex;align-items:center;justify-content:center;color:var(--t3);transition:color .2s;}
@@ -215,10 +218,10 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
 .icon-card-btn.green:active{color:var(--green);border-color:rgba(105,240,174,.4);}
 
 /* FAB */
-.fab{position:fixed;bottom:24px;right:18px;z-index:25;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--ion),rgba(100,120,220,.9));border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(79,195,247,.35);transition:transform .15s,opacity .15s;opacity:0;pointer-events:none;}
+.fab{position:fixed;top:calc(var(--topbar-h) + 16px);right:18px;z-index:25;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--ion),rgba(100,120,220,.9));border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(79,195,247,.4);transition:transform .15s,opacity .15s,box-shadow .15s;opacity:0;pointer-events:none;}
 .fab.visible{opacity:1;pointer-events:all;}
-.fab:active{transform:scale(.93);}
-.fab svg{width:22px;height:22px;}
+.fab:active{transform:scale(.92);box-shadow:0 3px 12px rgba(79,195,247,.3);}
+.fab svg{width:24px;height:24px;}
 
 /* Icon detail sheet */
 .icon-sheet-bg{position:fixed;inset:0;z-index:55;background:rgba(0,0,0,.65);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .28s;}
@@ -237,6 +240,9 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
 .icon-stroke-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;background:var(--ion);border:2px solid var(--deep);cursor:pointer;}
 .icon-stroke-slider::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--ion);border:2px solid var(--deep);cursor:pointer;}
 .icon-stroke-val{font-family:var(--mono);font-size:12px;color:var(--t2);flex-shrink:0;width:28px;text-align:right;}
+.export-format-group{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;padding:0 0;}
+.format-radio{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t2);cursor:pointer;user-select:none;}
+.format-radio input[type="radio"]{cursor:pointer;accent-color:var(--ion);}
 .icon-action-row{display:flex;gap:8px;margin-bottom:4px;}
 .size-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
 .size-preset-btn{height:30px;padding:0 12px;border-radius:8px;border:1px solid var(--glass-b);background:var(--glass);color:var(--t2);font-family:var(--mono);font-size:12px;cursor:pointer;transition:background .12s,color .12s,border-color .12s;}
@@ -402,7 +408,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
           <div class="settings-group-label">About</div>
           <div class="settings-row">
             <div class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
-            <div class="settings-text"><div class="settings-label">Fragment</div><div class="settings-sub">v1.1.3 · KV-backed · sovereign</div></div>
+            <div class="settings-text"><div class="settings-label">Fragment</div><div class="settings-sub">v1.1.4 · KV-backed · sovereign</div></div>
           </div>
         </div>
       </div>
@@ -477,6 +483,14 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
     <div class="modal-title">Download size</div>
     <div class="modal-desc">Pick a size or enter a custom value.</div>
     <div class="size-presets" id="sizePresets"></div>
+    <!-- Export format selection -->
+    <div class="export-format-group">
+      <div class="form-label" style="font-size:12px;color:var(--t3);margin-bottom:8px;">Format</div>
+      <label class="format-radio"><input type="radio" name="exportFormat" value="file" checked> SVG File</label>
+      <label class="format-radio"><input type="radio" name="exportFormat" value="inline"> Inline SVG</label>
+      <label class="format-radio"><input type="radio" name="exportFormat" value="data-uri-b64"> Data URI (Base64)</label>
+      <label class="format-radio"><input type="radio" name="exportFormat" value="data-uri-utf8"> Data URI (UTF-8)</label>
+    </div>
     <div class="size-custom-row">
       <input type="number" id="sizeCustomInput" min="8" max="2048" placeholder="96">
       <span>px</span>
@@ -707,13 +721,17 @@ function normalizeIconSvg(svgString, { color = "#4fc3f7", strokeWidth = 2 } = {}
   result = result.replace(/currentColor/g, color);
   // 2. Replace explicit fill values (except "none") with the color
   result = result.replace(/fill="(?!none)[^"]*"/g, 'fill="' + color + '"');
-  // 3. Inject or override stroke-width on the svg tag and all child elements
+  // 3. Inject stroke on svg tag if NO stroke attribute exists (catches old icons)
+  if (!result.includes('stroke=') && !result.includes('stroke:')) {
+    result = result.replace(/(<svg[^>]*)(>)/i, '$1 stroke="' + color + '"$2');
+  }
+  // 4. Inject or override stroke-width on the svg tag
   if (!result.includes('stroke-width')) {
     result = result.replace(/(<svg[^>]*)(>)/i, '$1 stroke-width="' + strokeWidth + '"$2');
   } else {
     result = result.replace(/stroke-width="[^"]*"/g, 'stroke-width="' + strokeWidth + '"');
   }
-  // 4. Ensure viewBox fallback if missing
+  // 5. Ensure viewBox exists (fallback to 0 0 24 24)
   if (!result.includes('viewBox')) {
     result = result.replace(/(<svg[^>]*)(>)/i, '$1 viewBox="0 0 24 24"$2');
   }
@@ -1606,6 +1624,29 @@ function closeSizePicker() {
   document.getElementById("sizeModal").classList.remove("open");
 }
 
+// ── Export format helpers ──────────────────────────────────
+function getInlineSvg(icon, color, strokeWidth, size) {
+  const normalized = normalizeIconSvg(icon.svg, { color, strokeWidth });
+  return normalized.replace(/^<svg/, '<svg width="' + size + '" height="' + size + '"');
+}
+
+function getDataUriBase64(icon, color, strokeWidth, size) {
+  const svg = getInlineSvg(icon, color, strokeWidth, size);
+  const base64 = btoa(unescape(encodeURIComponent(svg)));
+  return "data:image/svg+xml;base64," + base64;
+}
+
+function getDataUriUtf8(icon, color, strokeWidth, size) {
+  const svg = getInlineSvg(icon, color, strokeWidth, size);
+  return "data:image/svg+xml," + encodeURIComponent(svg);
+}
+
+function copyToClipboard(text, label) {
+  navigator.clipboard.writeText(text)
+    .then(() => toast("Copied " + label))
+    .catch(() => toast("Copy failed", false));
+}
+
 function doDownloadIcon() {
   const { icon, color, strokeWidth } = iconDetailState;
   if (!icon) return;
@@ -1618,7 +1659,28 @@ function doDownloadIcon() {
     return;
   }
 
-  // Normalize SVG with user's color + stroke width, then inject size attrs
+  const format = document.querySelector('input[name="exportFormat"]:checked').value;
+
+  switch (format) {
+    case 'inline':
+      handleFormatInline(icon, color, strokeWidth, size);
+      break;
+    case 'data-uri-b64':
+      handleFormatDataUriBase64(icon, color, strokeWidth, size);
+      break;
+    case 'data-uri-utf8':
+      handleFormatDataUriUtf8(icon, color, strokeWidth, size);
+      break;
+    case 'file':
+    default:
+      handleFormatFile(icon, color, strokeWidth, size);
+      break;
+  }
+
+  closeSizePicker();
+}
+
+function handleFormatFile(icon, color, strokeWidth, size) {
   let svgCode = normalizeIconSvg(icon.svg, { color, strokeWidth });
   svgCode = svgCode.replace(/^<svg/, '<svg width="' + size + '" height="' + size + '"');
   const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' + svgCode;
@@ -1626,7 +1688,6 @@ function doDownloadIcon() {
   const blob = new Blob([xml], { type: "image/svg+xml" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  // Filename: {id}-{hex without #}-{strokewidth}w-{size}px.svg
   const hexClean = color.replace("#", "");
   a.href = url;
   a.download = icon.id + "-" + hexClean + "-" + strokeWidth + "w-" + size + "px.svg";
@@ -1634,9 +1695,22 @@ function doDownloadIcon() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-
-  closeSizePicker();
   toast("Downloaded " + icon.id + "-" + size + "px.svg");
+}
+
+function handleFormatInline(icon, color, strokeWidth, size) {
+  const svg = getInlineSvg(icon, color, strokeWidth, size);
+  copyToClipboard(svg, "Inline SVG");
+}
+
+function handleFormatDataUriBase64(icon, color, strokeWidth, size) {
+  const uri = getDataUriBase64(icon, color, strokeWidth, size);
+  copyToClipboard(uri, "Data URI");
+}
+
+function handleFormatDataUriUtf8(icon, color, strokeWidth, size) {
+  const uri = getDataUriUtf8(icon, color, strokeWidth, size);
+  copyToClipboard(uri, "Data URI");
 }
 
 // ── Create icon modal ───────────────────────────────────
@@ -1859,8 +1933,10 @@ async function submitCreateIcon() {
   document.getElementById("ciGlobalErr").textContent = "";
 
   try {
+    // Normalize SVG before storing (inject currentColor + defaults)
+    const normalizedSvg = normalizeIconSvg(svg, { color: "currentColor", strokeWidth: 2 });
     await apiSend("/api/icon/" + encodeURIComponent(id), "POST", {
-      name, alias, category: cat, description: desc, tags, svg
+      name, alias, category: cat, description: desc, tags, svg: normalizedSvg
     });
     // Bust cache and refresh
     delete iconCache[id];
@@ -1877,6 +1953,13 @@ async function submitCreateIcon() {
 
 // PIN enter key
 document.getElementById("pinInput").addEventListener("keydown", e => { if (e.key === "Enter") submitPin(); });
+
+// Keyboard shortcuts
+document.addEventListener("keydown", e => {
+  if (e.shiftKey && e.key === "I" && state.activeTab === "icons") {
+    openCreateIconModal();
+  }
+});
 
 // ── Init ────────────────────────────────────────────────
 (async function init() {
