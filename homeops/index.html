@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <meta name="theme-color" content="#0d0f14"/>
-<title>Household Ops</title>
+<title>Household Ops // v1.2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
@@ -474,6 +474,12 @@ a { color:var(--accent-primary); text-decoration:none; }
 
 
 // =========================================================
+// TUTORIAL SYSTEM
+// =========================================================
+import { TUTORIAL_DATA } from './tutorial-text.js';
+import { Tutorial } from './tutorial.js';
+
+// =========================================================
 // ICONS
 // =========================================================
 const Icons = {
@@ -781,6 +787,13 @@ async function renderBoard(appEl,session){
 }
 
 async function handleComplete(task,session,appEl){
+  // Check if we're in tutorial phase 3
+  if(window.TUT_PHASE_3_PENDING){
+    window.TUT_PHASE_3_PENDING=false;
+    const callback=window.TUT_PHASE_3_CALLBACK;
+    if(callback)callback();
+  }
+
   const{household,player}=session;
   const result=calculatePoints(task,player),streak=computeStreakUpdate(player);
   const oldRank=getRankForPoints(player.totalPoints||0),newTotal=(player.totalPoints||0)+result.total,newRank=getRankForPoints(newTotal),isRankUp=newRank.level>oldRank.level;
@@ -1217,11 +1230,28 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/service-worker.js').catch(() => {});
 }
 
-// Boot — check session validity
-(function boot(){
+// Boot — check session and tutorial status
+(async function boot(){
   const s=getSession();
-  if(s.authenticated){App.navigate('board');}
-  else{App.navigate('auth');}
+  if(!s.authenticated){
+    App.navigate('auth');
+    return;
+  }
+
+  // Check if tutorial complete
+  try {
+    const tutStatus = await api(`/api/players/${s.player.id}/tutorial-status`);
+    if (!tutStatus.complete) {
+      navEl.classList.add('hidden');
+      await Tutorial.start(s);
+    }
+  } catch (e) {
+    // No tutorial status = new player, run tutorial
+    navEl.classList.add('hidden');
+    await Tutorial.start(s);
+  }
+
+  App.navigate('board');
 })();
 </script>
 </body>
