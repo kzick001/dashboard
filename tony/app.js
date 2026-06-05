@@ -14,6 +14,7 @@ const CONFIG = {
 // ── Short team name lookup ────────────────────────────
 const SHORT_NAMES = {
     'MLB_MIN':       'Twins',
+    'MLB_MIL':       'Brewers',
     'NHL_MIN':       'Wild',
     'NFL_MIN':       'Vikings',
     'NFL_GB':        'Packers',
@@ -27,6 +28,7 @@ const SHORT_NAMES = {
 // Team abbreviations for offseason pills
 const ABBREVS = {
     'MLB_MIN':       'MIN',
+    'MLB_MIL':       'MIL',
     'NHL_MIN':       'MIN',
     'NFL_MIN':       'MIN',
     'NFL_GB':        'GB',
@@ -49,6 +51,20 @@ const SPORT_COLORS = {
     'NCAAMHOK':  'bg-teal-900/60 text-teal-400 border-teal-700/40',
 };
 
+// ── AQI EPA categories ────────────────────────────────
+const AQI_CATEGORIES = [
+    { max: 50,       label: 'GOOD',                      ring: 'stroke-green-500',   text: 'text-green-400',   alert: false },
+    { max: 100,      label: 'MODERATE',                  ring: 'stroke-yellow-400',  text: 'text-yellow-400',  alert: false },
+    { max: 150,      label: 'UNHEALTHY FOR SENSITIVE',   ring: 'stroke-orange-500',  text: 'text-orange-400',  alert: true  },
+    { max: 200,      label: 'UNHEALTHY',                 ring: 'stroke-red-500',     text: 'text-red-400',     alert: true  },
+    { max: 300,      label: 'VERY UNHEALTHY',            ring: 'stroke-purple-500',  text: 'text-purple-400',  alert: true  },
+    { max: Infinity, label: 'HAZARDOUS',                 ring: 'stroke-fuchsia-600', text: 'text-fuchsia-400', alert: true  },
+];
+
+function getAQICategory(aqi) {
+    return AQI_CATEGORIES.find(c => aqi <= c.max) || AQI_CATEGORIES[AQI_CATEGORIES.length - 1];
+}
+
 const DOM = {};
 const STATE = {
     network: 'ONLINE',
@@ -67,12 +83,13 @@ function cacheDOM() {
         'comp-hour', 'comp-minute', 'comp-ampm', 'comp-date',
         'sys-status-dot', 'sys-status-text',
         'current-icon', 'current-temp', 'high-temp', 'low-temp',
-        'wind-speed', 'dew-point', 'aqi-value', 'aqi-ring',
+        'wind-speed', 'dew-point', 'aqi-value', 'aqi-ring', 'aqi-label',
         'sunrise-time', 'sunset-time',
         'alerts-container', 'alerts-text',
         'forecast-container',
         'sports-feed-container',
         'sports-offseason-container',
+        'wind-dir-icon', 'sync-badge',
     ];
     ids.forEach(id => {
         const el = document.getElementById(id);
@@ -81,6 +98,24 @@ function cacheDOM() {
 }
 
 // ── Clock ─────────────────────────────────────────────
+let lastSyncTime = Date.now();
+
+function updateSyncBadge() {
+    if (!DOM['sync-badge']) return;
+    const elapsed = Math.floor((Date.now() - lastSyncTime) / 1000);
+    if (elapsed < 90) {
+        DOM['sync-badge'].textContent = '∼ SYNCED';
+        DOM['sync-badge'].className = 'text-[8px] font-mono text-slate-700 tracking-widest';
+    } else if (elapsed < 3600) {
+        const mins = Math.floor(elapsed / 60);
+        DOM['sync-badge'].textContent = `∼ SYNCED ${mins}m AGO`;
+        DOM['sync-badge'].className = 'text-[8px] font-mono text-slate-600 tracking-widest';
+    } else {
+        DOM['sync-badge'].textContent = '∼ SYNC STALE';
+        DOM['sync-badge'].className = 'text-[8px] font-mono text-red-800 tracking-widest';
+    }
+}
+
 function updateClock() {
     const now = new Date();
     const parts = FORMATTERS.time.formatToParts(now);
@@ -94,6 +129,8 @@ function updateClock() {
 
     const dateStr = FORMATTERS.date.format(now).toUpperCase();
     if (DOM['comp-date'].textContent !== dateStr) DOM['comp-date'].textContent = dateStr;
+
+    updateSyncBadge();
 }
 
 // ── Network ───────────────────────────────────────────
@@ -132,11 +169,40 @@ function setNetworkState(status) {
 
 // ── Weather helpers ───────────────────────────────────
 function getIconSVG(code) {
-    const isRain   = [4000, 4200, 4001, 4201].includes(code);
-    const isCloudy = [1001, 1100, 1101, 1102].includes(code);
-    if (isRain)   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-full h-full text-blue-400"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m-4-2l-3 3m14-3l3 3m-9-15a3 3 0 100-6 3 3 0 000 6z"/></svg>`;
-    if (isCloudy) return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-full h-full text-slate-400"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>`;
+    const isRain      = [4000, 4200, 4001, 4201].includes(code);
+    const isSnow      = [5000, 5001, 5100, 5101].includes(code);
+    const isThunder   = [8000, 8001, 8002, 8003].includes(code);
+    const isCloudy    = [1001, 1100, 1101, 1102].includes(code);
+    const isPartly    = [1100, 1101].includes(code);
+    const isFog       = [2000, 2100].includes(code);
+
+    if (isThunder) return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-full h-full text-yellow-300"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10l-2 4h4l-2 4"/></svg>`;
+    if (isRain)    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-full h-full text-blue-400"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/><line x1="8" y1="22" x2="7" y2="24" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="22" x2="11" y2="24" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="22" x2="15" y2="24" stroke-width="2" stroke-linecap="round"/></svg>`;
+    if (isSnow)    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-full h-full text-cyan-300"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/><line x1="8" y1="22" x2="8" y2="24" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="21" x2="12" y2="24" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="22" x2="16" y2="24" stroke-width="2" stroke-linecap="round"/></svg>`;
+    if (isFog)     return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-full h-full text-slate-400"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/><line x1="3" y1="20" x2="21" y2="20" stroke-width="1.5" stroke-linecap="round"/><line x1="5" y1="22" x2="19" y2="22" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+    if (isCloudy)  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-full h-full text-slate-400"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>`;
+    // Default: sunny
     return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-full h-full text-yellow-400"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>`;
+}
+
+function getWeatherDescription(code, cloudCover) {
+    if ([8000, 8001, 8002, 8003].includes(code)) return 'THUNDER';
+    if ([4000, 4200, 4001, 4201].includes(code)) return 'RAIN';
+    if ([5000, 5001, 5100, 5101].includes(code)) return 'SNOW';
+    if ([6000, 6001, 6200, 6201, 7000, 7101, 7102].includes(code)) return 'SLEET';
+    if ([2000, 2100].includes(code)) return 'FOG';
+    if ([1001].includes(code)) return 'CLOUDY';
+    if ([1100, 1101, 1102].includes(code)) return cloudCover > 60 ? 'MOSTLY CLOUDY' : 'PARTLY CLOUDY';
+    if ([1000].includes(code)) return 'CLEAR';
+    // Fallback: use cloudCover only if no matching code
+    return cloudCover > 70 ? 'CLOUDY' : cloudCover > 30 ? 'PARTLY CLOUDY' : 'CLEAR';
+}
+
+function getPrecipLabel(probability, precipType) {
+    if (!probability || probability < 5) return `💧 0%`;
+    const typeMap = { 1: 'RAIN', 2: 'SNOW', 3: 'SLEET', 4: 'SLEET' };
+    const label = typeMap[precipType] || 'PRECIP';
+    return `💧 ${Math.round(probability)}% ${label}`;
 }
 
 // ── Alerts ────────────────────────────────────────────
@@ -168,6 +234,7 @@ async function updateAlerts() {
 async function updateWeather() {
     const payload = await fetchWithRetry(CONFIG.WEATHER_URL);
     if (!payload?.data?.timelines) return;
+    lastSyncTime = Date.now();
 
     const timelines = payload.data.timelines;
     const current   = timelines.find(t => t.timestep === 'current')?.intervals[0]?.values;
@@ -190,20 +257,35 @@ async function updateWeather() {
         DOM['dew-point'].textContent    = `${Math.round(current.dewPoint)}°`;
         DOM['wind-speed'].textContent   = `${Math.round(current.windSpeed)} MPH`;
         DOM['current-icon'].innerHTML   = getIconSVG(current.weatherCode);
+        if (DOM['wind-dir-icon'] && current.windDirection != null) {
+            DOM['wind-dir-icon'].style.transform = `rotate(${current.windDirection}deg)`;
+        }
     }
 
     if (airnow) {
         const currentAqi = airnow.primaryAQI || 0;
         DOM['aqi-value'].textContent = currentAqi > 0 ? currentAqi : '--';
         if (currentAqi > 0) {
+            const cat = getAQICategory(currentAqi);
             const fillPct = Math.min(currentAqi / 300, 1);
             DOM['aqi-ring'].style.strokeDashoffset = 364 - (364 * fillPct);
-            DOM['aqi-ring'].className = currentAqi > 100
-                ? 'stroke-red-500 transition-all duration-1000'
-                : currentAqi > 50
-                    ? 'stroke-yellow-500 transition-all duration-1000'
-                    : 'stroke-green-500 transition-all duration-1000';
-            STATE.aqiAlertText = currentAqi > 100 ? `AIR QUALITY ALERT: ${airnow.category.toUpperCase()}` : null;
+            DOM['aqi-ring'].className = `${cat.ring} transition-all duration-1000`;
+            if (DOM['aqi-label']) {
+                DOM['aqi-label'].textContent = cat.label;
+                DOM['aqi-label'].className = `text-[9px] font-mono tracking-widest uppercase mt-2 text-center leading-tight ${cat.text}`;
+            }
+            if (DOM['aqi-value']) {
+                DOM['aqi-value'].className = `text-5xl font-bold tracking-tighter ${cat.text}`;
+            }
+            STATE.aqiAlertText = cat.alert ? `AIR QUALITY ALERT: ${cat.label}` : null;
+        } else {
+            if (DOM['aqi-label']) {
+                DOM['aqi-label'].textContent = '--';
+                DOM['aqi-label'].className = 'text-[9px] font-mono tracking-widest uppercase mt-2 text-slate-600';
+            }
+            if (DOM['aqi-value']) {
+                DOM['aqi-value'].className = 'text-5xl font-bold text-white tracking-tighter';
+            }
         }
         renderAlerts();
     }
@@ -221,17 +303,19 @@ async function updateWeather() {
             const dateKey  = dateObj.toISOString().split('T')[0];
             const dayName  = new Intl.DateTimeFormat('en-US', { timeZone: CONFIG.TZ, weekday: 'short' }).format(dateObj).toUpperCase();
             const vals     = day.values;
-            const desc     = vals.cloudCover > 50 ? 'CLOUDY' : 'CLEAR';
+            const desc     = getWeatherDescription(vals.weatherCode, vals.cloudCover);
+            const precip   = getPrecipLabel(vals.precipitationProbability, vals.precipitationType);
             const dayAqi   = aqiForecastMap[dateKey] ? ` | AQI: ${aqiForecastMap[dateKey]}` : '';
 
             const div = document.createElement('div');
             div.className = 'flex flex-col items-center flex-1';
             div.innerHTML = `
-                <span class="text-sm font-mono text-slate-400 mb-2">${dayName}</span>
-                <div class="w-12 h-12 mb-2">${getIconSVG(vals.weatherCode)}</div>
-                <span class="text-xl font-mono text-white">${Math.round(vals.temperatureMax)}° / ${Math.round(vals.temperatureMin)}°</span>
-                <span class="text-[10px] text-slate-500 uppercase mt-1">${desc}</span>
-                <span class="text-[10px] font-mono text-blue-400/80 mt-1">💧 ${Math.round(vals.precipitationProbability)}% | UV: ${Math.round(vals.uvIndex)}${dayAqi}</span>
+                <span class="text-sm font-mono text-slate-400 mb-1">${dayName}</span>
+                <div class="w-12 h-12 mb-1">${getIconSVG(vals.weatherCode)}</div>
+                <span class="text-lg font-mono text-white leading-tight">${Math.round(vals.temperatureMax)}°</span>
+                <span class="text-xs font-mono text-slate-500">${Math.round(vals.temperatureMin)}°</span>
+                <span class="text-[9px] text-slate-500 uppercase mt-1 tracking-wide">${desc}</span>
+                <span class="text-[9px] font-mono text-blue-400/80 mt-1">${precip} | UV: ${Math.round(vals.uvIndex)}${dayAqi}</span>
             `;
             frag.appendChild(div);
         });
@@ -294,7 +378,7 @@ function buildFinalTile(team, key) {
         : `<span class="text-[10px] font-mono text-slate-600">No upcoming game</span>`;
 
     const div = document.createElement('div');
-    div.className = 'bg-slate-900/40 border border-slate-700/30 rounded-2xl p-4 flex flex-col gap-2';
+    div.className = 'bg-slate-900/40 border border-slate-700/30 rounded-2xl p-3 flex flex-col gap-1.5';
     div.innerHTML = `
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -329,7 +413,7 @@ function buildUpcomingTile(team, key) {
         : '';
 
     const div = document.createElement('div');
-    div.className = 'bg-slate-900/40 border border-slate-700/30 rounded-2xl p-4 flex flex-col gap-2';
+    div.className = 'bg-slate-900/40 border border-slate-700/30 rounded-2xl p-3 flex flex-col gap-1.5';
     div.innerHTML = `
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
