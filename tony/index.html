@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tony Kiosk V0.5.0</title>
+    <title>Tony Kiosk V1.0</title>
     
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 10 C20 10, 15 20, 15 20 C15 20, 25 25, 32 18 C39 25, 49 20, 49 20 C49 20, 44 10, 32 10 Z' fill='%2322c55e'/><circle cx='22' cy='30' r='10' fill='%23e30b5d'/><circle cx='42' cy='30' r='10' fill='%23e30b5d'/><circle cx='26' cy='45' r='10' fill='%23e30b5d'/><circle cx='38' cy='45' r='10' fill='%23e30b5d'/><circle cx='32' cy='52' r='10' fill='%23e30b5d'/><circle cx='32' cy='35' r='14' fill='%23e30b5d'/><text x='32' y='48' font-family='sans-serif' font-size='36' font-weight='bold' fill='%23fde047' text-anchor='middle'>T</text></svg>">
     
@@ -36,7 +36,7 @@
         @layer base {
             body {
                 @apply bg-black text-slate-200 overflow-hidden font-sans;
-                width: 1920px; height: 1080px; cursor: none;
+                width: 1440px; height: 900px; cursor: none;
             }
         }
         .bg-mesh {
@@ -48,7 +48,7 @@
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="relative flex flex-col p-10">
+<body class="relative flex flex-col p-6">
 
     <div class="fixed inset-0 z-0 bg-black overflow-hidden pointer-events-none">
         <div class="absolute inset-0 bg-mesh"></div>
@@ -56,18 +56,21 @@
 
     <!-- Header -->
     <div class="z-10 flex justify-between items-center mb-8 border-b border-slate-800/60 pb-4 flex-none">
-        <div class="text-[10px] font-mono tracking-[0.3em] text-slate-500 uppercase">Raspberry Tony // V0.5.0 Stable</div>
-        <div class="flex items-center gap-2">
-            <span id="sys-status-dot" class="text-green-500 animate-blink">●</span> 
-            <span id="sys-status-text" class="text-[10px] font-mono text-slate-400 uppercase tracking-widest">System Online</span>
+        <div class="text-[10px] font-mono tracking-[0.3em] text-slate-500 uppercase">Raspberry Tony // V1.0 Stable</div>
+        <div class="flex items-center gap-4">
+            <span id="sync-badge" class="text-[8px] font-mono text-slate-700 tracking-widest">∼ SYNCED</span>
+            <div class="flex items-center gap-2">
+                <span id="sys-status-dot" class="text-green-500 animate-blink">●</span> 
+                <span id="sys-status-text" class="text-[10px] font-mono text-slate-400 uppercase tracking-widest">System Online</span>
+            </div>
         </div>
     </div>
 
     <!-- Main Grid -->
-    <div class="grid grid-cols-16 gap-8 z-10 flex-1 h-full w-full min-h-0">
+    <div class="grid grid-cols-12 gap-6 z-10 flex-1 h-full w-full min-h-0">
         
         <!-- Left Column: Clock + Weather -->
-        <div class="col-span-4 flex flex-col gap-6 h-full">
+        <div class="col-span-3 flex flex-col gap-6 h-full">
             <!-- Clock -->
             <div class="flex flex-col items-center">
                 <div class="text-[8rem] font-light tracking-tighter text-white leading-none flex items-baseline justify-center">
@@ -98,7 +101,7 @@
                     <div class="flex flex-col gap-1">
                         <span class="text-xs font-mono text-slate-600 tracking-widest uppercase">Wind</span>
                         <div class="flex items-center gap-2 text-white font-mono text-2xl">
-                            <svg id="wind-dir-icon" class="w-6 h-6 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2.5" d="M12 2L16 10L12 8L8 10L12 2Z"></path></svg>
+                            <svg id="wind-dir-icon" class="w-6 h-6 text-cyan-400 transition-transform duration-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2.5" d="M12 2L16 10L12 8L8 10L12 2Z"></path></svg>
                             <span id="wind-speed">-- MPH</span>
                         </div>
                     </div>
@@ -113,12 +116,13 @@
                     <div class="relative w-32 h-32">
                         <svg class="w-full h-full transform -rotate-90" viewBox="0 0 128 128">
                             <circle cx="64" cy="64" r="58" fill="none" class="stroke-slate-800" stroke-width="8"></circle>
-                            <circle id="aqi-ring" cx="64" cy="64" r="58" fill="none" class="stroke-slate-600 transition-colors duration-1000" stroke-width="8" stroke-dasharray="364" stroke-dashoffset="364" stroke-linecap="round"></circle>
+                            <circle id="aqi-ring" cx="64" cy="64" r="58" fill="none" class="stroke-slate-600 transition-all duration-1000" stroke-width="8" stroke-dasharray="364" stroke-dashoffset="364" stroke-linecap="round"></circle>
                         </svg>
                         <div class="absolute inset-0 flex flex-col items-center justify-center">
                             <span id="aqi-value" class="text-5xl font-bold text-white tracking-tighter">--</span>
                         </div>
                     </div>
+                    <span id="aqi-label" class="text-[9px] font-mono tracking-widest uppercase mt-3 text-slate-600 text-center leading-tight">--</span>
                 </div>
 
                 <div class="flex justify-between items-center w-full mt-4 pt-4 border-t border-slate-800/50">
@@ -140,10 +144,10 @@
         </div>
 
         <!-- Center Column: Forecast + Sports -->
-        <div class="col-span-8 flex flex-col gap-5 h-full min-w-0">
+        <div class="col-span-6 flex flex-col gap-5 h-full min-w-0">
             
             <!-- Forecast -->
-            <div class="flex-none bg-slate-900/40 border border-slate-700/30 rounded-[2rem] p-6 flex flex-col">
+            <div class="flex-none bg-slate-900/40 border border-slate-700/30 rounded-[2rem] p-4 flex flex-col">
                 <div id="alerts-container" class="hidden w-full bg-red-900/50 border border-red-500/50 rounded-xl p-4 mb-4 flex items-center gap-3 text-red-200">
                     <svg class="w-6 h-6 flex-shrink-0 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     <span id="alerts-text" class="font-bold text-sm tracking-wide"></span>
@@ -153,10 +157,10 @@
             </div>
 
             <!-- Sports: Active Teams -->
-            <div class="flex-1 bg-slate-900/40 border border-slate-700/30 rounded-[2rem] p-6 flex flex-col min-h-0">
+            <div class="flex-1 bg-slate-900/40 border border-slate-700/30 rounded-[2rem] p-4 flex flex-col min-h-0">
                 <div class="text-xs font-mono text-slate-500 tracking-widest uppercase mb-4 border-b border-slate-800 pb-3">Sports Feed</div>
                 <!-- Active tiles: LIVE / UPCOMING / FINAL -->
-                <div id="sports-feed-container" class="grid grid-cols-3 gap-4 overflow-y-auto flex-1 content-start items-start"></div>
+                <div id="sports-feed-container" class="grid grid-cols-3 gap-4 overflow-y-auto flex-1 content-start auto-rows-fr"></div>
                 <!-- Offseason pill row -->
                 <div id="sports-offseason-container" class="flex flex-wrap gap-2 mt-4 pt-3 border-t border-slate-800/50"></div>
             </div>
@@ -164,9 +168,9 @@
         </div>
 
         <!-- Right Column: Hardware image -->
-        <div class="col-span-4 flex flex-col gap-6 h-full">
-            <div class="bg-slate-900/40 border border-slate-700/30 rounded-[2rem] flex-1 overflow-hidden flex items-center justify-center relative p-4">
-                <img src="tony-column.png" class="w-full h-full object-contain rounded-[1.5rem]" alt="Hardware Display" onerror="this.style.display='none'">
+        <div class="col-span-3 flex flex-col gap-6 h-full">
+            <div class="bg-slate-900/40 border border-slate-700/30 rounded-[2rem] flex-1 overflow-hidden flex items-center justify-center relative">
+                <img src="tony-column.png" class="w-full h-full object-cover rounded-[2rem]" alt="Hardware Display" onerror="this.style.display='none'">
                 <div class="absolute inset-0 flex items-center justify-center -z-10">
                     <span class="text-xs font-mono text-slate-700 tracking-widest uppercase">IMAGE SIGNAL LOST</span>
                 </div>
@@ -177,4 +181,4 @@
 
     <script src="app.js"></script>
 </body>
-</html> 
+</html>
