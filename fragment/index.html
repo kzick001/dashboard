@@ -6,10 +6,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Fragment">
-<title>Fragment // v1.1.7</title>
+<title>Fragment // v1.1.8</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%234fc3f7;stop-opacity:1'/><stop offset='100%25' style='stop-color:%23b39ddb;stop-opacity:1'/></linearGradient></defs><rect width='100' height='100' fill='%23030410'/><path d='M 30 25 L 70 25 L 70 75 L 30 75 Z' fill='none' stroke='url(%23g)' stroke-width='3' stroke-linejoin='round'/><circle cx='40' cy='45' r='4' fill='%234fc3f7'/><circle cx='60' cy='55' r='4' fill='%23b39ddb'/><line x1='40' y1='45' x2='60' y2='55' stroke='url(%23g)' stroke-width='2' opacity='0.6'/></svg>" type="image/svg+xml">
-<link rel="stylesheet" href="https://kzick.dev/fragment/styles.css?v=1.1.7">
+<link rel="stylesheet" href="https://kzick.dev/fragment/styles.css?v=1.1.8">
 </head>
 <body>
 <div class="ambient"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
@@ -131,7 +131,7 @@
           <div class="settings-group-label">About</div>
           <div class="settings-row">
             <div class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
-            <div class="settings-text"><div class="settings-label">Fragment</div><div class="settings-sub">v1.1.7 · KV-backed · sovereign</div></div>
+            <div class="settings-text"><div class="settings-label">Fragment</div><div class="settings-sub">v1.1.8 · KV-backed · sovereign</div></div>
           </div>
         </div>
       </div>
@@ -157,6 +157,7 @@
       <div class="sheet-title" id="iconSheetTitle">Icon</div>
       <div class="sheet-sub" id="iconSheetSub"></div>
     </div>
+    <button class="sheet-action-btn" id="iconEditBtn" onclick="openEditIconModal()" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>
     <button class="sheet-action-btn red" id="iconArchiveBtn" onclick="onIconArchiveClick()" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>Archive</button>
     <button class="sheet-close" onclick="closeIconSheet()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
@@ -230,8 +231,8 @@
 <!-- Create Icon Modal -->
 <div class="modal-bg" id="createIconModal">
   <div class="modal create-modal">
-    <div class="modal-title">Add New Icon</div>
-    <div class="form-field">
+    <div class="modal-title" id="ciModalTitle">Add New Icon</div>
+    <div class="form-field" id="ciIdField">
       <div class="form-label">Icon ID <span class="req">*</span></div>
       <input type="text" id="ciId" class="form-input" placeholder="chevron-right" autocomplete="off" oninput="onCiIdInput()">
       <div class="form-hint">Kebab-case only — lowercase letters, numbers, hyphens</div>
@@ -291,7 +292,7 @@
 <!-- Create Snippet Modal -->
 <div class="modal-bg" id="createSnippetModal">
   <div class="modal create-snippet-modal">
-    <div class="modal-title">Add New Snippet</div>
+    <div class="modal-title" id="csModalTitle">Add New Snippet</div>
     <div class="snippet-form-cols">
       <div class="snippet-form-left">
         <div class="form-field">
@@ -370,6 +371,7 @@
       <div class="sheet-title" id="sheetTitle">Snippet</div>
       <div class="sheet-sub" id="sheetSub"></div>
     </div>
+    <button class="sheet-action-btn" id="snippetEditBtn" onclick="openEditSnippetModal()" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>
     <button class="sheet-action-btn red" id="snippetArchiveBtn" onclick="onSnippetArchiveClick()" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>Archive</button>
     <button class="sheet-close" onclick="closeSheet()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
@@ -412,6 +414,11 @@ let state = {
   iconFilter: "all",
   iconSearch: "",
 };
+// Edit mode state — tracks whether create modals are in edit-vs-create mode
+let editMode = {
+  type: null,  // "snippet" | "icon" | null
+  id: null,    // ID of record being edited
+};
 let snippetCache = {}; // id/archiveKey -> full snippet
 let iconCache = {};    // id/archiveKey -> full icon record
 let timerInterval = null;
@@ -429,6 +436,7 @@ const ICON = {
   check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',
   alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
   download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+  pencil: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
 };
 
 // ── SVG Normalization ───────────────────────────────────
@@ -813,6 +821,8 @@ async function openSheet(encodedKey, isArchived) {
 
   const archBtn = document.getElementById("snippetArchiveBtn");
   if (archBtn) archBtn.style.display = (!isArchived && !state.locked) ? "flex" : "none";
+  const editBtn = document.getElementById("snippetEditBtn");
+  if (editBtn) editBtn.style.display = (!isArchived && !state.locked) ? "flex" : "none";
 
   switchPane("preview");
   document.getElementById("sheetBg").classList.add("open");
@@ -824,6 +834,8 @@ function closeSheet() {
   document.getElementById("liveFrame").srcdoc = "";
   const archBtn = document.getElementById("snippetArchiveBtn");
   if (archBtn) archBtn.style.display = "none";
+  const editBtn = document.getElementById("snippetEditBtn");
+  if (editBtn) editBtn.style.display = "none";
 }
 function switchPane(name) {
   document.querySelectorAll(".stab").forEach(t => t.classList.toggle("active", t.dataset.pane === name));
@@ -1270,6 +1282,8 @@ async function openIconDetail(encodedId, isArchived, encodedArchiveKey) {
 
   const archBtn = document.getElementById("iconArchiveBtn");
   if (archBtn) archBtn.style.display = (!isArchived && !state.locked) ? "flex" : "none";
+  const editBtn = document.getElementById("iconEditBtn");
+  if (editBtn) editBtn.style.display = (!isArchived && !state.locked) ? "flex" : "none";
 
   switchIconPane("preview");
   document.getElementById("iconSheetBg").classList.add("open");
@@ -1282,6 +1296,8 @@ function closeIconSheet() {
   iconDetailState.icon = null;
   const archBtn = document.getElementById("iconArchiveBtn");
   if (archBtn) archBtn.style.display = "none";
+  const editBtn = document.getElementById("iconEditBtn");
+  if (editBtn) editBtn.style.display = "none";
 }
 
 function switchIconPane(name) {
@@ -1600,6 +1616,13 @@ function onCiSvgInput() {
 
 function closeCreateIconModal() {
   document.getElementById("createIconModal").classList.remove("open");
+  if (editMode.type === "icon") {
+    editMode.type = null;
+    editMode.id = null;
+    document.getElementById("ciModalTitle").textContent = "Add New Icon";
+    document.getElementById("ciSubmitBtn").textContent = "Create Icon";
+    document.getElementById("ciIdField").style.display = "";
+  }
 }
 
 // ── Snippet Creation Modal ──────────────────────────────────────────────────
@@ -1621,6 +1644,12 @@ function openCreateSnippetModal() {
 
 function closeCreateSnippetModal() {
   document.getElementById("createSnippetModal").classList.remove("open");
+  if (editMode.type === "snippet") {
+    editMode.type = null;
+    editMode.id = null;
+    document.getElementById("csModalTitle").textContent = "Add New Snippet";
+    document.getElementById("csSubmitBtn").textContent = "Create Snippet";
+  }
 }
 
 function onCsCodeInput() {
@@ -1674,12 +1703,28 @@ async function submitCreateSnippet() {
 
   const btn = document.getElementById("csSubmitBtn");
   btn.disabled = true;
+  const isEdit = editMode.type === "snippet";
+  const targetId = isEdit ? editMode.id : Math.random().toString(36).substring(2, 11);
   try {
-    const id = Math.random().toString(36).substring(2, 11);
-    await apiSend("/api/snippet/" + encodeURIComponent(id), "POST", { id, name: title, category: cat, description: desc, htmlContent: code });
+    await apiSend("/api/snippet/" + encodeURIComponent(targetId), "POST", {
+      id: targetId, name: title, category: cat, description: desc, htmlContent: code
+    });
+    // On edit: bust cache and refresh detail sheet if still open
+    if (isEdit) {
+      delete snippetCache["snippet:" + targetId];
+      if (state.current && state.current.snip.id === targetId) {
+        const updated = await apiGet("/api/snippet/" + encodeURIComponent(targetId));
+        snippetCache["snippet:" + targetId] = updated;
+        state.current.snip = updated;
+        document.getElementById("sheetTitle").textContent = updated.name;
+        document.getElementById("sheetSub").textContent = updated.id + " · " + updated.category;
+        document.getElementById("liveFrame").srcdoc = updated.htmlContent || "";
+        document.getElementById("codeBlock").textContent = updated.htmlContent || "";
+      }
+    }
     closeCreateSnippetModal();
     await loadIndex();
-    toast("Snippet saved (" + code.length + " chars)");
+    toast(isEdit ? "Snippet updated" : "Snippet saved (" + code.length + " chars)");
   } catch (e) {
     document.getElementById("csGlobalErr").textContent = e.message;
     toast("Save failed: " + e.message, false);
@@ -1735,27 +1780,119 @@ async function submitCreateIcon() {
   }
 
   const btn = document.getElementById("ciSubmitBtn");
+  const isEdit = editMode.type === "icon";
+  const targetId = isEdit ? editMode.id : id;
   btn.disabled = true;
-  btn.textContent = "Creating…";
+  btn.textContent = isEdit ? "Updating…" : "Creating…";
   document.getElementById("ciGlobalErr").textContent = "";
 
   try {
     // Normalize SVG before storing (inject currentColor + defaults)
     const normalizedSvg = normalizeIconSvg(svg, { color: "currentColor", strokeWidth: 2 });
-    await apiSend("/api/icon/" + encodeURIComponent(id), "POST", {
+    await apiSend("/api/icon/" + encodeURIComponent(targetId), "POST", {
       name, alias, category: cat, description: desc, tags, svg: normalizedSvg
     });
     // Bust cache and refresh
-    delete iconCache[id];
+    delete iconCache[targetId];
     iconArchiveBundle = null;
     await loadIconIndex();
+    // If icon detail sheet is open for this icon, refresh it in place
+    if (isEdit && iconDetailState.icon && iconDetailState.icon.id === targetId) {
+      const updated = await apiGet("/api/icon/" + encodeURIComponent(targetId));
+      iconCache[targetId] = updated;
+      iconDetailState.icon = updated;
+      renderIconPreview();
+      renderIconCode();
+      renderIconInfo();
+      document.getElementById("iconSheetTitle").textContent = updated.name;
+      document.getElementById("iconSheetSub").textContent = updated.id + " · " + updated.category;
+    }
     closeCreateIconModal();
-    toast("Icon created: " + name);
+    toast(isEdit ? "Icon updated: " + name : "Icon created: " + name);
   } catch (e) {
     document.getElementById("ciGlobalErr").textContent = e.message;
     btn.disabled = false;
-    btn.textContent = "Create Icon";
+    btn.textContent = isEdit ? "Update Icon" : "Create Icon";
   }
+}
+
+// ── Edit modal openers ──────────────────────────────────
+function openEditSnippetModal() {
+  if (!state.current) return;
+  if (state.locked) { toast("Unlock first", false); return; }
+  const snip = state.current.snip;
+
+  editMode.type = "snippet";
+  editMode.id = snip.id;
+
+  // Pre-fill fields
+  document.getElementById("csTitle").value = snip.name || "";
+  document.getElementById("csCategory").value = snip.category || "";
+  document.getElementById("csDesc").value = snip.description || "";
+  document.getElementById("csCode").value = snip.htmlContent || "";
+  document.getElementById("csTitleErr").textContent = "";
+  document.getElementById("csCategoryErr").textContent = "";
+  document.getElementById("csCodeErr").textContent = "";
+  document.getElementById("csGlobalErr").textContent = "";
+
+  // Update modal chrome
+  document.getElementById("csModalTitle").textContent = "Edit Snippet";
+  document.getElementById("csSubmitBtn").textContent = "Update Snippet";
+  document.getElementById("csSubmitBtn").disabled = false;
+
+  // Trigger live preview with existing code
+  onCsCodeInput();
+
+  document.getElementById("createSnippetModal").classList.add("open");
+  setTimeout(() => document.getElementById("csTitle").focus(), 260);
+}
+
+function openEditIconModal() {
+  if (!iconDetailState.icon) return;
+  if (state.locked) { toast("Unlock first", false); return; }
+  const icon = iconDetailState.icon;
+
+  editMode.type = "icon";
+  editMode.id = icon.id;
+
+  // Rebuild dropdown to include any custom categories
+  rebuildCategoryDropdown();
+  const catExists = [...document.getElementById("ciCategory").options].some(o => o.value === icon.category);
+  if (!catExists && icon.category) {
+    if (!customCategories.includes(icon.category)) customCategories.push(icon.category);
+    rebuildCategoryDropdown();
+  }
+
+  // Pre-fill fields
+  document.getElementById("ciId").value = icon.id;
+  document.getElementById("ciName").value = icon.name || "";
+  document.getElementById("ciAlias").value = icon.alias || "";
+  document.getElementById("ciDesc").value = icon.description || "";
+  document.getElementById("ciTags").value = (icon.tags || []).join(", ");
+  document.getElementById("ciSvg").value = icon.svg || "";
+  document.getElementById("ciCategory").value = icon.category || "";
+  document.getElementById("ciCategoryCustom").style.display = "none";
+
+  // Clear errors
+  document.getElementById("ciIdErr").textContent = "";
+  document.getElementById("ciNameErr").textContent = "";
+  document.getElementById("ciCategoryErr").textContent = "";
+  document.getElementById("ciSvgErr").textContent = "";
+  document.getElementById("ciGlobalErr").textContent = "";
+
+  // Trigger SVG mini-preview
+  onCiSvgInput();
+
+  // Hide ID field — ID is immutable on edit
+  document.getElementById("ciIdField").style.display = "none";
+
+  // Update modal chrome
+  document.getElementById("ciModalTitle").textContent = "Edit Icon";
+  document.getElementById("ciSubmitBtn").textContent = "Update Icon";
+  document.getElementById("ciSubmitBtn").disabled = false;
+
+  document.getElementById("createIconModal").classList.add("open");
+  setTimeout(() => document.getElementById("ciName").focus(), 260);
 }
 
 // PIN enter key
