@@ -1820,6 +1820,7 @@ async function submitCreateIcon() {
 function openEditSnippetModal() {
   if (!state.current) return;
   if (state.locked) { toast("Unlock first", false); return; }
+  closeSheet();
   const snip = state.current.snip;
 
   editMode.type = "snippet";
@@ -1850,6 +1851,7 @@ function openEditSnippetModal() {
 function openEditIconModal() {
   if (!iconDetailState.icon) return;
   if (state.locked) { toast("Unlock first", false); return; }
+  closeIconSheet();
   const icon = iconDetailState.icon;
 
   editMode.type = "icon";
