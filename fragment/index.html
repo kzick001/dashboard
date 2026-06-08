@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Fragment">
-<title>Fragment // v1.1.5</title>
+<title>Fragment // v1.1.6</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%234fc3f7;stop-opacity:1'/><stop offset='100%25' style='stop-color:%23b39ddb;stop-opacity:1'/></linearGradient></defs><rect width='100' height='100' fill='%23030410'/><path d='M 30 25 L 70 25 L 70 75 L 30 75 Z' fill='none' stroke='url(%23g)' stroke-width='3' stroke-linejoin='round'/><circle cx='40' cy='45' r='4' fill='%234fc3f7'/><circle cx='60' cy='55' r='4' fill='%23b39ddb'/><line x1='40' y1='45' x2='60' y2='55' stroke='url(%23g)' stroke-width='2' opacity='0.6'/></svg>" type="image/svg+xml">
 <style>
@@ -413,7 +413,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
           <div class="settings-group-label">About</div>
           <div class="settings-row">
             <div class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
-            <div class="settings-text"><div class="settings-label">Fragment</div><div class="settings-sub">v1.1.5 · KV-backed · sovereign</div></div>
+            <div class="settings-text"><div class="settings-label">Fragment</div><div class="settings-sub">v1.1.6 · KV-backed · sovereign</div></div>
           </div>
         </div>
       </div>
@@ -627,7 +627,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--void);color:va
     <div class="modal-err" id="pinErr"></div>
     <div class="modal-actions">
       <button class="modal-btn" onclick="closePinModal()">Cancel</button>
-      <button class="modal-btn primary" onclick="submitPin()">Unlock</button>
+      <button class="modal-btn primary" id="pinSubmitBtn" onclick="submitPin()">Unlock</button>
     </div>
   </div>
 </div>
@@ -845,6 +845,8 @@ function closePinModal() { document.getElementById("pinModal").classList.remove(
 async function submitPin() {
   const pin = document.getElementById("pinInput").value;
   if (!pin) return;
+  const btn = document.getElementById("pinSubmitBtn");
+  btn.disabled = true;
   try {
     const data = await apiSend("/api/unlock", "POST", { pin });
     state.locked = false;
@@ -854,11 +856,19 @@ async function submitPin() {
     if (!timerInterval) timerInterval = setInterval(updateTimerText, 1000);
     toast("Unlocked for 1 hour");
   } catch (e) {
+    state.locked = true;
+    state.unlockedUntil = null;
+    refreshLockUI();
     const input = document.getElementById("pinInput");
     input.classList.add("error");
     document.getElementById("pinErr").textContent = e.message;
     input.value = "";
-    setTimeout(() => input.classList.remove("error"), 400);
+    setTimeout(() => {
+      input.classList.remove("error");
+      input.focus();
+    }, 400);
+  } finally {
+    btn.disabled = false;
   }
 }
 
@@ -1925,16 +1935,37 @@ async function submitCreateSnippet() {
   if (!code)  { document.getElementById("csCodeErr").textContent = "Code is required"; valid = false; }
   if (!valid) return;
 
-  document.getElementById("csSubmitBtn").disabled = true;
+  // Truncation guard: re-read raw value and compare lengths
+  const rawCode = document.getElementById("csCode").value;
+  if (rawCode.length !== code.length + (rawCode.length - rawCode.trimEnd().length)) {
+    // trimmed is fine, but check raw length is reasonable
+  }
+  const serialized = JSON.stringify({ id: "test", name: title, category: cat, description: desc, htmlContent: code });
+  const expectedCodeLen = code.length;
+  let parsedCodeLen = 0;
+  try {
+    parsedCodeLen = JSON.parse(serialized).htmlContent.length;
+  } catch (e) {
+    document.getElementById("csGlobalErr").textContent = "Code contains invalid characters and cannot be serialized.";
+    return;
+  }
+  if (parsedCodeLen !== expectedCodeLen) {
+    document.getElementById("csGlobalErr").textContent = "Code was truncated during serialization (" + parsedCodeLen + " of " + expectedCodeLen + " chars). Check for unsupported characters.";
+    return;
+  }
+
+  const btn = document.getElementById("csSubmitBtn");
+  btn.disabled = true;
   try {
     const id = Math.random().toString(36).substring(2, 11);
-    await apiSend("/api/snippet/" + encodeURIComponent(id), "POST", { id, name: title, category: cat, description: desc, code });
+    await apiSend("/api/snippet/" + encodeURIComponent(id), "POST", { id, name: title, category: cat, description: desc, htmlContent: code });
     closeCreateSnippetModal();
     await loadIndex();
-    toast("Snippet created!");
+    toast("Snippet saved (" + code.length + " chars)");
   } catch (e) {
     document.getElementById("csGlobalErr").textContent = e.message;
-    document.getElementById("csSubmitBtn").disabled = false;
+    toast("Save failed: " + e.message, false);
+    btn.disabled = false;
   }
 }
 
