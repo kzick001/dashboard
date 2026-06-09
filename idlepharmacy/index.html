@@ -39,6 +39,7 @@
         <span class="hstat-value" id="building-level">Lv. 1</span>
       </div>
     </div>
+    <button id="btn-shop" class="header-btn">⚗ Shop</button>
     <button id="btn-stats" class="header-btn">◷ Stats</button>
     <div class="save-status" id="save-status" data-status="saved">⬤ Saved</div>
   </header>
@@ -169,6 +170,7 @@
     <aside id="shop">
       <div class="shop-header">
         <h2>SHOP</h2>
+        <button class="modal-close" id="btn-shop-close">×</button>
       </div>
 
       <!-- STAFF ─────────────────────────────────────────────── -->
@@ -308,6 +310,9 @@
 
     </aside><!-- /shop -->
 
+    <!-- Shop backdrop — visible when #shop.is-open -->
+    <div id="shop-backdrop"></div>
+
   </main>
 
   <!-- ═══ OFFLINE MODAL ══════════════════════════════════════ -->
@@ -362,6 +367,12 @@
 
   <!-- ═══ TOAST CONTAINER ════════════════════════════════════ -->
   <div id="toast-container"></div>
+
+  <!-- ═══ MOBILE NAV BAR ════════════════════════════════════ -->
+  <nav id="mobile-nav">
+    <button class="mobile-nav-btn" id="mob-btn-shop">⚗ Shop</button>
+    <button class="mobile-nav-btn" id="mob-btn-stats">◷ Stats</button>
+  </nav>
 
 </div><!-- /app -->
 
@@ -1099,6 +1110,16 @@ function drawSparkline() {
     `<polyline points="${pts}" fill="none" stroke="#2f7d5b" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
 }
 
+function openShopModal() {
+  el('shop').classList.add('is-open');
+  el('shop-backdrop').classList.add('is-open');
+}
+
+function closeShopModal() {
+  el('shop').classList.remove('is-open');
+  el('shop-backdrop').classList.remove('is-open');
+}
+
 function wireShop() {
   el('btn-hire-fill'       ).addEventListener('click', () => hireWorker('fill'));
   el('btn-hire-check'      ).addEventListener('click', () => hireWorker('check'));
@@ -1124,6 +1145,11 @@ function wireShop() {
   el('stats-modal').addEventListener('click', (e) => {
     if (e.target.id === 'stats-modal') closeStatsModal();
   });
+  el('btn-shop'      ).addEventListener('click', openShopModal);
+  el('btn-shop-close').addEventListener('click', closeShopModal);
+  el('shop-backdrop' ).addEventListener('click', closeShopModal);
+  el('mob-btn-shop'  ).addEventListener('click', openShopModal);
+  el('mob-btn-stats' ).addEventListener('click', openStatsModal);
 }
 
 function openPrestigeModal() {
