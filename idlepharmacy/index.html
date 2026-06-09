@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Idle Pharmacy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══ HEADER ═══════════════════════════════════════════════ -->
+  <header id="header">
+    <div class="brand">
+      <span class="brand-mark">℞</span>
+      <span class="brand-name">IDLE PHARMACY</span>
+    </div>
+    <div class="header-stats">
+      <div class="hstat">
+        <span class="hstat-label">Balance</span>
+        <span class="hstat-value mono" id="money-display">$0.00</span>
+      </div>
+      <div class="hstat-sep"></div>
+      <div class="hstat">
+        <span class="hstat-label">Rate</span>
+        <span class="hstat-value mono" id="income-rate">$0.00/s</span>
+      </div>
+      <div class="hstat-sep"></div>
+      <div class="hstat">
+        <span class="hstat-label">Tier</span>
+        <span class="hstat-value" id="tier-name">Generics</span>
+      </div>
+      <div class="hstat-sep"></div>
+      <div class="hstat">
+        <span class="hstat-label">Building</span>
+        <span class="hstat-value" id="building-level">Lv. 1</span>
+      </div>
+    </div>
+    <button id="btn-stats" class="header-btn">◷ Stats</button>
+    <div class="save-status" id="save-status" data-status="saved">⬤ Saved</div>
+  </header>
+
+  <!-- ═══ MAIN ════════════════════════════════════════════════ -->
+  <main id="main">
+
+    <!-- Pipeline + Throughput Bar -->
+    <div id="pipeline-wrap">
+      <div id="pipeline">
+
+        <!-- FILL STAGE -->
+        <div class="stage-card" id="card-fill">
+          <div class="stage-label">FILL</div>
+          <div class="stage-role">Technicians</div>
+          <div class="stage-metrics">
+            <div class="metric active-metric">
+              <span class="metric-val" id="fill-active">1</span>
+              <span class="metric-key">Workers</span>
+            </div>
+            <div class="metric">
+              <span class="metric-val" id="fill-rate">0.20</span>
+              <span class="metric-key">rx/s</span>
+            </div>
+          </div>
+          <div class="stage-progress-wrap">
+            <div class="stage-progress" id="fill-progress"></div>
+          </div>
+        </div>
+
+        <!-- BUFFER: Fill → Check -->
+        <div class="flow-node">
+          <div class="flow-buffer">
+            <span class="buf-val mono" id="buf-fill">0.00</span>
+            <span class="buf-label">rx queued</span>
+          </div>
+          <div class="flow-arrow">→</div>
+        </div>
+
+        <!-- CHECK STAGE -->
+        <div class="stage-card" id="card-check">
+          <div class="stage-label">CHECK</div>
+          <div class="stage-role">Pharmacists</div>
+          <div class="stage-metrics">
+            <div class="metric active-metric">
+              <span class="metric-val" id="check-active">1</span>
+              <span class="metric-key">Workers</span>
+            </div>
+            <div class="metric">
+              <span class="metric-val" id="check-rate">0.33</span>
+              <span class="metric-key">rx/s</span>
+            </div>
+          </div>
+          <div class="stage-progress-wrap">
+            <div class="stage-progress" id="check-progress"></div>
+          </div>
+        </div>
+
+        <!-- BUFFER: Check → Pack -->
+        <div class="flow-node">
+          <div class="flow-buffer">
+            <span class="buf-val mono" id="buf-check">0.00</span>
+            <span class="buf-label">rx queued</span>
+          </div>
+          <div class="flow-arrow">→</div>
+        </div>
+
+        <!-- PACK STAGE -->
+        <div class="stage-card" id="card-pack">
+          <div class="stage-label">PACK</div>
+          <div class="stage-role">Packers</div>
+          <div class="stage-metrics">
+            <div class="metric active-metric">
+              <span class="metric-val" id="pack-active">1</span>
+              <span class="metric-key">Workers</span>
+            </div>
+            <div class="metric">
+              <span class="metric-val" id="pack-rate">0.10</span>
+              <span class="metric-key">rx/s</span>
+            </div>
+          </div>
+          <div class="stage-progress-wrap">
+            <div class="stage-progress" id="pack-progress"></div>
+          </div>
+        </div>
+
+      </div><!-- /pipeline -->
+
+      <!-- Pharmacy Floor -->
+      <div id="floor-wrap">
+        <div id="floor-roster">
+          <span class="roster-item">Stations <b id="r-stations">2/5</b></span>
+          <span class="roster-sep">·</span>
+          <span class="roster-item">Slots <b id="r-slots">4</b></span>
+          <span class="roster-sep">·</span>
+          <span class="roster-item">Staff
+            <b class="pip-fill"  id="r-fill">1</b>F
+            <b class="pip-check" id="r-check">1</b>C
+            <b class="pip-pack"  id="r-pack">1</b>P
+          </span>
+          <span class="roster-sep">·</span>
+          <span class="roster-item">Free <b id="r-free">1</b></span>
+          <span class="roster-sep">·</span>
+          <span class="roster-item">Tiers <b id="r-active-tiers">Generics</b></span>
+        </div>
+        <div id="floor-grid"><!-- station tiles injected by render() --></div>
+        <div class="floor-hint">Click tile to upgrade station · Click tier badge to change tier · Click worker pip to remove</div>
+      </div>
+
+      <!-- Throughput readout -->
+      <div id="throughput-bar">
+        <span class="throughput-label">THROUGHPUT</span>
+        <span class="mono" id="throughput-display">0.000 rx/s</span>
+        <span class="throughput-sep">·</span>
+        <span class="throughput-label">BOTTLENECK</span>
+        <span id="bottleneck-stage">✓ BALANCED</span>
+        <span class="throughput-sep">·</span>
+        <span class="throughput-label">TOTAL EARNED</span>
+        <span class="mono" id="total-earned">$0.00</span>
+        <span class="throughput-sep">·</span>
+        <span class="throughput-label">NEXT MILESTONE</span>
+        <span id="milestone-readout">+40% at 50 rx</span>
+      </div>
+
+    </div><!-- /pipeline-wrap -->
+
+    <!-- ═══ SHOP ══════════════════════════════════════════════ -->
+    <aside id="shop">
+      <div class="shop-header">
+        <h2>SHOP</h2>
+      </div>
+
+      <!-- STAFF ─────────────────────────────────────────────── -->
+      <div class="shop-section">
+        <div class="shop-section-title">Staff</div>
+
+        <div class="shop-item" id="si-hire-fill">
+          <div class="si-info">
+            <span class="si-name">Hire Technician</span>
+            <span class="si-desc" id="desc-hire-fill">+1 Fill worker</span>
+          </div>
+          <button class="btn-buy" id="btn-hire-fill" disabled>
+            <span class="btn-cost mono" id="cost-hire-fill">$--</span>
+          </button>
+        </div>
+
+        <div class="shop-item" id="si-hire-check">
+          <div class="si-info">
+            <span class="si-name">Hire Pharmacist</span>
+            <span class="si-desc" id="desc-hire-check">+1 Check worker</span>
+          </div>
+          <button class="btn-buy" id="btn-hire-check" disabled>
+            <span class="btn-cost mono" id="cost-hire-check">$--</span>
+          </button>
+        </div>
+
+        <div class="shop-item" id="si-hire-pack">
+          <div class="si-info">
+            <span class="si-name">Hire Packer</span>
+            <span class="si-desc" id="desc-hire-pack">+1 Pack worker</span>
+          </div>
+          <button class="btn-buy" id="btn-hire-pack" disabled>
+            <span class="btn-cost mono" id="cost-hire-pack">$--</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- STATIONS ──────────────────────────────────────────── -->
+      <div class="shop-section">
+        <div class="shop-section-title">Stations</div>
+
+        <div class="shop-item" id="si-station">
+          <div class="si-info">
+            <span class="si-name">Build Station</span>
+            <span class="si-desc" id="desc-station">+1 station (2 slots)</span>
+          </div>
+          <button class="btn-buy" id="btn-station" disabled>
+            <span class="btn-cost mono" id="cost-station">$--</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- INFRASTRUCTURE ────────────────────────────────────── -->
+      <div class="shop-section">
+        <div class="shop-section-title">Infrastructure</div>
+
+        <div class="shop-item" id="si-building">
+          <div class="si-info">
+            <span class="si-name">Upgrade Building</span>
+            <span class="si-desc" id="building-desc">Floor cap → 8 stations</span>
+          </div>
+          <button class="btn-buy btn-building" id="btn-building" disabled>
+            <span class="btn-cost mono" id="cost-building">$--</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- DRUG TIERS ─────────────────────────────────────────── -->
+      <div class="shop-section">
+        <div class="shop-section-title">Drug Tiers</div>
+
+        <div class="shop-item" id="si-tier-2">
+          <div class="si-info">
+            <span class="si-name">Brand Name</span>
+            <span class="si-desc">$40/rx · 4× value</span>
+          </div>
+          <button class="btn-buy" id="btn-tier-2" disabled>
+            <span class="btn-cost mono">$1.00K</span>
+          </button>
+        </div>
+
+        <div class="shop-item" id="si-tier-3">
+          <div class="si-info">
+            <span class="si-name">Specialty Rx</span>
+            <span class="si-desc">$160/rx · 16× value</span>
+          </div>
+          <button class="btn-buy" id="btn-tier-3" disabled>
+            <span class="btn-cost mono">$25.00K</span>
+          </button>
+        </div>
+
+        <div class="shop-item" id="si-tier-4">
+          <div class="si-info">
+            <span class="si-name">Biologics</span>
+            <span class="si-desc">$640/rx · 64× value</span>
+          </div>
+          <button class="btn-buy" id="btn-tier-4" disabled>
+            <span class="btn-cost mono">$500.00K</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- MARKETING ──────────────────────────────────────────── -->
+      <div class="shop-section">
+        <div class="shop-section-title">Marketing</div>
+
+        <div class="shop-item" id="si-marketing">
+          <div class="si-info">
+            <span class="si-name">Run Ad Campaign</span>
+            <span class="si-desc" id="desc-marketing">Demand 1.00× income</span>
+          </div>
+          <button class="btn-buy" id="btn-marketing" disabled>
+            <span class="btn-cost mono" id="cost-marketing">$--</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- UPGRADES ───────────────────────────────────────────── -->
+      <div class="shop-section">
+        <div class="shop-section-title">Upgrades</div>
+        <div id="upgrade-list"><!-- injected by render() --></div>
+      </div>
+
+      <!-- PRESTIGE (hidden until $1M lifetime) ───────────────── -->
+      <div class="shop-section" id="si-prestige-section" hidden>
+        <div class="shop-section-title">Prestige</div>
+        <div class="shop-item" id="si-prestige">
+          <div class="si-info">
+            <span class="si-name">Sell the Franchise</span>
+            <span class="si-desc" id="desc-prestige">Reset for a permanent bonus</span>
+          </div>
+          <button class="btn-buy btn-prestige" id="btn-prestige">
+            <span class="btn-cost mono" id="cost-prestige">+0.0×</span>
+          </button>
+        </div>
+      </div>
+
+    </aside><!-- /shop -->
+
+  </main>
+
+  <!-- ═══ OFFLINE MODAL ══════════════════════════════════════ -->
+  <div id="offline-modal" class="modal hidden">
+    <div class="modal-box">
+      <div class="modal-icon">℞</div>
+      <h2 class="modal-title">Welcome Back</h2>
+      <p class="modal-body">Your pharmacy kept running.<br>You earned while away:</p>
+      <div class="modal-earned mono" id="offline-earned">$0.00</div>
+      <button class="modal-btn" id="btn-offline-close">Collect</button>
+    </div>
+  </div>
+
+  <!-- ═══ PRESTIGE MODAL ═════════════════════════════════════ -->
+  <div id="prestige-modal" class="modal hidden">
+    <div class="modal-box">
+      <div class="modal-icon">℞</div>
+      <h2 class="modal-title">Sell the Franchise?</h2>
+      <p class="modal-body">Reset your pharmacy in exchange for a permanent income multiplier.</p>
+      <div class="modal-earned mono" id="prestige-preview">→ 1.50×</div>
+      <div class="prestige-actions">
+        <button class="modal-btn ghost" id="btn-prestige-cancel">Cancel</button>
+        <button class="modal-btn" id="btn-prestige-confirm">Confirm Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ STATION MODAL ══════════════════════════════════════ -->
+  <div id="station-modal" class="modal hidden">
+    <div class="modal-box station-modal-box">
+      <button class="modal-close" id="btn-station-close">×</button>
+      <div class="station-modal-head">
+        <h2 class="modal-title" id="station-modal-title">Station 1</h2>
+        <div class="tier-picker" id="station-tier-picker"><!-- tier chips injected --></div>
+      </div>
+      <div class="upgrade-tracks" id="station-upgrade-tracks"><!-- tracks injected --></div>
+    </div>
+  </div>
+
+  <!-- ═══ STATS MODAL ════════════════════════════════════════ -->
+  <div id="stats-modal" class="modal hidden">
+    <div class="modal-box stats-modal-box">
+      <button class="modal-close" id="btn-stats-close">×</button>
+      <h2 class="modal-title">Pharmacy Stats</h2>
+      <div class="stats-grid" id="stats-grid"><!-- stat rows injected --></div>
+      <div class="stats-chart-wrap">
+        <div class="stats-chart-label">Cumulative Earnings</div>
+        <svg id="stats-spark" viewBox="0 0 320 80" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TOAST CONTAINER ════════════════════════════════════ -->
+  <div id="toast-container"></div>
+
+</div><!-- /app -->
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════
+//  IDLE PHARMACY — Phase 1: State + Persistence + Bare Render
+//
+//  Phase 2 hooks: advance(dt), startGameLoop(), progress bar animation
+//  Phase 3 hooks: buyStaff(st), buyStation(st), buyBuilding(), buyTier(n)
+//  Phase 4 hooks: applyOffline()
+// ═══════════════════════════════════════════════════════════════
+
+// ─── CONFIG ───────────────────────────────────────────────────
+const VERSION          = 3;
+const SAVE_KEY         = 'idleRx_save';
+const AUTOSAVE_MS      = 10_000;
+const SLOTS_PER_STATION = 2;
+
+const CONFIG = {
+  tickMs:        250,
+  offlineCapMs:  24 * 60 * 60 * 1000,
+
+  // Asymmetric base seconds-per-rx per active slot. Check fastest, Pack slowest.
+  stageSpeed:    { check: 3, fill: 5, pack: 10 },
+
+  staffBase:     { fill: 10, check: 25, pack: 10 },
+  staffScale:    1.15,
+
+  stationBase:   100,      // cost of the FIRST purchased station (3rd overall)
+  stationScale:  4,
+
+  buildingBase:  150,
+  buildingScale: 8,
+
+  // Marketing
+  marketingBase:  500,
+  marketingScale: 3.5,
+  marketingStep:  0.25,    // +25% income per level
+
+  // Prestige
+  prestigeUnlock: 1_000_000,
+
+  // One-time passive upgrades
+  upgrades: [
+    { id: 'efficientWorkflow', name: 'Efficient Workflow', desc: 'Fill +20% throughput',  cost: 5_000,  stage: 'fill'  },
+    { id: 'peerReview',        name: 'Peer Review',        desc: 'Check +20% throughput', cost: 15_000, stage: 'check' },
+    { id: 'betterPackaging',   name: 'Better Packaging',   desc: 'Pack +20% throughput',  cost: 2_000,  stage: 'pack'  },
+    { id: 'expeditedShipping', name: 'Expedited Shipping', desc: 'Income +10% flat',      cost: 50_000, stage: null    },
+  ],
+  upgradeBuff: 1.20,
+
+  tiers: [
+    { name: 'Generics',  value: 10,  unlock: 0       },
+    { name: 'Brand',     value: 40,  unlock: 1_000   },
+    { name: 'Specialty', value: 160, unlock: 25_000  },
+    { name: 'Biologics', value: 640, unlock: 500_000 },
+  ],
+
+  // ── Phase 3: per-tier processing modifiers (multiplier on stageSpeed; higher = slower)
+  tierSpeedMod: {
+    1: { fill: 1.0, check: 1.0, pack: 1.0 },
+    2: { fill: 1.0, check: 1.3, pack: 1.0 },
+    3: { fill: 1.2, check: 1.6, pack: 1.4 },
+    4: { fill: 1.3, check: 2.2, pack: 1.8 },
+  },
+
+  // ── Phase 3: per-station upgrade tracks
+  stationUpgrades: {
+    dispensing:   { stage: 'fill',  base: 250,  scale: 5, stepPct: 0.15,
+                    names: ['Calibrated Counting Trays', 'Automated Tablet Counter', 'Robotic Dispensing Cell'] },
+    verification: { stage: 'check', base: 400,  scale: 5, stepPct: 0.15,
+                    names: ['Dual-Monitor Terminal', 'Barcode Scan-Verify', 'Intelligent DUR Alerts'] },
+    fulfillment:  { stage: 'pack',  base: 200,  scale: 5, stepPct: 0.15,
+                    names: ['Supply Dispensers', 'Automated Label Printer', 'Conveyor Sortation'] },
+  },
+  stationUpgradeMaxLevel: 3,
+
+  // ── Phase 3: stats time-series sampler
+  statsSampleMs:   30_000,
+  statsMaxSamples: 400,
+};
+
+// ─── STATE ────────────────────────────────────────────────────
+let state;
+
+function newState() {
+  return {
+    version:       VERSION,
+    money:         0,
+    buildingLevel: 1,
+    drugTier:      1,
+
+    stations: [
+      { tier: 1, slots: ['fill', null],    upgrades: { dispensing: 0, verification: 0, fulfillment: 0 } },
+      { tier: 1, slots: ['check', 'pack'], upgrades: { dispensing: 0, verification: 0, fulfillment: 0 } },
+    ],
+
+    // Per-tier buffers keyed by tier number. Lazily ensured by ensureBuffers().
+    buffers: {
+      1: { fillToCheck: 0, checkToPack: 0 },
+      2: { fillToCheck: 0, checkToPack: 0 },
+      3: { fillToCheck: 0, checkToPack: 0 },
+      4: { fillToCheck: 0, checkToPack: 0 },
+    },
+
+    speedMult:      1.0,
+    marketingLevel: 0,
+    upgrades:       {},
+    milestones: [
+      { id: 'rx50',    threshold: 50,     pct: 0.40, claimed: false },
+      { id: 'rx250',   threshold: 250,    pct: 0.30, claimed: false },
+      { id: 'rx1k',    threshold: 1000,   pct: 0.25, claimed: false },
+      { id: 'rx5k',    threshold: 5000,   pct: 0.20, claimed: false },
+      { id: 'rx25k',   threshold: 25000,  pct: 0.15, claimed: false },
+      { id: 'rx100k',  threshold: 100000, pct: 0.10, claimed: false },
+    ],
+    totalRxFilled: 0,
+
+    prestigeCount:      0,
+    prestigeMultiplier: 1.0,
+
+    totalEarned:  0,
+    lastSaved:    Date.now(),
+    statsSamples: [],
+    playStartedAt: Date.now(),
+  };
+}
+
+// ─── PERSISTENCE ──────────────────────────────────────────────
+function save() {
+  state.lastSaved = Date.now();
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    setSaveStatus('saved');
+  } catch (e) {
+    console.warn('[IdleRx] Save failed:', e);
+    setSaveStatus('error');
+  }
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return newState();
+    const parsed = JSON.parse(raw);
+    if (!parsed) return newState();
+    if (parsed.version === VERSION) return ensureShape(parsed);
+    if (parsed.version === 2) return migrateV2toV3(parsed);
+    if (parsed.version === 1) return migrateV2toV3(migrateV1toV2(parsed));
+    console.info('[IdleRx] Unknown save version. Starting fresh.');
+    return newState();
+  } catch (e) {
+    console.warn('[IdleRx] Corrupt save. Starting fresh.', e);
+    return newState();
+  }
+}
+
+function migrateV2toV3(old) {
+  const s = newState();
+  s.money              = old.money              || 0;
+  s.totalEarned        = old.totalEarned        || 0;
+  s.totalRxFilled      = old.totalRxFilled      || 0;
+  s.buildingLevel      = old.buildingLevel      || 1;
+  s.drugTier           = old.drugTier           || 1;
+  s.speedMult          = old.speedMult          || 1.0;
+  s.marketingLevel     = old.marketingLevel     || 0;
+  s.upgrades           = old.upgrades           || {};
+  s.prestigeCount      = old.prestigeCount      || 0;
+  s.prestigeMultiplier = old.prestigeMultiplier || 1.0;
+
+  // Stations: add tier (default 1) + empty upgrades. Preserve slots.
+  if (Array.isArray(old.stations) && old.stations.length) {
+    s.stations = old.stations.map(st => ({
+      tier: 1,
+      slots: Array.isArray(st.slots) ? st.slots.slice(0, SLOTS_PER_STATION) : [null, null],
+      upgrades: { dispensing: 0, verification: 0, fulfillment: 0 },
+    }));
+  }
+
+  // Old global buffers → dump into tier-1 buffer (everything was tier 1).
+  s.buffers = { 1:{fillToCheck:0,checkToPack:0}, 2:{fillToCheck:0,checkToPack:0},
+                3:{fillToCheck:0,checkToPack:0}, 4:{fillToCheck:0,checkToPack:0} };
+  if (old.buffers && typeof old.buffers.fillToCheck === 'number') {
+    s.buffers[1].fillToCheck = old.buffers.fillToCheck || 0;
+    s.buffers[1].checkToPack = old.buffers.checkToPack || 0;
+  }
+
+  // Milestones: carry claimed flags forward by id.
+  if (Array.isArray(old.milestones)) {
+    for (const m of s.milestones) {
+      const prev = old.milestones.find(o => o.id === m.id);
+      if (prev && prev.claimed) m.claimed = true;
+    }
+  }
+  return s;
+}
+
+// ensureShape: defensively backfill missing P3 fields on a V3 save.
+function ensureShape(s) {
+  if (!s.buffers || typeof s.buffers !== 'object') s.buffers = {};
+  for (const t of [1,2,3,4]) {
+    if (!s.buffers[t]) s.buffers[t] = { fillToCheck: 0, checkToPack: 0 };
+  }
+  if (!Array.isArray(s.statsSamples)) s.statsSamples = [];
+  if (!s.playStartedAt) s.playStartedAt = Date.now();
+  for (const st of (s.stations || [])) {
+    if (st.tier == null) st.tier = 1;
+    if (!st.upgrades) st.upgrades = { dispensing: 0, verification: 0, fulfillment: 0 };
+  }
+  return s;
+}
+
+function migrateV1toV2(old) {
+  const s = newState();
+  s.money         = old.money         || 0;
+  s.totalEarned   = old.totalEarned   || 0;
+  s.buildingLevel = old.buildingLevel || 1;
+  s.drugTier      = old.drugTier      || 1;
+  s.buffers       = old.buffers       || s.buffers;
+
+  // Flatten old per-stage staff into a worker list, pack into 2-slot stations.
+  const workers = [];
+  for (const role of ['fill', 'check', 'pack']) {
+    const n = old.stages?.[role]?.staff || 0;
+    for (let i = 0; i < n; i++) workers.push(role);
+  }
+  const cap = maxStations(s.buildingLevel);
+  const stations = [];
+  for (let i = 0; i < workers.length && stations.length < cap; i += SLOTS_PER_STATION) {
+    stations.push({ slots: [workers[i] ?? null, workers[i + 1] ?? null] });
+  }
+  if (stations.length === 0) stations.push({ slots: ['fill', null] });
+  s.stations = stations;
+  return s;
+}
+
+function setSaveStatus(status) {
+  const el = document.getElementById('save-status');
+  el.dataset.status = status;
+  const labels = { saved: '⬤ Saved', error: '⬤ Error', saving: '⬤ Saving…' };
+  el.textContent = labels[status] ?? '⬤ —';
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────
+// Number formatter: 1234567 → "1.23M"
+function fmt(n) {
+  if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
+  if (n >= 1e9)  return (n / 1e9 ).toFixed(2) + 'B';
+  if (n >= 1e6)  return (n / 1e6 ).toFixed(2) + 'M';
+  if (n >= 1e3)  return (n / 1e3 ).toFixed(2) + 'K';
+  return n.toFixed(2);
+}
+
+// Cost formulas
+function staffCost(role) {
+  return Math.floor(CONFIG.staffBase[role] * (CONFIG.staffScale ** activeSlots(role)));
+}
+function stationCost() {
+  return Math.floor(CONFIG.stationBase * (CONFIG.stationScale ** (state.stations.length - 2)));
+}
+function buildingCost() {
+  return Math.floor(CONFIG.buildingBase * (CONFIG.buildingScale ** (state.buildingLevel - 1)));
+}
+function marketingCost() {
+  return Math.floor(CONFIG.marketingBase * (CONFIG.marketingScale ** state.marketingLevel));
+}
+
+// Station pool helpers
+function maxStations(level) {
+  return (level + 1) * (level + 2) / 2 + 2;
+}
+function totalSlots()  { return state.stations.length * SLOTS_PER_STATION; }
+function filledSlots() {
+  let n = 0;
+  for (const st of state.stations) for (const slot of st.slots) if (slot) n++;
+  return n;
+}
+function freeSlots()   { return totalSlots() - filledSlots(); }
+function findEmptySlot() {
+  for (let s = 0; s < state.stations.length; s++)
+    for (let i = 0; i < state.stations[s].slots.length; i++)
+      if (state.stations[s].slots[i] === null) return { s, i };
+  return null;
+}
+
+const STAGE_BUFF = { fill: 'efficientWorkflow', check: 'peerReview', pack: 'betterPackaging' };
+
+function marketingMult() { return 1 + state.marketingLevel * CONFIG.marketingStep; }
+
+function incomeMult() {
+  let m = marketingMult() * state.prestigeMultiplier;
+  if (state.upgrades.expeditedShipping) m *= 1.10;
+  return m;
+}
+
+// ─── PIPELINE ANALYTICS (Phase 3 — per-tier) ──────────────────
+
+// Ensure all four tier buffers exist (defensive).
+function ensureBuffers() {
+  for (const t of [1,2,3,4]) {
+    if (!state.buffers[t]) state.buffers[t] = { fillToCheck: 0, checkToPack: 0 };
+  }
+}
+
+// Per-station upgrade buff for a given stage.
+function stationStageBuff(station, stage) {
+  let buff = 1;
+  for (const key in CONFIG.stationUpgrades) {
+    const def = CONFIG.stationUpgrades[key];
+    if (def.stage === stage) {
+      const lvl = (station.upgrades && station.upgrades[key]) || 0;
+      buff *= (1 + lvl * def.stepPct);
+    }
+  }
+  return buff;
+}
+
+// Per-slot rate for one station's slot of a given role.
+// Accounts for tier speed mod, global speedMult, global stage upgrade, per-station upgrade buff.
+function slotRate(station, role) {
+  const tier    = station.tier || 1;
+  const tierMod = CONFIG.tierSpeedMod[tier][role];
+  const seconds = CONFIG.stageSpeed[role] * tierMod * state.speedMult;
+  let rate      = 1 / seconds;
+  const gBuff   = STAGE_BUFF[role];
+  if (gBuff && state.upgrades[gBuff]) rate *= CONFIG.upgradeBuff;
+  rate *= stationStageBuff(station, role);
+  return rate;
+}
+
+// stageRate(tier, role): total rx/s capacity, summed over stations of that tier.
+function stageRate(tier, role) {
+  let total = 0;
+  for (const st of state.stations) {
+    if ((st.tier || 1) !== tier) continue;
+    const per = slotRate(st, role);
+    for (const slot of st.slots) if (slot === role) total += per;
+  }
+  return total;
+}
+
+// activeSlots(role[, tier]): count slots of a role, optionally filtered by tier.
+function activeSlots(role, tier = null) {
+  let n = 0;
+  for (const st of state.stations) {
+    if (tier != null && (st.tier || 1) !== tier) continue;
+    for (const slot of st.slots) if (slot === role) n++;
+  }
+  return n;
+}
+
+// Which tiers currently have at least one worker of any role.
+function activeTiers() {
+  const set = new Set();
+  for (const st of state.stations) {
+    if (st.slots.some(s => s)) set.add(st.tier || 1);
+  }
+  return [...set].sort((a,b) => a-b);
+}
+
+// Aggregate stage rate across all tiers (for pipeline card display).
+function aggStageRate(role) {
+  let total = 0;
+  for (const t of [1,2,3,4]) total += stageRate(t, role);
+  return total;
+}
+
+// Per-tier throughput = min of its three stage rates.
+function tierThroughput(tier) {
+  return Math.min(stageRate(tier,'fill'), stageRate(tier,'check'), stageRate(tier,'pack'));
+}
+
+// Total throughput = sum of per-tier throughputs.
+function calcThroughput() {
+  let total = 0;
+  for (const t of activeTiers()) total += tierThroughput(t);
+  return total;
+}
+
+// Income rate = Σ tierThroughput(T) × tierValue(T) × incomeMult()
+function calcIncomeRate() {
+  let raw = 0;
+  for (const t of activeTiers()) raw += tierThroughput(t) * CONFIG.tiers[t-1].value;
+  return raw * incomeMult();
+}
+
+// Returns { tier, keys: [...] } for the most-constrained active tier.
+function bottleneckInfo() {
+  const tiers = activeTiers();
+  if (!tiers.length) return { tier: null, keys: [] };
+  let worstTier = tiers[0], worstTp = Infinity;
+  for (const t of tiers) {
+    const tp = tierThroughput(t);
+    if (tp < worstTp) { worstTp = tp; worstTier = t; }
+  }
+  const r = { fill: stageRate(worstTier,'fill'), check: stageRate(worstTier,'check'), pack: stageRate(worstTier,'pack') };
+  const min = Math.min(r.fill, r.check, r.pack);
+  const slow = Object.keys(r).filter(k => r[k] === min);
+  return { tier: worstTier, keys: slow.length < 3 ? slow : [] };
+}
+
+function bottleneckKeys() {
+  return bottleneckInfo().keys;
+}
+
+function findBottleneck() {
+  const bn = bottleneckInfo();
+  if (!bn.tier || !bn.keys.length) return '✓ BALANCED';
+  const tierName = CONFIG.tiers[bn.tier-1].name;
+  return `${bn.keys.map(s => s.toUpperCase()).join(', ')} · ${tierName}`;
+}
+
+// Returns the next unclaimed milestone + progress, or null if all claimed.
+function nextMilestone() {
+  const rx = state.totalRxFilled || 0;
+  for (const m of state.milestones) {
+    if (!m.claimed) return { ...m, remaining: Math.max(0, m.threshold - rx), current: rx };
+  }
+  return null;
+}
+
+// ─── ENGINE ───────────────────────────────────────────────────
+function advance(dt) {
+  ensureBuffers();
+  let income = 0;
+
+  for (const tier of [1,2,3,4]) {
+    const fillRate  = stageRate(tier, 'fill');
+    const checkRate = stageRate(tier, 'check');
+    const packRate  = stageRate(tier, 'pack');
+    const buf = state.buffers[tier];
+
+    // FILL — infinite upstream; produces into this tier's fill→check buffer
+    buf.fillToCheck += fillRate * dt;
+
+    // CHECK — drains fill→check into check→pack
+    const checked = Math.min(checkRate * dt, buf.fillToCheck);
+    buf.fillToCheck -= checked;
+    buf.checkToPack += checked;
+
+    // PACK — drains check→pack; money lands here
+    const packed = Math.min(packRate * dt, buf.checkToPack);
+    buf.checkToPack -= packed;
+
+    income += packed * CONFIG.tiers[tier-1].value;
+    state.totalRxFilled = (state.totalRxFilled || 0) + packed;
+  }
+
+  income *= incomeMult();
+  state.money       += income;
+  state.totalEarned  = (state.totalEarned || 0) + income;
+
+  checkMilestones();
+}
+
+function checkMilestones() {
+  for (const m of (state.milestones || [])) {
+    if (!m.claimed && state.totalRxFilled >= m.threshold) {
+      m.claimed = true;
+      state.speedMult *= (1 - m.pct);
+      queueToast(`✦ ${m.threshold} prescriptions filled — processing speed +${Math.round(m.pct * 100)}%`);
+    }
+  }
+}
+
+// Real toast — replaces the 2A stub
+function queueToast(msg) {
+  const c = el('toast-container');
+  if (!c) return;
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  c.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3000);
+}
+
+// startGameLoop: 250ms delta-timed tick. Framerate-independent.
+function startGameLoop() {
+  let last = Date.now();
+  setInterval(() => {
+    const now = Date.now();
+    advance((now - last) / 1000);
+    last = now;
+    render();
+  }, CONFIG.tickMs);
+}
+
+// ─── SHOP ACTIONS ─────────────────────────────────────────────
+
+function hireWorker(role) {
+  const cost = staffCost(role);
+  if (state.money < cost) return;
+  const slot = findEmptySlot();
+  if (!slot) return;
+  state.money -= cost;
+  state.stations[slot.s].slots[slot.i] = role;
+  save(); render();
+}
+
+// Remove worker from specific slot (no refund), freeing it for reallocation.
+function removeWorker(s, i) {
+  if (!state.stations[s] || state.stations[s].slots[i] == null) return;
+  state.stations[s].slots[i] = null;
+  save(); render();
+}
+
+// Cycle a station's tier to the next unlocked tier (wraps). drugTier = highest unlocked.
+function cycleStationTier(sIdx) {
+  const st = state.stations[sIdx];
+  if (!st) return;
+  let next = (st.tier || 1) + 1;
+  if (next > state.drugTier) next = 1;
+  st.tier = next;
+  save(); render();
+}
+
+// Direct set — used by station modal tier picker.
+function setStationTier(sIdx, tier) {
+  const st = state.stations[sIdx];
+  if (!st) return;
+  if (tier < 1 || tier > state.drugTier) return;
+  st.tier = tier;
+  save(); render();
+}
+
+// Cost of the NEXT level of an upgrade track on a specific station.
+function stationUpgradeCost(sIdx, trackKey) {
+  const def = CONFIG.stationUpgrades[trackKey];
+  const lvl = (state.stations[sIdx]?.upgrades?.[trackKey]) || 0;
+  return Math.floor(def.base * (def.scale ** lvl));
+}
+
+function buyStationUpgrade(sIdx, trackKey) {
+  const st  = state.stations[sIdx];
+  const def = CONFIG.stationUpgrades[trackKey];
+  if (!st || !def) return;
+  const lvl = st.upgrades[trackKey] || 0;
+  if (lvl >= CONFIG.stationUpgradeMaxLevel) return;
+  const cost = stationUpgradeCost(sIdx, trackKey);
+  if (state.money < cost) return;
+  state.money -= cost;
+  st.upgrades[trackKey] = lvl + 1;
+  save(); render();
+  if (typeof refreshStationModal === 'function') refreshStationModal();
+}
+
+function buyStation() {
+  const cost = stationCost();
+  if (state.money < cost) return;
+  if (state.stations.length >= maxStations(state.buildingLevel)) return;
+  state.money -= cost;
+  state.stations.push({ tier: 1, slots: Array(SLOTS_PER_STATION).fill(null), upgrades: { dispensing: 0, verification: 0, fulfillment: 0 } });
+  save(); render();
+}
+
+function buyBuilding() {
+  const cost = buildingCost();
+  if (state.money < cost) return;
+  state.money -= cost;
+  state.buildingLevel++;
+  save(); render();
+}
+
+function buyTier(n) {
+  const tier = CONFIG.tiers[n - 1];
+  if (state.drugTier >= n)      return;
+  if (state.drugTier !== n - 1) return;
+  if (state.money < tier.unlock) return;
+  state.money -= tier.unlock;
+  state.drugTier = n;
+  save(); render();
+}
+
+function buyMarketing() {
+  const cost = marketingCost();
+  if (state.money < cost) return;
+  state.money -= cost;
+  state.marketingLevel++;
+  save(); render();
+}
+
+function buyUpgrade(id) {
+  const def = CONFIG.upgrades.find(u => u.id === id);
+  if (!def || state.upgrades[id]) return;
+  if (state.money < def.cost) return;
+  state.money -= def.cost;
+  state.upgrades[id] = true;
+  save(); render();
+}
+
+function prestigeAvailable() { return state.totalEarned >= CONFIG.prestigeUnlock; }
+
+function calcPrestigeMult() {
+  return 1 + (Math.log10(Math.max(state.totalEarned, 1)) - 5) * 0.5;
+}
+
+function doPrestige() {
+  if (!prestigeAvailable()) return;
+  const keep = {
+    totalEarned:        state.totalEarned,
+    prestigeCount:      state.prestigeCount + 1,
+    prestigeMultiplier: Math.max(state.prestigeMultiplier, calcPrestigeMult()),
+  };
+  state = Object.assign(newState(), keep);
+  save(); render();
+}
+
+// ─── STATION MODAL ────────────────────────────────────────────
+let openStationIdx = null;
+
+function openStationModal(sIdx) {
+  openStationIdx = sIdx;
+  refreshStationModal();
+  el('station-modal').classList.remove('hidden');
+}
+
+function closeStationModal() {
+  openStationIdx = null;
+  el('station-modal').classList.add('hidden');
+}
+
+function refreshStationModal() {
+  if (openStationIdx == null) return;
+  const sIdx = openStationIdx;
+  const st = state.stations[sIdx];
+  if (!st) { closeStationModal(); return; }
+
+  el('station-modal-title').textContent = `Station ${sIdx + 1}`;
+
+  // ── Tier picker chips (unlocked tiers only) ──
+  const tp = el('station-tier-picker');
+  tp.innerHTML = '';
+  for (let t = 1; t <= state.drugTier; t++) {
+    const chip = document.createElement('button');
+    chip.className = `tier-chip tier-${t}` + ((st.tier || 1) === t ? ' selected' : '');
+    chip.textContent = CONFIG.tiers[t-1].name;
+    chip.addEventListener('click', () => { setStationTier(sIdx, t); refreshStationModal(); });
+    tp.appendChild(chip);
+  }
+
+  // ── Upgrade tracks ──
+  const tracksEl = el('station-upgrade-tracks');
+  tracksEl.innerHTML = '';
+  for (const key in CONFIG.stationUpgrades) {
+    const def   = CONFIG.stationUpgrades[key];
+    const lvl   = st.upgrades[key] || 0;
+    const maxed = lvl >= CONFIG.stationUpgradeMaxLevel;
+    const cost  = stationUpgradeCost(sIdx, key);
+    const afford = !maxed && state.money >= cost;
+    const nextName = maxed ? def.names[def.names.length - 1] : def.names[lvl];
+
+    const row = document.createElement('div');
+    row.className = 'upgrade-track';
+    row.innerHTML =
+      `<div class="track-head">` +
+        `<span class="track-stage track-${def.stage}">${def.stage.toUpperCase()}</span>` +
+        `<span class="track-level">Lv ${lvl}/${CONFIG.stationUpgradeMaxLevel}</span>` +
+      `</div>` +
+      `<div class="track-name">${nextName}</div>` +
+      `<div class="track-buff">+${Math.round(lvl * def.stepPct * 100)}% now` +
+        (maxed ? '' : ` → +${Math.round((lvl + 1) * def.stepPct * 100)}%`) +
+      `</div>` +
+      `<button class="btn-buy track-buy" data-track="${key}" ${(maxed || !afford) ? 'disabled' : ''}>` +
+        `<span class="btn-cost mono">${maxed ? 'MAXED' : '$' + fmt(cost)}</span>` +
+      `</button>`;
+    tracksEl.appendChild(row);
+  }
+  tracksEl.querySelectorAll('[data-track]').forEach(b =>
+    b.addEventListener('click', () => buyStationUpgrade(sIdx, b.dataset.track)));
+}
+
+// wireShop: all static handlers wired once on init.
+// Upgrade buttons wired dynamically in render().
+// ─── STATS SAMPLER + MODAL ────────────────────────────────────
+
+function pushStatsSample() {
+  if (!Array.isArray(state.statsSamples)) state.statsSamples = [];
+  state.statsSamples.push({ t: Date.now(), earned: state.totalEarned || 0 });
+  const over = state.statsSamples.length - CONFIG.statsMaxSamples;
+  if (over > 0) state.statsSamples.splice(0, over);
+}
+
+function startStatsSampler() {
+  pushStatsSample();
+  setInterval(pushStatsSample, CONFIG.statsSampleMs);
+}
+
+function openStatsModal()  { renderStats(); el('stats-modal').classList.remove('hidden'); }
+function closeStatsModal() { el('stats-modal').classList.add('hidden'); }
+
+function renderStats() {
+  const grid   = el('stats-grid');
+  const playMs = Date.now() - (state.playStartedAt || Date.now());
+  const rows   = [
+    ['Lifetime Earned',  '$' + fmt(state.totalEarned || 0)],
+    ['Current Balance',  '$' + fmt(state.money)],
+    ['Total Rx Filled',  fmt(state.totalRxFilled || 0)],
+    ['Income Rate',      '$' + fmt(calcIncomeRate()) + '/s'],
+    ['Throughput',       calcThroughput().toFixed(3) + ' rx/s'],
+    ['Active Tiers',     activeTiers().map(t => CONFIG.tiers[t-1].name).join(', ') || '—'],
+    ['Stations',         `${state.stations.length}/${maxStations(state.buildingLevel)}`],
+    ['Building Level',   'Lv. ' + state.buildingLevel],
+    ['Marketing Level',  state.marketingLevel],
+    ['Prestige Count',   state.prestigeCount],
+    ['Prestige Mult',    state.prestigeMultiplier.toFixed(2) + '×'],
+    ['Time Played',      fmtDuration(playMs)],
+  ];
+  grid.innerHTML = rows.map(([k, v]) =>
+    `<div class="stat-row"><span class="stat-k">${k}</span><span class="stat-v mono">${v}</span></div>`
+  ).join('');
+  drawSparkline();
+}
+
+function drawSparkline() {
+  const svg     = el('stats-spark');
+  const samples = state.statsSamples || [];
+  const W = 320, H = 80, pad = 4;
+  if (samples.length < 2) {
+    svg.innerHTML = `<text x="160" y="44" text-anchor="middle" fill="#9b8568" font-size="11" font-family="Inter,sans-serif">Collecting data…</text>`;
+    return;
+  }
+  const xs   = samples.map(s => s.t);
+  const ys   = samples.map(s => s.earned);
+  const minX = xs[0], maxX = xs[xs.length - 1];
+  const minY = 0,     maxY = Math.max(...ys, 1);
+  const sx = v => pad + (W - 2*pad) * (maxX === minX ? 0 : (v - minX) / (maxX - minX));
+  const sy = v => (H - pad) - (H - 2*pad) * (maxY === minY ? 0 : (v - minY) / (maxY - minY));
+  const pts     = samples.map(s => `${sx(s.t).toFixed(1)},${sy(s.earned).toFixed(1)}`).join(' ');
+  const areaPts = `${pad},${H - pad} ${pts} ${W - pad},${H - pad}`;
+  svg.innerHTML =
+    `<polygon points="${areaPts}" fill="rgba(47,125,91,0.12)" stroke="none"/>` +
+    `<polyline points="${pts}" fill="none" stroke="#2f7d5b" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+}
+
+function wireShop() {
+  el('btn-hire-fill'       ).addEventListener('click', () => hireWorker('fill'));
+  el('btn-hire-check'      ).addEventListener('click', () => hireWorker('check'));
+  el('btn-hire-pack'       ).addEventListener('click', () => hireWorker('pack'));
+  el('btn-station'         ).addEventListener('click', buyStation);
+  el('btn-building'        ).addEventListener('click', buyBuilding);
+  el('btn-marketing'       ).addEventListener('click', buyMarketing);
+  el('btn-tier-2'          ).addEventListener('click', () => buyTier(2));
+  el('btn-tier-3'          ).addEventListener('click', () => buyTier(3));
+  el('btn-tier-4'          ).addEventListener('click', () => buyTier(4));
+  el('btn-prestige'        ).addEventListener('click', openPrestigeModal);
+  el('btn-prestige-cancel' ).addEventListener('click', () => el('prestige-modal').classList.add('hidden'));
+  el('btn-prestige-confirm').addEventListener('click', () => {
+    el('prestige-modal').classList.add('hidden');
+    doPrestige();
+  });
+  el('btn-station-close').addEventListener('click', closeStationModal);
+  el('station-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'station-modal') closeStationModal();
+  });
+  el('btn-stats'      ).addEventListener('click', openStatsModal);
+  el('btn-stats-close').addEventListener('click', closeStatsModal);
+  el('stats-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'stats-modal') closeStatsModal();
+  });
+}
+
+function openPrestigeModal() {
+  if (!prestigeAvailable()) return;
+  el('prestige-preview').textContent = `→ ${calcPrestigeMult().toFixed(2)}×`;
+  el('prestige-modal').classList.remove('hidden');
+}
+
+// ─── OFFLINE PROGRESS ─────────────────────────────────────────
+// Simulates time elapsed since last save using advance().
+// 1000 samples keeps it fast; the continuous-rate model is accurate at any dt.
+function applyOffline() {
+  const elapsed = Math.min(Date.now() - state.lastSaved, CONFIG.offlineCapMs);
+  if (elapsed < 1000) return null;  // under 1s — not worth showing modal
+  const moneyBefore = state.money;
+  const SAMPLES = 1000;
+  const step = (elapsed / 1000) / SAMPLES;  // seconds per sample
+  for (let i = 0; i < SAMPLES; i++) advance(step);
+  return { elapsed, earned: state.money - moneyBefore };
+}
+
+function fmtDuration(ms) {
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+function showOfflineModal(earned, elapsed) {
+  el('offline-modal').querySelector('.modal-body').innerHTML =
+    `Away for <strong>${fmtDuration(elapsed)}</strong>. Your pharmacy kept running:`;
+  el('offline-earned').textContent = '$' + fmt(earned);
+  el('offline-modal').classList.remove('hidden');
+  // { once: true } — auto-removes listener after first click, no stacking
+  el('btn-offline-close').addEventListener('click', () => {
+    el('offline-modal').classList.add('hidden');
+  }, { once: true });
+}
+
+// Tiny DOM shorthand
+function el(id) { return document.getElementById(id); }
+
+// ─── RENDER ───────────────────────────────────────────────────
+function render() {
+  const tier = CONFIG.tiers[state.drugTier - 1];
+  const bk   = bottleneckKeys();
+
+  // ── Header ──
+  el('money-display' ).textContent = '$' + fmt(state.money);
+  el('income-rate'   ).textContent = '$' + fmt(calcIncomeRate()) + '/s';
+  el('tier-name'     ).textContent = tier.name;
+  el('building-level').textContent = 'Lv. ' + state.buildingLevel;
+
+  // ── Per-stage AGGREGATE metrics (summed across all tiers) ──
+  for (const role of ['fill', 'check', 'pack']) {
+    el(`${role}-active`).textContent = activeSlots(role);
+    el(`${role}-rate`  ).textContent = aggStageRate(role).toFixed(2);
+  }
+
+  // ── Buffers (aggregate across all tiers for display) ──
+  const aggFillToCheck = [1,2,3,4].reduce((s,t) => s + (state.buffers[t]?.fillToCheck || 0), 0);
+  const aggCheckToPack = [1,2,3,4].reduce((s,t) => s + (state.buffers[t]?.checkToPack || 0), 0);
+  el('buf-fill' ).textContent = aggFillToCheck.toFixed(2);
+  el('buf-check').textContent = aggCheckToPack.toFixed(2);
+
+  // ── Throughput bar ──
+  el('throughput-display').textContent = calcThroughput().toFixed(3) + ' rx/s';
+  el('bottleneck-stage'  ).textContent = findBottleneck();
+  el('total-earned'      ).textContent = '$' + fmt(state.totalEarned || 0);
+
+  // ── Milestone readout ──
+  const nm = nextMilestone();
+  el('milestone-readout').textContent = nm
+    ? `+${Math.round(nm.pct*100)}% at ${fmt(nm.threshold)} rx (${fmt(nm.remaining)} to go)`
+    : 'All milestones claimed ✓';
+
+  // ── Visual state classes ──
+  for (const role of ['fill', 'check', 'pack']) {
+    el(`card-${role}`).classList.toggle('is-active',     activeSlots(role) > 0);
+    el(`card-${role}`).classList.toggle('is-bottleneck', bk.includes(role));
+  }
+  el('buf-fill' ).closest('.flow-buffer').classList.toggle('has-rx', aggFillToCheck > 0.01);
+  el('buf-check').closest('.flow-buffer').classList.toggle('has-rx', aggCheckToPack > 0.01);
+  el('throughput-bar').classList.toggle('is-balanced', bk.length === 0);
+
+  // ── Floor roster ──
+  el('r-stations').textContent = `${state.stations.length}/${maxStations(state.buildingLevel)}`;
+  el('r-slots'   ).textContent = totalSlots();
+  el('r-fill'    ).textContent = activeSlots('fill');
+  el('r-check'   ).textContent = activeSlots('check');
+  el('r-pack'    ).textContent = activeSlots('pack');
+  el('r-free'    ).textContent = freeSlots();
+  const atEl = el('r-active-tiers');
+  if (atEl) {
+    const ts = activeTiers();
+    atEl.textContent = ts.length ? ts.map(t => CONFIG.tiers[t-1].name).join(', ') : '—';
+  }
+
+  // ── Floor grid (rebuild tiles each render) ──
+  const grid = el('floor-grid');
+  grid.innerHTML = '';
+  state.stations.forEach((station, sIdx) => {
+    const tier = station.tier || 1;
+    const tile = document.createElement('div');
+    tile.className = 'station-tile';
+
+    // Tier badge — click cycles tier; stopPropagation so tile click doesn't also open modal
+    const badge = document.createElement('button');
+    badge.className = `tier-badge tier-${tier}`;
+    badge.textContent = tier;
+    badge.title = `${CONFIG.tiers[tier-1].name} — click to change tier`;
+    badge.addEventListener('click', (e) => { e.stopPropagation(); cycleStationTier(sIdx); });
+    tile.appendChild(badge);
+
+    // Slot pips
+    const pips = document.createElement('div');
+    pips.className = 'tile-pips';
+    station.slots.forEach((role, iIdx) => {
+      const pip = document.createElement('button');
+      pip.className = 'slot-pip' + (role ? ` pip-${role}` : ' pip-empty');
+      pip.title = role ? `${role} — click to remove` : 'empty slot';
+      pip.textContent = role ? role[0].toUpperCase() : '+';
+      if (role) pip.addEventListener('click', (e) => { e.stopPropagation(); removeWorker(sIdx, iIdx); });
+      else pip.disabled = true;
+      pips.appendChild(pip);
+    });
+    tile.appendChild(pips);
+
+    // Upgrade indicator dots
+    const upTotal = (station.upgrades.dispensing||0) + (station.upgrades.verification||0) + (station.upgrades.fulfillment||0);
+    if (upTotal > 0) {
+      const up = document.createElement('div');
+      up.className = 'tile-upgrades';
+      up.textContent = '★'.repeat(Math.min(upTotal, 9));
+      tile.appendChild(up);
+    }
+
+    // Click tile body → open station modal
+    tile.addEventListener('click', () => openStationModal(sIdx));
+    grid.appendChild(tile);
+  });
+
+  // ── Station buy ──
+  const atStationCap = state.stations.length >= maxStations(state.buildingLevel);
+  el('cost-station').textContent = '$' + fmt(stationCost());
+  el('desc-station').textContent = atStationCap
+    ? `${state.stations.length}/${maxStations(state.buildingLevel)} — upgrade building`
+    : '+1 station (2 slots)';
+  el('btn-station').disabled = atStationCap || state.money < stationCost();
+  el('si-station' ).classList.toggle('can-afford', !atStationCap && state.money >= stationCost());
+
+  // ── Building ──
+  el('cost-building').textContent = '$' + fmt(buildingCost());
+  el('btn-building' ).disabled    = state.money < buildingCost();
+  el('building-desc').textContent = `Floor cap → ${maxStations(state.buildingLevel + 1)} stations`;
+  el('si-building'  ).classList.toggle('can-afford', state.money >= buildingCost());
+
+  // ── Hire buttons ──
+  for (const role of ['fill', 'check', 'pack']) {
+    const cost   = staffCost(role);
+    const noSlot = freeSlots() <= 0;
+    el(`cost-hire-${role}`).textContent = '$' + fmt(cost);
+    el(`btn-hire-${role}` ).disabled    = noSlot || state.money < cost;
+    el(`desc-hire-${role}`).textContent = noSlot ? 'No open slot — build a station' : `+1 worker`;
+    el(`si-hire-${role}`  ).classList.toggle('can-afford', !noSlot && state.money >= cost);
+  }
+
+  // ── Tier buttons ──
+  for (let n = 2; n <= 4; n++) {
+    const t           = CONFIG.tiers[n - 1];
+    const owned       = state.drugTier >= n;
+    const prevMissing = state.drugTier < n - 1;
+    const canAfford   = state.money >= t.unlock;
+    const btn = el(`btn-tier-${n}`);
+    btn.disabled = owned || prevMissing || !canAfford;
+    btn.querySelector('.btn-cost').textContent = owned ? 'OWNED' : '$' + fmt(t.unlock);
+    el(`si-tier-${n}`).classList.toggle('can-afford', !owned && !prevMissing && canAfford);
+    el(`si-tier-${n}`).classList.toggle('is-locked',  prevMissing);
+  }
+
+  // ── Marketing ──
+  el('cost-marketing').textContent = '$' + fmt(marketingCost());
+  el('desc-marketing').textContent = `Demand ${marketingMult().toFixed(2)}× income`;
+  el('btn-marketing' ).disabled    = state.money < marketingCost();
+  el('si-marketing'  ).classList.toggle('can-afford', state.money >= marketingCost());
+
+  // ── Upgrades (rebuild list) ──
+  const ul = el('upgrade-list');
+  ul.innerHTML = '';
+  for (const u of CONFIG.upgrades) {
+    const owned  = !!state.upgrades[u.id];
+    const afford = !owned && state.money >= u.cost;
+    const item   = document.createElement('div');
+    item.className = 'shop-item' + (afford ? ' can-afford' : '');
+    item.innerHTML =
+      `<div class="si-info">` +
+        `<span class="si-name">${u.name}</span>` +
+        `<span class="si-desc">${u.desc}</span>` +
+      `</div>` +
+      `<button class="btn-buy" data-upg="${u.id}" ${(owned || !afford) ? 'disabled' : ''}>` +
+        `<span class="btn-cost mono">${owned ? 'OWNED' : '$' + fmt(u.cost)}</span>` +
+      `</button>`;
+    ul.appendChild(item);
+  }
+  ul.querySelectorAll('[data-upg]').forEach(b =>
+    b.addEventListener('click', () => buyUpgrade(b.dataset.upg)));
+
+  // ── Prestige ──
+  const psSection = el('si-prestige-section');
+  if (prestigeAvailable()) {
+    psSection.hidden = false;
+    const m = calcPrestigeMult();
+    el('cost-prestige').textContent = `→ ${m.toFixed(2)}×`;
+    el('desc-prestige').textContent = state.prestigeCount > 0
+      ? `Reset · ${state.prestigeCount} prior reset(s)`
+      : 'Reset for a permanent bonus';
+  } else {
+    psSection.hidden = true;
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────────────
+function init() {
+  state = load();
+
+  // Apply offline earnings before first render so opening balance is accurate
+  const offline = applyOffline();
+
+  render();
+
+  // Autosave on interval + tab close
+  setInterval(save, AUTOSAVE_MS);
+  window.addEventListener('beforeunload', save);
+
+  wireShop();
+  startGameLoop();
+  startStatsSampler();
+
+  // Modal fires after loop is running; non-blocking, close button dismisses it
+  if (offline && offline.earned >= 0.01) {
+    showOfflineModal(offline.earned, offline.elapsed);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
