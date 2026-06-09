@@ -216,6 +216,7 @@ body::after {
   flex: 1;
   overflow: hidden;
   min-height: 0;
+  position: relative;
 }
 
 /* ─── PIPELINE WRAP ──────────────────────────────────────────── */
@@ -577,15 +578,40 @@ body::after {
 
 /* ─── SHOP ───────────────────────────────────────────────────── */
 #shop {
+  position: fixed;
+  top: var(--header-h);
+  right: 0;
+  bottom: 0;
   width: var(--shop-w);
-  flex-shrink: 0;
-  border-left: 1px solid var(--border);
   background: var(--surface);
+  border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--text-muted) transparent;
+  z-index: 50;
+  transform: translateX(100%);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: -4px 0 20px rgba(61, 40, 23, 0.12);
+}
+
+#shop.is-open {
+  transform: translateX(0);
+}
+
+/* Backdrop */
+#shop-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(61, 40, 23, 0.35);
+  backdrop-filter: blur(2px);
+  z-index: 49;
+}
+
+#shop-backdrop.is-open {
+  display: block;
 }
 
 #shop::-webkit-scrollbar       { width: 3px; }
@@ -599,7 +625,24 @@ body::after {
   top: 0;
   background: var(--surface);
   z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
+
+/* Shop close button sits inline in the header flex row */
+#btn-shop-close {
+  position: static;
+  font-size: 20px;
+  color: var(--text-dim);
+  background: none;
+  border: none;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+  transition: color 0.15s;
+}
+#btn-shop-close:hover { color: var(--text-hi); }
 
 .shop-header h2 {
   font-family: var(--font-ui);
@@ -916,10 +959,15 @@ body::after {
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
   padding: 6px 12px;
-  margin-left: auto;
-  margin-right: 14px;
+  margin-right: 6px;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  flex-shrink: 0;
+}
+
+/* Push the header button group right — only the first header-btn gets auto margin */
+#btn-shop {
+  margin-left: auto;
 }
 .header-btn:hover {
   background: var(--surface-hi);
@@ -1104,4 +1152,215 @@ body::after {
   font-size: 11px;
   font-weight: 600;
   color: var(--gold);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PHASE 3.5 — MOBILE RESPONSIVE
+═══════════════════════════════════════════════════════════════ */
+
+/* ─── GLOBAL MODAL WIDTH CLAMP (all screen sizes) ───────────── */
+.station-modal-box,
+.stats-modal-box {
+  width: min(420px, calc(100vw - 32px));
+}
+
+/* ─── MOBILE NAV BAR (hidden on desktop) ─────────────────────── */
+#mobile-nav {
+  display: none;
+}
+
+@media (max-width: 600px) {
+
+  /* Allow page to scroll vertically on mobile */
+  html, body {
+    overflow: auto;
+    height: auto;
+  }
+
+  #app {
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  /* ── Header: tighten up, hide secondary stats ── */
+  #header {
+    padding: 0 14px;
+    gap: 8px;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: var(--header-h);
+  }
+
+  /* Hide Tier and Building from header on mobile — stats modal covers it */
+  .hstat:nth-child(5),
+  .hstat:nth-child(7),
+  .hstat-sep:nth-child(4),
+  .hstat-sep:nth-child(6) {
+    display: none;
+  }
+
+  .hstat { padding: 4px 10px; }
+  .hstat-value { font-size: 13px; }
+
+  /* Hide header buttons on mobile — replaced by bottom nav */
+  #btn-shop,
+  #btn-stats {
+    display: none;
+  }
+
+  .save-status { margin-left: 0; }
+
+  /* ── Main layout: single column ── */
+  #main {
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  /* ── Pipeline: stack vertically ── */
+  #pipeline {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+  }
+
+  /* Stage cards: full width */
+  .stage-card {
+    width: 100%;
+    border-radius: var(--r-md);
+    padding: 14px 16px 10px;
+    gap: 8px;
+  }
+
+  /* Flow nodes: horizontal separators between stacked cards */
+  .flow-node {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: 4px 16px;
+    gap: 8px;
+  }
+
+  .flow-buffer {
+    flex-direction: row;
+    gap: 6px;
+    padding: 5px 10px;
+    min-width: unset;
+  }
+
+  .flow-arrow {
+    transform: rotate(90deg);
+    font-size: 14px;
+  }
+
+  /* ── Pipeline wrap ── */
+  #pipeline-wrap {
+    padding: 12px 12px 72px;
+    gap: 12px;
+    width: 100%;
+    overflow: visible;
+    justify-content: flex-start;
+  }
+
+  /* ── Floor wrap: full width ── */
+  #floor-wrap {
+    max-width: 100%;
+    border-radius: var(--r-md);
+  }
+
+  /* Floor grid: slightly smaller tiles, uncapped height */
+  #floor-grid {
+    max-height: none;
+    grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
+  }
+
+  /* ── Throughput bar: wrap gracefully ── */
+  #throughput-bar {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    padding: 10px 14px;
+    border-radius: var(--r-sm);
+  }
+
+  /* ── Shop: bottom sheet on mobile ── */
+  #shop {
+    top: unset;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 75dvh;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    box-shadow: 0 -4px 24px rgba(61, 40, 23, 0.16);
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  #shop.is-open {
+    transform: translateY(0);
+  }
+
+  /* Sheet drag handle — decorative */
+  .shop-header::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 12px;
+  }
+
+  /* Backdrop z-index: above pipeline, below sheet, below mobile nav */
+  #shop-backdrop.is-open {
+    z-index: 59;
+  }
+
+  /* ── Bottom nav bar: visible on mobile ── */
+  #mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 60;
+    gap: 0;
+  }
+
+  .mobile-nav-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-body);
+    background: none;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    gap: 6px;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .mobile-nav-btn:active {
+    background: var(--surface-2);
+    color: var(--text-hi);
+  }
+
+  .mobile-nav-btn:first-child {
+    border-right: 1px solid var(--border);
+  }
+
+  /* Toast: tighter right margin on mobile */
+  #toast-container {
+    right: 12px;
+  }
+
 }
