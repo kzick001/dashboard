@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 1000" width="500" height="1000" preserveAspectRatio="none">
+<rect width="500" height="1000" fill="#18181b"/>
+<ellipse cx="165" cy="970" rx="39" ry="78" fill="#141417" opacity="0.6"/>
+<ellipse cx="202" cy="666" rx="33" ry="66" fill="#141417" opacity="0.6"/>
+<ellipse cx="37" cy="840" rx="64" ry="128" fill="#141417" opacity="0.6"/>
+<ellipse cx="48" cy="374" rx="67" ry="134" fill="#141417" opacity="0.6"/>
+<ellipse cx="29" cy="931" rx="62" ry="124" fill="#141417" opacity="0.6"/>
+<ellipse cx="109" cy="38" rx="35" ry="70" fill="#141417" opacity="0.6"/>
+<ellipse cx="222" cy="428" rx="34" ry="68" fill="#141417" opacity="0.6"/>
+<ellipse cx="123" cy="92" rx="65" ry="130" fill="#141417" opacity="0.6"/>
+<ellipse cx="217" cy="60" rx="82" ry="164" fill="#141417" opacity="0.6"/>
+<ellipse cx="289" cy="126" rx="90" ry="180" fill="#141417" opacity="0.6"/>
+<ellipse cx="114" cy="645" rx="70" ry="140" fill="#141417" opacity="0.6"/>
+<ellipse cx="298" cy="970" rx="33" ry="66" fill="#141417" opacity="0.6"/>
+<ellipse cx="295" cy="599" rx="55" ry="110" fill="#141417" opacity="0.6"/>
+<ellipse cx="25" cy="999" rx="44" ry="88" fill="#141417" opacity="0.6"/>
+<rect x="8" width="5" height="1000" fill="#8a7a2f" opacity="0.45"/>
+<rect x="487" width="5" height="1000" fill="#8a7a2f" opacity="0.45"/>
+<rect x="246" y="0" width="8" height="42" fill="#6b7280" opacity="0.45"/>
+<rect x="246" y="90" width="8" height="42" fill="#6b7280" opacity="0.45"/>
+<rect x="246" y="180" width="8" height="42" fill="#6b7280" opacity="0.45"/>
+<rect x="246" y="270" width="8" height="42" fill="#6b7280" opacity="0.45"/>
+<rect x="246" y="360" width="8" height="42" fill="#6b7280" opacity="0.45"/>
+<rect x="246" y="450" width="8" height="42" fill="#6b7280" opacity="0.45"/>
+<rect x="246" y="540" width="8" height="42" fill="#6b7280" opacity="0.45"/>
+<rect x="246" y="630" width="8" height="42" fill="#6b7280" opacity="0.45"/>
+<rect x="246" y="720" width="8" height="42" fill="#6b7280" opacity="0.45"/>
+<rect x="246" y="810" width="8" height="42" fill="#6b7280" opacity="0.45"/>
+<rect x="246" y="900" width="8" height="42" fill="#6b7280" opacity="0.45"/>
+<rect x="246" y="990" width="8" height="42" fill="#6b7280" opacity="0.45"/>
+<polyline points="43,570 67,588 55,624 34,668 11,714" stroke="#0d0d0f" stroke-width="2" fill="none" opacity="0.8"/>
+<polyline points="177,573 199,626 180,642 187,688 197,710" stroke="#0d0d0f" stroke-width="2" fill="none" opacity="0.8"/>
+<polyline points="210,99 215,154 189,200 162,249 145,290" stroke="#0d0d0f" stroke-width="2" fill="none" opacity="0.8"/>
+<polyline points="368,544 365,603 355,642 362,681 355,710" stroke="#0d0d0f" stroke-width="2" fill="none" opacity="0.8"/>
+<polyline points="147,813 128,867 147,892 122,938 111,981" stroke="#0d0d0f" stroke-width="2" fill="none" opacity="0.8"/>
+<polyline points="273,896 264,952 262,980 270,994 247,1036" stroke="#0d0d0f" stroke-width="2" fill="none" opacity="0.8"/>
+<polyline points="234,168 252,199 231,240 227,252 239,266" stroke="#0d0d0f" stroke-width="2" fill="none" opacity="0.8"/>
+<polyline points="411,571 417,631 443,661 434,715 426,763" stroke="#0d0d0f" stroke-width="2" fill="none" opacity="0.8"/>
+<polyline points="274,593 295,632 269,647 299,674 299,728" stroke="#0d0d0f" stroke-width="2" fill="none" opacity="0.8"/>
+<polyline points="360,66 333,122 347,151 358,197 371,235" stroke="#0d0d0f" stroke-width="2" fill="none" opacity="0.8"/>
+<polyline points="165,733 159,785 151,796 181,835 173,855" stroke="#0d0d0f" stroke-width="2" fill="none" opacity="0.8"/>
+<polyline points="332,119 333,132 316,191 304,209 321,234" stroke="#0d0d0f" stroke-width="2" fill="none" opacity="0.8"/>
+<ellipse cx="233" cy="400" rx="30" ry="12" fill="#000000" opacity="0.25"/>
+<ellipse cx="115" cy="459" rx="27" ry="18" fill="#000000" opacity="0.25"/>
+<ellipse cx="100" cy="838" rx="28" ry="18" fill="#000000" opacity="0.25"/>
+<ellipse cx="391" cy="425" rx="26" ry="22" fill="#000000" opacity="0.25"/>
+<ellipse cx="148" cy="154" rx="17" ry="15" fill="#000000" opacity="0.25"/>
+<ellipse cx="107" cy="237" rx="36" ry="17" fill="#000000" opacity="0.25"/>
+<ellipse cx="36" cy="496" rx="33" ry="15" fill="#000000" opacity="0.25"/>
+<ellipse cx="164" cy="288" rx="15" ry="14" fill="#000000" opacity="0.25"/>
+</svg>

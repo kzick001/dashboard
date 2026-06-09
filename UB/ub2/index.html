@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Undead Barrage</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.0/phaser.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        * { user-select: none; -webkit-user-select: none; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #a1a1aa;
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            overflow: hidden;
+        }
+
+        #game-wrapper {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+        }
+
+        canvas { display: block; }
+
+        /* CRT Vignette */
+        .crt-vignette {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.9);
+            pointer-events: none;
+            z-index: 9998;
+        }
+
+        /* ===== Modal Overlays ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            backdrop-filter: blur(6px);
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal-panel {
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid #3f3f46;
+            padding: 30px;
+            border-radius: 0;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
+        }
+
+        .modal-title {
+            font-size: 2.5em;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #27272a;
+            padding-bottom: 10px;
+            font-weight: normal;
+            letter-spacing: 2px;
+            color: #0ea5e9;
+        }
+
+        .btn {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #0ea5e9;
+            color: #0ea5e9;
+            text-shadow: 0 0 5px rgba(14, 165, 233, 0.5);
+            font-family: inherit;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            text-transform: uppercase;
+            width: 100%;
+            transition: 0.2s;
+            box-shadow: inset 0 0 8px rgba(14, 165, 233, 0.2);
+            margin-bottom: 10px;
+        }
+        .btn:hover {
+            background: rgba(14, 165, 233, 0.15);
+            box-shadow: inset 0 0 15px rgba(14, 165, 233, 0.4);
+            text-shadow: 0 0 10px rgba(14, 165, 233, 0.8);
+        }
+        .btn.locked {
+            border-color: #3f3f46;
+            color: #52525b;
+            box-shadow: none;
+            text-shadow: none;
+            cursor: not-allowed;
+            background: transparent;
+        }
+
+        /* ===== Settings rows ===== */
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid #1e293b;
+        }
+        .settings-row .btn { width: 100px; padding: 5px; margin: 0; box-shadow: none; }
+        .settings-row input[type="range"] {
+            width: 140px;
+            accent-color: #0ea5e9;
+        }
+        .settings-divider {
+            border-top: 1px dashed #3f3f46;
+            margin: 15px 0;
+        }
+
+        /* ===== HUD ===== */
+        #hud-root {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 100;
+            font-family: 'Share Tech Mono', monospace;
+            color: #a1a1aa;
+            display: none;
+        }
+        #hud-top {
+            position: absolute;
+            top: 14px; left: 0; right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+        #hud-wave { font-size: 1.4em; color: #0ea5e9; letter-spacing: 2px; }
+        #hud-combo { font-size: 1.1em; color: #ffd43b; }
+        #hud-funds { font-size: 1.4em; color: #4ade80; }
+        #hud-bottom {
+            position: absolute;
+            bottom: 14px; left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        #hud-hp { font-size: 1.3em; color: #ef4444; }
+        #hud-armor { font-size: 1.0em; color: #60a5fa; }
+        #hud-grenades { font-size: 1.0em; color: #fb923c; }
+        #hud-weapon { position: absolute; bottom: 14px; right: 20px; text-align: right; }
+        #hud-wpn-name { font-size: 1.2em; color: #0ea5e9; }
+        #hud-ammo { font-size: 1.6em; color: #e4e4e7; }
+        #hud-transmission {
+            position: absolute;
+            top: 60px; left: 50%;
+            transform: translateX(-50%);
+            max-width: 600px;
+            text-align: center;
+            color: #a1a1aa;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 16px;
+            border: 1px solid #27272a;
+            display: none;
+            font-size: 0.95em;
+        }
+
+        /* ===== Dev Panel ===== */
+        #hud-dev {
+            position: fixed;
+            top: 10px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 300;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid #ef4444;
+            padding: 8px;
+            display: none;
+            flex-wrap: wrap;
+            gap: 6px;
+            font-family: 'Share Tech Mono', monospace;
+        }
+        #hud-dev button {
+            background: #000;
+            color: #ef4444;
+            border: 1px solid #ef4444;
+            padding: 4px 8px;
+            margin: 2px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.8em;
+        }
+
+        /* ===== Shop & Harvest ===== */
+        #shop-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+        #shop-tabs .btn { margin: 0; }
+        #shop-body { min-height: 240px; }
+        #shop-body .shop-funds { color: #4ade80; margin-bottom: 10px; }
+
+        .bio-monitor {
+            border: 1px solid #27272a;
+            padding: 10px 14px;
+            margin-bottom: 14px;
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            font-size: 0.85em;
+        }
+        .bio-monitor .bio-head { color: #0ea5e9; width: 100%; letter-spacing: 1px; }
+        .bio-row span:first-child { color: #71717a; margin-right: 8px; }
+
+        #shop-rack {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+        #shop-rack .btn {
+            margin: 0;
+            padding: 8px 4px;
+            font-size: 0.7em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        #shop-rack img { height: 18px; image-rendering: pixelated; }
+
+        .mastery-wrap { border: 1px solid #27272a; padding: 10px; margin-bottom: 10px; }
+        .mastery-wrap .mastery-head { color: #0ea5e9; margin-bottom: 8px; }
+        .mastery-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .mastery-row .btn { width: 120px; margin: 0; padding: 4px; font-size: 0.7em; }
+
+        #harvest-intro { color: #71717a; font-size: 0.9em; margin-bottom: 16px; }
+        #harvest-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        #harvest-cards .btn { text-align: left; height: auto; padding: 14px; white-space: normal; }
+        .harvest-title { color: #0ea5e9; font-size: 1.1em; margin-bottom: 6px; }
+        .harvest-desc { font-size: 0.8em; color: #a1a1aa; margin-bottom: 6px; }
+        .harvest-quote { font-size: 0.75em; color: #71717a; font-style: italic; }
+        .venture-locked { color: #71717a; text-align: center; padding: 40px; }
+        .shop-action { margin-top: 6px; font-size: 0.85em; }
+        .harvest-consolation { grid-column: 1 / 4; color: #71717a; }
+
+        /* Version tag */
+        #version-tag {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: #3f3f46;
+            font-size: 0.85em;
+            z-index: 100;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="crt-vignette"></div>
+<div id="game-wrapper"></div>
+
+<!-- Boot Screen -->
+<div id="screen-boot" class="modal-overlay active">
+    <div class="modal-panel" style="text-align: center;">
+        <h1 class="modal-title" style="border: none; margin-bottom: 5px; font-size: 3.5em;">UNDEAD BARRAGE</h1>
+        <div style="font-size: 1.2em; color: #71717a; margin-bottom: 30px; letter-spacing: 4px;">TACTICAL DEPLOYMENT</div>
+        <button id="btn-new-game" class="btn" style="font-size: 1.5em; padding: 20px;">DEPLOY</button>
+        <button id="btn-open-settings" class="btn" style="font-size: 1em; color: #a1a1aa; border-color: #3f3f46; box-shadow: none; margin-top: 15px;">SETTINGS / OVERRIDES</button>
+    </div>
+</div>
+
+<!-- Pause Screen -->
+<div id="screen-pause" class="modal-overlay">
+    <div class="modal-panel" style="text-align: center; max-width: 400px;">
+        <h2 class="modal-title">PAUSED</h2>
+        <button id="btn-resume" class="btn">RESUME</button>
+        <button id="btn-settings" class="btn" style="color: #a1a1aa; border-color: #3f3f46; box-shadow: none; margin-top: 15px;">SETTINGS</button>
+    </div>
+</div>
+
+<!-- Settings Screen -->
+<div id="screen-settings" class="modal-overlay">
+    <div class="modal-panel" style="max-width: 500px;">
+        <h2 class="modal-title">SYSTEM SETTINGS</h2>
+        <div class="settings-row">
+            <div>Impact Screen Shake</div>
+            <button id="tog-shake" class="btn">ON</button>
+        </div>
+        <div class="settings-row">
+            <div>Master Volume</div>
+            <input type="range" id="vol-master" min="0" max="100" value="100">
+        </div>
+        <div class="settings-row">
+            <div>SFX Volume</div>
+            <input type="range" id="vol-sfx" min="0" max="100" value="100">
+        </div>
+        <div class="settings-divider"></div>
+        <div class="settings-row">
+            <div>Enable Dev Overrides</div>
+            <button id="tog-dev" class="btn">OFF</button>
+        </div>
+        <button id="btn-close-settings" class="btn" style="margin-top: 20px;">CLOSE</button>
+    </div>
+</div>
+
+<!-- Game Over Screen -->
+<div id="screen-game-over" class="modal-overlay">
+    <div class="modal-panel" style="text-align: center;">
+        <h2 class="modal-title" id="game-over-title" style="color: #ef4444; font-size: 3em; border-bottom: none;">YOU DEAD</h2>
+        <div id="game-over-stats" style="font-size: 1.3em; color: #71717a; margin-bottom: 30px; letter-spacing: 2px;">SURVIVED: 0 WAVES</div>
+        <button id="btn-restart" class="btn">RESTART</button>
+    </div>
+</div>
+
+<!-- Shop Screen (populated by ShopManager) -->
+<div id="screen-shop" class="modal-overlay">
+    <div class="modal-panel" style="max-width: 760px;">
+        <h2 class="modal-title">THE ARMORY</h2>
+        <div id="shop-tabs">
+            <button class="btn shop-tab" data-tab="firearms">FIREARMS</button>
+            <button class="btn shop-tab" data-tab="logistics">LOGISTICS</button>
+            <button class="btn shop-tab" data-tab="venture">VENTURE</button>
+        </div>
+        <div id="shop-body"></div>
+        <button id="btn-return-battlefield" class="btn" style="margin-top: 16px;">RETURN TO BATTLEFIELD</button>
+    </div>
+</div>
+
+<!-- Harvest Screen (populated by HarvestManager) -->
+<div id="screen-harvest" class="modal-overlay">
+    <div class="modal-panel" style="max-width: 720px;">
+        <h2 class="modal-title">BIOLOGICAL HARVEST</h2>
+        <div id="harvest-intro"></div>
+        <div id="harvest-cards"></div>
+    </div>
+</div>
+
+<!-- In-Game HUD (shown while a run is active) -->
+<div id="hud-root">
+    <div id="hud-top">
+        <div id="hud-wave"></div>
+        <div id="hud-combo"></div>
+        <div id="hud-funds"></div>
+    </div>
+    <div id="hud-bottom">
+        <div id="hud-hp"></div>
+        <div id="hud-armor"></div>
+        <div id="hud-grenades"></div>
+    </div>
+    <div id="hud-weapon">
+        <div id="hud-wpn-name"></div>
+        <div id="hud-ammo"></div>
+    </div>
+    <div id="hud-transmission"></div>
+</div>
+
+<!-- Dev Panel (buttons injected by HUDManager; toggled in settings) -->
+<div id="hud-dev"></div>
+
+<div id="version-tag">v2.0.0</div>
+
+<script src="config.js"></script>
+<script src="flavor.js"></script>
+<script src="game.js"></script>
+
+</body>
+</html>
