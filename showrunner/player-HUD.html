@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Crawler Terminal V5.3</title>
+  <title>Showrunner | Crawler Terminal V5.2.1</title>
 
   <svg xmlns="http://www.w3.org/2000/svg" style="display:none;position:absolute">
     <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
@@ -238,20 +238,6 @@
     .btn-confirm { flex:1; background:linear-gradient(135deg,var(--danger),rgba(248,113,113,.7)); border:1px solid var(--danger); color:#fff; padding:.7rem; border-radius:var(--r-sm); font-size:.8rem; font-weight:bold; text-transform:uppercase; letter-spacing:.05em; cursor:pointer; transition:all .2s ease; }
     .btn-confirm:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(248,113,113,.4); }
 
-    /* Inventory Modal */
-    #inv-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:3000; backdrop-filter:blur(4px); }
-    .inv-modal { background:var(--bg-card); border:2px solid var(--accent); border-radius:var(--r); padding:1.5rem; width:min(92vw,420px); max-height:75vh; display:flex; flex-direction:column; box-shadow:0 8px 32px rgba(187,134,252,.25); }
-    .inv-modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid var(--border); padding-bottom:.8rem; flex-shrink:0; }
-    .inv-modal-header h2 { margin:0; font-size:1.1rem; color:var(--terminal); text-transform:uppercase; letter-spacing:.08em; }
-    .inv-modal-close { background:none; border:none; color:var(--text); cursor:pointer; font-size:1.2rem; transition:color .2s ease; }
-    .inv-modal-close:hover { color:var(--danger); }
-    .inv-list { overflow-y:auto; flex:1; }
-    .inv-item-row { background:rgba(0,0,0,.2); border:1px solid var(--border); border-radius:var(--r-sm); padding:.65rem; margin-bottom:.5rem; }
-    .inv-item-name { font-size:.88rem; font-weight:bold; color:var(--primary); margin-bottom:.15rem; }
-    .inv-item-meta { font-size:.65rem; color:var(--muted); text-transform:capitalize; letter-spacing:.04em; }
-    .inv-item-desc { font-size:.72rem; color:var(--text); margin-top:.3rem; line-height:1.4; opacity:.85; }
-    .inv-empty { text-align:center; color:var(--muted); font-size:.8rem; padding:1.5rem; }
-
     /* Toast */
     .toast { position:fixed; bottom:1rem; left:50%; transform:translateX(-50%); background:rgba(14,18,40,.95); border:1px solid var(--accent); color:var(--text); padding:.8rem 1.2rem; border-radius:var(--r-sm); font-size:.8rem; z-index:4000; box-shadow:0 4px 16px rgba(0,0,0,.6); animation:toast-slide 0.3s ease-out; }
     @keyframes toast-slide { from { transform:translateX(-50%) translateY(20px); opacity:0; } to { transform:translateX(-50%) translateY(0); opacity:1; } }
@@ -301,6 +287,44 @@
       .ach-item-name { font-size:.8rem; }
       .ach-item-desc { font-size:.65rem; }
     }
+
+  /* ══════════════════════════════
+     SHEET OVERLAY (Phase 4A)
+  ══════════════════════════════ */
+  #sheet-overlay {
+    position: fixed; inset: 0; z-index: 800;
+    background: var(--bg); display: flex; flex-direction: column;
+    overflow-y: auto; transform: translateY(100%);
+    transition: transform 0.3s ease; pointer-events: none;
+  }
+  #sheet-overlay.open {
+    transform: translateY(0); pointer-events: auto;
+  }
+  .sheet-header {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.75rem 1rem; background: var(--card);
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .sheet-avatar { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+  .sheet-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .sheet-identity { flex: 1; }
+  .sheet-identity h2 { margin: 0; font-size: 1rem; font-weight: bold; }
+  .sheet-identity p { margin: 0; font-size: 0.75rem; color: var(--text-muted); }
+  .sheet-collapse-btn {
+    background: none; border: 1px solid var(--glass-border); color: var(--text-muted);
+    border-radius: 6px; padding: 0.4rem; cursor: pointer; transition: 0.2s;
+  }
+  .sheet-collapse-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .sheet-section { border-bottom: 1px solid var(--glass-border); }
+  .sheet-section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.75rem 1rem; cursor: pointer; user-select: none;
+  }
+  .sheet-section-title { font-size: 0.8rem; font-weight: bold; letter-spacing: 0.1em; text-transform: uppercase; }
+  .sheet-section-body { padding: 0 1rem 1rem; }
+  .sheet-section.collapsed .sheet-section-body { display: none; }
+
   </style>
 </head>
 <body>
@@ -341,15 +365,40 @@
 
   <div id="vitals-inline"></div>
 
+  <div id="sync-row" style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0.6rem;justify-content:flex-end;">
+    <span id="sync-label" style="font-size:0.65rem;color:#555;letter-spacing:0.05em;">—</span>
+    <button onclick="manualRefresh()" style="background:none;border:none;color:#555;cursor:pointer;padding:2px;" title="Refresh">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    </button>
+  </div>
+
   <div class="hud-section">
     <div class="section-label">Status</div>
     <div id="cond-grid"><span class="no-cond">No active conditions</span></div>
   </div>
 
   <div id="actions">
-    <button class="action-btn" id="btn-items">Inventory</button>
+    <button class="action-btn" id="btn-sheet" onclick="openSheet()">Character Sheet</button>
     <button class="action-btn" id="btn-ach">Achievements</button>
   </div>
+</div>
+
+<!-- SHEET OVERLAY -->
+<div id="sheet-overlay">
+  <div class="sheet-header">
+    <div class="sheet-avatar"><div id="sheet-av-inner"></div></div>
+    <div class="sheet-identity">
+      <h2 id="sheet-name">—</h2>
+      <p id="sheet-sub">—</p>
+    </div>
+    <button class="sheet-collapse-btn" onclick="closeSheet()" title="Return to HUD">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+        <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+      </svg>
+    </button>
+  </div>
+  <div id="sheet-sections"></div>
 </div>
 
 <!-- TICKER -->
@@ -385,19 +434,6 @@
     <div id="ach-tab-archive" class="ach-tab-content">
       <div id="ach-list-archive"></div>
       <p id="ach-empty-archive" class="ach-empty">Archive empty.</p>
-    </div>
-  </div>
-</div>
-
-<!-- INVENTORY MODAL (V5.3) -->
-<div id="inv-modal-overlay" class="hidden" onclick="if(event.target===this)closeInventoryModal();">
-  <div class="inv-modal">
-    <div class="inv-modal-header">
-      <h2>Inventory</h2>
-      <button class="inv-modal-close" onclick="closeInventoryModal();">✕</button>
-    </div>
-    <div id="inv-list" class="inv-list">
-      <p class="inv-empty">No items.</p>
     </div>
   </div>
 </div>
@@ -443,8 +479,8 @@
 
 /* ── Config ── */
 const WORKER_URL   = 'https://dmscreen.askozicki.workers.dev';
-const TICKER_URL   = 'https://kzick.dev/dm-screen/ticker.json';
-const AVATAR_BASE  = 'https://cdn.jsdelivr.net/gh/kzick001/dashboard@main/dm-screen/players/';
+const TICKER_URL   = 'https://kzick.dev/showrunner/ticker.json';
+const AVATAR_BASE  = 'https://cdn.jsdelivr.net/gh/kzick001/dashboard@main/showrunner/players/';
 const P_KEY        = 'showrunner_active_player';
 const T_KEY        = 'showrunner_ticker_visible';
 const POLL_MS      = 30000;
@@ -493,11 +529,11 @@ document.addEventListener('DOMContentLoaded', () => {
   startPolling();
   buildRoster();
 
-  get('btn-items').addEventListener('click', openInventoryModal);
+  // btn-sheet uses inline onclick="openSheet()"
   get('btn-ach').addEventListener('click', openModal);
   get('ticker-pill').addEventListener('click', toggleTicker);
   get('modal-overlay').addEventListener('click', e => { if (e.target === get('modal-overlay')) closeModal(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeInventoryModal(); } });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
   // Auto-login after first state fetch
   console.log('[HUD] Attempting auto-login...');
@@ -597,8 +633,6 @@ function logout() {
   localStorage.removeItem(P_KEY);
   playerName = null; player = null; spellBuilt = false;
 
-  closeInventoryModal();
-
   VFX_ALL.forEach(c => get('vfx-layer').classList.remove(c));
   if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
   stopMessagePolling();
@@ -639,15 +673,42 @@ async function fetchState() {
     if (playerName) player = state.characters?.find(c => c.name === playerName) || null;
     console.log('[HUD] Player set:', player?.name);
     if (!get('main-hud').classList.contains('hidden')) renderAll();
+    resetSyncTimer();
   } catch (e) { console.error('[HUD] Poll error:', e.message, e.stack); }
 }
 
 function startPolling() {
   fetchState();
-  pollTimer = setInterval(fetchState, POLL_MS);
+  pollTimer = setInterval(pollState, POLL_MS);
+}
+
+/* ══════════════════════════════
+   SHEET OVERLAY OPEN/CLOSE
+══════════════════════════════ */
+function openSheet() {
+  renderSheet();
+  document.getElementById('sheet-overlay').classList.add('open');
+}
+function closeSheet() {
+  document.getElementById('sheet-overlay').classList.remove('open');
+}
+function updateSheetAvatar() {
+  const inner = document.getElementById('sheet-av-inner');
+  if (!inner || !player) return;
+  const name = player.name?.split(' ')[0].toLowerCase() || '';
+  const imgPath = `${AVATAR_BASE}${name}.png?v=51`;
+  const img = new Image();
+  img.onload = () => {
+    inner.innerHTML = '';
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;';
+    inner.appendChild(img);
+  };
+  img.onerror = () => { inner.innerHTML = '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>'; };
+  img.src = imgPath;
 }
 
 async function syncToKV() {
+  // TOMBSTONE: superseded by mutateAndPush (Phase 4A). Kept for reference.
   if (!state) return;
   try {
     const res = await fetch(WORKER_URL, {
@@ -657,7 +718,7 @@ async function syncToKV() {
     });
     if (res.ok) {
       const r = await res.json();
-      if (r.version !== undefined) state.version = r.version;
+      if (r.new_version !== undefined) state.version = r.new_version;
     } else if (res.status === 409) {
       console.warn('[HUD] Collision — re-fetching');
       await fetchState();
@@ -665,6 +726,76 @@ async function syncToKV() {
       toast('Save failed. Try again.');
     }
   } catch (e) { toast('Connection error. Could not save.'); }
+}
+
+/* ══════════════════════════════
+   MUTATE AND PUSH (Phase 4A)
+══════════════════════════════ */
+async function mutateAndPush(mutationFn, successMsg) {
+  try {
+    const res = await fetch(WORKER_URL);
+    if (!res.ok) throw new Error('Fetch failed');
+    const latest = await res.json();
+    mutationFn(latest);
+    latest.version = (latest.version || 0) + 1;
+    latest.lastModified = Date.now();
+    const post = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ base_version: latest.version - 1, data: latest })
+    });
+    if (post.status === 409) {
+      return mutateAndPush(mutationFn, successMsg);
+    }
+    if (!post.ok) throw new Error('Post failed');
+    state = latest;
+    player = state.characters?.find(c => c.name === playerName) || null;
+    renderAll();
+    if (successMsg) notifyToast(successMsg);
+    resetSyncTimer();
+  } catch (e) {
+    console.error('[HUD] mutateAndPush failed:', e);
+    notifyToast('Sync failed. Check connection.');
+  }
+}
+
+
+/* ══════════════════════════════
+   SYNC TIMER + POLL STATE (Phase 4A)
+══════════════════════════════ */
+let _syncTime = null;
+let _syncCountTimer = null;
+
+function resetSyncTimer() {
+  _syncTime = Date.now();
+  clearInterval(_syncCountTimer);
+  _syncCountTimer = setInterval(() => {
+    if (!_syncTime) return;
+    const s = Math.floor((Date.now() - _syncTime) / 1000);
+    const el = document.getElementById('sync-label');
+    if (el) el.textContent = s < 60 ? `synced ${s}s ago` : `synced ${Math.floor(s/60)}m ago`;
+  }, 1000);
+}
+
+async function manualRefresh() {
+  await fetchState();
+  renderAll();
+  resetSyncTimer();
+}
+
+async function pollState() {
+  try {
+    const res = await fetch(WORKER_URL);
+    if (!res.ok) return;
+    const newState = await res.json();
+    state = newState;
+    player = state.characters?.find(c => c.name === playerName) || null;
+    renderAll();
+    if (document.getElementById('sheet-overlay').classList.contains('open')) {
+      renderSheet();
+    }
+    resetSyncTimer();
+  } catch(e) { console.warn('[HUD] Poll failed:', e.message); }
 }
 
 /* ══════════════════════════════
@@ -684,9 +815,433 @@ function renderAll() {
 }
 
 /* ══════════════════════════════
-   HEADER
+   SHEET OVERLAY RENDER (Phase 4A)
 ══════════════════════════════ */
-function updateHeader() {
+function renderSheet() {
+  if (!player) return;
+  document.getElementById('sheet-name').textContent = player.name;
+  document.getElementById('sheet-sub').textContent =
+    [player.race, player.class, player.level ? `Level ${player.level}` : null].filter(Boolean).join(' · ');
+  updateSheetAvatar();
+
+  const sections = [
+    { id: 'sheet-stats',     title: 'Stats',      fn: renderSheetStats },
+    { id: 'sheet-inventory', title: 'Inventory',  fn: renderSheetInventory },
+    { id: 'sheet-spells',    title: 'Spell Slots',fn: renderSheetSpells },
+    { id: 'sheet-gold',      title: 'Gold',       fn: renderSheetGold },
+    ...(player.familiar ? [{ id: 'sheet-familiar', title: `Companion — ${player.familiar.name}`, fn: renderSheetFamiliar }] : []),
+    { id: 'sheet-dice',      title: 'Dice Roller',fn: renderSheetDice }
+  ];
+
+  let storedCollapse = {};
+  try { storedCollapse = JSON.parse(localStorage.getItem('showrunner_sheet_sections') || '{}'); } catch(e) {}
+
+  const container = document.getElementById('sheet-sections');
+  container.innerHTML = sections.map(s => {
+    const collapsed = storedCollapse[s.id] ? 'collapsed' : '';
+    return `<div class="sheet-section ${collapsed}" id="${s.id}">
+      <div class="sheet-section-head" onclick="toggleSheetSection('${s.id}')">
+        <span class="sheet-section-title">${s.title}</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="sheet-section-body" id="${s.id}-body"></div>
+    </div>`;
+  }).join('');
+
+  sections.forEach(s => {
+    const bodyEl = document.getElementById(`${s.id}-body`);
+    if (bodyEl) s.fn(bodyEl);
+  });
+}
+
+function toggleSheetSection(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('collapsed');
+  try {
+    const stored = JSON.parse(localStorage.getItem('showrunner_sheet_sections') || '{}');
+    stored[id] = el.classList.contains('collapsed');
+    localStorage.setItem('showrunner_sheet_sections', JSON.stringify(stored));
+  } catch(e) {}
+}
+
+function renderSheetStats(body) {
+  if (!player?.stats) { body.innerHTML = '<p style="color:#555;font-size:0.82rem;">No stats.</p>'; return; }
+  const { hp, ac, passivePerception, passiveInsight, speed } = player.stats;
+  const abs = player.abilities || {};
+  const mod = v => { const m = Math.floor(((v||10)-10)/2); return (m >= 0 ? '+' : '') + m; };
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:0.75rem;">
+      ${[['HP', `${hp?.current??'—'}/${hp?.max??'—'}`],['AC',ac??'—'],['Speed',speed?`${speed}ft`:'—'],
+         ['Pass. Perc.',passivePerception??'—'],['Pass. Ins.',passiveInsight??'—']].map(([l,v])=>
+        `<div style="background:rgba(255,255,255,0.04);border-radius:4px;padding:0.4rem;text-align:center;">
+          <div style="font-size:0.65rem;color:#666;margin-bottom:0.15rem;text-transform:uppercase;">${l}</div>
+          <div style="font-size:0.95rem;font-weight:bold;">${v}</div>
+        </div>`).join('')}
+    </div>
+    ${Object.keys(abs).length ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.4rem;">
+      ${['strength','dexterity','constitution','intelligence','wisdom','charisma'].map(ab =>
+        `<div style="background:rgba(255,255,255,0.03);border-radius:4px;padding:0.35rem;text-align:center;">
+          <div style="font-size:0.6rem;color:#555;text-transform:uppercase;">${ab.slice(0,3)}</div>
+          <div style="font-size:0.88rem;font-weight:bold;">${abs[ab]??10}</div>
+          <div style="font-size:0.7rem;color:var(--accent);">${mod(abs[ab])}</div>
+        </div>`).join('')}
+    </div>` : ''}`;
+}
+
+// Stubs — filled in Phase 4B and 4C
+function renderSheetInventory(body) {
+  const inv = (player?.inventory || []).filter(i => !i.isDeleted);
+
+  let html = `<button onclick="openAddItemForm()" style="
+    background:rgba(187,134,252,0.1);border:1px solid rgba(187,134,252,0.3);
+    color:var(--accent);border-radius:4px;padding:0.35rem 0.75rem;font-size:0.78rem;
+    cursor:pointer;margin-bottom:0.6rem;">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:3px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Add Item
+  </button><div id="add-item-form-container"></div>`;
+
+  if (!inv.length) {
+    html += '<p style="color:#555;font-size:0.82rem;">No items.</p>';
+  } else {
+    html += inv.map(it => {
+      const rarColor = { common:'#9e9e9e',uncommon:'#1eff00',rare:'#0070dd','very rare':'#a335ee',legendary:'#ff8000' }[it.rarity] || '#9e9e9e';
+      const m = it.mechanics || {};
+      const mechParts = [m.text, m.damageBonus ? `Dmg: ${m.damageBonus}` : null, m.toHitBonus != null && m.toHitBonus !== '' ? `Hit: ${m.toHitBonus >= 0 ? '+' : ''}${m.toHitBonus}` : null].filter(Boolean);
+      return `<div style="border:1px solid #2a2a2a;border-radius:5px;margin-bottom:0.4rem;overflow:hidden;" id="inv-item-${it.id}">
+        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.6rem;cursor:pointer;" onclick="toggleInvExpand('${it.id}')">
+          <span style="width:8px;height:8px;border-radius:50%;background:${rarColor};flex-shrink:0;"></span>
+          <span style="flex:1;font-size:0.82rem;font-weight:bold;">${x(it.name)}</span>
+          ${it.quantity > 1 ? `<span style="font-size:0.72rem;color:#666;">×${it.quantity}</span>` : ''}
+          <button onclick="event.stopPropagation();openEditItemForm('${it.id}')" style="background:none;border:none;color:#555;cursor:pointer;padding:2px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button onclick="event.stopPropagation();deletePlayerItem('${it.id}')" style="background:none;border:none;color:#555;cursor:pointer;padding:2px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          </button>
+        </div>
+        <div class="inv-detail-${it.id}" style="display:none;padding:0.3rem 0.6rem 0.5rem;border-top:1px solid #222;font-size:0.76rem;color:var(--text-muted);">
+          ${it.description ? `<div style="margin-bottom:0.25rem;">${x(it.description)}</div>` : ''}
+          ${mechParts.length ? `<div style="color:#aaa;">${mechParts.map(x).join(' · ')}</div>` : ''}
+          ${it.charges?.max ? `<div style="margin-top:0.3rem;display:flex;align-items:center;gap:0.5rem;">
+            <span>Charges: ${it.charges.current}/${it.charges.max}</span>
+            <button onclick="useCharge('${it.id}')" ${it.charges.current <= 0 ? 'disabled' : ''} style="background:rgba(3,218,198,0.1);border:1px solid rgba(3,218,198,0.3);color:var(--success);border-radius:3px;padding:0.15rem 0.5rem;font-size:0.72rem;cursor:pointer;">Use</button>
+          </div>` : ''}
+          ${it.requiresAttunement ? `<div style="color:var(--accent);font-size:0.72rem;">Requires Attunement${it.isAttuned ? ' · Attuned' : ''}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+  body.innerHTML = html;
+}
+function renderSheetSpells(body) {
+  const ss = player?.spellSlots;
+  const defaultOn = ss && Object.values(ss).some(s => s && typeof s === 'object' && (s.max||0) > 0);
+  const isOn = typeof player?.showSpellSlots === 'boolean' ? player.showSpellSlots : (defaultOn || false);
+
+  let html = `<label style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;margin-bottom:0.6rem;cursor:pointer;">
+    <input type="checkbox" ${isOn ? 'checked' : ''} onchange="togglePlayerSpellSlots(this.checked)">
+    Track spell slots
+  </label>`;
+
+  if (!isOn) { body.innerHTML = html; return; }
+
+  html += `<button onclick="playerLongRest()" style="background:rgba(116,185,255,0.1);border:1px solid rgba(116,185,255,0.3);color:var(--info);border-radius:4px;padding:0.3rem 0.7rem;font-size:0.75rem;cursor:pointer;margin-bottom:0.6rem;">Long Rest (Reset All)</button>`;
+
+  for (let lvl = 1; lvl <= 9; lvl++) {
+    const slot = ss ? ss['level' + lvl] : null;
+    const cur = slot?.current ?? 0;
+    const max = slot?.max ?? 0;
+    if (!ss && lvl > 5) continue;
+    const pips = max > 0
+      ? Array.from({ length: max }, (_, i) =>
+          `<span onclick="playerTogglePip(${lvl},${i})" style="display:inline-block;width:14px;height:14px;border-radius:50%;border:1.5px solid var(--accent);background:${i < cur ? 'var(--accent)' : 'transparent'};cursor:pointer;transition:background 0.15s;"></span>`
+        ).join('')
+      : '<span style="color:#555;font-size:0.72rem;">no slots</span>';
+
+    html += `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem;">
+      <span style="font-size:0.75rem;color:#666;width:40px;flex-shrink:0;">Lv ${lvl}</span>
+      <div style="display:flex;gap:0.25rem;flex-wrap:wrap;flex:1;">${pips}</div>
+      <span style="font-size:0.7rem;color:#555;">Max:</span>
+      <input type="number" value="${max}" min="0" max="9"
+        style="width:36px;background:#1a1a1a;border:1px solid #444;color:var(--text);border-radius:3px;padding:0.15rem;text-align:center;font-size:0.75rem;"
+        onchange="playerSetSpellMax(${lvl},this.value)">
+    </div>`;
+  }
+  body.innerHTML = html;
+}
+
+function togglePlayerSpellSlots(on) {
+  mutateAndPush(latest => {
+    const ch = latest.characters?.find(c => c.name === playerName);
+    if (!ch) return;
+    ch.showSpellSlots = on;
+    if (on && !ch.spellSlots) {
+      ch.spellSlots = { lastLongRest: null };
+      for (let l = 1; l <= 9; l++) ch.spellSlots['level' + l] = { current: 0, max: 0 };
+    }
+  }, null);
+}
+
+function playerTogglePip(lvl, pipIdx) {
+  mutateAndPush(latest => {
+    const ch = latest.characters?.find(c => c.name === playerName);
+    const slot = ch?.spellSlots?.['level' + lvl];
+    if (!slot) return;
+    slot.current = pipIdx >= slot.current ? pipIdx + 1 : pipIdx;
+    slot.current = Math.max(0, Math.min(slot.current, slot.max));
+  }, null);
+}
+
+function playerSetSpellMax(lvl, val) {
+  const max = Math.max(0, parseInt(val) || 0);
+  mutateAndPush(latest => {
+    const ch = latest.characters?.find(c => c.name === playerName);
+    if (!ch) return;
+    if (!ch.spellSlots) ch.spellSlots = { lastLongRest: null };
+    if (!ch.spellSlots['level' + lvl]) ch.spellSlots['level' + lvl] = { current: 0, max: 0 };
+    ch.spellSlots['level' + lvl].max = max;
+    ch.spellSlots['level' + lvl].current = Math.min(ch.spellSlots['level' + lvl].current, max);
+  }, null);
+}
+
+function playerLongRest() {
+  mutateAndPush(latest => {
+    const ch = latest.characters?.find(c => c.name === playerName);
+    if (!ch?.spellSlots) return;
+    for (let l = 1; l <= 9; l++) {
+      const s = ch.spellSlots['level' + l];
+      if (s) s.current = s.max;
+    }
+    ch.spellSlots.lastLongRest = new Date().toISOString();
+  }, 'Long rest — spell slots restored.');
+}
+function renderSheetGold(body) {
+  const gold = player?.gold ?? 0;
+  body.innerHTML = `<div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;margin-bottom:0.5rem;border-bottom:1px solid #222;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffd700" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span style="font-size:1.1rem;font-weight:bold;color:#ffd700;" id="gold-display">${gold} gp</span>
+    <button onclick="adjustGold(-1)" style="background:none;border:1px solid #444;color:#aaa;width:26px;height:26px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+    <input type="number" id="gold-input" value="${gold}" min="0" style="width:70px;background:#1a1a1a;border:1px solid #444;color:var(--text);border-radius:3px;padding:0.25rem 0.4rem;text-align:center;">
+    <button onclick="adjustGold(1)" style="background:none;border:1px solid #444;color:#aaa;width:26px;height:26px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+    <button onclick="setGoldFromInput()" style="background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);color:#ffd700;border-radius:4px;padding:0.25rem 0.5rem;font-size:0.75rem;cursor:pointer;">Set</button>
+  </div>`;
+}
+function renderSheetFamiliar(body) {
+  const f = player?.familiar;
+  if (!f) { body.innerHTML = '<p style="color:#555;font-size:0.82rem;">No companion.</p>'; return; }
+  const hp = f.stats?.hp || { current: 0, max: 0 };
+  const hpPct = hp.max ? hp.current / hp.max : 1;
+  const hpColor = hpPct <= 0.25 ? 'var(--danger)' : hpPct <= 0.5 ? 'var(--warning)' : 'var(--success)';
+  const condChips = (f.conditions || []).map(c =>
+    `<span style="background:rgba(3,218,198,0.12);border:1px solid rgba(3,218,198,0.3);color:var(--success);font-size:0.68rem;padding:0.1rem 0.45rem;border-radius:12px;">${x(c)}</span>`
+  ).join('');
+
+  body.innerHTML = `
+    <div style="margin-bottom:0.6rem;">
+      <div style="font-size:0.82rem;font-weight:bold;margin-bottom:0.2rem;">${x(f.name)}
+        <span style="font-size:0.72rem;color:#666;font-weight:normal;"> · ${x(f.race || f.type || '')}</span>
+      </div>
+      ${f.description ? `<div style="font-size:0.76rem;color:var(--text-muted);margin-bottom:0.4rem;">${x(f.description)}</div>` : ''}
+    </div>
+    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+      <span style="font-size:0.72rem;color:#666;width:24px;">HP</span>
+      <div style="flex:1;height:8px;background:#222;border-radius:4px;overflow:hidden;">
+        <div style="width:${Math.min(100,hpPct*100)}%;height:100%;background:${hpColor};transition:width 0.3s;"></div>
+      </div>
+      <span style="font-size:0.82rem;font-weight:bold;">${hp.current}/${hp.max}</span>
+      <button onclick="famAdjHP(-1)" style="background:none;border:1px solid #444;color:#aaa;width:22px;height:22px;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button onclick="famAdjHP(1)" style="background:none;border:1px solid #444;color:#aaa;width:22px;height:22px;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+    <div style="display:flex;gap:0.4rem;margin-bottom:0.5rem;">
+      ${['active','inactive','dead'].map(s => {
+        const isSelected = s === 'dead' ? f.isDead : s === 'active' ? (f.isActive && !f.isDead) : (!f.isActive && !f.isDead);
+        return `<button onclick="setFamStatus('${s}')" style="flex:1;background:${isSelected ? 'rgba(187,134,252,0.2)' : 'rgba(255,255,255,0.04)'};border:1px solid ${isSelected ? 'var(--accent)' : '#333'};color:${isSelected ? 'var(--accent)' : '#666'};border-radius:4px;padding:0.25rem;font-size:0.72rem;cursor:pointer;text-transform:capitalize;">${s}</button>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:0.3rem;">${condChips || '<span style="color:#555;font-size:0.72rem;">No conditions</span>'}</div>
+  `;
+}
+
+function famAdjHP(delta) {
+  mutateAndPush(latest => {
+    const ch = latest.characters?.find(c => c.name === playerName);
+    if (!ch?.familiar?.stats?.hp) return;
+    const hp = ch.familiar.stats.hp;
+    hp.current = Math.max(0, Math.min((hp.current || 0) + delta, hp.max || 0));
+  }, null);
+}
+
+function setFamStatus(status) {
+  mutateAndPush(latest => {
+    const ch = latest.characters?.find(c => c.name === playerName);
+    if (!ch?.familiar) return;
+    ch.familiar.isActive = status === 'active';
+    ch.familiar.isDead   = status === 'dead';
+    if (status === 'dead') ch.familiar.deathDate = new Date().toISOString();
+  }, status === 'dead' ? `${player.familiar?.name} has died.` : null);
+}
+let _diceHistory = [];
+
+function renderSheetDice(body) {
+  body.innerHTML = `
+    <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+      ${[4,6,8,10,12,20,100].map(d =>
+        `<button onclick="rollDie(${d})" style="background:rgba(255,255,255,0.06);border:1px solid #444;color:var(--text);border-radius:6px;padding:0.45rem 0.6rem;font-size:0.82rem;font-weight:bold;cursor:pointer;transition:0.15s;min-width:44px;">d${d}</button>`
+      ).join('')}
+    </div>
+    <div id="dice-result" style="text-align:center;font-size:2.5rem;font-weight:900;min-height:3rem;color:var(--accent);transition:all 0.15s;"></div>
+    <div id="dice-history" style="display:flex;gap:0.3rem;margin-top:0.5rem;flex-wrap:wrap;justify-content:center;"></div>
+  `;
+}
+
+function rollDie(sides) {
+  const result = Math.ceil(Math.random() * sides);
+  const el = document.getElementById('dice-result');
+  if (el) {
+    el.style.transform = 'scale(1.3)';
+    el.textContent = result;
+    setTimeout(() => { if (el) el.style.transform = 'scale(1)'; }, 150);
+  }
+  _diceHistory.unshift({ sides, result });
+  if (_diceHistory.length > 5) _diceHistory.pop();
+  const histEl = document.getElementById('dice-history');
+  if (histEl) {
+    histEl.innerHTML = _diceHistory.map(h =>
+      `<span style="font-size:0.72rem;color:#555;background:#1a1a1a;border:1px solid #333;border-radius:3px;padding:0.1rem 0.35rem;">d${h.sides}:${h.result}</span>`
+    ).join('');
+  }
+}
+
+/* ══════════════════════════════
+   INVENTORY HELPERS (Phase 4B)
+══════════════════════════════ */
+function toggleInvExpand(itemId) {
+  const detail = document.querySelector(`.inv-detail-${itemId}`);
+  if (detail) detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
+}
+
+function openAddItemForm() {
+  const container = document.getElementById('add-item-form-container');
+  if (container) container.innerHTML = buildItemFormHTML(null);
+}
+
+function openEditItemForm(itemId) {
+  const it = (player?.inventory || []).find(i => i.id === itemId);
+  if (!it) return;
+  const itemEl = document.getElementById(`inv-item-${itemId}`);
+  if (itemEl) itemEl.insertAdjacentHTML('afterend', buildItemFormHTML(it));
+}
+
+function buildItemFormHTML(existing) {
+  const id = existing?.id || null;
+  return `<div class="item-inline-form" style="background:rgba(255,255,255,0.04);border:1px solid #333;border-radius:5px;padding:0.6rem;margin-bottom:0.4rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-bottom:0.4rem;">
+      <div><label style="font-size:0.7rem;color:#666;">Name</label>
+        <input id="if-name" value="${x(existing?.name || '')}" style="width:100%;background:#1a1a1a;border:1px solid #444;color:var(--text);border-radius:3px;padding:0.25rem 0.4rem;font-size:0.8rem;box-sizing:border-box;"></div>
+      <div><label style="font-size:0.7rem;color:#666;">Qty</label>
+        <input id="if-qty" type="number" value="${existing?.quantity || 1}" min="1" style="width:100%;background:#1a1a1a;border:1px solid #444;color:var(--text);border-radius:3px;padding:0.25rem 0.4rem;font-size:0.8rem;box-sizing:border-box;"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-bottom:0.4rem;">
+      <div><label style="font-size:0.7rem;color:#666;">Type</label>
+        <select id="if-type" style="width:100%;background:#1a1a1a;border:1px solid #444;color:var(--text);border-radius:3px;padding:0.25rem 0.4rem;font-size:0.8rem;box-sizing:border-box;">
+          ${['weapon','armor','wand','ring','potion','wondrous','consumable','trinket','currency','arcane focus'].map(t =>
+            `<option value="${t}" ${existing?.type === t ? 'selected' : ''}>${t}</option>`).join('')}
+        </select></div>
+      <div><label style="font-size:0.7rem;color:#666;">Rarity</label>
+        <select id="if-rarity" style="width:100%;background:#1a1a1a;border:1px solid #444;color:var(--text);border-radius:3px;padding:0.25rem 0.4rem;font-size:0.8rem;box-sizing:border-box;">
+          ${['common','uncommon','rare','very rare','legendary'].map(r =>
+            `<option value="${r}" ${existing?.rarity === r ? 'selected' : ''}>${r}</option>`).join('')}
+        </select></div>
+    </div>
+    <div style="margin-bottom:0.4rem;"><label style="font-size:0.7rem;color:#666;">Description / Notes</label>
+      <textarea id="if-desc" rows="2" style="width:100%;background:#1a1a1a;border:1px solid #444;color:var(--text);border-radius:3px;padding:0.25rem 0.4rem;font-size:0.78rem;resize:vertical;box-sizing:border-box;">${x(existing?.description || '')}</textarea></div>
+    <div style="display:flex;gap:0.4rem;">
+      <button onclick="saveItemForm('${id}')" style="background:rgba(187,134,252,0.15);border:1px solid rgba(187,134,252,0.4);color:var(--accent);border-radius:4px;padding:0.3rem 0.7rem;font-size:0.78rem;cursor:pointer;">Save</button>
+      <button onclick="this.closest('.item-inline-form').remove()" style="background:none;border:1px solid #444;color:#666;border-radius:4px;padding:0.3rem 0.7rem;font-size:0.78rem;cursor:pointer;">Cancel</button>
+    </div>
+  </div>`;
+}
+
+function saveItemForm(existingId) {
+  const name = document.getElementById('if-name')?.value.trim();
+  if (!name) return notifyToast('Item name required.');
+  const qty      = parseInt(document.getElementById('if-qty')?.value) || 1;
+  const type     = document.getElementById('if-type')?.value || 'misc';
+  const rarity   = document.getElementById('if-rarity')?.value || 'common';
+  const desc     = document.getElementById('if-desc')?.value.trim() || '';
+
+  mutateAndPush(latest => {
+    const ch = latest.characters?.find(c => c.name === playerName);
+    if (!ch) return;
+    if (!Array.isArray(ch.inventory)) ch.inventory = [];
+    if (existingId && existingId !== 'null') {
+      const it = ch.inventory.find(i => i.id === existingId);
+      if (it) { it.name = name; it.quantity = qty; it.type = type; it.rarity = rarity; it.description = desc; }
+    } else {
+      ch.inventory.push({
+        id: 'item_' + Date.now().toString(36),
+        name, type, rarity, quantity: qty, description: desc,
+        mechanics: { toHitBonus: null, damageBonus: null, acBase: null, acMod: null, text: '' },
+        charges: null, requiresAttunement: false, isAttuned: false, isDeleted: false
+      });
+    }
+    ch.updatedAt = new Date().toISOString();
+  }, existingId && existingId !== 'null' ? 'Item updated.' : 'Item added.');
+
+  document.querySelector('.item-inline-form')?.remove();
+}
+
+function deletePlayerItem(itemId) {
+  if (!confirm('Remove this item?')) return;
+  mutateAndPush(latest => {
+    const ch = latest.characters?.find(c => c.name === playerName);
+    const it = ch?.inventory?.find(i => i.id === itemId);
+    if (it) { it.isDeleted = true; ch.updatedAt = new Date().toISOString(); }
+  }, 'Item removed.');
+}
+
+function useCharge(itemId) {
+  mutateAndPush(latest => {
+    const ch = latest.characters?.find(c => c.name === playerName);
+    const it = ch?.inventory?.find(i => i.id === itemId);
+    if (it?.charges && it.charges.current > 0) {
+      it.charges.current--;
+      ch.updatedAt = new Date().toISOString();
+    }
+  }, 'Charge used.');
+}
+
+/* ══════════════════════════════
+   GOLD HELPERS (Phase 4B)
+══════════════════════════════ */
+function adjustGold(delta) {
+  const cur = player?.gold ?? 0;
+  const newVal = Math.max(0, cur + delta);
+  const inp = document.getElementById('gold-input');
+  if (inp) inp.value = newVal;
+  setGold(newVal);
+}
+
+function setGoldFromInput() {
+  const val = parseInt(document.getElementById('gold-input')?.value) || 0;
+  setGold(Math.max(0, val));
+}
+
+function setGold(val) {
+  mutateAndPush(latest => {
+    const ch = latest.characters?.find(c => c.name === playerName);
+    if (ch) { ch.gold = val; ch.updatedAt = new Date().toISOString(); }
+  }, `Gold: ${val} gp`);
+}
   get('hud-name').textContent = player?.name || playerName || '—';
   const sub = player ? [player.race, player.class].filter(Boolean).join(' ') : 'Awaiting data...';
   get('hud-sub').textContent = sub || '—';
@@ -741,8 +1296,7 @@ function updateVitals() {
   const ac    = player?.stats?.ac ?? null;
   const pass  = player?.stats?.passivePerception ?? null;
   const speed = player?.stats?.speed ?? null;
-  const gold  = player?.gold ?? null;
-  console.log('[HUD] Vitals:', {hp, maxHp, ac, pass, speed, gold});
+  console.log('[HUD] Vitals:', {hp, maxHp, ac, pass, speed});
 
   const fmt = (v, unit='') => v != null ? `${v}${unit}` : '—';
   const el = get('vitals-inline');
@@ -758,8 +1312,7 @@ function updateVitals() {
     `<span style="color:var(--muted);"> &nbsp;|&nbsp; </span>` +
     `<span style="color:var(--primary);">Passive ${fmt(pass)}</span>` +
     `<span style="color:var(--muted);"> &nbsp;|&nbsp; </span>` +
-    `<span style="color:var(--primary);">Speed ${fmt(speed,' ft')}</span>` +
-    (gold !== null ? `<span style="color:var(--muted);"> &nbsp;|&nbsp; </span><span style="color:#ffd700;">${fmt(gold)} gp</span>` : '');
+    `<span style="color:var(--primary);">Speed ${fmt(speed,' ft')}</span>`;
 }
 
 /* ══════════════════════════════
@@ -1090,6 +1643,13 @@ function showAchievementDetail(achId) {
   
   if (unlocked) {
     // Full details
+    const earnedTs = a.earnedBy?.[player?.id];
+    const earnDateStr = earnedTs
+      ? new Date(earnedTs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : null;
+    const isParty = !a.earnedBy || Object.keys(a.earnedBy).length === 0;
+    const earnLine = `<div style="font-size:0.72rem;color:#666;margin:0.3rem 0;">${isParty ? 'Party Achievement' : (earnDateStr ? `Earned: ${earnDateStr}` : '')}</div>`;
+    const goldReward = a.rewards?.gold ? `<div style="color:#ffd700;font-size:0.8rem;margin-bottom:0.4rem;">+${a.rewards.gold} gp</div>` : '';
     const goldLine = (a.rewards?.gold) ? `<div class="ach-detail-gold">${a.rewards.gold} gp awarded</div>` : '';
     let lootHtml = '';
     if (a.loot && a.loot.name) {
@@ -1098,13 +1658,15 @@ function showAchievementDetail(achId) {
           <div class="ach-detail-loot-label">Loot Details</div>
           <div class="ach-detail-loot-text">${escapeHtml(formatLootText(a.loot))}</div>
           <div class="ach-detail-actions" style="gap:0.4rem;margin-top:0.5rem;">
-            <button class="btn-copy-loot" data-copy-loot="name">📋 Copy Name</button>
-            <button class="btn-copy-loot" data-copy-loot="full">📋 Copy All</button>
+            <button class="btn-copy-loot" data-copy-loot="name">Copy Name</button>
+            <button class="btn-copy-loot" data-copy-loot="full">Copy All</button>
           </div>
         </div>`;
     }
     bodyHtml = `
       <div class="ach-detail-desc">${escapeHtml(a.description || '')}</div>
+      ${earnLine}
+      ${goldReward}
       ${goldLine}
       ${lootHtml}`;
     // Archived items are read-only; only awarded-not-acked shows the button
@@ -1223,39 +1785,24 @@ async function markAcknowledgedAch(achId) {
   if (!state || !player) return;
   const ach = state.achievements?.find(a => a.id === achId);
   if (!ach) return;
-  
-  // Mark acknowledged locally
-  if (!ach.acknowledgedBy) ach.acknowledgedBy = [];
-  if (!ach.acknowledgedBy.includes(player.id)) ach.acknowledgedBy.push(player.id);
-  // Remember this notify-wave so poll merges can't resurrect it; a future
-  // DM re-notify produces a new notifyPlayerAt and therefore a new key.
-  _acknowledgedLocally.add(_notifyKey(ach));
-  
-  // Silence the notification toast immediately (kill click handler + hide)
+
+  // Silence the notification toast immediately
   const toast = get('ach-toast');
-  toast.onclick = null;
-  toast.style.cursor = 'default';
-  toast.classList.remove('show');
-  
-  // POST to worker to sync KV
-  try {
-    await fetch(WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'acknowledge_achievement',
-        achievementId: achId,
-        characterId: player.id
-      })
-    });
-  } catch (e) {
-    console.error('Post acknowledge failed:', e);
-  }
-  
-  // Update UI
+  if (toast) { toast.onclick = null; toast.style.cursor = 'default'; toast.classList.remove('show'); }
+
+  // Remember this notify-wave locally so poll merges can't resurrect it
+  _acknowledgedLocally.add(_notifyKey(ach));
+
+  // Persist via mutateAndPush (replaces broken action: 'acknowledge_achievement' POST)
+  await mutateAndPush(latest => {
+    const a = latest.achievements?.find(x => x.id === achId);
+    if (!a) return;
+    if (!Array.isArray(a.acknowledgedBy)) a.acknowledgedBy = [];
+    if (!a.acknowledgedBy.includes(player.id)) a.acknowledgedBy.push(player.id);
+  }, null);
+
   updateAchPill();
   backToList();
-  notifyToast('Achievement acknowledged');
 }
 
 /* Poll for achievement state changes every 12s */
@@ -1427,38 +1974,6 @@ function escapeHtml(text) {
 function escapeForAttr(text) {
   if (!text) return '';
   return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-}
-
-/* ══════════════════════════════
-   INVENTORY (V5.3)
-══════════════════════════════ */
-function openInventoryModal() {
-  renderInventoryList();
-  get('inv-modal-overlay').classList.remove('hidden');
-}
-
-function closeInventoryModal() {
-  const el = get('inv-modal-overlay');
-  if (el) el.classList.add('hidden');
-}
-
-function renderInventoryList() {
-  const list = get('inv-list');
-  const inv  = (player?.inventory || []).filter(it => !it.isDeleted);
-  if (!inv.length) {
-    list.innerHTML = '<p class="inv-empty">No items in inventory.</p>';
-    return;
-  }
-  list.innerHTML = inv.map(it => {
-    const meta = [it.type, it.rarity].filter(Boolean).join(' · ');
-    const qty  = (it.quantity > 1) ? ` ×${it.quantity}` : '';
-    const desc = it.mechanics?.text || it.description || '';
-    return `<div class="inv-item-row">` +
-      `<div class="inv-item-name">${x(it.name)}${qty}</div>` +
-      (meta ? `<div class="inv-item-meta">${x(meta)}</div>` : '') +
-      (desc ? `<div class="inv-item-desc">${x(desc)}</div>` : '') +
-      `</div>`;
-  }).join('');
 }
 
 /* ══════════════════════════════
