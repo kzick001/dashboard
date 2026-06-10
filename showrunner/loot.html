@@ -175,8 +175,13 @@
     .magazine-list { overflow-y: auto; flex-grow: 1; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
 
     .slot { padding: 0.6rem 0.7rem; border-radius: 6px; font-size: 0.88rem; border: 1px solid transparent; transition: 0.2s; display: flex; align-items: center; gap: 0.6rem; }
-    .slot.loaded { background: #1a1a1a; border-color: #333; }
+    .slot.loaded { background: #1a1a1a; border-color: #333; cursor: pointer; }
     .slot.loaded:hover { border-color: #555; }
+    .slot-detail { max-height: 0; overflow: hidden; transition: max-height 0.25s ease; padding: 0; border-top: none; }
+    .slot.loaded.expanded .slot-detail { max-height: 200px; border-top: 1px solid #2a2a2a; padding: 0.5rem 0.75rem 0.6rem; }
+    .slot-detail-line { font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; }
+    .slot-detail-line span { color: var(--text); }
+    .slot-detail-badges { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-bottom: 0.3rem; }
     .slot .roll-tag { font-family: monospace; font-size: 0.78rem; color: #888; background: rgba(255,255,255,0.06); padding: 2px 7px; border-radius: 4px; flex-shrink: 0; min-width: 52px; text-align: center; }
     .slot .item-name { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #ddd; }
     .slot .rarity-pip { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
@@ -499,6 +504,8 @@
   // Max roll per table, keyed by "category:id".
   // Tiers/personal have implied maxes; custom stores explicit maxRoll on the table meta.
   let tableMax = {};
+
+  let expandedMagIdx = null;    // index of currently expanded magazine slot
 
   let currentView = null;       // { category: 'tiers'|'personal'|'custom', id: 'bronze' }
   let stagedRoll = null;        // { entryIndex, item, range }
@@ -921,6 +928,12 @@
           <div class="result-matched">Roll ${ctx.roll} → Range ${rangeStr(ctx.range)}</div>
           <h2 class="result-title" style="color:var(--danger)">Slot Empty</h2>
           <p class="result-text">This range was awarded or cleared. The Kouateen are displeased.</p>
+          <div class="action-row">
+            <button class="btn-action" onclick="quickFillSlot(${JSON.stringify(ctx.range)})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Fill This Slot
+            </button>
+          </div>
         </div>`;
       return;
     }
@@ -1085,19 +1098,58 @@
       }
       const it = e.item;
       const rarColor = RARITY_COLOR[it.rarity] || 'var(--r-common)';
+      const isExpanded = expandedMagIdx === idx;
+
+      // Build detail content
+      let detailLines = [];
+      if (it.description) detailLines.push(`<div class="slot-detail-line">${escHtml(it.description)}</div>`);
+      const m = it.mechanics || {};
+      const mechParts = [];
+      if (m.text) mechParts.push(m.text);
+      if (m.toHitBonus != null && m.toHitBonus !== '') mechParts.push(`To-hit ${m.toHitBonus >= 0 ? '+' : ''}${m.toHitBonus}`);
+      if (m.damageBonus) mechParts.push(`Damage: ${m.damageBonus}`);
+      if (m.acBase != null) mechParts.push(`AC Base: ${m.acBase}`);
+      if (m.acMod) mechParts.push(`AC Mod: ${m.acMod >= 0 ? '+' : ''}${m.acMod}`);
+      if (mechParts.length) detailLines.push(`<div class="slot-detail-line"><span>Mechanics:</span> ${escHtml(mechParts.join(' · '))}</div>`);
+      if (it.charges?.max) detailLines.push(`<div class="slot-detail-line"><span>Charges:</span> ${it.charges.current}/${it.charges.max}</div>`);
+      if (it.requiresAttunement) detailLines.push(`<div class="slot-detail-line"><span>Attunement required</span></div>`);
+
       return `
-        <div class="slot loaded">
+        <div class="slot loaded ${isExpanded ? 'expanded' : ''}" onclick="toggleSlotExpand(${idx})">
           <span class="roll-tag">${rng}</span>
           <span class="rarity-pip" style="background:${rarColor}" title="${escAttr(it.rarity)}"></span>
           <span class="item-name" title="${escAttr(it.name)}">${escHtml(it.name)}</span>
-          <span class="slot-actions">
-            <button class="slot-btn" title="Edit" onclick="openItemModal(${idx})">✎</button>
-            <button class="slot-btn del" title="Delete" onclick="deleteEntry(${idx})">✕</button>
+          <span class="slot-actions" onclick="event.stopPropagation()">
+            <button class="slot-btn" title="Edit" onclick="openItemModal(${idx})">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="slot-btn del" title="Delete" onclick="deleteEntry(${idx})">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
           </span>
+          <div class="slot-detail">${detailLines.join('') || '<div class="slot-detail-line" style="color:#555">No additional details.</div>'}</div>
         </div>`;
     }).join('');
 
     document.getElementById('magazine-list').innerHTML = html;
+  }
+
+  function toggleSlotExpand(idx) {
+    expandedMagIdx = expandedMagIdx === idx ? null : idx;
+    renderMagazine();
+  }
+
+  function quickFillSlot(range) {
+    if (!currentView) return;
+    const table = getTable(currentView);
+    const idx = table.findIndex(e => Array.isArray(e.rollRange) && e.rollRange[0] === range[0] && e.rollRange[1] === range[1]);
+    openItemModal(idx !== -1 ? idx : null);
+    setTimeout(() => {
+      const minEl = document.getElementById('f-rollmin');
+      const maxEl = document.getElementById('f-rollmax');
+      if (minEl) minEl.value = range[0];
+      if (maxEl) maxEl.value = range[1];
+    }, 50);
   }
 
   /* ══════════════════════════════════════════════════
