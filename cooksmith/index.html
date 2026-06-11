@@ -1,0 +1,2429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cooksmith</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ============================================================ SVG symbol defs -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="icon-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+    <path d="M9 21V12h6v9"/>
+  </symbol>
+  <symbol id="icon-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
+    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+  </symbol>
+  <symbol id="icon-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="7" height="7" rx="1"/>
+    <rect x="14" y="3" width="7" height="7" rx="1"/>
+    <rect x="3" y="14" width="7" height="7" rx="1"/>
+    <rect x="14" y="14" width="7" height="7" rx="1"/>
+  </symbol>
+  <symbol id="icon-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+    <path d="M2 12l10 5 10-5"/>
+    <path d="M2 17l10 5 10-5"/>
+  </symbol>
+  <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </symbol>
+  <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+  </symbol>
+  <symbol id="icon-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  </symbol>
+  <symbol id="icon-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+    <polyline points="16 17 21 12 16 7"/>
+    <line x1="21" y1="12" x2="9" y2="12"/>
+  </symbol>
+  <symbol id="icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"/>
+    <line x1="5" y1="12" x2="19" y2="12"/>
+  </symbol>
+  <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </symbol>
+  <symbol id="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="3 6 5 6 21 6"/>
+    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+    <path d="M10 11v6"/>
+    <path d="M14 11v6"/>
+    <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+  </symbol>
+  <symbol id="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"/>
+    <line x1="6" y1="6" x2="18" y2="18"/>
+  </symbol>
+  <symbol id="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="8"/>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </symbol>
+  <symbol id="icon-chevron-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="18 15 12 9 6 15"/>
+  </symbol>
+  <symbol id="icon-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="6 9 12 15 18 9"/>
+  </symbol>
+  <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </symbol>
+  <symbol id="icon-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"/>
+    <circle cx="8.5" cy="8.5" r="1.5"/>
+    <polyline points="21 15 16 10 5 21"/>
+  </symbol>
+  <symbol id="icon-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <polyline points="12 6 12 12 16 14"/>
+  </symbol>
+  <symbol id="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <line x1="3" y1="18" x2="21" y2="18"/>
+  </symbol>
+  <symbol id="icon-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="16 16 12 12 8 16"/>
+    <line x1="12" y1="12" x2="12" y2="21"/>
+    <path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/>
+  </symbol>
+  <symbol id="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </symbol>
+  <symbol id="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+    <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+  </symbol>
+  <symbol id="icon-parallel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="3" y1="7" x2="21" y2="7"/>
+    <line x1="3" y1="17" x2="21" y2="17"/>
+  </symbol>
+</svg>
+
+<!-- ============================================================ App shell -->
+<div id="app">
+
+  <!-- Desktop top nav -->
+  <nav id="top-nav">
+    <a href="#home" class="nav-logo">cook<span>smith</span></a>
+    <div class="nav-links" id="nav-links">
+      <a href="#home" class="nav-link" data-route="home">
+        <svg><use href="#icon-home"/></svg> Home
+      </a>
+      <a href="#my-recipes" class="nav-link" data-route="my-recipes">
+        <svg><use href="#icon-book"/></svg> My Recipes
+      </a>
+      <a href="#components" class="nav-link" data-route="components">
+        <svg><use href="#icon-grid"/></svg> Components
+      </a>
+      <a href="#builder" class="nav-link" data-route="builder">
+        <svg><use href="#icon-layers"/></svg> Meal Builder
+      </a>
+      <a href="#admin" class="nav-link hidden" id="nav-admin-link" data-route="admin">
+        <svg><use href="#icon-shield"/></svg> Admin
+      </a>
+    </div>
+    <div class="nav-right" id="nav-right">
+      <!-- Populated by renderNav() -->
+    </div>
+  </nav>
+
+  <!-- Main layout -->
+  <div id="main-layout">
+    <aside id="sidebar"></aside>
+    <main id="view-container"></main>
+  </div>
+
+  <!-- Mobile bottom nav -->
+  <nav id="mobile-nav">
+    <a href="#home" class="mobile-nav-btn" data-route="home">
+      <svg><use href="#icon-home"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="#my-recipes" class="mobile-nav-btn" data-route="my-recipes">
+      <svg><use href="#icon-book"/></svg>
+      <span>Recipes</span>
+    </a>
+    <a href="#components" class="mobile-nav-btn" data-route="components">
+      <svg><use href="#icon-grid"/></svg>
+      <span>Components</span>
+    </a>
+    <a href="#builder" class="mobile-nav-btn" data-route="builder">
+      <svg><use href="#icon-layers"/></svg>
+      <span>Builder</span>
+    </a>
+    <button class="mobile-nav-btn" id="mobile-profile-btn">
+      <svg><use href="#icon-user"/></svg>
+      <span>Profile</span>
+    </button>
+  </nav>
+
+  <!-- Mobile slide-up sheet -->
+  <div id="mobile-sheet-overlay">
+    <div id="mobile-sheet">
+      <div class="sheet-handle"></div>
+      <div id="mobile-sheet-content">
+        <!-- Populated by renderNav() -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+</div>
+
+<!-- ============================================================ App JS -->
+<script type="module">
+/* ------------------------------------------------------------ constants */
+const API_BASE = 'https://api.cooksmith.kzick.dev';
+const TOKEN_KEY = 'cooksmith::token';
+
+const APPLIANCE_COLORS = {
+  'Suvie':      '#4A90D9',
+  'Stovetop':   '#E8563A',
+  'Microwave':  '#9B59B6',
+  'Oven':       '#F39C12',
+  'Air Fryer':  '#27AE60',
+  'Grill':      '#C0392B',
+  'Instant Pot':'#2C3E50',
+  'custom':     '#7F8C8D',
+};
+
+const APPLIANCE_LIST = ['Suvie','Stovetop','Microwave','Oven','Air Fryer','Grill','Instant Pot','custom'];
+const CATEGORY_LIST  = ['protein','side','veggie','sauce','grain','other'];
+
+const ERROR_MESSAGES = {
+  AUTH_REQUIRED:       'You need to be logged in to do that.',
+  AUTH_INVALID:        'Your session has expired. Please log in again.',
+  AUTH_FORBIDDEN:      'You don\'t have permission to do that.',
+  USER_NOT_FOUND:      'User not found.',
+  USER_EXISTS:         'That username or email is already taken.',
+  RECIPE_NOT_FOUND:    'Recipe not found.',
+  RECIPE_FORBIDDEN:    'You don\'t own this recipe.',
+  COMPONENT_NOT_FOUND: 'Component not found.',
+  COMPONENT_FORBIDDEN: 'You don\'t own this component.',
+  IMAGE_TOO_LARGE:     'Image must be under 10 MB.',
+  IMAGE_TYPE_INVALID:  'Accepted image types: JPEG, PNG, WebP, GIF.',
+  IMPORT_INVALID:      'Import data is invalid or incomplete.',
+  VALIDATION_ERROR:    'Please check your input and try again.',
+  INTERNAL_ERROR:      'Something went wrong on the server.',
+};
+
+/* ------------------------------------------------------------ global state */
+const AppState = {
+  currentUser: null,
+  currentView: null,
+  token: null,
+};
+
+/* ------------------------------------------------------------ icon helper */
+function icon(id, cls = '') {
+  return `<svg class="${cls}" aria-hidden="true"><use href="#icon-${id}"/></svg>`;
+}
+
+/* ------------------------------------------------------------ api client */
+async function api(method, path, body = undefined) {
+  const headers = {};
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (AppState.token) headers['Authorization'] = `Bearer ${AppState.token}`;
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+
+  if (res.status === 204) return {};
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    const err = data && data.error ? data : {
+      error: true, code: 'INTERNAL_ERROR',
+      message: `Request failed (${res.status})`, status: res.status,
+    };
+    if (err.code === 'AUTH_REQUIRED' || err.code === 'AUTH_INVALID') {
+      clearAuth();
+      renderNav();
+      route('#home');
+    }
+    throw err;
+  }
+
+  return data;
+}
+
+async function uploadImage(uploadUrl, file) {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(uploadUrl, { method: 'POST', body: form });
+  if (!res.ok) throw { code: 'INTERNAL_ERROR', message: 'Image upload failed.', status: res.status };
+  return res;
+}
+
+/* ------------------------------------------------------------ auth helpers */
+function clearAuth() {
+  AppState.token = null;
+  AppState.currentUser = null;
+  localStorage.removeItem(TOKEN_KEY);
+}
+
+function setAuth(token, user) {
+  AppState.token = token;
+  AppState.currentUser = user;
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+/* ------------------------------------------------------------ toast */
+function toast(message, type = 'default') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = message;
+  document.getElementById('toast-container').appendChild(el);
+  requestAnimationFrame(() => { requestAnimationFrame(() => { el.classList.add('show'); }); });
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 300);
+  }, 3200);
+}
+
+/* ------------------------------------------------------------ nav */
+function renderNav() {
+  const navRight = document.getElementById('nav-right');
+  const adminLink = document.getElementById('nav-admin-link');
+  const sheetContent = document.getElementById('mobile-sheet-content');
+
+  if (AppState.currentUser) {
+    const user = AppState.currentUser;
+    const avatarHtml = user.avatar_url
+      ? `<img src="${user.avatar_url}" alt="${user.username}">`
+      : icon('user');
+
+    navRight.innerHTML = `
+      <a href="#profile/${user.username}" class="nav-user">
+        <span class="nav-avatar">${avatarHtml}</span>
+        ${user.username}
+      </a>
+      <a href="#settings" class="btn btn-ghost btn-sm">${icon('settings')} Settings</a>
+      <button class="btn btn-ghost btn-sm" id="logout-btn">${icon('logout')} Log out</button>
+    `;
+
+    if (user.role === 'admin') adminLink.classList.remove('hidden');
+    else adminLink.classList.add('hidden');
+
+    sheetContent.innerHTML = `
+      <a href="#profile/${user.username}" class="sheet-item">${icon('user')} ${user.username}</a>
+      <a href="#settings" class="sheet-item">${icon('settings')} Settings</a>
+      ${user.role === 'admin' ? `<a href="#admin" class="sheet-item">${icon('shield')} Admin</a>` : ''}
+      <button class="sheet-item danger" id="mobile-logout-btn">${icon('logout')} Log out</button>
+    `;
+
+    document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
+    document.getElementById('mobile-logout-btn')?.addEventListener('click', handleLogout);
+  } else {
+    navRight.innerHTML = `
+      <button class="btn btn-ghost btn-sm" id="nav-login-btn">Log in</button>
+      <button class="btn btn-primary btn-sm" id="nav-register-btn">Register</button>
+    `;
+    adminLink.classList.add('hidden');
+    sheetContent.innerHTML = `
+      <button class="sheet-item" id="mobile-login-btn">${icon('user')} Log in</button>
+    `;
+
+    document.getElementById('nav-login-btn')?.addEventListener('click', () => showAuthModal('login'));
+    document.getElementById('nav-register-btn')?.addEventListener('click', () => showAuthModal('register'));
+    document.getElementById('mobile-login-btn')?.addEventListener('click', () => {
+      closeMobileSheet();
+      showAuthModal('login');
+    });
+  }
+
+  updateNavActive();
+}
+
+function updateNavActive() {
+  const hash = location.hash.replace('#', '') || 'home';
+  const routeBase = hash.split('/')[0];
+
+  document.querySelectorAll('.nav-link[data-route]').forEach(el => {
+    el.classList.toggle('active', el.dataset.route === routeBase);
+  });
+  document.querySelectorAll('.mobile-nav-btn[data-route]').forEach(el => {
+    el.classList.toggle('active', el.dataset.route === routeBase);
+  });
+}
+
+/* ------------------------------------------------------------ mobile sheet */
+const mobileSheetOverlay = document.getElementById('mobile-sheet-overlay');
+
+function openMobileSheet() {
+  mobileSheetOverlay.classList.add('open');
+}
+function closeMobileSheet() {
+  mobileSheetOverlay.classList.remove('open');
+}
+mobileSheetOverlay.addEventListener('click', e => {
+  if (e.target === mobileSheetOverlay) closeMobileSheet();
+});
+document.getElementById('mobile-profile-btn').addEventListener('click', () => {
+  if (AppState.currentUser) {
+    openMobileSheet();
+  } else {
+    showAuthModal('login');
+  }
+});
+
+/* ------------------------------------------------------------ confirm modal */
+function showConfirmModal({ title, body, confirmLabel = 'Confirm', danger = true, onConfirm }) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay open';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:400px;">
+      <div class="modal-header">
+        <span class="modal-title">${title}</span>
+        <button class="btn btn-ghost btn-icon" id="cm-close">${icon('close')}</button>
+      </div>
+      <div class="modal-body"><p style="color:var(--text-secondary);font-size:.88rem;">${body}</p></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="cm-cancel">Cancel</button>
+        <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" id="cm-confirm">${confirmLabel}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  overlay.querySelector('#cm-close').addEventListener('click', close);
+  overlay.querySelector('#cm-cancel').addEventListener('click', close);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  overlay.querySelector('#cm-confirm').addEventListener('click', async () => {
+    const btn = overlay.querySelector('#cm-confirm');
+    btn.disabled = true;
+    await onConfirm();
+    close();
+  });
+}
+
+
+async function handleLogout() {
+  try {
+    await api('POST', '/auth/logout');
+  } catch { /* token may already be expired */ }
+  clearAuth();
+  renderNav();
+  toast('Logged out.');
+  route('#home');
+}
+
+/* ------------------------------------------------------------ auth modal */
+let authModal = null;
+
+function showAuthModal(mode = 'login') {
+  closeMobileSheet();
+  if (authModal) authModal.remove();
+
+  authModal = document.createElement('div');
+  authModal.className = 'modal-overlay open';
+  authModal.innerHTML = buildAuthModal(mode);
+  document.body.appendChild(authModal);
+
+  authModal.querySelector('#auth-close').addEventListener('click', () => {
+    authModal.remove(); authModal = null;
+  });
+  authModal.addEventListener('click', e => {
+    if (e.target === authModal) { authModal.remove(); authModal = null; }
+  });
+
+  const form = authModal.querySelector('#auth-form');
+  form.addEventListener('submit', e => handleAuthSubmit(e, mode));
+
+  authModal.querySelector('#auth-toggle')?.addEventListener('click', () => {
+    authModal.remove(); authModal = null;
+    showAuthModal(mode === 'login' ? 'register' : 'login');
+  });
+
+  // Focus first field
+  requestAnimationFrame(() => {
+    const first = authModal.querySelector('input');
+    first?.focus();
+  });
+}
+
+function buildAuthModal(mode) {
+  const isLogin = mode === 'login';
+  return `
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">${isLogin ? 'Log in' : 'Create account'}</span>
+        <button class="btn btn-ghost btn-icon" id="auth-close">${icon('close')}</button>
+      </div>
+      <form id="auth-form">
+        <div class="modal-body">
+          ${!isLogin ? `<div class="form-group">
+            <label for="auth-username">Username</label>
+            <input type="text" id="auth-username" name="username" autocomplete="username" required />
+          </div>` : ''}
+          <div class="form-group">
+            <label for="auth-email">Email</label>
+            <input type="email" id="auth-email" name="email" autocomplete="email" required />
+          </div>
+          <div class="form-group">
+            <label for="auth-password">Password</label>
+            <input type="password" id="auth-password" name="password" autocomplete="${isLogin ? 'current-password' : 'new-password'}" required />
+          </div>
+          <div class="form-error hidden" id="auth-error"></div>
+        </div>
+        <div class="modal-footer" style="justify-content:space-between;align-items:center;">
+          <button type="button" class="btn btn-ghost btn-sm" id="auth-toggle">
+            ${isLogin ? 'Need an account? Register' : 'Have an account? Log in'}
+          </button>
+          <button type="submit" class="btn btn-primary" id="auth-submit">
+            ${isLogin ? 'Log in' : 'Register'}
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
+async function handleAuthSubmit(e, mode) {
+  e.preventDefault();
+  const form = e.target;
+  const errEl = form.querySelector('#auth-error');
+  const submitBtn = form.querySelector('#auth-submit');
+  errEl.classList.add('hidden');
+  errEl.textContent = '';
+  submitBtn.disabled = true;
+  const origLabel = submitBtn.textContent;
+  submitBtn.textContent = mode === 'login' ? 'Logging in…' : 'Creating account…';
+
+  const email = form.querySelector('#auth-email').value.trim();
+  const password = form.querySelector('#auth-password').value;
+  const body = { email, password };
+  if (mode === 'register') {
+    body.username = form.querySelector('#auth-username').value.trim();
+  }
+
+  try {
+    const path = mode === 'login' ? '/auth/login' : '/auth/register';
+    const data = await api('POST', path, body);
+    setAuth(data.token, data.user);
+    renderNav();
+    authModal?.remove(); authModal = null;
+    toast(`Welcome, ${data.user.username}!`, 'success');
+    route(location.hash || '#home');
+  } catch (err) {
+    const msg = ERROR_MESSAGES[err.code] || err.message || 'Something went wrong.';
+    errEl.textContent = msg;
+    errEl.classList.remove('hidden');
+    submitBtn.disabled = false;
+    submitBtn.textContent = origLabel;
+  }
+}
+
+/* ------------------------------------------------------------ router */
+const ROUTES = [
+  { pattern: /^home$|^$/, view: viewHome },
+  { pattern: /^recipe\/(.+)$/, view: viewRecipe, param: 1 },
+  { pattern: /^my-recipes$/, view: viewMyRecipes },
+  { pattern: /^components$/, view: viewComponents },
+  { pattern: /^builder$/, view: viewBuilder },
+  { pattern: /^profile\/(.+)$/, view: viewProfile, param: 1 },
+  { pattern: /^settings$/, view: viewSettings },
+  { pattern: /^admin$/, view: viewAdmin },
+];
+
+function route(hash) {
+  if (hash && hash !== location.hash) {
+    location.hash = hash;
+  } else {
+    router();
+  }
+}
+
+function router() {
+  const raw = (location.hash || '#home').replace(/^#/, '').replace(/\/+$/, '');
+
+  for (const r of ROUTES) {
+    const m = raw.match(r.pattern);
+    if (m) {
+      const param = r.param ? m[r.param] : undefined;
+      AppState.currentView = raw.split('/')[0];
+      setSidebar(false);
+      r.view(param);
+      updateNavActive();
+      return;
+    }
+  }
+
+  // Unknown route → home
+  location.hash = '#home';
+}
+
+window.addEventListener('hashchange', router);
+
+/* ------------------------------------------------------------ sidebar helper */
+function setSidebar(visible, contentHtml = '') {
+  const sidebar = document.getElementById('sidebar');
+  const body = document.body;
+  if (visible) {
+    sidebar.innerHTML = contentHtml;
+    sidebar.classList.add('visible');
+    body.classList.add('has-sidebar');
+  } else {
+    sidebar.innerHTML = '';
+    sidebar.classList.remove('visible');
+    body.classList.remove('has-sidebar');
+  }
+}
+
+/* ------------------------------------------------------------ view helpers */
+function setView(html) {
+  document.getElementById('view-container').innerHTML = html;
+}
+
+function requireAuth() {
+  if (!AppState.currentUser) {
+    const intended = location.hash || '#home';
+    showAuthModal('login');
+    // After successful login, handleAuthSubmit routes to location.hash which
+    // will still be the intended route since we haven't navigated away.
+    return false;
+  }
+  return true;
+}
+
+function applianceBadge(appliance, customName) {
+  const display = appliance === 'custom' ? (customName || 'Custom') : appliance;
+  const color = APPLIANCE_COLORS[appliance] || APPLIANCE_COLORS.custom;
+  return `<span class="badge badge-appliance" style="background:${color}">${display}</span>`;
+}
+
+function visibilityBadge(v) {
+  if (v === 'published')     return `<span class="badge badge-published">Published</span>`;
+  if (v === 'admin_removed') return `<span class="badge badge-removed">Removed</span>`;
+  return `<span class="badge badge-draft">Draft</span>`;
+}
+
+/* ============================================================ VIEWS */
+
+/* ------------------------------------------------------------ Home */
+function viewHome() {
+  setView(`
+    <div class="view-header">
+      <div>
+        <div class="view-title">Recipes</div>
+        <div class="view-subtitle">Browse published recipes from the community.</div>
+      </div>
+    </div>
+    <div class="filter-row" id="home-filters">
+      <div class="search-wrap">
+        ${icon('search')}
+        <input type="search" id="home-search" placeholder="Filter by name…" />
+      </div>
+    </div>
+    <div id="home-tag-row" class="tag-chips" style="margin-bottom:var(--s4);"></div>
+    <div id="home-grid" class="card-grid">
+      ${skeletonCards(8)}
+    </div>
+    <div id="home-pagination" class="pagination hidden"></div>
+  `);
+
+  let activeTag = '';
+  loadFeed({ page: 1 }).then(() => renderTagPills());
+
+  function renderTagPills() {
+    const row = document.getElementById('home-tag-row');
+    if (!row || !feedData.length) return;
+    const allTags = [...new Set(feedData.flatMap(r => safeParseJSON(r.tags, [])))].sort();
+    if (!allTags.length) return;
+    row.innerHTML = allTags.map(t =>
+      `<button class="badge badge-tag" style="cursor:pointer;border:none;font-size:0.72rem;${activeTag === t ? 'background:var(--accent-muted);color:var(--accent-text);border:1px solid var(--accent);' : ''}" data-tag="${t}">${t}</button>`
+    ).join('');
+    row.querySelectorAll('[data-tag]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeTag = activeTag === btn.dataset.tag ? '' : btn.dataset.tag;
+        renderTagPills();
+        loadFeed({ page: 1, tag: activeTag });
+      });
+    });
+  }
+
+  let searchTimer;
+  document.getElementById('home-search').addEventListener('input', e => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => filterFeedLocal(e.target.value), 180);
+  });
+}
+
+let feedData = [];
+
+async function loadFeed({ page = 1, tag = '' } = {}) {
+  const grid = document.getElementById('home-grid');
+  const pag  = document.getElementById('home-pagination');
+  if (!grid) return;
+  grid.innerHTML = skeletonCards(8);
+
+  try {
+    const params = new URLSearchParams({ page, limit: 12 });
+    if (tag) params.set('tag', tag);
+    const data = await api('GET', `/recipes?${params}`);
+    feedData = data.items || [];
+
+    renderFeedCards(feedData);
+
+    const totalPages = Math.ceil(data.total / data.limit);
+    if (totalPages > 1) {
+      pag.classList.remove('hidden');
+      pag.innerHTML = `
+        <button class="btn btn-ghost btn-sm" ${page <= 1 ? 'disabled' : ''} id="pag-prev">${icon('chevron-up')} Prev</button>
+        <span class="page-info">${page} / ${totalPages}</span>
+        <button class="btn btn-ghost btn-sm" ${page >= totalPages ? 'disabled' : ''} id="pag-next">Next ${icon('chevron-down')}</button>
+      `;
+      document.getElementById('pag-prev')?.addEventListener('click', () => loadFeed({ page: page - 1, tag }));
+      document.getElementById('pag-next')?.addEventListener('click', () => loadFeed({ page: page + 1, tag }));
+    } else {
+      pag.classList.add('hidden');
+    }
+  } catch (err) {
+    grid.innerHTML = `<div class="empty-state"><p class="empty-state-title">Failed to load recipes.</p></div>`;
+  }
+}
+
+function renderFeedCards(items) {
+  const grid = document.getElementById('home-grid');
+  if (!grid) return;
+  if (!items.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      ${icon('book')}
+      <div class="empty-state-title">No recipes found</div>
+      <div class="empty-state-body">Try a different tag or search term.</div>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = items.map(r => recipeCard(r)).join('');
+}
+
+function filterFeedLocal(query) {
+  const q = query.toLowerCase();
+  const filtered = q ? feedData.filter(r => r.name.toLowerCase().includes(q)) : feedData;
+  renderFeedCards(filtered);
+}
+
+function recipeCard(r) {
+  const tags = safeParseJSON(r.tags, []);
+  const photoHtml = r.photo_url
+    ? `<img src="${r.photo_url}" alt="${r.name}" loading="lazy">`
+    : icon('image');
+
+  return `
+    <a href="#recipe/${r.slug}" class="card recipe-card" style="text-decoration:none;color:inherit;">
+      <div class="recipe-card-photo">${photoHtml}</div>
+      <div class="recipe-card-body">
+        <div class="recipe-card-name">${r.name}</div>
+        <div class="recipe-card-meta">
+          ${icon('user')}
+          <a href="#profile/${r.author_username}" style="color:var(--text-secondary);"
+             onclick="event.stopPropagation()">${r.author_username}</a>
+          ${r.servings ? `<span style="color:var(--text-muted);">·</span><span style="color:var(--text-muted);">${r.servings} serving${r.servings !== 1 ? 's' : ''}</span>` : ''}
+        </div>
+        ${tags.length ? `<div class="tag-chips" style="margin-top:4px;">${tags.slice(0,3).map(t => `<span class="badge badge-tag">${t}</span>`).join('')}</div>` : ''}
+      </div>
+    </a>
+  `;
+}
+
+function skeletonCards(n) {
+  return Array.from({ length: n }, () => `
+    <div class="card">
+      <div class="skeleton skeleton-card" style="border-radius:0;height:140px;"></div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
+        <div class="skeleton skeleton-title"></div>
+        <div class="skeleton skeleton-text" style="width:50%;"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ------------------------------------------------------------ Recipe Detail */
+function viewRecipe(slug) {
+  setView(`<div class="empty-state">${skeletonCards(1)}</div>`);
+  loadRecipeDetail(slug);
+}
+
+async function loadRecipeDetail(slug) {
+  try {
+    const { recipe, components } = await api('GET', `/recipes/${slug}`);
+    const tags = safeParseJSON(recipe.tags, []);
+    const isOwner = AppState.currentUser?.id === recipe.user_id;
+
+    const progressKey = `cooksmith::progress::${recipe.id}`;
+    const progress = loadProgress(progressKey);
+
+    const componentHtml = components.map(c => {
+      const steps = safeParseJSON(c.steps, []);
+      const appDisplay = c.appliance === 'custom' ? (c.custom_appliance_name || 'Custom') : c.appliance;
+      const color = APPLIANCE_COLORS[c.appliance] || APPLIANCE_COLORS.custom;
+
+      const stepsHtml = steps.length ? `
+        <div class="step-list" data-component="${c.id}">
+          ${steps.map((s, i) => {
+            const key = `${c.id}::${i}`;
+            const checked = progress.checked?.[key] ? 'checked' : '';
+            return `
+              <div class="step-item ${checked ? 'checked' : ''}" data-key="${key}">
+                <input type="checkbox" id="step-${c.id}-${i}" ${checked} />
+                <label for="step-${c.id}-${i}">${s}</label>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      ` : '<p class="text-muted text-sm">No steps listed.</p>';
+
+      return `
+        <div class="component-block" data-component-id="${c.id}">
+          <div class="component-block-header">
+            <span class="component-block-name">${c.name}</span>
+            ${applianceBadge(c.appliance, c.custom_appliance_name)}
+            <span class="data-time">${icon('clock')} ${c.duration} min</span>
+            ${c.can_start_anytime ? '<span class="badge badge-tag">Flexible start</span>' : ''}
+            ${AppState.currentUser && recipe.user_id !== AppState.currentUser.id
+              ? `<button class="btn btn-ghost btn-sm comp-extract-btn" style="margin-left:auto;" data-component-id="${c.id}">+ Save</button>`
+              : ''}
+          </div>
+          <div class="component-block-body">
+            ${stepsHtml}
+            ${c.notes ? `<p class="text-sm text-muted" style="margin-top:12px;border-top:1px solid var(--border-light);padding-top:10px;">${c.notes}</p>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    setView(`
+      <div style="max-width:720px;">
+        <div style="margin-bottom:var(--s3);">
+          <a href="#home" class="btn btn-ghost btn-sm">${icon('chevron-up')} Back</a>
+        </div>
+
+        ${recipe.photo_url ? `<img src="${recipe.photo_url}" alt="${recipe.name}" style="width:100%;border-radius:var(--r2);margin-bottom:var(--s5);aspect-ratio:16/9;object-fit:cover;">` : ''}
+
+        <div class="view-header" style="margin-bottom:var(--s4);">
+          <div>
+            <h1 class="view-title">${recipe.name}</h1>
+            <div style="display:flex;align-items:center;gap:var(--s3);margin-top:var(--s2);">
+              <a href="#profile/${recipe.author_username}" class="text-sm text-muted">${icon('user')} ${recipe.author_username}</a>
+              <span class="text-sm text-muted">${icon('layers')} ${recipe.servings} serving${recipe.servings !== 1 ? 's' : ''}</span>
+              ${visibilityBadge(recipe.visibility)}
+            </div>
+          </div>
+          ${isOwner ? `<div style="display:flex;gap:var(--s2);">
+            <a href="#my-recipes" class="btn btn-ghost btn-sm">${icon('edit')} Edit</a>
+          </div>` : ''}
+        </div>
+
+        ${recipe.description ? `<p style="margin-bottom:var(--s5);color:var(--text-secondary);">${recipe.description}</p>` : ''}
+
+        ${tags.length ? `<div class="tag-chips" style="margin-bottom:var(--s5);">${tags.map(t => `<span class="badge badge-tag">${t}</span>`).join('')}</div>` : ''}
+
+        ${components.length ? `
+          <div class="section">
+            <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
+              Cook Timeline
+              <span id="gantt-total-time" class="data-time" style="font-size:0.85rem;">${icon('clock')} — min total</span>
+            </div>
+            <div id="gantt-container" class="gantt-wrap"></div>
+          </div>
+        ` : ''}
+
+        <div class="section">
+          <div class="section-title">Components</div>
+          <div style="display:flex;flex-direction:column;gap:var(--s4);">
+            ${componentHtml}
+          </div>
+        </div>
+
+        ${recipe.notes ? `
+          <div class="section">
+            <div class="section-title">Notes</div>
+            <p class="text-sm" style="color:var(--text-secondary);">${recipe.notes}</p>
+          </div>
+        ` : ''}
+      </div>
+    `);
+
+    // Step progress listeners
+    document.querySelectorAll('.step-item input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const item = cb.closest('.step-item');
+        item.classList.toggle('checked', cb.checked);
+        saveProgress(progressKey, recipe.id);
+      });
+    });
+
+    // Extract as Component buttons
+    document.querySelectorAll('.comp-extract-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const c = components.find(x => x.id === +btn.dataset.componentId);
+        if (c) showComponentModal(null, c);
+      });
+    });
+
+    // Gantt
+    if (components.length) {
+      try {
+        const { calculateTimeline } = await import('./timeline.js');
+        const ganttData = components.map(c => ({
+          id: c.id, name: c.name, appliance: c.appliance,
+          duration: c.duration,
+          can_start_anytime: Boolean(c.can_start_anytime),
+          sort_order: c.sort_order,
+        }));
+        const { totalMinutes } = renderGantt(
+          document.getElementById('gantt-container'), ganttData, calculateTimeline
+        );
+        const totalEl = document.getElementById('gantt-total-time');
+        if (totalEl && totalMinutes != null) {
+          totalEl.innerHTML = `${icon('clock')} ${totalMinutes} min total`;
+        }
+      } catch (e) {
+        document.getElementById('gantt-container').innerHTML =
+          '<p class="text-sm text-muted">Timeline unavailable.</p>';
+      }
+    }
+
+  } catch (err) {
+    if (err.code === 'RECIPE_NOT_FOUND') {
+      setView(`<div class="empty-state">
+        ${icon('book')}
+        <div class="empty-state-title">Recipe not found</div>
+        <div class="empty-state-body">This recipe may be a draft or may have been removed.</div>
+        <a href="#home" class="btn btn-ghost">Back to recipes</a>
+      </div>`);
+    } else {
+      setView(`<div class="empty-state"><div class="empty-state-title">Failed to load recipe.</div></div>`);
+    }
+  }
+}
+
+/* ------------------------------------------------------------ Gantt renderer */
+function renderGantt(container, components, calculateTimeline) {
+  const { bars, totalMinutes } = calculateTimeline(components);
+  if (!bars.length) { container.innerHTML = ''; return; }
+
+  const ROW_H    = 36;
+  const LABEL_W  = 140;
+  const AXIS_H   = 28;
+  const LEGEND_H = 32;
+  const PAD      = 16;
+
+  // Separate floating from sequential
+  const floatingBars    = bars.filter(b => b.canStartAnytime);
+  const sequentialBars  = bars.filter(b => !b.canStartAnytime);
+  const allRows         = [...floatingBars, ...sequentialBars];
+  const height          = allRows.length * ROW_H + AXIS_H + LEGEND_H + PAD * 2;
+  const WIDTH           = 800;
+  const chartW          = WIDTH - LABEL_W - PAD;
+
+  // Compute ticks
+  const tickStep = totalMinutes <= 60 ? 5 : 10;
+  const ticks = [];
+  for (let t = 0; t <= totalMinutes; t += tickStep) ticks.push(t);
+  if (ticks[ticks.length - 1] < totalMinutes) ticks.push(totalMinutes);
+
+  const xScale = t => (t / (totalMinutes || 1)) * chartW;
+
+  // Unique appliances for legend
+  const appliancesSeen = [...new Set(bars.map(b => b.appliance))];
+
+  let svgContent = `<svg viewBox="0 0 ${WIDTH} ${height}" xmlns="http://www.w3.org/2000/svg" style="width:100%;font-family:system-ui,sans-serif;">`;
+
+  // Background
+  svgContent += `<rect width="${WIDTH}" height="${height}" fill="none"/>`;
+
+  // X-axis ticks + gridlines
+  ticks.forEach(t => {
+    const x = LABEL_W + xScale(t);
+    svgContent += `<line x1="${x}" y1="${PAD}" x2="${x}" y2="${PAD + allRows.length * ROW_H}" stroke="#3A3A36" stroke-width="1"/>`;
+    svgContent += `<text x="${x}" y="${PAD + allRows.length * ROW_H + 16}" text-anchor="middle" font-size="10" fill="#5E5E56" font-family="ui-monospace,monospace">${t}m</text>`;
+  });
+
+  // Divider between floating and sequential
+  if (floatingBars.length && sequentialBars.length) {
+    const divY = PAD + floatingBars.length * ROW_H;
+    svgContent += `<line x1="${LABEL_W - 8}" y1="${divY}" x2="${WIDTH - PAD}" y2="${divY}" stroke="#3A3A36" stroke-width="1" stroke-dasharray="4,4"/>`;
+  }
+
+  // Bars
+  allRows.forEach((bar, i) => {
+    const y   = PAD + i * ROW_H;
+    const x   = LABEL_W + xScale(bar.startMin);
+    const w   = Math.max(xScale(bar.endMin - bar.startMin), 4);
+    const mid = y + ROW_H / 2;
+
+    // Label
+    svgContent += `<text x="${LABEL_W - 6}" y="${mid + 4}" text-anchor="end" font-size="11" fill="#9A9A8E" font-family="system-ui,sans-serif">${truncateText(bar.name, 18)}</text>`;
+
+    // Bar rect
+    const isFloat = bar.canStartAnytime;
+    svgContent += `<rect x="${x}" y="${y + 5}" width="${w}" height="${ROW_H - 10}" rx="3" fill="${bar.color}" opacity="${isFloat ? '0.6' : '0.85'}" ${isFloat ? 'stroke="' + bar.color + '" stroke-dasharray="4,3" fill-opacity="0.35"' : ''}/>`;
+
+    // Duration label inside bar if wide enough
+    if (w > 36) {
+      svgContent += `<text x="${x + w / 2}" y="${mid + 4}" text-anchor="middle" font-size="10" fill="#fff" font-family="ui-monospace,monospace" opacity="0.9">${bar.endMin - bar.startMin}m</text>`;
+    }
+  });
+
+  // Legend
+  const legendY = PAD + allRows.length * ROW_H + AXIS_H + 4;
+  let legendX = LABEL_W;
+  appliancesSeen.forEach(app => {
+    const color = APPLIANCE_COLORS[app] || APPLIANCE_COLORS.custom;
+    const label = app === 'custom' ? 'Custom' : app;
+    svgContent += `<rect x="${legendX}" y="${legendY}" width="12" height="12" rx="2" fill="${color}"/>`;
+    svgContent += `<text x="${legendX + 16}" y="${legendY + 10}" font-size="10" fill="#9A9A8E" font-family="system-ui,sans-serif">${label}</text>`;
+    legendX += label.length * 6.5 + 28;
+  });
+
+  svgContent += '</svg>';
+  container.innerHTML = svgContent;
+  return { totalMinutes };
+}
+
+function truncateText(str, max) {
+  return str.length > max ? str.slice(0, max - 1) + '…' : str;
+}
+
+/* ------------------------------------------------------------ Progress */
+function loadProgress(key) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return { checked: {} };
+    const p = JSON.parse(raw);
+    if (p.expires && p.expires < Date.now()) {
+      sessionStorage.removeItem(key);
+      return { checked: {} };
+    }
+    return p;
+  } catch { return { checked: {} }; }
+}
+
+function saveProgress(key, recipeId) {
+  const checked = {};
+  document.querySelectorAll('.step-item input[type="checkbox"]').forEach(cb => {
+    const item = cb.closest('.step-item');
+    if (cb.checked) checked[item.dataset.key] = true;
+  });
+  const expires = Date.now() + 12 * 60 * 60 * 1000;
+  sessionStorage.setItem(key, JSON.stringify({ expires, checked }));
+}
+
+/* ------------------------------------------------------------ My Recipes */
+function viewMyRecipes() {
+  if (!requireAuth()) return;
+  setView(`
+    <div class="view-header">
+      <div>
+        <div class="view-title">My Recipes</div>
+        <div class="view-subtitle">Manage your recipe collection.</div>
+      </div>
+      <button class="btn btn-primary" id="new-recipe-btn">${icon('plus')} New Recipe</button>
+    </div>
+    <div id="my-recipes-grid" class="card-grid">${skeletonCards(4)}</div>
+  `);
+
+  document.getElementById('new-recipe-btn').addEventListener('click', () => showRecipeModal());
+  loadMyRecipes();
+}
+
+async function loadMyRecipes() {
+  const grid = document.getElementById('my-recipes-grid');
+  if (!grid) return;
+  try {
+    const data = await api('GET', '/recipes/mine');
+    const recipes = data.items || [];
+    if (!recipes.length) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+        ${icon('book')}
+        <div class="empty-state-title">No recipes yet</div>
+        <div class="empty-state-body">Create your first recipe to get started.</div>
+        <button class="btn btn-primary" onclick="showRecipeModal()">${icon('plus')} New Recipe</button>
+      </div>`;
+      return;
+    }
+    grid.innerHTML = recipes.map(r => myRecipeCard(r)).join('');
+    wireMyRecipeCards(recipes);
+  } catch (err) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-state-title">Failed to load recipes.</div>
+    </div>`;
+  }
+}
+
+function wireMyRecipeCards(recipes) {
+  const grid = document.getElementById('my-recipes-grid');
+  if (!grid) return;
+
+  grid.querySelectorAll('.recipe-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const r = recipes.find(x => x.slug === btn.dataset.slug);
+      if (r) showRecipeModal(r);
+    });
+  });
+
+  grid.querySelectorAll('.recipe-publish-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const r = recipes.find(x => x.slug === btn.dataset.slug);
+      if (!r) return;
+      try {
+        await api('PATCH', `/recipes/${r.slug}/publish`);
+        toast(r.visibility === 'published' ? 'Recipe unpublished.' : 'Recipe published.', 'success');
+        loadMyRecipes();
+      } catch (err) { toast(ERROR_MESSAGES[err.code] || err.message, 'error'); }
+    });
+  });
+
+  grid.querySelectorAll('.recipe-del-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const r = recipes.find(x => x.slug === btn.dataset.slug);
+      if (!r) return;
+      showConfirmModal({
+        title: 'Delete recipe',
+        body: `Permanently delete <strong>${r.name}</strong>?`,
+        confirmLabel: 'Delete',
+        onConfirm: async () => {
+          try {
+            await api('DELETE', `/recipes/${r.slug}`);
+            toast('Recipe deleted.');
+            loadMyRecipes();
+          } catch (err) { toast(ERROR_MESSAGES[err.code] || err.message, 'error'); }
+        },
+      });
+    });
+  });
+}
+
+function myRecipeCard(r) {
+  const tags = safeParseJSON(r.tags, []);
+  const isRemoved = r.visibility === 'admin_removed';
+  return `
+    <div class="card recipe-card">
+      <div class="recipe-card-photo" style="height:120px;">
+        ${r.photo_url ? `<img src="${r.photo_url}" alt="${r.name}">` : icon('image')}
+      </div>
+      <div class="recipe-card-body">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+          <a href="#recipe/${r.slug}" class="recipe-card-name" style="text-decoration:none;color:inherit;">${r.name}</a>
+          ${visibilityBadge(r.visibility)}
+        </div>
+        ${tags.length ? `<div class="tag-chips">${tags.slice(0,3).map(t => `<span class="badge badge-tag">${t}</span>`).join('')}</div>` : ''}
+      </div>
+      <div class="card-footer">
+        <button class="btn btn-ghost btn-sm recipe-edit-btn" data-slug="${r.slug}" ${isRemoved ? 'disabled' : ''}>${icon('edit')}</button>
+        <button class="btn btn-ghost btn-sm recipe-publish-btn" data-slug="${r.slug}" title="${r.visibility === 'published' ? 'Unpublish' : 'Publish'}" ${isRemoved ? 'disabled' : ''}>${icon('eye')}</button>
+        <button class="btn btn-ghost btn-sm recipe-del-btn" data-slug="${r.slug}" style="color:var(--danger);margin-left:auto;">${icon('trash')}</button>
+      </div>
+    </div>
+  `;
+}
+
+/* ------------------------------------------------------------ Recipe modal */
+async function showRecipeModal(existing = null) {
+  // Always fetch fresh component list for the selector
+  let components = allComponents;
+  if (!components.length) {
+    try { const d = await api('GET', '/components'); components = d.items || []; allComponents = components; }
+    catch { components = []; }
+  }
+
+  // If editing, fetch current recipe components
+  let existingComponents = [];
+  if (existing) {
+    try {
+      const d = await api('GET', `/recipes/${existing.slug}`);
+      existingComponents = d.components || [];
+    } catch { existingComponents = []; }
+  }
+
+  const tags = existing ? safeParseJSON(existing.tags, []) : [];
+  const isEdit = !!existing;
+
+  // Build meal rows from existing components
+  // mealRows: [{component_id, sort_order, name, appliance, custom_appliance_name, duration}]
+  let mealRows = existingComponents.map(c => ({
+    component_id: c.id,
+    sort_order: c.sort_order,
+    name: c.name,
+    appliance: c.appliance,
+    custom_appliance_name: c.custom_appliance_name,
+    duration: c.duration,
+  }));
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay open';
+  overlay.style.cssText = 'align-items:flex-start;padding-top:40px;';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:640px;">
+      <div class="modal-header">
+        <span class="modal-title">${isEdit ? 'Edit recipe' : 'New recipe'}</span>
+        <button class="btn btn-ghost btn-icon" id="rm-close">${icon('close')}</button>
+      </div>
+      <div class="modal-body" style="max-height:75vh;overflow-y:auto;">
+        <div class="form-group">
+          <label for="rm-name">Recipe name</label>
+          <input type="text" id="rm-name" value="${existing?.name || ''}" maxlength="120" required />
+        </div>
+        <div class="form-group">
+          <label for="rm-description">Description</label>
+          <textarea id="rm-description" rows="2">${existing?.description || ''}</textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="rm-servings">Servings</label>
+            <input type="number" id="rm-servings" value="${existing?.servings || 1}" min="1" max="100" />
+          </div>
+          <div class="form-group">
+            <label for="rm-tags">Tags <span class="form-hint" style="display:inline;">(comma-separated)</span></label>
+            <input type="text" id="rm-tags" value="${tags.join(', ')}" placeholder="weeknight, chicken…" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="rm-notes">Notes</label>
+          <textarea id="rm-notes" rows="2">${existing?.notes || ''}</textarea>
+        </div>
+
+        ${isEdit ? `
+        <div class="form-group">
+          <label>Photo</label>
+          <div style="display:flex;align-items:center;gap:var(--s3);">
+            ${existing?.photo_url ? `<img src="${existing.photo_url}" style="width:72px;height:48px;object-fit:cover;border-radius:var(--r1);border:1px solid var(--border);">` : ''}
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer;">
+              ${icon('upload')} ${existing?.photo_url ? 'Replace photo' : 'Upload photo'}
+              <input type="file" id="rm-photo" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none;" />
+            </label>
+            <span id="rm-photo-status" class="text-sm text-muted"></span>
+          </div>
+        </div>
+        ` : ''}
+
+        <div class="form-group">
+          <label>Components <span class="form-hint" style="display:inline;">— drag order controls cook sequence</span></label>
+          <div id="rm-meal-rows" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;">
+            ${mealRows.length ? '' : '<p class="text-sm text-muted" id="rm-no-components">No components added yet.</p>'}
+          </div>
+          <div style="position:relative;">
+            ${icon('search')}
+            <input type="search" id="rm-comp-search" placeholder="Search your components to add…"
+              style="padding-left:32px;background:var(--surface-2);" />
+          </div>
+          <div id="rm-comp-list" class="component-select-list" style="margin-top:6px;max-height:200px;"></div>
+        </div>
+
+        <div class="form-error hidden" id="rm-error"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="rm-cancel">Cancel</button>
+        <button class="btn btn-primary" id="rm-save">${isEdit ? 'Save changes' : 'Create recipe'}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.querySelector('#rm-close').addEventListener('click', close);
+  overlay.querySelector('#rm-cancel').addEventListener('click', close);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+
+  // Render initial meal rows
+  renderMealRows();
+
+  // Component search
+  const compSearch = overlay.querySelector('#rm-comp-search');
+  const compList   = overlay.querySelector('#rm-comp-list');
+  renderCompPicker('');
+  compSearch.addEventListener('input', () => renderCompPicker(compSearch.value));
+
+  function renderCompPicker(q) {
+    const lower = q.toLowerCase();
+    const filtered = components.filter(c =>
+      (!lower || c.name.toLowerCase().includes(lower)) &&
+      !mealRows.find(r => r.component_id === c.id)
+    );
+    compList.innerHTML = filtered.slice(0, 20).map(c => `
+      <div class="component-select-item" data-id="${c.id}">
+        <div class="component-select-item-name">${c.name}</div>
+        ${applianceBadge(c.appliance, c.custom_appliance_name)}
+        <span class="data-time">${icon('clock')} ${c.duration}m</span>
+        <button class="btn btn-ghost btn-sm" data-id="${c.id}">${icon('plus')}</button>
+      </div>
+    `).join('');
+    compList.querySelectorAll('[data-id]').forEach(el => {
+      el.addEventListener('click', () => {
+        const c = components.find(x => x.id === +el.dataset.id);
+        if (!c) return;
+        const maxOrder = mealRows.length ? Math.max(...mealRows.map(r => r.sort_order)) : -1;
+        mealRows.push({ component_id: c.id, sort_order: maxOrder + 1, name: c.name,
+          appliance: c.appliance, custom_appliance_name: c.custom_appliance_name, duration: c.duration });
+        renderMealRows();
+        renderCompPicker(compSearch.value);
+        compSearch.value = '';
+      });
+    });
+  }
+
+  function renderMealRows() {
+    const container = overlay.querySelector('#rm-meal-rows');
+    if (!mealRows.length) {
+      container.innerHTML = '<p class="text-sm text-muted" id="rm-no-components">No components added yet.</p>';
+      return;
+    }
+    // Sort by sort_order then render
+    mealRows.sort((a, b) => a.sort_order - b.sort_order);
+    container.innerHTML = mealRows.map((row, i) => {
+      const prevOrder = i > 0 ? mealRows[i-1].sort_order : null;
+      const isParallel = prevOrder !== null && row.sort_order === prevOrder;
+      return `
+        <div class="meal-row" data-idx="${i}">
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <button class="btn btn-ghost btn-icon meal-up" data-idx="${i}" ${i === 0 ? 'disabled' : ''}>${icon('chevron-up')}</button>
+            <button class="btn btn-ghost btn-icon meal-down" data-idx="${i}" ${i === mealRows.length-1 ? 'disabled' : ''}>${icon('chevron-down')}</button>
+          </div>
+          <div class="meal-row-name">
+            <div style="font-weight:500;font-size:.87rem;">${row.name}</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+              ${applianceBadge(row.appliance, row.custom_appliance_name)}
+              <span class="data-time">${icon('clock')} ${row.duration}m</span>
+            </div>
+          </div>
+          ${i > 0 ? `
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:.75rem;color:var(--text-muted);white-space:nowrap;">
+            <input type="checkbox" class="parallel-toggle" data-idx="${i}" ${isParallel ? 'checked' : ''} style="width:auto;accent-color:var(--accent);" />
+            parallel
+          </label>` : '<span style="width:72px;"></span>'}
+          <button class="btn btn-ghost btn-icon meal-remove" data-idx="${i}" style="color:var(--danger);">${icon('close')}</button>
+        </div>
+      `;
+    }).join('');
+
+    // Wire row controls
+    container.querySelectorAll('.meal-up').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = +btn.dataset.idx;
+        if (i === 0) return;
+        [mealRows[i], mealRows[i-1]] = [mealRows[i-1], mealRows[i]];
+        reassignOrders();
+        renderMealRows();
+        renderCompPicker(compSearch.value);
+      });
+    });
+    container.querySelectorAll('.meal-down').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = +btn.dataset.idx;
+        if (i >= mealRows.length - 1) return;
+        [mealRows[i], mealRows[i+1]] = [mealRows[i+1], mealRows[i]];
+        reassignOrders();
+        renderMealRows();
+        renderCompPicker(compSearch.value);
+      });
+    });
+    container.querySelectorAll('.parallel-toggle').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const i = +cb.dataset.idx;
+        if (cb.checked) {
+          mealRows[i].sort_order = mealRows[i-1].sort_order;
+        } else {
+          mealRows[i].sort_order = mealRows[i-1].sort_order + 1;
+          // Shift everything after up
+          for (let j = i+1; j < mealRows.length; j++) mealRows[j].sort_order++;
+        }
+        renderMealRows();
+      });
+    });
+    container.querySelectorAll('.meal-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        mealRows.splice(+btn.dataset.idx, 1);
+        reassignOrders();
+        renderMealRows();
+        renderCompPicker(compSearch.value);
+      });
+    });
+  }
+
+  function reassignOrders() {
+    // Re-index sort_orders 0,1,2... preserving parallel groups
+    let order = 0;
+    mealRows.forEach((row, i) => {
+      row.sort_order = i === 0 ? 0 : order;
+      if (i > 0) order++;
+      else order = 1;
+    });
+    // simpler: just set sequential orders; parallel toggle handles grouping
+    mealRows.forEach((row, i) => { row.sort_order = i; });
+  }
+
+  // Photo upload (edit mode only)
+  const photoInput = overlay.querySelector('#rm-photo');
+  if (photoInput) {
+    photoInput.addEventListener('change', async () => {
+      const file = photoInput.files[0];
+      if (!file) return;
+      const status = overlay.querySelector('#rm-photo-status');
+      status.textContent = 'Uploading…';
+      try {
+        const { uploadUrl, deliveryUrl } = await api('POST', `/recipes/${existing.slug}/photo`, {
+          contentType: file.type, size: file.size,
+        });
+        await uploadImage(uploadUrl, file);
+        await api('PUT', `/recipes/${existing.slug}`, { photo_url: deliveryUrl });
+        existing.photo_url = deliveryUrl;
+        status.textContent = 'Photo updated.';
+        const img = overlay.querySelector('img');
+        if (img) img.src = deliveryUrl;
+        else status.insertAdjacentHTML('beforebegin',
+          `<img src="${deliveryUrl}" style="width:72px;height:48px;object-fit:cover;border-radius:var(--r1);border:1px solid var(--border);">`);
+      } catch (err) {
+        status.textContent = ERROR_MESSAGES[err.code] || err.message;
+        status.style.color = 'var(--danger)';
+      }
+    });
+  }
+
+  // Save
+  overlay.querySelector('#rm-save').addEventListener('click', async () => {
+    const errEl  = overlay.querySelector('#rm-error');
+    const saveBtn = overlay.querySelector('#rm-save');
+    errEl.classList.add('hidden');
+
+    const name = overlay.querySelector('#rm-name').value.trim();
+    if (!name) { errEl.textContent = 'Recipe name is required.'; errEl.classList.remove('hidden'); return; }
+
+    const tagsRaw = overlay.querySelector('#rm-tags').value;
+    const body = {
+      name,
+      description: overlay.querySelector('#rm-description').value.trim(),
+      servings: parseInt(overlay.querySelector('#rm-servings').value, 10) || 1,
+      tags: tagsRaw.split(',').map(t => t.trim()).filter(Boolean),
+      notes: overlay.querySelector('#rm-notes').value.trim(),
+      components: mealRows.map(r => ({ component_id: r.component_id, sort_order: r.sort_order })),
+    };
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = isEdit ? 'Saving…' : 'Creating…';
+    try {
+      if (isEdit) {
+        await api('PUT', `/recipes/${existing.slug}`, body);
+        toast('Recipe updated.', 'success');
+      } else {
+        const data = await api('POST', '/recipes', body);
+        toast('Recipe created.', 'success');
+        close();
+        route(`#recipe/${data.recipe.slug}`);
+        return;
+      }
+      close();
+      loadMyRecipes();
+    } catch (err) {
+      errEl.textContent = ERROR_MESSAGES[err.code] || err.message;
+      errEl.classList.remove('hidden');
+      saveBtn.disabled = false;
+      saveBtn.textContent = isEdit ? 'Save changes' : 'Create recipe';
+    }
+  });
+
+  requestAnimationFrame(() => overlay.querySelector('#rm-name')?.focus());
+}
+
+// Expose for empty-state inline onclick
+window.showRecipeModal = showRecipeModal;
+
+
+
+/* ------------------------------------------------------------ Components */
+function viewComponents() {
+  if (!requireAuth()) return;
+  setView(`
+    <div class="view-header">
+      <div>
+        <div class="view-title">Component Library</div>
+        <div class="view-subtitle">Reusable cooking steps for any appliance.</div>
+      </div>
+      <button class="btn btn-primary" id="new-component-btn">${icon('plus')} New Component</button>
+    </div>
+    <div class="filter-row">
+      <div class="search-wrap">
+        ${icon('search')}
+        <input type="search" id="comp-search" placeholder="Search components…" />
+      </div>
+      <select id="comp-cat-filter">
+        <option value="">All categories</option>
+        ${CATEGORY_LIST.map(c => `<option>${c}</option>`).join('')}
+      </select>
+      <select id="comp-app-filter">
+        <option value="">All appliances</option>
+        ${APPLIANCE_LIST.map(a => `<option>${a}</option>`).join('')}
+      </select>
+    </div>
+    <div id="components-grid" class="card-grid">${skeletonCards(6)}</div>
+  `);
+
+  document.getElementById('new-component-btn').addEventListener('click', () => showComponentModal());
+  loadComponents();
+
+  let compTimer;
+  document.getElementById('comp-search').addEventListener('input', () => {
+    clearTimeout(compTimer);
+    compTimer = setTimeout(filterComponents, 200);
+  });
+  document.getElementById('comp-cat-filter').addEventListener('change', filterComponents);
+  document.getElementById('comp-app-filter').addEventListener('change', filterComponents);
+}
+
+let allComponents = [];
+
+async function loadComponents() {
+  const grid = document.getElementById('components-grid');
+  if (!grid) return;
+  try {
+    const data = await api('GET', '/components');
+    allComponents = data.items || [];
+    renderComponents(allComponents);
+  } catch (err) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-title">Failed to load components.</div></div>`;
+  }
+}
+
+function filterComponents() {
+  const q   = document.getElementById('comp-search')?.value.toLowerCase() || '';
+  const cat = document.getElementById('comp-cat-filter')?.value || '';
+  const app = document.getElementById('comp-app-filter')?.value || '';
+  renderComponents(allComponents.filter(c =>
+    (!q   || c.name.toLowerCase().includes(q)) &&
+    (!cat || c.category === cat) &&
+    (!app || c.appliance === app)
+  ));
+}
+
+function renderComponents(items) {
+  const grid = document.getElementById('components-grid');
+  if (!grid) return;
+  if (!items.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      ${icon('grid')}
+      <div class="empty-state-title">No components found</div>
+      <div class="empty-state-body">Add your first cooking component to build recipes.</div>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = items.map(c => componentCard(c)).join('');
+  grid.querySelectorAll('.comp-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const c = allComponents.find(x => x.id === +btn.dataset.id);
+      if (c) showComponentModal(c);
+    });
+  });
+  grid.querySelectorAll('.comp-del-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const c = allComponents.find(x => x.id === +btn.dataset.id);
+      if (!c) return;
+      showConfirmModal({
+        title: 'Delete component',
+        body: `Delete <strong>${c.name}</strong>? It will be removed from any recipes that use it.`,
+        confirmLabel: 'Delete',
+        onConfirm: async () => {
+          try {
+            await api('DELETE', `/components/${c.id}`);
+            toast('Component deleted.');
+            await loadComponents();
+          } catch (err) {
+            toast(ERROR_MESSAGES[err.code] || err.message, 'error');
+          }
+        },
+      });
+    });
+  });
+}
+
+function componentCard(c) {
+  const steps = safeParseJSON(c.steps, []);
+  return `
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;">
+          <div style="font-weight:600;font-size:.9rem;">${c.name}</div>
+          <span class="badge" style="text-transform:capitalize;background:var(--surface-2);color:var(--text-secondary);border:1px solid var(--border);flex-shrink:0;">${c.category}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          ${applianceBadge(c.appliance, c.custom_appliance_name)}
+          <span class="data-time">${icon('clock')} ${c.duration} min</span>
+          ${c.can_start_anytime ? '<span class="badge badge-tag">Flexible</span>' : ''}
+        </div>
+        <div class="text-sm text-muted" style="margin-top:8px;">${steps.length} step${steps.length !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="card-footer">
+        <button class="btn btn-ghost btn-sm comp-edit-btn" data-id="${c.id}">${icon('edit')}</button>
+        <button class="btn btn-ghost btn-sm comp-del-btn" data-id="${c.id}" style="color:var(--danger);margin-left:auto;">${icon('trash')}</button>
+      </div>
+    </div>
+  `;
+}
+
+/* ------------------------------------------------------------ Component modal */
+function showComponentModal(existing = null, prefill = null) {
+  // prefill: data from another user's component to copy (Extract as Component)
+  const src = existing || prefill || {};
+  const isEdit = !!existing;
+  const steps = safeParseJSON(src.steps, []);
+  const isCustom = src.appliance === 'custom';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay open';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <span class="modal-title">${isEdit ? 'Edit component' : 'New component'}</span>
+        <button class="btn btn-ghost btn-icon" id="comp-modal-close">${icon('close')}</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group" style="grid-column:1/-1;">
+            <label for="cm-name">Name</label>
+            <input type="text" id="cm-name" value="${src.name || ''}" maxlength="120" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="cm-category">Category</label>
+            <select id="cm-category">
+              ${CATEGORY_LIST.map(c => `<option ${src.category === c ? 'selected' : ''}>${c}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="cm-appliance">Appliance</label>
+            <select id="cm-appliance">
+              ${APPLIANCE_LIST.map(a => `<option ${src.appliance === a ? 'selected' : ''}>${a}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="form-group ${isCustom ? '' : 'hidden'}" id="cm-custom-wrap">
+          <label for="cm-custom-name">Custom appliance name</label>
+          <input type="text" id="cm-custom-name" value="${src.custom_appliance_name || ''}" maxlength="60" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="cm-duration">Duration (minutes)</label>
+            <input type="number" id="cm-duration" value="${src.duration ?? 0}" min="0" max="1440" />
+          </div>
+          <div class="form-group" style="justify-content:flex-end;padding-top:20px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;">
+              <input type="checkbox" id="cm-anytime" ${src.can_start_anytime ? 'checked' : ''} style="width:auto;" />
+              <span style="font-size:.85rem;color:var(--text-secondary);">Flexible start</span>
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Steps</label>
+          <div class="steps-editor" id="cm-steps-editor">
+            ${steps.map((s, i) => stepEditRow(s, i)).join('')}
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="cm-add-step" style="margin-top:6px;">${icon('plus')} Add step</button>
+        </div>
+        <div class="form-group">
+          <label for="cm-notes">Notes</label>
+          <textarea id="cm-notes" rows="3">${src.notes || ''}</textarea>
+        </div>
+        <div class="form-error hidden" id="cm-error"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="comp-modal-cancel">Cancel</button>
+        <button class="btn btn-primary" id="comp-modal-save">${isEdit ? 'Save changes' : 'Create component'}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.querySelector('#comp-modal-close').addEventListener('click', close);
+  overlay.querySelector('#comp-modal-cancel').addEventListener('click', close);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+
+  // Appliance → custom name reveal
+  const appSel = overlay.querySelector('#cm-appliance');
+  const customWrap = overlay.querySelector('#cm-custom-wrap');
+  appSel.addEventListener('change', () => {
+    customWrap.classList.toggle('hidden', appSel.value !== 'custom');
+  });
+
+  // Steps
+  const stepsEditor = overlay.querySelector('#cm-steps-editor');
+  overlay.querySelector('#cm-add-step').addEventListener('click', () => {
+    const idx = stepsEditor.querySelectorAll('.step-edit-row').length;
+    stepsEditor.insertAdjacentHTML('beforeend', stepEditRow('', idx));
+    stepsEditor.lastElementChild.querySelector('input').focus();
+    wireStepRemove(stepsEditor);
+  });
+  wireStepRemove(stepsEditor);
+
+  // Save
+  overlay.querySelector('#comp-modal-save').addEventListener('click', async () => {
+    const errEl = overlay.querySelector('#cm-error');
+    const saveBtn = overlay.querySelector('#comp-modal-save');
+    errEl.classList.add('hidden');
+
+    const name = overlay.querySelector('#cm-name').value.trim();
+    if (!name) { errEl.textContent = 'Name is required.'; errEl.classList.remove('hidden'); return; }
+
+    const stepInputs = [...stepsEditor.querySelectorAll('.step-edit-row input[type="text"]')];
+    const steps = stepInputs.map(i => i.value.trim()).filter(Boolean);
+    const appliance = appSel.value;
+
+    const body = {
+      name,
+      category: overlay.querySelector('#cm-category').value,
+      appliance,
+      custom_appliance_name: appliance === 'custom' ? (overlay.querySelector('#cm-custom-name').value.trim() || null) : null,
+      duration: parseInt(overlay.querySelector('#cm-duration').value, 10) || 0,
+      can_start_anytime: overlay.querySelector('#cm-anytime').checked ? 1 : 0,
+      steps,
+      notes: overlay.querySelector('#cm-notes').value.trim(),
+    };
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = isEdit ? 'Saving…' : 'Creating…';
+    try {
+      if (isEdit) {
+        await api('PUT', `/components/${existing.id}`, body);
+        toast('Component updated.', 'success');
+      } else {
+        await api('POST', '/components', body);
+        toast('Component created.', 'success');
+      }
+      close();
+      await loadComponents();
+    } catch (err) {
+      errEl.textContent = ERROR_MESSAGES[err.code] || err.message;
+      errEl.classList.remove('hidden');
+      saveBtn.disabled = false;
+      saveBtn.textContent = isEdit ? 'Save changes' : 'Create component';
+    }
+  });
+
+  requestAnimationFrame(() => overlay.querySelector('#cm-name')?.focus());
+}
+
+function stepEditRow(value, idx) {
+  return `<div class="step-edit-row">
+    <input type="text" value="${value.replace(/"/g, '&quot;')}" placeholder="Step ${idx + 1}…" />
+    <button type="button" class="btn btn-ghost btn-icon step-remove-btn">${icon('close')}</button>
+  </div>`;
+}
+
+function wireStepRemove(editor) {
+  editor.querySelectorAll('.step-remove-btn').forEach(btn => {
+    btn.replaceWith(btn.cloneNode(true)); // de-dupe listeners
+  });
+  editor.querySelectorAll('.step-remove-btn').forEach(btn => {
+    btn.addEventListener('click', () => btn.closest('.step-edit-row').remove());
+  });
+}
+
+
+
+/* ------------------------------------------------------------ Builder */
+let builderMeal = [];       // [{component_id, sort_order, name, appliance, custom_appliance_name, duration}]
+let calcTimeline = null;    // cached import
+
+async function getCalcTimeline() {
+  if (!calcTimeline) {
+    try { ({ calculateTimeline: calcTimeline } = await import('./timeline.js')); }
+    catch { calcTimeline = null; }
+  }
+  return calcTimeline;
+}
+
+function viewBuilder() {
+  if (!requireAuth()) return;
+
+  setView(`
+    <div class="view-header" style="margin-bottom:var(--s5);">
+      <div>
+        <div class="view-title">Meal Builder</div>
+        <div class="view-subtitle">Assemble components into a timed meal plan.</div>
+      </div>
+      <button class="btn btn-primary" id="builder-save-btn" disabled>${icon('check')} Save as Recipe</button>
+    </div>
+    <div class="builder-layout">
+      <div class="builder-panel">
+        <div class="builder-panel-header">Your Components</div>
+        <div class="builder-panel-body" style="padding:var(--s3);">
+          <div style="position:relative;margin-bottom:var(--s3);">
+            ${icon('search')}
+            <input type="search" id="builder-search" placeholder="Search…"
+              style="padding-left:30px;background:var(--bg-elevated);" />
+          </div>
+          <select id="builder-cat" style="margin-bottom:var(--s3);background:var(--bg-elevated);">
+            <option value="">All categories</option>
+            ${CATEGORY_LIST.map(c => `<option>${c}</option>`).join('')}
+          </select>
+          <div id="builder-comp-list" style="display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:calc(100vh - 320px);"></div>
+        </div>
+      </div>
+      <div class="builder-panel">
+        <div class="builder-panel-header" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Meal Assembly</span>
+          <span id="builder-total-time" class="data-time" style="font-size:.85rem;"></span>
+        </div>
+        <div class="builder-panel-body" id="builder-assembly" style="padding:var(--s3);"></div>
+      </div>
+    </div>
+    <div class="section" style="margin-top:var(--s6);">
+      <div class="section-title">Timeline Preview</div>
+      <div id="builder-gantt" class="gantt-wrap"></div>
+    </div>
+  `);
+
+  // Load components, populate left panel
+  loadBuilderComponents();
+
+  document.getElementById('builder-search').addEventListener('input', renderBuilderCompList);
+  document.getElementById('builder-cat').addEventListener('change', renderBuilderCompList);
+  document.getElementById('builder-save-btn').addEventListener('click', showBuilderSaveModal);
+
+  renderBuilderAssembly();
+}
+
+async function loadBuilderComponents() {
+  const listEl = document.getElementById('builder-comp-list');
+  if (!listEl) return;
+  listEl.innerHTML = `<div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text" style="margin-top:6px;"></div>`;
+  try {
+    if (!allComponents.length) {
+      const d = await api('GET', '/components');
+      allComponents = d.items || [];
+    }
+    renderBuilderCompList();
+  } catch {
+    if (listEl) listEl.innerHTML = `<p class="text-sm text-muted">Failed to load components.</p>`;
+  }
+}
+
+function renderBuilderCompList() {
+  const listEl = document.getElementById('builder-comp-list');
+  if (!listEl) return;
+  const q   = (document.getElementById('builder-search')?.value || '').toLowerCase();
+  const cat = document.getElementById('builder-cat')?.value || '';
+
+  const filtered = allComponents.filter(c =>
+    (!q   || c.name.toLowerCase().includes(q)) &&
+    (!cat || c.category === cat)
+  );
+
+  if (!filtered.length) {
+    listEl.innerHTML = `<div class="empty-state" style="padding:var(--s8) 0;">
+      ${icon('grid')}
+      <div class="empty-state-title" style="font-size:.85rem;">No components found</div>
+    </div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(c => `
+    <div class="component-select-item builder-add-item" data-id="${c.id}" style="cursor:pointer;">
+      <div class="component-select-item-name">${c.name}</div>
+      ${applianceBadge(c.appliance, c.custom_appliance_name)}
+      <span class="data-time" style="white-space:nowrap;">${icon('clock')} ${c.duration}m</span>
+      <button class="btn btn-ghost btn-sm" tabindex="-1">${icon('plus')}</button>
+    </div>
+  `).join('');
+
+  listEl.querySelectorAll('.builder-add-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const c = allComponents.find(x => x.id === +el.dataset.id);
+      if (!c) return;
+      const maxOrder = builderMeal.length
+        ? Math.max(...builderMeal.map(r => r.sort_order)) + 1 : 0;
+      builderMeal.push({
+        component_id: c.id, sort_order: maxOrder,
+        name: c.name, appliance: c.appliance,
+        custom_appliance_name: c.custom_appliance_name, duration: c.duration,
+      });
+      renderBuilderAssembly();
+      updateBuilderGantt();
+    });
+  });
+}
+
+function renderBuilderAssembly() {
+  const panel = document.getElementById('builder-assembly');
+  const saveBtn = document.getElementById('builder-save-btn');
+  if (!panel) return;
+
+  if (saveBtn) saveBtn.disabled = builderMeal.length === 0;
+
+  if (!builderMeal.length) {
+    panel.innerHTML = `<div class="empty-state" style="padding:var(--s10) 0;">
+      ${icon('layers')}
+      <div class="empty-state-title">Nothing here yet</div>
+      <div class="empty-state-body">Click a component on the left to add it.</div>
+    </div>`;
+    return;
+  }
+
+  // Sort by sort_order
+  builderMeal.sort((a, b) => a.sort_order - b.sort_order);
+
+  panel.innerHTML = builderMeal.map((row, i) => {
+    const prevOrder = i > 0 ? builderMeal[i-1].sort_order : null;
+    const isParallel = prevOrder !== null && row.sort_order === prevOrder;
+    return `
+      <div class="meal-row" data-idx="${i}" style="margin-bottom:6px;">
+        <div style="display:flex;flex-direction:column;gap:1px;">
+          <button class="btn btn-ghost btn-icon bld-up" data-idx="${i}" ${i === 0 ? 'disabled' : ''}>${icon('chevron-up')}</button>
+          <button class="btn btn-ghost btn-icon bld-down" data-idx="${i}" ${i === builderMeal.length-1 ? 'disabled' : ''}>${icon('chevron-down')}</button>
+        </div>
+        <div class="meal-row-name">
+          <div style="font-weight:500;font-size:.87rem;">${row.name}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;">
+            ${applianceBadge(row.appliance, row.custom_appliance_name)}
+            <span class="data-time">${icon('clock')} ${row.duration}m</span>
+          </div>
+        </div>
+        ${i > 0 ? `
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:.72rem;color:var(--text-muted);white-space:nowrap;">
+            <input type="checkbox" class="bld-parallel" data-idx="${i}" ${isParallel ? 'checked' : ''}
+              style="width:auto;accent-color:var(--accent);" />
+            parallel
+          </label>` : '<span style="min-width:60px;"></span>'}
+        <button class="btn btn-ghost btn-icon bld-remove" data-idx="${i}" style="color:var(--danger);">${icon('close')}</button>
+      </div>
+    `;
+  }).join('');
+
+  // Wire controls
+  panel.querySelectorAll('.bld-up').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = +btn.dataset.idx;
+      if (i === 0) return;
+      [builderMeal[i], builderMeal[i-1]] = [builderMeal[i-1], builderMeal[i]];
+      builderReindex();
+      renderBuilderAssembly();
+      updateBuilderGantt();
+    });
+  });
+  panel.querySelectorAll('.bld-down').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = +btn.dataset.idx;
+      if (i >= builderMeal.length - 1) return;
+      [builderMeal[i], builderMeal[i+1]] = [builderMeal[i+1], builderMeal[i]];
+      builderReindex();
+      renderBuilderAssembly();
+      updateBuilderGantt();
+    });
+  });
+  panel.querySelectorAll('.bld-parallel').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const i = +cb.dataset.idx;
+      if (cb.checked) {
+        builderMeal[i].sort_order = builderMeal[i-1].sort_order;
+      } else {
+        // Give it its own order, shift everything after
+        const base = builderMeal[i-1].sort_order + 1;
+        for (let j = i; j < builderMeal.length; j++) {
+          builderMeal[j].sort_order = base + (j - i);
+        }
+      }
+      renderBuilderAssembly();
+      updateBuilderGantt();
+    });
+  });
+  panel.querySelectorAll('.bld-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      builderMeal.splice(+btn.dataset.idx, 1);
+      builderReindex();
+      renderBuilderAssembly();
+      updateBuilderGantt();
+    });
+  });
+}
+
+function builderReindex() {
+  builderMeal.forEach((row, i) => { row.sort_order = i; });
+}
+
+async function updateBuilderGantt() {
+  const container = document.getElementById('builder-gantt');
+  const totalEl   = document.getElementById('builder-total-time');
+  if (!container) return;
+
+  if (!builderMeal.length) {
+    container.innerHTML = '';
+    if (totalEl) totalEl.textContent = '';
+    return;
+  }
+
+  const calc = await getCalcTimeline();
+  if (!calc) {
+    container.innerHTML = '<p class="text-sm text-muted">Timeline unavailable — timeline.js not found.</p>';
+    return;
+  }
+
+  const ganttData = builderMeal.map(r => ({
+    id: r.component_id, name: r.name, appliance: r.appliance,
+    duration: r.duration, can_start_anytime: false, sort_order: r.sort_order,
+  }));
+
+  const { totalMinutes } = renderGantt(container, ganttData, calc);
+  if (totalEl) totalEl.innerHTML = `${icon('clock')} ${totalMinutes} min total`;
+}
+
+/* ------------------------------------------------------------ Builder save modal */
+function showBuilderSaveModal() {
+  if (!builderMeal.length) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay open';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:460px;">
+      <div class="modal-header">
+        <span class="modal-title">Save as Recipe</span>
+        <button class="btn btn-ghost btn-icon" id="bsm-close">${icon('close')}</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="bsm-name">Recipe name</label>
+          <input type="text" id="bsm-name" placeholder="My Weeknight Bowl…" maxlength="120" required />
+        </div>
+        <div class="form-group">
+          <label for="bsm-description">Description <span class="form-hint" style="display:inline;">optional</span></label>
+          <textarea id="bsm-description" rows="2" placeholder="Quick summary of the meal…"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="bsm-servings">Servings</label>
+            <input type="number" id="bsm-servings" value="2" min="1" max="100" />
+          </div>
+          <div class="form-group">
+            <label for="bsm-tags">Tags <span class="form-hint" style="display:inline;">comma-sep</span></label>
+            <input type="text" id="bsm-tags" placeholder="weeknight, quick…" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="bsm-notes">Notes <span class="form-hint" style="display:inline;">optional</span></label>
+          <textarea id="bsm-notes" rows="2"></textarea>
+        </div>
+        <div class="form-error hidden" id="bsm-error"></div>
+        <p class="text-sm text-muted" style="margin-top:var(--s2);">Saves as a draft. You can publish it from My Recipes.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="bsm-cancel">Cancel</button>
+        <button class="btn btn-primary" id="bsm-save">${icon('check')} Save recipe</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.querySelector('#bsm-close').addEventListener('click', close);
+  overlay.querySelector('#bsm-cancel').addEventListener('click', close);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+
+  overlay.querySelector('#bsm-save').addEventListener('click', async () => {
+    const errEl   = overlay.querySelector('#bsm-error');
+    const saveBtn = overlay.querySelector('#bsm-save');
+    errEl.classList.add('hidden');
+
+    const name = overlay.querySelector('#bsm-name').value.trim();
+    if (!name) {
+      errEl.textContent = 'Recipe name is required.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+
+    const tagsRaw = overlay.querySelector('#bsm-tags').value;
+    try {
+      const data = await api('POST', '/builder/save', {
+        name,
+        description: overlay.querySelector('#bsm-description').value.trim(),
+        servings: parseInt(overlay.querySelector('#bsm-servings').value, 10) || 1,
+        tags: tagsRaw.split(',').map(t => t.trim()).filter(Boolean),
+        notes: overlay.querySelector('#bsm-notes').value.trim(),
+        components: builderMeal.map(r => ({
+          component_id: r.component_id,
+          sort_order: r.sort_order,
+        })),
+      });
+      builderMeal = [];
+      toast('Recipe saved!', 'success');
+      close();
+      route(`#recipe/${data.recipe.slug}`);
+    } catch (err) {
+      errEl.textContent = ERROR_MESSAGES[err.code] || err.message;
+      errEl.classList.remove('hidden');
+      saveBtn.disabled = false;
+      saveBtn.textContent = `${icon('check')} Save recipe`;
+    }
+  });
+
+  requestAnimationFrame(() => overlay.querySelector('#bsm-name')?.focus());
+}
+
+
+
+/* ------------------------------------------------------------ Profile */
+function viewProfile(username) {
+  setView(`<div class="empty-state">${skeletonCards(2)}</div>`);
+  loadProfile(username);
+}
+
+async function loadProfile(username) {
+  try {
+    const { user, recipes } = await api('GET', `/users/${username}`);
+    const avatarHtml = user.avatar_url
+      ? `<img src="${user.avatar_url}" alt="${user.username}">`
+      : icon('user');
+
+    setView(`
+      <div class="profile-header">
+        <div class="profile-avatar">${avatarHtml}</div>
+        <div class="profile-info">
+          <div class="profile-name">${user.username}</div>
+          ${user.bio ? `<div class="profile-bio">${user.bio}</div>` : ''}
+        </div>
+        ${AppState.currentUser?.username === username
+          ? `<a href="#settings" class="btn btn-ghost btn-sm">${icon('settings')} Edit profile</a>`
+          : ''}
+      </div>
+      <div class="section-title">Published Recipes</div>
+      <div class="card-grid">
+        ${recipes.length
+          ? recipes.map(r => recipeCard({ ...r, author_username: username })).join('')
+          : `<div class="empty-state" style="grid-column:1/-1">
+              ${icon('book')}
+              <div class="empty-state-title">No published recipes</div>
+             </div>`}
+      </div>
+    `);
+  } catch (err) {
+    setView(`<div class="empty-state"><div class="empty-state-title">User not found.</div></div>`);
+  }
+}
+
+/* ------------------------------------------------------------ Settings */
+function viewSettings() {
+  if (!requireAuth()) return;
+  const user = AppState.currentUser;
+  setView(`
+    <div class="view-header">
+      <div class="view-title">Settings</div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Profile</div>
+      <div style="display:flex;flex-direction:column;gap:var(--s4);">
+        <div class="form-group">
+          <label for="set-username">Username</label>
+          <input type="text" id="set-username" value="${user.username}" />
+        </div>
+        <div class="form-group">
+          <label for="set-bio">Bio</label>
+          <textarea id="set-bio">${user.bio || ''}</textarea>
+        </div>
+        <div><button class="btn btn-primary" id="save-profile-btn">Save profile</button></div>
+        <div class="form-error hidden" id="profile-error"></div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Change Password</div>
+      <div style="display:flex;flex-direction:column;gap:var(--s4);">
+        <div class="form-group">
+          <label for="set-cur-pw">Current password</label>
+          <input type="password" id="set-cur-pw" />
+        </div>
+        <div class="form-group">
+          <label for="set-new-pw">New password</label>
+          <input type="password" id="set-new-pw" />
+        </div>
+        <div class="form-group">
+          <label for="set-confirm-pw">Confirm new password</label>
+          <input type="password" id="set-confirm-pw" />
+        </div>
+        <div><button class="btn btn-primary" id="save-pw-btn">Change password</button></div>
+        <div class="form-error hidden" id="pw-error"></div>
+      </div>
+    </div>
+
+    <div class="settings-section danger-zone">
+      <div class="danger-zone-title">Delete Account</div>
+      <div class="danger-zone-body">This permanently deletes your account and all recipes. Type your username to confirm.</div>
+      <div class="form-group" style="margin-bottom:var(--s3);">
+        <input type="text" id="delete-confirm" placeholder="${user.username}" />
+      </div>
+      <button class="btn btn-danger" id="delete-account-btn">${icon('trash')} Delete my account</button>
+      <div class="form-error hidden" id="delete-error"></div>
+    </div>
+  `);
+
+  document.getElementById('save-profile-btn').addEventListener('click', async () => {
+    const errEl = document.getElementById('profile-error');
+    errEl.classList.add('hidden');
+    const btn = document.getElementById('save-profile-btn');
+    btn.disabled = true;
+    try {
+      const data = await api('PUT', '/users/me', {
+        username: document.getElementById('set-username').value.trim(),
+        bio: document.getElementById('set-bio').value.trim(),
+      });
+      AppState.currentUser = data.user;
+      renderNav();
+      toast('Profile updated.', 'success');
+    } catch (err) {
+      errEl.textContent = ERROR_MESSAGES[err.code] || err.message;
+      errEl.classList.remove('hidden');
+    }
+    btn.disabled = false;
+  });
+
+  document.getElementById('save-pw-btn').addEventListener('click', async () => {
+    const errEl = document.getElementById('pw-error');
+    errEl.classList.add('hidden');
+    const btn = document.getElementById('save-pw-btn');
+    const newPw = document.getElementById('set-new-pw').value;
+    const confirm = document.getElementById('set-confirm-pw').value;
+    if (newPw !== confirm) {
+      errEl.textContent = 'Passwords do not match.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    btn.disabled = true;
+    try {
+      await api('PUT', '/users/me', {
+        current_password: document.getElementById('set-cur-pw').value,
+        new_password: newPw,
+      });
+      toast('Password changed.', 'success');
+      document.getElementById('set-cur-pw').value = '';
+      document.getElementById('set-new-pw').value = '';
+      document.getElementById('set-confirm-pw').value = '';
+    } catch (err) {
+      errEl.textContent = ERROR_MESSAGES[err.code] || err.message;
+      errEl.classList.remove('hidden');
+    }
+    btn.disabled = false;
+  });
+
+  document.getElementById('delete-account-btn').addEventListener('click', async () => {
+    const confirmVal = document.getElementById('delete-confirm').value.trim();
+    const errEl = document.getElementById('delete-error');
+    errEl.classList.add('hidden');
+    if (confirmVal !== AppState.currentUser.username) {
+      errEl.textContent = 'Username does not match.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    const btn = document.getElementById('delete-account-btn');
+    btn.disabled = true;
+    try {
+      await api('DELETE', '/users/me', { confirm_username: confirmVal });
+      clearAuth();
+      renderNav();
+      toast('Account deleted.');
+      route('#home');
+    } catch (err) {
+      errEl.textContent = ERROR_MESSAGES[err.code] || err.message;
+      errEl.classList.remove('hidden');
+      btn.disabled = false;
+    }
+  });
+}
+
+/* ------------------------------------------------------------ Admin */
+function viewAdmin() {
+  if (!AppState.currentUser) { showAuthModal('login'); return; }
+  if (AppState.currentUser.role !== 'admin') {
+    setView(`<div class="empty-state">
+      ${icon('shield')}
+      <div class="empty-state-title">Access denied</div>
+      <div class="empty-state-body">Admin access required.</div>
+    </div>`);
+    return;
+  }
+
+  setView(`
+    <div class="view-header">
+      <div class="view-title">Admin Panel</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Users</div>
+      <div id="admin-users-wrap"><div class="skeleton skeleton-card" style="height:120px;"></div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Error Logs</div>
+      <div style="display:flex;gap:var(--s3);align-items:center;margin-bottom:var(--s3);">
+        <select id="admin-log-level" style="width:auto;min-width:120px;">
+          <option value="">All levels</option>
+          <option>error</option><option>warn</option><option>info</option>
+        </select>
+        <button class="btn btn-danger btn-sm" id="clear-logs-btn">${icon('trash')} Clear logs</button>
+      </div>
+      <div id="admin-logs-wrap"><div class="skeleton skeleton-card" style="height:180px;"></div></div>
+      <div id="admin-logs-pag" class="pagination hidden"></div>
+    </div>
+  `);
+
+  loadAdminUsers();
+  loadAdminLogs({ page: 1 });
+
+  document.getElementById('admin-log-level').addEventListener('change', () => {
+    loadAdminLogs({ page: 1, level: document.getElementById('admin-log-level').value });
+  });
+
+  document.getElementById('clear-logs-btn').addEventListener('click', async () => {
+    if (!confirm('Clear all error logs? This cannot be undone.')) return;
+    try {
+      await api('DELETE', '/admin/errors');
+      toast('Logs cleared.', 'success');
+      loadAdminLogs({ page: 1 });
+    } catch (err) { toast(ERROR_MESSAGES[err.code] || err.message, 'error'); }
+  });
+}
+
+async function loadAdminUsers() {
+  const wrap = document.getElementById('admin-users-wrap');
+  if (!wrap) return;
+  try {
+    const { items } = await api('GET', '/admin/users');
+    wrap.innerHTML = `
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead><tr>
+            <th>Username</th><th>Email</th><th>Role</th><th>Joined</th><th></th>
+          </tr></thead>
+          <tbody>
+            ${items.map(u => `
+              <tr>
+                <td><a href="#profile/${u.username}">${u.username}</a></td>
+                <td class="text-sm text-muted">${u.email}</td>
+                <td><span class="badge ${u.role === 'admin' ? 'badge-published' : 'badge-draft'}">${u.role}</span></td>
+                <td class="text-sm text-muted font-mono">${u.created_at?.slice(0,10)}</td>
+                <td>
+                  ${u.id !== AppState.currentUser.id
+                    ? `<button class="btn btn-ghost btn-sm" onclick="toggleUserRole(${u.id},'${u.role}')">
+                        ${u.role === 'admin' ? 'Demote' : 'Promote'}
+                       </button>`
+                    : ''}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } catch (err) {
+    wrap.innerHTML = `<div class="form-error">Failed to load users.</div>`;
+  }
+}
+
+window.toggleUserRole = async function(id, currentRole) {
+  const newRole = currentRole === 'admin' ? 'user' : 'admin';
+  try {
+    await api('PATCH', `/admin/users/${id}/role`, { role: newRole });
+    toast(`Role updated to ${newRole}.`, 'success');
+    loadAdminUsers();
+  } catch (err) { toast(ERROR_MESSAGES[err.code] || err.message, 'error'); }
+};
+
+async function loadAdminLogs({ page = 1, level = '' } = {}) {
+  const wrap = document.getElementById('admin-logs-wrap');
+  const pag  = document.getElementById('admin-logs-pag');
+  if (!wrap) return;
+  try {
+    const params = new URLSearchParams({ page, limit: 50 });
+    if (level) params.set('level', level);
+    const data = await api('GET', `/admin/errors?${params}`);
+    const items = data.items || [];
+
+    if (!items.length) {
+      wrap.innerHTML = `<div class="empty-state">${icon('check')}<div class="empty-state-title">No logs</div></div>`;
+      pag.classList.add('hidden');
+      return;
+    }
+
+    wrap.innerHTML = `
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead><tr><th>Time</th><th>Level</th><th>Context</th><th>Message</th></tr></thead>
+          <tbody>
+            ${items.map(l => `
+              <tr class="expandable-row" onclick="this.querySelector('.expand-content')?.classList.toggle('hidden')">
+                <td class="font-mono text-sm" style="white-space:nowrap;">${l.created_at?.slice(0,19)}</td>
+                <td><span class="badge badge-${l.level}">${l.level}</span></td>
+                <td class="text-sm">${l.context}</td>
+                <td class="text-sm">
+                  ${l.message}
+                  ${l.stack ? `<div class="expand-content hidden">${l.stack}</div>` : ''}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    const totalPages = Math.ceil(data.total / data.limit);
+    if (totalPages > 1) {
+      pag.classList.remove('hidden');
+      pag.innerHTML = `
+        <button class="btn btn-ghost btn-sm" ${page <= 1 ? 'disabled' : ''} id="log-pag-prev">${icon('chevron-up')} Prev</button>
+        <span class="page-info">${page} / ${totalPages}</span>
+        <button class="btn btn-ghost btn-sm" ${page >= totalPages ? 'disabled' : ''} id="log-pag-next">Next ${icon('chevron-down')}</button>
+      `;
+      document.getElementById('log-pag-prev')?.addEventListener('click', () => loadAdminLogs({ page: page-1, level }));
+      document.getElementById('log-pag-next')?.addEventListener('click', () => loadAdminLogs({ page: page+1, level }));
+    } else {
+      pag.classList.add('hidden');
+    }
+  } catch (err) {
+    wrap.innerHTML = `<div class="form-error">Failed to load logs.</div>`;
+  }
+}
+
+/* ------------------------------------------------------------ utils */
+function safeParseJSON(val, fallback) {
+  if (Array.isArray(val) || (val && typeof val === 'object')) return val;
+  try { return JSON.parse(val); } catch { return fallback; }
+}
+
+/* ============================================================ Boot */
+async function boot() {
+  const savedToken = localStorage.getItem(TOKEN_KEY);
+  if (savedToken) {
+    AppState.token = savedToken;
+    try {
+      const { user } = await api('GET', '/auth/me');
+      AppState.currentUser = user;
+    } catch {
+      clearAuth();
+    }
+  }
+
+  renderNav();
+  router();
+}
+
+boot();
+</script>
+</body>
+</html>
