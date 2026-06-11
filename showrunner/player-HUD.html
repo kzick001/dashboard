@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Crawler Terminal V6.0.0</title>
+  <title>Showrunner | Crawler Terminal V6.0.1</title>
 
   <svg xmlns="http://www.w3.org/2000/svg" style="display:none;position:absolute">
     <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
@@ -87,9 +87,10 @@
     .bar { height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--primary)); border-radius:2px; transition:width 6s linear; }
 
     /* HUD */
-    #main-hud { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:min(93vw,480px); max-height:88vh; background:var(--bg-card); border:2px solid var(--accent); border-radius:12px; padding:1.2rem; z-index:1000; display:flex; flex-direction:column; gap:.8rem; overflow-y:auto; box-shadow:0 8px 40px rgba(0,0,0,.7),0 0 60px rgba(187,134,252,.08); scrollbar-width:thin; scrollbar-color:var(--accent) transparent; }
+    #main-hud { position:fixed; top:calc(50% + 18px); left:50%; transform:translate(-50%,-50%); width:min(93vw,480px); max-height:84vh; background:var(--bg-card); border:2px solid var(--accent); border-radius:12px; padding:1.2rem; z-index:1000; display:flex; flex-direction:column; gap:.8rem; overflow-y:auto; box-shadow:0 8px 40px rgba(0,0,0,.7),0 0 60px rgba(187,134,252,.08); scrollbar-width:thin; scrollbar-color:var(--accent) transparent; }
     #main-hud::-webkit-scrollbar { width:4px; }
     #main-hud::-webkit-scrollbar-thumb { background:var(--accent); border-radius:2px; }
+    #main-hud.sheet-hidden { display:none; }
     .hud-section { background:rgba(0,0,0,.22); border:1px solid var(--border); border-radius:var(--r); padding:.85rem; }
     .section-label { font-size:.62rem; color:var(--muted); text-transform:uppercase; letter-spacing:.12em; margin-bottom:.55rem; }
 
@@ -162,7 +163,18 @@
     .sp-val { font-family:monospace; font-size:.85rem; flex:1; text-align:center; }
     .sp-reset { background:rgba(187,134,252,.1); border:1px solid var(--accent); color:var(--accent); padding:.4rem .8rem; border-radius:var(--r-sm); font-size:.65rem; font-weight:bold; text-transform:uppercase; letter-spacing:.05em; margin-top:.4rem; cursor:pointer; transition:all .2s ease; align-self:flex-start; }
     .sp-reset:hover { box-shadow:0 0 12px rgba(187,134,252,.25); }
-    .spell-toggle-eye { background:none; border:none; color:var(--accent); cursor:pointer; font-size:1rem; padding:0; line-height:1; }
+    /* TOMBSTONE: spell-toggle-eye removed v6.0.1 — emoji eye replaced by pip UI */
+    /* .spell-toggle-eye { background:none; border:none; color:var(--accent); cursor:pointer; font-size:1rem; padding:0; line-height:1; } */
+    /* New pip-row spell UI (v6.0.1) */
+    .sp-pip-row { display:flex; align-items:center; gap:.5rem; margin-bottom:.35rem; }
+    .sp-pip-lvl { font-family:monospace; font-weight:bold; color:var(--accent); width:14px; text-align:center; flex-shrink:0; font-size:.8rem; }
+    .sp-pip-track { display:flex; gap:.25rem; flex-wrap:wrap; flex:1; }
+    .sp-pip { width:12px; height:12px; border-radius:50%; background:var(--accent); cursor:pointer; transition:all .15s ease; flex-shrink:0; }
+    .sp-pip.spent { background:transparent; border:1.5px solid var(--accent); opacity:.55; }
+    .sp-pip:hover { transform:scale(1.2); }
+    .sp-pip-count { font-family:monospace; font-size:.7rem; color:var(--muted); flex-shrink:0; min-width:2.2rem; text-align:right; }
+    .sp-setup { font-size:.75rem; color:var(--muted); }
+    .sp-setup-link { background:none; border:none; color:var(--accent); cursor:pointer; text-decoration:underline; font-size:.75rem; padding:0; }
 
     /* Achievement Badge (top-right of HUD) */
     #ach-pill { position:absolute; top:.4rem; right:2.8rem; display:none; align-items:center; justify-content:center; background:rgba(187,134,252,.15); border:1px solid var(--accent); color:var(--accent); width:28px; height:28px; border-radius:50%; cursor:pointer; transition:all .3s ease; z-index:100; font-size:.9rem; }
@@ -172,7 +184,7 @@
     @keyframes badge-glow { 0%,100%{box-shadow:0 0 8px rgba(187,134,252,.4)} 50%{box-shadow:0 0 16px rgba(187,134,252,.9)} }
 
     /* Ticker (centered below HUD) */
-    .ticker-container { position:fixed; left:50%; transform:translateX(-50%); top:calc(50% + 220px); z-index:500; display:flex; flex-direction:column; align-items:center; gap:.4rem; }
+    .ticker-container { position:fixed; left:50%; transform:translateX(-50%); top:0; z-index:500; display:flex; flex-direction:row; align-items:center; gap:.4rem; padding-top:.4rem; }
     .ticker-pill { width:min(90vw,720px); background:rgba(14,18,40,.95); border:1px solid var(--terminal); border-radius:2px; padding:.5rem .8rem; font-size:.75rem; color:var(--terminal); letter-spacing:.08em; text-transform:uppercase; overflow:hidden; white-space:nowrap; cursor:pointer; transition:all .2s ease; }
     .ticker-pill:hover { box-shadow:inset 0 0 12px rgba(255,235,59,.2); }
     #ticker-text { display:inline-block; padding-left:100%; font-weight:bold; animation:ticker-scroll 22.5s linear infinite; }
@@ -199,6 +211,10 @@
     .ach-item-earned { font-size:.65rem; color:var(--muted); font-style:italic; margin-bottom:.4rem; }
     .ach-item-ack { background:linear-gradient(135deg,var(--accent),var(--primary)); border:none; color:#fff; padding:.4rem .8rem; border-radius:var(--r-sm); font-size:.65rem; font-weight:bold; text-transform:uppercase; letter-spacing:.05em; cursor:pointer; transition:all .2s ease; }
     .ach-item-ack:hover { transform:translateY(-1px); box-shadow:0 2px 10px rgba(187,134,252,.4); }
+    .ach-details-btn { margin-top:.4rem; background:rgba(255,255,255,.04); border:1px solid var(--border); color:var(--text); padding:.3rem .7rem; border-radius:var(--r-sm); font-size:.68rem; font-weight:bold; text-transform:uppercase; letter-spacing:.05em; cursor:pointer; transition:all .2s ease; }
+    .ach-details-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .ach-item-name, .ach-item-desc, .ach-item-earned { overflow-wrap:anywhere; word-break:break-word; }
+    .ach-detail-desc, .ach-detail-loot-text { overflow-wrap:anywhere; word-break:break-word; }
     .ach-empty { text-align:center; color:var(--muted); font-size:.8rem; padding:1rem; }
 
     /* Notification toast */
@@ -261,7 +277,7 @@
       .action-btn { padding:.5rem; font-size:.7rem; }
     }
     @media (max-width: 768px) {
-      #main-hud { width:95vw; top:45%; max-height:85vh; padding:.8rem; }
+      #main-hud { width:95vw; top:calc(45% + 18px); max-height:85vh; padding:.8rem; }
       .hud-header { gap:.6rem; padding-right:3.2rem; }
       #hud-avatar { width:64px; height:64px; }
       .hud-info h2 { font-size:.9rem; }
@@ -277,7 +293,7 @@
       .sp-detail.open { max-height:160px; }
       .action-btn { padding:.4rem; font-size:.65rem; }
       .btn-logout-hud { padding:.15rem .35rem; font-size:1rem; }
-      .ticker-container { top:auto; bottom:1rem; }
+      .ticker-container { top:0; bottom:auto; }
       .ticker-pill { width:95vw; font-size:.65rem; padding:.4rem .6rem; }
       #ticker-text { animation:ticker-scroll 27.5s linear infinite; }
       .ach-modal { width:92vw; max-height:75vh; padding:1rem; }
@@ -688,9 +704,11 @@ function startPolling() {
 function openSheet() {
   renderSheet();
   document.getElementById('sheet-overlay').classList.add('open');
+  document.getElementById('main-hud').classList.add('sheet-hidden');
 }
 function closeSheet() {
   document.getElementById('sheet-overlay').classList.remove('open');
+  document.getElementById('main-hud').classList.remove('sheet-hidden');
 }
 function updateSheetAvatar() {
   const inner = document.getElementById('sheet-av-inner');
@@ -1024,11 +1042,11 @@ function renderSheetGold(body) {
     <button onclick="adjustGold(-1)" style="background:none;border:1px solid #444;color:#aaa;width:26px;height:26px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </button>
-    <input type="number" id="gold-input" value="${gold}" min="0" style="width:70px;background:#1a1a1a;border:1px solid #444;color:var(--text);border-radius:3px;padding:0.25rem 0.4rem;text-align:center;">
+    <input type="number" id="gold-input" value="${gold}" min="0" oninput="goldAutoSave()" style="width:70px;background:#1a1a1a;border:1px solid #444;color:var(--text);border-radius:3px;padding:0.25rem 0.4rem;text-align:center;">
     <button onclick="adjustGold(1)" style="background:none;border:1px solid #444;color:#aaa;width:26px;height:26px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </button>
-    <button onclick="setGoldFromInput()" style="background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);color:#ffd700;border-radius:4px;padding:0.25rem 0.5rem;font-size:0.75rem;cursor:pointer;">Set</button>
+    <span id="gold-saved" style="font-size:0.7rem;color:var(--success);opacity:0;transition:opacity 0.3s;">Saved</span>
   </div>`;
 }
 function renderSheetFamiliar(body) {
@@ -1231,9 +1249,15 @@ function adjustGold(delta) {
   setGold(newVal);
 }
 
-function setGoldFromInput() {
-  const val = parseInt(document.getElementById('gold-input')?.value) || 0;
-  setGold(Math.max(0, val));
+let _goldTimer = null;
+function goldAutoSave() {
+  clearTimeout(_goldTimer);
+  _goldTimer = setTimeout(() => {
+    const val = Math.max(0, parseInt(document.getElementById('gold-input')?.value) || 0);
+    setGold(val);
+    const tag = document.getElementById('gold-saved');
+    if (tag) { tag.style.opacity = '1'; setTimeout(() => { tag.style.opacity = '0'; }, 1600); }
+  }, 2000);
 }
 
 function setGold(val) {
@@ -1242,7 +1266,6 @@ function setGold(val) {
     if (ch) { ch.gold = val; ch.updatedAt = new Date().toISOString(); }
   }, `Gold: ${val} gp`);
 }
-function updateHeader() {
   get('hud-name').textContent = player?.name || playerName || '—';
   const sub = player ? [player.race, player.class].filter(Boolean).join(' ') : 'Awaiting data...';
   get('hud-sub').textContent = sub || '—';
@@ -1307,13 +1330,37 @@ function updateVitals() {
   const hpColor = hpPct <= 0.25 ? 'var(--danger)' : hpPct <= 0.5 ? 'var(--orange)' : 'var(--primary)';
 
   el.innerHTML =
-    `<span style="color:${hpColor};">HP ${fmt(hp)}/${fmt(maxHp)}</span>` +
+    `<span id="hp-display" style="color:${hpColor};cursor:pointer;border-bottom:1px dotted ${hpColor};" onclick="beginHpEdit()" title="Tap to edit HP">HP ${fmt(hp)}/${fmt(maxHp)}</span>` +
     `<span style="color:var(--muted);"> &nbsp;|&nbsp; </span>` +
     `<span style="color:var(--primary);">AC ${fmt(ac)}</span>` +
     `<span style="color:var(--muted);"> &nbsp;|&nbsp; </span>` +
     `<span style="color:var(--primary);">Passive ${fmt(pass)}</span>` +
     `<span style="color:var(--muted);"> &nbsp;|&nbsp; </span>` +
     `<span style="color:var(--primary);">Speed ${fmt(speed,' ft')}</span>`;
+}
+
+function beginHpEdit() {
+  const cur = player?.stats?.hp?.current ?? 0;
+  const span = document.getElementById('hp-display');
+  if (!span) return;
+  span.outerHTML =
+    `<span style="color:var(--primary);">HP </span>` +
+    `<input id="hp-edit-input" type="number" inputmode="numeric" value="${cur}" ` +
+    `style="width:3.4rem;background:#1a1a1a;border:1px solid var(--accent);color:var(--text);` +
+    `border-radius:3px;padding:.1rem .2rem;text-align:center;font-family:monospace;" ` +
+    `onblur="commitHpEdit(this.value)" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value='__cancel__';this.blur();}">`;
+  const inp = document.getElementById('hp-edit-input');
+  if (inp) { inp.focus(); inp.select(); }
+}
+function commitHpEdit(val) {
+  if (val === '__cancel__') { updateVitals(); return; }
+  const n = parseInt(val);
+  if (isNaN(n)) { updateVitals(); return; }
+  // No over-max guard: Roll20 is source of truth; this is a quick-reference mirror.
+  mutateAndPush(latest => {
+    const ch = latest.characters?.find(c => c.name === playerName);
+    if (ch?.stats?.hp) ch.stats.hp.current = Math.max(0, n);
+  }, `HP set to ${Math.max(0, n)}`);
 }
 
 /* ══════════════════════════════
@@ -1427,101 +1474,86 @@ function renderFamiliarSection() {
    SPELLS
 ══════════════════════════════ */
 function renderSpellSection() {
-  if (!player?.spellSlots || spellBuilt) return;
   const hud = get('main-hud');
   const actions = document.getElementById('actions');
-  const sec = document.createElement('div');
-  sec.id = 'spell-section';
-  sec.className = 'hud-section';
+  let sec = document.getElementById('spell-section');
+
+  // Only show the section at all if tracking is on (or slots exist).
+  const ss = player?.spellSlots;
+  const defaultOn = ss && Object.values(ss).some(s => s && typeof s === 'object' && (s.max||0) > 0);
+  const isOn = typeof player?.showSpellSlots === 'boolean' ? player.showSpellSlots : (defaultOn || false);
+
+  if (!isOn) { if (sec) sec.remove(); spellBuilt = false; return; }
+
+  if (!sec) {
+    sec = document.createElement('div');
+    sec.id = 'spell-section';
+    sec.className = 'hud-section';
+    hud.insertBefore(sec, actions);
+  }
+
+  // Which levels render? Only those with max > 0.
+  const levels = [];
+  for (let lvl = 1; lvl <= 9; lvl++) {
+    const slot = ss ? ss['level' + lvl] : null;
+    if (slot && (slot.max || 0) > 0) levels.push(lvl);
+  }
+
+  let rows;
+  if (levels.length === 0) {
+    rows = `<div class="sp-setup">No slots set. Configure in
+      <button class="sp-setup-link" onclick="openSheet()">Character Sheet</button>.</div>`;
+  } else {
+    rows = levels.map(lvl => {
+      const slot = ss['level' + lvl];
+      const cur = slot.current ?? 0, max = slot.max ?? 0;
+      const pips = Array.from({ length: max }, (_, i) =>
+        `<span class="sp-pip ${i < cur ? '' : 'spent'}" onclick="adjSpellPip(${lvl},${i})"></span>`
+      ).join('');
+      return `<div class="sp-pip-row">
+        <span class="sp-pip-lvl">${lvl}</span>
+        <div class="sp-pip-track">${pips}</div>
+        <span class="sp-pip-count">${cur}/${max}</span>
+      </div>`;
+    }).join('');
+  }
+
   sec.innerHTML = `
-    <div class="section-label" style="display:flex; justify-content:space-between; align-items:center;">
-      <span>Spell Slots</span>
-      <button class="spell-toggle-eye" onclick="toggleSpellVisibility()" title="Show/hide slots">👁</button>
-    </div>
-    <div class="sp-intro">Track and spend spell slots across levels.</div>
-    <div class="sp-btns">
-      ${[1,2,3].map(i=>`
-        <button class="sp-btn" id="sp-btn-${i}" onclick="toggleDetail(${i})">
-          Level ${i}
-          <span class="cnt" id="sp-cnt-${i}">—</span>
-        </button>`).join('')}
-    </div>
-    ${[1,2,3].map(i=>`
-      <div class="sp-detail" id="sp-det-${i}">
-        <span class="sp-dlabel">Level ${i}</span>
-        <div class="sp-ctrl">
-          <button class="sp-adj" id="sp-dec-${i}" onclick="adjSlot(${i},-1)">−</button>
-          <span class="sp-val" id="sp-val-${i}">—</span>
-          <button class="sp-adj" id="sp-inc-${i}" onclick="adjSlot(${i},1)">+</button>
-        </div>
-      </div>`).join('')}
-    <button class="sp-reset" onclick="longRest()">Reset Slots</button>
+    <div class="section-label">Spell Slots</div>
+    <div id="sp-pip-wrap">${rows}</div>
+    ${levels.length ? `<button class="sp-reset" onclick="longRest()">Long Rest</button>` : ''}
   `;
-  hud.insertBefore(sec, actions);
   spellBuilt = true;
 }
 
-function toggleSpellVisibility() {
-  const sec = document.getElementById('spell-section');
-  if (!sec) return;
-  const buttons = sec.querySelector('.sp-btns');
-  const intro   = sec.querySelector('.sp-intro');
-  const details = sec.querySelectorAll('.sp-detail');
-  const reset   = sec.querySelector('.sp-reset');
-  const hidden  = buttons?.style.display === 'none';
+// TOMBSTONE (v6.0.1): mini-HUD spell UI rebuilt as pip rows in renderSpellSection().
+// updateSpellCounts / toggleDetail / toggleSpellVisibility no longer used.
+function updateSpellCounts() { /* superseded by renderSpellSection pip render */ }
+function toggleDetail() { /* superseded */ }
+function toggleSpellVisibility() { /* superseded */ }
 
-  if (buttons) buttons.style.display = hidden ? 'flex' : 'none';
-  if (intro)   intro.style.display   = hidden ? 'block' : 'none';
-  details.forEach(d => d.style.display = hidden ? 'block' : 'none');
-  if (reset)   reset.style.display    = hidden ? 'block' : 'none';
-}
-
-function updateSpellCounts() {
-  if (!player?.spellSlots) return;
-  [1,2,3].forEach(i => {
-    const slot = player.spellSlots[`level${i}`];
-    const btn  = document.getElementById(`sp-btn-${i}`);
-    const cnt  = document.getElementById(`sp-cnt-${i}`);
-    const val  = document.getElementById(`sp-val-${i}`);
-    const dec  = document.getElementById(`sp-dec-${i}`);
-    const inc  = document.getElementById(`sp-inc-${i}`);
-    if (!btn || !slot) return;
-    const max = slot.max ?? 0, cur = slot.current ?? 0;
-    if (max === 0) { btn.className='sp-btn no-slots'; if(cnt) cnt.textContent='N/A'; }
-    else { btn.className = cur===0 ? 'sp-btn depleted':'sp-btn'; if(cnt) cnt.textContent=`${cur}/${max}`; }
-    if (val) val.textContent = `${cur} / ${max}`;
-    if (dec) dec.disabled = cur<=0;
-    if (inc) inc.disabled = cur>=max;
-  });
-}
-
-function toggleDetail(i) {
-  const d = document.getElementById(`sp-det-${i}`);
-  if (d) d.classList.toggle('open');
-}
-
-function adjSlot(i, delta) {
-  if (!player?.spellSlots) return;
-  const slot = player.spellSlots[`level${i}`];
-  if (!slot) return;
-  const n = (slot.current ?? 0) + delta;
-  if (n < 0 || n > (slot.max ?? 0)) return;
-  slot.current = n;
-  updateSpellCounts();
-  syncToKV();
+function adjSpellPip(lvl, pipIdx) {
+  mutateAndPush(latest => {
+    const ch = latest.characters?.find(c => c.name === playerName);
+    const slot = ch?.spellSlots?.['level' + lvl];
+    if (!slot) return;
+    // Clicking a filled pip spends down to it; clicking a spent pip restores up through it.
+    slot.current = pipIdx >= slot.current ? pipIdx + 1 : pipIdx;
+    slot.current = Math.max(0, Math.min(slot.current, slot.max));
+  }, null);
 }
 
 function longRest() {
-  if (!player?.spellSlots) return;
   if (!confirm('Reset all spell slots? This counts as a long rest.')) return;
-  [1,2,3].forEach(i => {
-    const s = player.spellSlots[`level${i}`];
-    if (s) s.current = s.max ?? 0;
-  });
-  player.spellSlots.lastLongRest = new Date().toISOString();
-  updateSpellCounts();
-  syncToKV();
-  toast('Long rest complete. All slots restored.');
+  mutateAndPush(latest => {
+    const ch = latest.characters?.find(c => c.name === playerName);
+    if (!ch?.spellSlots) return;
+    for (let l = 1; l <= 9; l++) {
+      const s = ch.spellSlots['level' + l];
+      if (s) s.current = s.max ?? 0;
+    }
+    ch.spellSlots.lastLongRest = new Date().toISOString();
+  }, 'Long rest complete. All slots restored.');
 }
 
 /* ══════════════════════════════
@@ -1637,7 +1669,7 @@ function showAchievementDetail(achId) {
   // Details (description, loot, gold) stay locked until the DM awards.
   const unlocked = !!a.awardedAt || !!a.isArchived;
   
-  const statusBadge = a.awardedAt ? '✓ AWARDED' : (a.notifyPlayerAt ? '🔔 NOTIFICATION' : 'PENDING');
+  const statusBadge = a.awardedAt ? 'AWARDED' : (a.notifyPlayerAt ? 'NOTIFICATION' : 'PENDING');
   
   let bodyHtml = '';
   let actionBtns = '';
@@ -1758,12 +1790,14 @@ function populateAchList(tab) {
     
     let statusClass = '';
     let statusIcon = '';
+    const bellSvg = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+    const checkSvg = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align:-1px;"><polyline points="20 6 9 17 4 12"/></svg>';
     if (a.notifyPlayerAt && !a.awardedAt) {
       statusClass = 'notified';
-      statusIcon = '🔔';
+      statusIcon = bellSvg;
     } else if (a.awardedAt) {
       statusClass = 'awarded';
-      statusIcon = '✓';
+      statusIcon = checkSvg;
     }
     
     // Details (flavor text) stay hidden until the DM awards.
@@ -1773,11 +1807,12 @@ function populateAchList(tab) {
       : `<div class="ach-item-desc" style="font-style:italic;opacity:0.7;">Details locked until awarded</div>`;
     
     return `
-      <div class="ach-item" onclick="showAchievementDetail('${escapeForAttr(a.id)}');">
-        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:0.05em;">${statusIcon} ${statusClass.toUpperCase()}</div>
+      <div class="ach-item">
+        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:0.05em;display:flex;align-items:center;gap:0.3rem;">${statusIcon}${statusClass.toUpperCase()}</div>
         <div class="ach-item-name">${escapeHtml(a.name || 'Achievement')}</div>
         ${descHtml}
         <div class="ach-item-earned">Earned: ${escapeHtml(earnedStr)}</div>
+        <button class="ach-details-btn" onclick="showAchievementDetail('${escapeForAttr(a.id)}');">Details</button>
       </div>`;
   }).join('');
 }
@@ -1999,18 +2034,14 @@ function randomMsg() {
 }
 
 function initTicker() {
-  const visible = localStorage.getItem(T_KEY) !== 'false';
+  // v6.0.1: session-only visibility — always starts visible, no localStorage persistence
   const pill = get('ticker-pill');
   const eye  = get('ticker-eye-icon');
   get('ticker-eye').classList.remove('hidden'); // eye always visible once logged in
-  if (eye) eye.setAttribute('href', visible ? '#icon-eye' : '#icon-eye-hidden');
-  if (visible) {
-    pill.classList.remove('hidden');
-    rotateTick();
-    tickTimer = setInterval(rotateTick, TICKER_MS);
-  } else {
-    pill.classList.add('hidden');
-  }
+  if (eye) eye.setAttribute('href', '#icon-eye');
+  pill.classList.remove('hidden');
+  rotateTick();
+  tickTimer = setInterval(rotateTick, TICKER_MS);
 }
 
 function rotateTick() {
@@ -2027,12 +2058,10 @@ function toggleTicker(e) {
   if (visible) {
     pill.classList.add('hidden');
     if (eye) eye.setAttribute('href', '#icon-eye-hidden');
-    localStorage.setItem(T_KEY, 'false');
     if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
   } else {
     pill.classList.remove('hidden');
     if (eye) eye.setAttribute('href', '#icon-eye');
-    localStorage.setItem(T_KEY, 'true');
     rotateTick();
     tickTimer = setInterval(rotateTick, TICKER_MS);
   }
