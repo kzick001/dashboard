@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Dashboard V5.2</title>
+  <title>Showrunner | Dashboard V6.0.1</title>
 
   <script>
     const WORKER_URL = "https://dmscreen.askozicki.workers.dev";
@@ -181,7 +181,7 @@
     .cond-chip-remove { background: none; border: none; color: inherit; cursor: pointer; padding: 0; line-height: 1; opacity: 0.7; display: flex; align-items: center; }
     .cond-chip-remove:hover { opacity: 1; }
     /* Dropdown panel */
-    .cond-dropdown { position: absolute; z-index: 500; background: var(--card); border: 1px solid var(--glass-border); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); width: 240px; padding: 0.5rem; display: none; max-height: 320px; overflow-y: auto; top: 100%; left: 0; }
+    .cond-dropdown { position: relative; z-index: 1; background: var(--card); border: 1px solid var(--glass-border); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); width: 100%; padding: 0.5rem; display: none; max-height: 320px; overflow-y: auto; margin-top: 0.4rem; }
     .cond-dropdown.open { display: block; }
     .cond-dropdown-item { display: flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.3rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer; }
     .cond-dropdown-item:hover { background: rgba(255,255,255,0.04); }
@@ -205,7 +205,7 @@
     /* Spell slot pips */
     .spell-section { margin-top: 0.4rem; }
     .spell-row { display: flex; align-items: center; gap: 0.4rem; margin: 0.2rem 0; font-size: 0.78rem; }
-    .spell-row-label { color: var(--text-muted); width: 48px; flex-shrink: 0; }
+    .spell-row-label { color: var(--accent); font-family: monospace; font-weight: bold; width: 18px; text-align: center; flex-shrink: 0; }
     .spell-pips { display: flex; gap: 0.2rem; flex-wrap: wrap; }
     .spell-pip { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--accent); background: var(--accent); cursor: pointer; transition: background 0.15s; }
     .spell-pip.spent { background: transparent; }
@@ -229,8 +229,8 @@
     /* ---- Main ---- */
     .main-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1rem; }
     .section-card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 10px; overflow: hidden; }
-    .section-head { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.85rem; border-bottom: 1px solid var(--glass-border); background: rgba(255,255,255,0.02); position: relative; }
-    .section-head h2 { font-size: 0.88rem; letter-spacing: 1px; margin: 0; }
+    .section-head { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0.7rem; border-bottom: 1px solid var(--glass-border); background: rgba(255,255,255,0.02); position: relative; }
+    .section-head h2 { font-size: 0.8rem; letter-spacing: 1px; margin: 0; }
     .section-head .meta { color: var(--text-muted); font-size: 0.8rem; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 0.3rem; }
     .section-head .meta:hover { color: var(--accent); }
     /* .session-num-input removed V5.1.3 */
@@ -511,7 +511,7 @@
   <nav class="navbar">
     <div class="brand">
       <svg viewBox="0 0 24 24" width="22" height="22" stroke="var(--accent)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-      SHOWRUNNER // DASHBOARD V5.2
+      SHOWRUNNER // DASHBOARD V5.2.1
       <span id="sync-heartbeat" class="heartbeat" title="Live database connection"></span>
     </div>
     <div class="nav-controls">
@@ -548,11 +548,7 @@
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
           Achievements
         </button>
-        <!-- Scratchpad button -->
-        <button class="btn-ghost" onclick="toggleScratchpad()" title="DM Scratchpad">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          Scratch
-        </button>
+        <!-- Scratchpad button removed v6.0.1 (TOMBSTONE: feature pulled, dmScratchpad KV field retained) -->
         <!-- Refresh button — SVG refresh icon -->
         <button class="btn-ghost" onclick="refreshFromKV()">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
@@ -2702,25 +2698,27 @@
     if(!isOn)return html;
     if(!ss){
       html+='<div style="font-size:0.75rem;color:#555;padding:0.2rem 0;">No slots configured.</div>';
+      return html;
     }
+    // v6.0.1: bare number label, only configured levels, no max-inputs
+    let hasAny=false;
     for(let lvl=1;lvl<=9;lvl++){
       const slot=ss?ss['level'+lvl]:null;
       const cur=slot?.current??0;
       const max=slot?.max??0;
-      if(!ss&&lvl>3)continue;
+      if(max===0)continue;
+      hasAny=true;
       const pips=Array.from({length:max},(_,i)=>
         '<span class="spell-pip '+(i>=cur?'spent':'')+'" onclick="toggleSpellPip(\''+esc(ch.id)+'\','+lvl+','+i+')"></span>'
       ).join('');
       html+='<div class="spell-row">'+
-        '<span class="spell-row-label">Lv '+lvl+'</span>'+
-        '<div class="spell-pips">'+(pips||'<span style="font-size:0.72rem;color:#555;">—</span>')+'</div>'+
-        '<input type="number" class="spell-max-input" value="'+max+'" min="0" max="9" title="Max slots"'+
-          ' onchange="setSpellMax(\''+esc(ch.id)+'\','+lvl+',this.value)">'+
+        '<span class="spell-row-label">'+lvl+'</span>'+
+        '<div class="spell-pips">'+pips+'</div>'+
       '</div>';
     }
+    if(!hasAny)html+='<div style="font-size:0.72rem;color:#555;">No slots set.</div>';
     return html;
   }
-
   function toggleSpellDisplay(charId,on){
     const ch=findChar(charId);if(!ch)return;
     ch.showSpellSlots=on;
@@ -2766,7 +2764,7 @@
     initFontScale();
     initSidebar();
     renderAll();
-    initScratchpad();
+    /* initScratchpad(); removed v6.0.1 */
     setHeartbeat("ok");
   });
   </script>
@@ -2831,26 +2829,6 @@
     </div>
   </div>
 </div>
-<div id="dm-scratchpad" class="anchor-right hidden">
-  <div class="scratch-head">
-    <span class="scratch-title">DM Notes</span>
-    <button class="scratch-btn" onclick="setScratchAnchor('left')" title="Dock left">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-    </button>
-    <button class="scratch-btn" onclick="setScratchAnchor('right')" title="Dock right">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
-    </button>
-    <button class="scratch-btn" onclick="setScratchAnchor('bottom')" title="Dock bottom">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
-    </button>
-    <button class="scratch-btn" id="scratch-collapse-btn" onclick="toggleScratchCollapse()" title="Collapse">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
-    </button>
-    <button class="scratch-btn" onclick="toggleScratchpad()" title="Close">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-  <textarea id="dm-scratch-text" placeholder="Running notes…" oninput="scheduleScratchSave()"></textarea>
-</div>
+<!-- dm-scratchpad panel removed v6.0.1 (TOMBSTONE: dmScratchpad KV field retained) -->
 </body>
 </html>
