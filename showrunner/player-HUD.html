@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Crawler Terminal V5.2.1</title>
+  <title>Showrunner | Crawler Terminal V6.0.0</title>
 
   <svg xmlns="http://www.w3.org/2000/svg" style="display:none;position:absolute">
     <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
@@ -1242,6 +1242,7 @@ function setGold(val) {
     if (ch) { ch.gold = val; ch.updatedAt = new Date().toISOString(); }
   }, `Gold: ${val} gp`);
 }
+function updateHeader() {
   get('hud-name').textContent = player?.name || playerName || '—';
   const sub = player ? [player.race, player.class].filter(Boolean).join(' ') : 'Awaiting data...';
   get('hud-sub').textContent = sub || '—';
