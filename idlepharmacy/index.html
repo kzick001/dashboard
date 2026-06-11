@@ -924,8 +924,8 @@ function advance(dt) {
 
     income += packed * CONFIG.tiers[tier-1].value;
     state.totalRxFilled = (state.totalRxFilled || 0) + packed;
-    if (packed > 0.01) {
-      _moneyPopQueue.push({ amount: packed * CONFIG.tiers[tier-1].value * incomeMult(), tier });
+    if (packed > 0.001) {
+      _moneyPopAccum[tier] = (_moneyPopAccum[tier] || 0) + packed * CONFIG.tiers[tier-1].value * incomeMult();
     }
   }
 
@@ -1551,6 +1551,8 @@ function patchStaffModal() {
 const _moneyPopQueue = [];
 let   _popPoolIdx    = 0;
 let   _lastConveyorUpdate = 0;
+const _moneyPopAccum  = { 1: 0, 2: 0, 3: 0, 4: 0 };
+let   _moneyPopLastFlush = 0;
 
 // ─── UPGRADE LIST (signature-gated) ──────────────────────────
 function renderUpgradeList() {
@@ -1628,20 +1630,26 @@ function renderConveyor() {
 
 // ─── MONEY POPS ───────────────────────────────────────────────
 function flushMoneyPops() {
-  if (!_moneyPopQueue.length) return;
+  const now = Date.now();
+  if (now - _moneyPopLastFlush < 1000) return;
+  _moneyPopLastFlush = now;
+
   const tierColors = ['var(--tier-1)', 'var(--tier-2)', 'var(--tier-3)', 'var(--tier-4)'];
   const pops = document.querySelectorAll('.money-pop');
   if (!pops.length) return;
-  while (_moneyPopQueue.length) {
-    const { amount, tier } = _moneyPopQueue.shift();
+
+  for (const tier of [1, 2, 3, 4]) {
+    const accum = _moneyPopAccum[tier] || 0;
+    if (accum < 0.5) { _moneyPopAccum[tier] = 0; continue; }
     const pop = pops[_popPoolIdx % pops.length];
     _popPoolIdx++;
-    pop.textContent = '+$' + fmt(amount);
+    pop.textContent = '+$' + Math.round(accum);
     pop.style.color = tierColors[tier - 1];
     pop.style.setProperty('--pop-x', (Math.random() * 40 - 20).toFixed(0) + 'px');
     pop.classList.remove('is-animating');
     void pop.offsetWidth;
     pop.classList.add('is-animating');
+    _moneyPopAccum[tier] = 0;
   }
 }
 
