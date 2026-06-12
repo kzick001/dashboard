@@ -1,2147 +1,2070 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Idle Pharmacy</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-<div id="app">
-
-  <!-- ═══ HEADER ═══════════════════════════════════════════════ -->
-  <header id="header" class="header-2row">
-    <div class="header-left">
-      <span class="brand-mark">℞</span>
-      <span class="brand-name">IDLE PHARMACY</span>
-    </div>
-
-    <div class="header-center" id="header-center">
-      <div class="header-row header-row-stats">
-        <div class="hstat">
-          <span class="hstat-label">Balance</span>
-          <span class="hstat-value mono" id="money-display">$0.00</span>
-        </div>
-        <div class="hstat-sep"></div>
-        <div class="hstat">
-          <span class="hstat-label">Rate</span>
-          <span class="hstat-value mono" id="income-rate">$0.00/s</span>
-        </div>
-        <div class="hstat-sep"></div>
-        <div class="hstat">
-          <span class="hstat-label">Tier</span>
-          <span class="hstat-value" id="tier-name">Generics</span>
-        </div>
-        <div class="hstat-sep"></div>
-        <div class="hstat">
-          <span class="hstat-label">Building</span>
-          <span class="hstat-value" id="building-level">Lv. 1</span>
-        </div>
-      </div>
-      <div class="header-row header-row-pills" id="header-pills-row">
-        <span class="hstat-label pills-label">Unassigned</span>
-        <button class="ua-pill ua-pill-fill"  id="ua-fill"  title="Unassigned Technicians — tap to assign">0</button>
-        <button class="ua-pill ua-pill-check" id="ua-check" title="Unassigned Pharmacists — tap to assign">0</button>
-        <button class="ua-pill ua-pill-pack"  id="ua-pack"  title="Unassigned Packers — tap to assign">0</button>
-      </div>
-    </div>
-
-    <!-- Mobile-only: collapse/expand the pills row -->
-    <button id="header-row-toggle" class="header-row-toggle" aria-expanded="true" aria-label="Toggle details">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-
-    <div class="header-right">
-      <button id="btn-staff" class="header-btn header-btn-icon" title="Staff">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <circle cx="6" cy="4" r="2.5" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M1 13c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          <circle cx="12" cy="5" r="1.75" stroke="currentColor" stroke-width="1.3"/>
-          <path d="M10 13c0-1.657.895-3.124 2.25-3.854" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-        </svg>
-        <span class="header-btn-label">Staff</span>
-      </button>
-      <button id="btn-upgrades" class="header-btn header-btn-icon" title="Upgrades">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M11.5 2.5a3 3 0 0 0-4 4l-5 5 1.5 1.5 5-5a3 3 0 0 0 4-4l-2 2-1.5-1.5 2-2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
-        </svg>
-        <span class="header-btn-label">Upgrades</span>
-      </button>
-      <button id="btn-stats" class="header-btn header-btn-icon" title="Stats">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <rect x="2" y="9" width="3" height="5" rx="1" fill="currentColor" opacity="0.5"/>
-          <rect x="6.5" y="5" width="3" height="9" rx="1" fill="currentColor" opacity="0.75"/>
-          <rect x="11" y="2" width="3" height="12" rx="1" fill="currentColor"/>
-        </svg>
-        <span class="header-btn-label">Stats</span>
-      </button>
-      <div class="save-status" id="save-status" data-status="saved">⬤ Saved</div>
-    </div>
-  </header>
-
-  <!-- ═══ MAIN ════════════════════════════════════════════════ -->
-  <main id="main">
-
-    <!-- ═══ FLOOR SCENE (default view) ═══ -->
-    <div id="floor-scene">
-
-      <!-- SVG sprite defs — worker figures referenced via <use> -->
-      <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-        <defs>
-          <!-- Fill worker: light blue technician -->
-          <g id="worker-fill">
-            <circle cx="20" cy="7" r="6" fill="var(--worker-head)"/>
-            <rect x="11" y="14" width="18" height="22" rx="4" fill="var(--worker-fill)"/>
-            <rect x="11" y="36" width="7"  height="14" rx="3" fill="var(--worker-leg)"/>
-            <rect x="22" y="36" width="7"  height="14" rx="3" fill="var(--worker-leg)"/>
-          </g>
-          <!-- Check worker: white coat pharmacist -->
-          <g id="worker-check">
-            <circle cx="20" cy="7" r="6" fill="var(--worker-head)"/>
-            <rect x="11" y="14" width="18" height="22" rx="4" fill="var(--coat-white)"/>
-            <rect x="11" y="36" width="7"  height="14" rx="3" fill="var(--worker-leg)"/>
-            <rect x="22" y="36" width="7"  height="14" rx="3" fill="var(--worker-leg)"/>
-          </g>
-          <!-- Pack worker: brown shirt packer -->
-          <g id="worker-pack">
-            <circle cx="20" cy="7" r="6" fill="var(--worker-head)"/>
-            <rect x="11" y="14" width="18" height="22" rx="4" fill="var(--shirt-brown)"/>
-            <rect x="11" y="36" width="7"  height="14" rx="3" fill="var(--worker-leg)"/>
-            <rect x="22" y="36" width="7"  height="14" rx="3" fill="var(--worker-leg)"/>
-          </g>
-        </defs>
-      </svg>
-
-      <div class="floor-toggle-wrap">
-        <button id="btn-floor-toggle" class="floor-toggle" title="Toggle detailed view">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <rect x="1" y="2" width="12" height="2" rx="1" fill="currentColor"/>
-            <rect x="1" y="6" width="12" height="2" rx="1" fill="currentColor"/>
-            <rect x="1" y="10" width="12" height="2" rx="1" fill="currentColor"/>
-          </svg>
-          <span>Detailed</span>
-        </button>
-      </div>
-
-      <!-- Conveyor + totes + backlog badges -->
-      <div id="scene-belt">
-        <div class="scene-belt-lane" id="scene-belt-lane"></div>
-        <div class="scene-totes scene-totes-fill"  id="scene-totes-fill"></div>
-        <div class="scene-totes scene-totes-check" id="scene-totes-check"></div>
-        <div class="scene-backlog scene-backlog-fill"  id="scene-backlog-fill">0</div>
-        <div class="scene-backlog scene-backlog-check" id="scene-backlog-check">0</div>
-      </div>
-
-      <!-- view-tier color strip -->
-      <div id="scene-tier-strip"></div>
-
-      <!-- Worker clusters -->
-      <div id="scene-floor">
-        <div class="station-cluster" id="cluster-fill"><div class="cluster-figures" id="figures-fill"></div></div>
-        <div class="station-cluster" id="cluster-check"><div class="cluster-figures" id="figures-check"></div></div>
-        <div class="station-cluster" id="cluster-pack"><div class="cluster-figures" id="figures-pack"></div></div>
-      </div>
-
-      <!-- Compact station cards -->
-      <div id="scene-cards">
-        <div class="scene-card" id="scene-card-fill">
-          <div class="scene-card-head"><span class="scene-card-label role-fill">FILL</span><span class="scene-card-rate mono" id="scene-rate-fill">0.00</span></div>
-          <div class="scene-card-controls">
-            <button class="stage-ctrl-btn stage-ctrl-minus" id="ctrl-fill-minus" disabled><svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg></button>
-            <span class="stage-ctrl-count" id="ctrl-fill-count">0</span>
-            <button class="stage-ctrl-btn stage-ctrl-plus"  id="ctrl-fill-plus"  disabled><svg width="10" height="10" viewBox="0 0 10 10"><rect x="4" width="2" height="10" rx="1" fill="currentColor"/><rect y="4" width="10" height="2" rx="1" fill="currentColor"/></svg></button>
-          </div>
-        </div>
-        <div class="scene-card" id="scene-card-check">
-          <div class="scene-card-head"><span class="scene-card-label role-check">CHECK</span><span class="scene-card-rate mono" id="scene-rate-check">0.00</span></div>
-          <div class="scene-card-controls">
-            <button class="stage-ctrl-btn stage-ctrl-minus" id="ctrl-check-minus" disabled><svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg></button>
-            <span class="stage-ctrl-count" id="ctrl-check-count">0</span>
-            <button class="stage-ctrl-btn stage-ctrl-plus"  id="ctrl-check-plus"  disabled><svg width="10" height="10" viewBox="0 0 10 10"><rect x="4" width="2" height="10" rx="1" fill="currentColor"/><rect y="4" width="10" height="2" rx="1" fill="currentColor"/></svg></button>
-          </div>
-        </div>
-        <div class="scene-card" id="scene-card-pack">
-          <div class="scene-card-head"><span class="scene-card-label role-pack">PACK</span><span class="scene-card-rate mono" id="scene-rate-pack">0.00</span></div>
-          <div class="scene-card-controls">
-            <button class="stage-ctrl-btn stage-ctrl-minus" id="ctrl-pack-minus" disabled><svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg></button>
-            <span class="stage-ctrl-count" id="ctrl-pack-count">0</span>
-            <button class="stage-ctrl-btn stage-ctrl-plus"  id="ctrl-pack-plus"  disabled><svg width="10" height="10" viewBox="0 0 10 10"><rect x="4" width="2" height="10" rx="1" fill="currentColor"/><rect y="4" width="10" height="2" rx="1" fill="currentColor"/></svg></button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tier tabs (drives floor scene + assignment) -->
-      <div id="tier-tabs">
-        <button class="tier-tab tier-tab-1 is-active" data-tier="1">Generics</button>
-        <button class="tier-tab tier-tab-2" data-tier="2" disabled>Brand</button>
-        <button class="tier-tab tier-tab-3" data-tier="3" disabled>Specialty</button>
-        <button class="tier-tab tier-tab-4" data-tier="4" disabled>Biologics</button>
-      </div>
-    </div>
-
-    <!-- ═══ DENSE VIEW (pipeline) — hidden by default ═══ -->
-    <div id="pipeline-wrap" hidden>
-      <div id="pipeline-track">
-
-        <!-- Conveyor belt layer (behind cards) -->
-        <div id="conveyor-belt">
-          <div class="belt-lane" id="belt-lane"></div>
-        </div>
-
-        <!-- Stage cards + buffers -->
-        <div id="pipeline">
-
-          <!-- RX INTAKE -->
-          <div class="flow-node intake-node">
-            <div class="flow-buffer intake-buffer">
-              <span class="buf-val mono" id="intake-rate">0</span>
-              <span class="buf-label">Rx Intake</span>
-              <span class="intake-pulse" id="intake-pulse"></span>
-            </div>
-            <div class="flow-arrow">→</div>
-          </div>
-
-          <!-- FILL STAGE -->
-          <div class="stage-card" id="card-fill">
-            <div class="stage-label">FILL</div>
-            <div class="stage-role">Technicians</div>
-            <div class="stage-metrics">
-              <div class="metric active-metric">
-                <span class="metric-val" id="fill-active">1</span>
-                <span class="metric-key">Workers</span>
-              </div>
-              <div class="metric">
-                <span class="metric-val" id="fill-rate">0.20</span>
-                <span class="metric-key">rx/s</span>
-              </div>
-            </div>
-            <div class="stage-progress-wrap">
-              <div class="stage-progress" id="fill-progress"></div>
-            </div>
-          </div>
-
-          <!-- BUFFER: Fill → Check -->
-          <div class="flow-node">
-            <div class="flow-buffer" id="buf-fill-node">
-              <div class="tote-stack" id="totes-fill"></div>
-              <span class="buf-val mono" id="buf-fill">0</span>
-              <span class="buf-label">queued</span>
-            </div>
-            <div class="flow-arrow">→</div>
-          </div>
-
-          <!-- CHECK STAGE -->
-          <div class="stage-card" id="card-check">
-            <div class="stage-label">CHECK</div>
-            <div class="stage-role">Pharmacists</div>
-            <div class="stage-metrics">
-              <div class="metric active-metric">
-                <span class="metric-val" id="check-active">1</span>
-                <span class="metric-key">Workers</span>
-              </div>
-              <div class="metric">
-                <span class="metric-val" id="check-rate">0.33</span>
-                <span class="metric-key">rx/s</span>
-              </div>
-            </div>
-            <div class="stage-progress-wrap">
-              <div class="stage-progress" id="check-progress"></div>
-            </div>
-          </div>
-
-          <!-- BUFFER: Check → Pack -->
-          <div class="flow-node">
-            <div class="flow-buffer" id="buf-check-node">
-              <div class="tote-stack" id="totes-check"></div>
-              <span class="buf-val mono" id="buf-check">0</span>
-              <span class="buf-label">queued</span>
-            </div>
-            <div class="flow-arrow">→</div>
-          </div>
-
-          <!-- PACK STAGE -->
-          <div class="stage-card" id="card-pack">
-            <div class="stage-label">PACK</div>
-            <div class="stage-role">Packers</div>
-            <div class="stage-metrics">
-              <div class="metric active-metric">
-                <span class="metric-val" id="pack-active">1</span>
-                <span class="metric-key">Workers</span>
-              </div>
-              <div class="metric">
-                <span class="metric-val" id="pack-rate">0.10</span>
-                <span class="metric-key">rx/s</span>
-              </div>
-            </div>
-            <div class="stage-progress-wrap">
-              <div class="stage-progress" id="pack-progress"></div>
-            </div>
-          </div>
-
-          <!-- Money pops (anchored to pack card) -->
-          <div id="money-pops" aria-hidden="true"></div>
-
-        </div><!-- /pipeline -->
-      </div><!-- /pipeline-track -->
-
-      <!-- Pharmacy Floor -->
-      <div id="floor-wrap">
-
-        <!-- Tier line panel — content rebuilt by render() -->
-        <div id="tier-line-panel"></div>
-
-        <!-- Capacity readout (unassigned now in header pills) -->
-        <div id="floor-roster">
-          <span class="roster-item">Stations <b id="r-stations">1/3</b></span>
-          <span class="roster-sep">·</span>
-          <span class="roster-item">Capacity <b id="r-capacity">3</b></span>
-          <span class="roster-sep">·</span>
-          <span class="roster-item">Free slots <b id="r-free">0</b></span>
-        </div>
-
-      </div>
-
-      <!-- Collapsible Stats Bar -->
-      <div id="stats-bar">
-        <div id="stats-bar-collapsed">
-          <span class="stats-bar-income mono" id="sb-income-rate">$0.00/s</span>
-          <button id="stats-bar-toggle" class="stats-bar-chevron" aria-label="Expand stats" aria-expanded="false">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-        </div>
-        <div id="stats-bar-expanded" hidden>
-          <div class="stats-bar-row">
-            <span class="sb-label">THROUGHPUT</span>
-            <span class="mono" id="sb-throughput">0 rx/s</span>
-            <span class="sb-sep">·</span>
-            <span class="sb-label">BOTTLENECK</span>
-            <span id="sb-bottleneck">✓ BALANCED</span>
-          </div>
-          <div class="stats-bar-row">
-            <span class="sb-label">TOTAL EARNED</span>
-            <span class="mono" id="sb-total-earned">$0.00</span>
-            <span class="sb-sep">·</span>
-            <span class="sb-label">INCOME RATE</span>
-            <span class="mono" id="sb-income-rate-2">$0.00/s</span>
-          </div>
-          <div class="stats-bar-row milestone-row">
-            <span class="sb-label">NEXT MILESTONE</span>
-            <span id="sb-milestone-text">—</span>
-            <div class="milestone-progress-wrap">
-              <div class="milestone-progress-fill" id="sb-milestone-bar"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /pipeline-wrap -->
-
-    <!-- Shop sidebar removed in Phase 5 — all actions live in the Upgrade modal -->
-
-  </main>
-
-  <!-- ═══ OFFLINE MODAL ══════════════════════════════════════ -->
-  <div id="offline-modal" class="modal hidden">
-    <div class="modal-box">
-      <div class="modal-icon">℞</div>
-      <h2 class="modal-title">Welcome Back</h2>
-      <p class="modal-body">Your pharmacy kept running.<br>You earned while away:</p>
-      <div class="modal-earned mono" id="offline-earned">$0.00</div>
-      <button class="modal-btn" id="btn-offline-close">Collect</button>
-    </div>
-  </div>
-
-  <!-- ═══ PRESTIGE MODAL ═════════════════════════════════════ -->
-  <div id="prestige-modal" class="modal hidden">
-    <div class="modal-box">
-      <div class="modal-icon">℞</div>
-      <h2 class="modal-title">Sell the Franchise?</h2>
-      <p class="modal-body">Reset your pharmacy in exchange for a permanent income multiplier.</p>
-      <div class="modal-earned mono" id="prestige-preview">→ 1.50×</div>
-      <div class="prestige-actions">
-        <button class="modal-btn ghost" id="btn-prestige-cancel">Cancel</button>
-        <button class="modal-btn" id="btn-prestige-confirm">Confirm Reset</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ STATS MODAL ════════════════════════════════════════ -->
-  <div id="stats-modal" class="modal hidden">
-    <div class="modal-box stats-modal-box">
-      <button class="modal-close" id="btn-stats-close">×</button>
-      <h2 class="modal-title">Pharmacy Stats</h2>
-      <div class="stats-grid" id="stats-grid"><!-- stat rows injected --></div>
-      <div class="stats-chart-wrap">
-        <div class="stats-chart-label">Cumulative Earnings</div>
-        <svg id="stats-spark" viewBox="0 0 320 80" preserveAspectRatio="none"></svg>
-      </div>
-      <div class="stats-achievements-wrap">
-        <div class="stats-chart-label">Achievements</div>
-        <div id="stats-achievements-grid"><!-- injected by renderStats() --></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ UPGRADE MODAL ══════════════════════════════════════ -->
-  <div id="upgrade-modal" class="modal hidden">
-    <div class="modal-box upgrade-modal-box">
-      <button class="modal-close" id="btn-upgrade-close">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-          <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
-      <h2 class="modal-title">Upgrades</h2>
-
-      <div id="upgrade-tabs">
-        <button class="upgrade-tab is-active" data-upg-tab="build">Build</button>
-        <button class="upgrade-tab" data-upg-tab="equipment">Equipment</button>
-        <button class="upgrade-tab" data-upg-tab="improvements">Improvements</button>
-        <button class="upgrade-tab" data-upg-tab="marketing">Marketing</button>
-      </div>
-
-      <!-- BUILD -->
-      <div class="upgrade-panel is-active" id="upgrade-panel-build">
-        <div class="shop-section">
-          <div class="shop-section-title">Stations</div>
-          <div class="shop-item" id="si-station">
-            <div class="si-info">
-              <span class="si-name">Build Station</span>
-              <span class="si-desc" id="desc-station">+1 station (3 slots)</span>
-            </div>
-            <button class="btn-buy" id="btn-station" disabled>
-              <span class="btn-cost mono" id="cost-station">$--</span>
-            </button>
-          </div>
-        </div>
-        <div class="shop-section">
-          <div class="shop-section-title">Infrastructure</div>
-          <div class="shop-item" id="si-building">
-            <div class="si-info">
-              <span class="si-name">Upgrade Building</span>
-              <span class="si-desc" id="building-desc">Floor cap → 8 stations</span>
-            </div>
-            <button class="btn-buy btn-building" id="btn-building" disabled>
-              <span class="btn-cost mono" id="cost-building">$--</span>
-            </button>
-          </div>
-        </div>
-        <div class="shop-section">
-          <div class="shop-section-title">Drug Tiers</div>
-          <div class="shop-item" id="si-tier-2">
-            <div class="si-info"><span class="si-name">Brand Name</span><span class="si-desc">$40/rx · 4× value</span></div>
-            <button class="btn-buy" id="btn-tier-2" disabled><span class="btn-cost mono">$1.00K</span></button>
-          </div>
-          <div class="shop-item" id="si-tier-3">
-            <div class="si-info"><span class="si-name">Specialty Rx</span><span class="si-desc">$160/rx · 16× value</span></div>
-            <button class="btn-buy" id="btn-tier-3" disabled><span class="btn-cost mono">$25.00K</span></button>
-          </div>
-          <div class="shop-item" id="si-tier-4">
-            <div class="si-info"><span class="si-name">Biologics</span><span class="si-desc">$640/rx · 64× value</span></div>
-            <button class="btn-buy" id="btn-tier-4" disabled><span class="btn-cost mono">$500.00K</span></button>
-          </div>
-        </div>
-      </div>
-
-      <!-- EQUIPMENT -->
-      <div class="upgrade-panel" id="upgrade-panel-equipment" hidden>
-        <div class="shop-section">
-          <div class="shop-section-title">Station Equipment</div>
-          <div id="station-upgrade-list"><!-- injected --></div>
-        </div>
-      </div>
-
-      <!-- IMPROVEMENTS -->
-      <div class="upgrade-panel" id="upgrade-panel-improvements" hidden>
-        <div class="shop-section">
-          <div class="shop-section-title">One-Time Improvements</div>
-          <div id="upgrade-list"><!-- injected --></div>
-        </div>
-      </div>
-
-      <!-- MARKETING + FRANCHISE RESET -->
-      <div class="upgrade-panel" id="upgrade-panel-marketing" hidden>
-        <div class="shop-section">
-          <div class="shop-section-title">Marketing</div>
-          <div class="shop-item" id="si-marketing">
-            <div class="si-info">
-              <span class="si-name">Run Ad Campaign</span>
-              <span class="si-desc" id="desc-marketing">Demand 1.00× income</span>
-            </div>
-            <button class="btn-buy" id="btn-marketing" disabled>
-              <span class="btn-cost mono" id="cost-marketing">$--</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="shop-section franchise-section" id="franchise-section" style="display:none">
-          <div class="shop-section-title franchise-title">Franchise Reset</div>
-          <p class="franchise-blurb">Sell the franchise and reopen with a permanent income multiplier. Achievements carry over.</p>
-          <div class="shop-item" id="si-prestige">
-            <div class="si-info">
-              <span class="si-name">Sell the Franchise</span>
-              <span class="si-desc" id="desc-prestige">Reset for a permanent bonus</span>
-            </div>
-            <button class="btn-buy btn-prestige" id="btn-prestige">
-              <span class="btn-cost mono" id="cost-prestige">+0.0×</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ STAFF MODAL ══════════════════════════════════════ -->
-  <div id="staff-modal" class="modal hidden">
-    <div class="modal-box staff-modal-box">
-      <button class="modal-close" id="btn-staff-close">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-          <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
-      <h2 class="modal-title">Edit Staff</h2>
-
-      <!-- Hire entry point -->
-      <div class="staff-hire-cta">
-        <button class="modal-btn staff-hire-more" id="btn-hire-more">+ Hire More Staff</button>
-      </div>
-
-      <!-- Unassigned pool -->
-      <div class="staff-pool-section">
-        <div class="staff-section-label">UNASSIGNED POOL</div>
-        <div class="staff-pool-row" id="staff-pool-row">
-          <!-- injected by renderStaffModal() -->
-        </div>
-      </div>
-
-      <!-- Per-tier assignment rows -->
-      <div class="staff-tiers-section" id="staff-tiers-section">
-        <!-- injected by renderStaffModal() -->
-      </div>
-
-      <div class="staff-modal-footer">
-        <span class="staff-capacity-note" id="staff-cap-note">3/3 staff slots used</span>
-        <button class="modal-btn" id="btn-staff-done">Done</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ HIRE MODAL ═════════════════════════════════════════ -->
-  <div id="hire-modal" class="modal hidden">
-    <div class="modal-box hire-modal-box">
-      <button class="modal-close" id="btn-hire-close">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-          <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
-      <h2 class="modal-title">Hire Staff</h2>
-      <div class="hire-cap-note" id="hire-cap-note" hidden></div>
-      <div id="hire-tabs">
-        <button class="hire-tab is-active" data-hire-tab="fill">Technicians</button>
-        <button class="hire-tab" data-hire-tab="check">Pharmacists</button>
-        <button class="hire-tab" data-hire-tab="pack">Packers</button>
-      </div>
-      <div class="hire-panel is-active" id="hire-panel-fill"></div>
-      <div class="hire-panel" id="hire-panel-check" hidden></div>
-      <div class="hire-panel" id="hire-panel-pack" hidden></div>
-    </div>
-  </div>
-
-  <!-- ═══ TOAST CONTAINER ════════════════════════════════════ -->
-  <div id="toast-container"></div>
-
-  <!-- ═══ MOBILE NAV BAR ════════════════════════════════════ -->
-  <nav id="mobile-nav">
-    <button class="mobile-nav-btn" id="mob-btn-staff">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <circle cx="6" cy="4" r="2.5" stroke="currentColor" stroke-width="1.5"/>
-        <path d="M1 13c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        <circle cx="12" cy="5" r="1.75" stroke="currentColor" stroke-width="1.3"/>
-        <path d="M10 13c0-1.657.895-3.124 2.25-3.854" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-      </svg>
-      Staff
-    </button>
-    <button class="mobile-nav-btn" id="mob-btn-upgrades">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M11.5 2.5a3 3 0 0 0-4 4l-5 5 1.5 1.5 5-5a3 3 0 0 0 4-4l-2 2-1.5-1.5 2-2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
-      </svg>
-      Upgrades
-    </button>
-    <button class="mobile-nav-btn" id="mob-btn-stats">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <rect x="2" y="9" width="3" height="5" rx="1" fill="currentColor" opacity="0.5"/>
-        <rect x="6.5" y="5" width="3" height="9" rx="1" fill="currentColor" opacity="0.75"/>
-        <rect x="11" y="2" width="3" height="12" rx="1" fill="currentColor"/>
-      </svg>
-      Stats
-    </button>
-  </nav>
-
-</div><!-- /app -->
-
-<script>
-'use strict';
-
-// ═══════════════════════════════════════════════════════════════
-//  IDLE PHARMACY — Phase 1: State + Persistence + Bare Render
-//
-//  Phase 2 hooks: advance(dt), startGameLoop(), progress bar animation
-//  Phase 3 hooks: buyStaff(st), buyStation(st), buyBuilding(), buyTier(n)
-//  Phase 4 hooks: applyOffline()
-// ═══════════════════════════════════════════════════════════════
-
-// ─── CONFIG ───────────────────────────────────────────────────
-const VERSION          = 5;
-const SAVE_KEY         = 'idleRx_save';
-const AUTOSAVE_MS      = 10_000;
-const WORKERS_PER_STATION = 3;
-
-const CONFIG = {
-  tickMs:        250,
-  offlineCapMs:  24 * 60 * 60 * 1000,
-
-  // Asymmetric base seconds-per-rx per active slot. Check fastest, Pack slowest.
-  stageSpeed:    { check: 3, fill: 5, pack: 10 },
-
-  staffBase:     { fill: 10, check: 25, pack: 10 },
-  staffScale:    1.15,
-
-  stationBase:   100,      // cost of the FIRST purchased station (3rd overall)
-  stationScale:  4,
-
-  buildingBase:  150,
-  buildingScale: 8,
-
-  // Marketing
-  marketingBase:  500,
-  marketingScale: 3.5,
-  marketingStep:  0.25,    // +25% income per level
-
-  // Prestige
-  prestigeUnlock: 1_000_000,
-
-  // One-time passive upgrades
-  upgrades: [
-    { id: 'efficientWorkflow', name: 'Efficient Workflow', desc: 'Fill +20% throughput',  cost: 5_000,  stage: 'fill'  },
-    { id: 'peerReview',        name: 'Peer Review',        desc: 'Check +20% throughput', cost: 15_000, stage: 'check' },
-    { id: 'betterPackaging',   name: 'Better Packaging',   desc: 'Pack +20% throughput',  cost: 2_000,  stage: 'pack'  },
-    { id: 'expeditedShipping', name: 'Expedited Shipping', desc: 'Income +10% flat',      cost: 50_000, stage: null    },
-  ],
-  upgradeBuff: 1.20,
-
-  // Achievement definitions
-  achievements: [
-    { id: 'first_fill',    name: 'First Technician',   desc: 'Hired your first Fill worker',        reward: 50,      trigger: s => totalStaffOfRole('fill')  >= 1 },
-    { id: 'first_check',   name: 'First Pharmacist',   desc: 'Hired your first Check worker',       reward: 50,      trigger: s => totalStaffOfRole('check') >= 1 },
-    { id: 'first_pack',    name: 'First Packer',       desc: 'Hired your first Pack worker',        reward: 50,      trigger: s => totalStaffOfRole('pack')  >= 1 },
-    { id: 'first_station', name: 'Open Floor Plan',    desc: 'Built your first station',            reward: 200,     trigger: s => s.stationsOwned >= 2 },
-    { id: 'tier_2',        name: 'Brand Recognition',  desc: 'Unlocked Brand Name drugs',           reward: 1_000,   trigger: s => s.drugTier >= 2 },
-    { id: 'tier_3',        name: 'Prior Auth Approved',desc: 'Unlocked Specialty Rx',               reward: 10_000,  trigger: s => s.drugTier >= 3 },
-    { id: 'tier_4',        name: 'Biologic License',   desc: 'Unlocked Biologics',                  reward: 100_000, trigger: s => s.drugTier >= 4 },
-    { id: 'rx_100',        name: 'Century Mark',       desc: 'Filled 100 prescriptions',            reward: 100,     trigger: s => (s.totalRxFilled || 0) >= 100 },
-    { id: 'rx_1k',         name: 'Thousand Strong',    desc: 'Filled 1,000 prescriptions',          reward: 500,     trigger: s => (s.totalRxFilled || 0) >= 1_000 },
-    { id: 'rx_10k',        name: 'High Volume',        desc: 'Filled 10,000 prescriptions',         reward: 5_000,   trigger: s => (s.totalRxFilled || 0) >= 10_000 },
-    { id: 'rx_100k',       name: 'Industrial Scale',   desc: 'Filled 100,000 prescriptions',        reward: 50_000,  trigger: s => (s.totalRxFilled || 0) >= 100_000 },
-    { id: 'earn_1k',       name: 'First Grand',        desc: '$1,000 lifetime earned',              reward: 100,     trigger: s => (s.totalEarned || 0) >= 1_000 },
-    { id: 'earn_100k',     name: 'Six Figures',        desc: '$100,000 lifetime earned',            reward: 2_500,   trigger: s => (s.totalEarned || 0) >= 100_000 },
-    { id: 'earn_1m',       name: 'Franchise Material', desc: '$1,000,000 lifetime earned',          reward: 25_000,  trigger: s => (s.totalEarned || 0) >= 1_000_000 },
-    { id: 'first_prestige',name: 'Sold the Franchise', desc: 'Completed your first prestige reset', reward: 0,       trigger: s => s.prestigeCount >= 1 },
-  ],
-
-  tiers: [
-    { name: 'Generics',  value: 10,  unlock: 0       },
-    { name: 'Brand',     value: 40,  unlock: 1_000   },
-    { name: 'Specialty', value: 160, unlock: 25_000  },
-    { name: 'Biologics', value: 640, unlock: 500_000 },
-  ],
-
-  // ── Phase 3: per-tier processing modifiers (multiplier on stageSpeed; higher = slower)
-  tierSpeedMod: {
-    1: { fill: 1.0, check: 1.0, pack: 1.0 },
-    2: { fill: 1.0, check: 1.3, pack: 1.0 },
-    3: { fill: 1.2, check: 1.6, pack: 1.4 },
-    4: { fill: 1.3, check: 2.2, pack: 1.8 },
-  },
-
-  // Station capacity
-  WORKERS_PER_STATION: 3,
-
-  // Global station upgrade tracks (replaces per-station upgrades)
-  globalStationUpgrades: {
-    dispensing:   { stage: 'fill',  base: 250, scale: 5, stepPct: 0.15,
-                    names: ['Calibrated Counting Trays', 'Automated Tablet Counter', 'Robotic Dispensing Cell'] },
-    verification: { stage: 'check', base: 400, scale: 5, stepPct: 0.15,
-                    names: ['Dual-Monitor Terminal', 'Barcode Scan-Verify', 'Intelligent DUR Alerts'] },
-    fulfillment:  { stage: 'pack',  base: 200, scale: 5, stepPct: 0.15,
-                    names: ['Supply Dispensers', 'Automated Label Printer', 'Conveyor Sortation'] },
-  },
-  globalStationUpgradeMaxLevel: 3,
-
-  // ── Phase 3: stats time-series sampler
-  statsSampleMs:   30_000,
-  statsMaxSamples: 400,
-
-  // Hire candidate pools — cosmetic only, no stat differences
-  candidatePool: {
-    fill: [
-      { name: 'Marcus Webb',    title: 'Pharmacy Technician',   bio: 'Methodical counter. Never a short fill.' },
-      { name: 'Priya Nair',     title: 'Certified Tech (CPhT)',  bio: 'Trains the new hires on QA.' },
-      { name: 'Dana Kowalski',  title: 'Dispensing Tech',        bio: 'Fifteen years on the bench.' },
-      { name: 'Theo Brandt',    title: 'Pharmacy Technician',    bio: 'Fast hands, steady counts.' },
-      { name: 'Lena Castillo',  title: 'Lead Technician',        bio: 'Keeps the bench moving.' },
-      { name: 'Omar Haddad',    title: 'Certified Tech (CPhT)',  bio: 'Zero rejected claims last quarter.' },
-      { name: 'Grace Im',       title: 'Pharmacy Technician',    bio: 'Color-codes everything. It works.' },
-    ],
-    check: [
-      { name: 'Dr. Osei',       title: 'Staff Pharmacist',       bio: 'Catches every interaction.' },
-      { name: 'Dr. Yuen',       title: 'PharmD, BCPS',           bio: 'Wrote the DUR policy.' },
-      { name: 'Dr. Reyes',      title: 'Pharmacy Director',      bio: 'Regulators love her.' },
-      { name: 'Dr. Halloran',   title: 'Staff Pharmacist',       bio: 'Unhurried and precise.' },
-      { name: 'Dr. Beckett',    title: 'PharmD',                 bio: 'Counsels every patient.' },
-      { name: 'Dr. Vance',      title: 'Clinical Pharmacist',    bio: 'Reads the chart twice.' },
-      { name: 'Dr. Sato',       title: 'PharmD, BCPS',           bio: 'Quiet, thorough, fast.' },
-    ],
-    pack: [
-      { name: 'Hector Lima',    title: 'Fulfillment Associate',  bio: 'Every label, perfect.' },
-      { name: 'Simone Park',    title: 'Lead Packer',            bio: 'Runs the end-of-day tally unasked.' },
-      { name: 'Jerome Tucker',  title: 'Fulfillment Supervisor', bio: 'Trains the floor in two days.' },
-      { name: 'Bianca Rossi',   title: 'Packer',                 bio: 'Never a mispack.' },
-      { name: 'Cole Mathers',   title: 'Fulfillment Associate',  bio: 'Boxes like a machine.' },
-      { name: 'Aisha Bello',    title: 'Lead Packer',            bio: 'Keeps the totes flowing.' },
-      { name: 'Devon Pratt',    title: 'Packer',                 bio: 'Calm under a full queue.' },
-    ],
-  },
-};
-
-// ─── STATE ────────────────────────────────────────────────────
-let state;
-
-function newState() {
-  return {
-    version:       VERSION,
-    money:         0,
-    buildingLevel: 1,
-    drugTier:      1,           // highest unlocked tier (1–4)
-
-    stationsOwned: 1,           // max staff = stationsOwned * WORKERS_PER_STATION
-
-    // Hired but not placed on a tier line
-    unassignedStaff: { fill: 1, check: 1, pack: 1 },
-
-    // Active, working staff per tier
-    staffPerTier: {
-      1: { fill: 0, check: 0, pack: 0 },
-      2: { fill: 0, check: 0, pack: 0 },
-      3: { fill: 0, check: 0, pack: 0 },
-      4: { fill: 0, check: 0, pack: 0 },
-    },
-
-    // Per-tier rx buffers (unchanged from 3.5)
-    buffers: {
-      1: { fillToCheck: 0, checkToPack: 0 },
-      2: { fillToCheck: 0, checkToPack: 0 },
-      3: { fillToCheck: 0, checkToPack: 0 },
-      4: { fillToCheck: 0, checkToPack: 0 },
-    },
-
-    // Global station upgrade tracks
-    globalUpgrades: {
-      dispensing:   0,
-      verification: 0,
-      fulfillment:  0,
-    },
-
-    speedMult:      1.0,
-    marketingLevel: 0,
-    upgrades:       {},
-    milestones: [
-      { id: 'rx50',    threshold: 50,     pct: 0.40, claimed: false },
-      { id: 'rx250',   threshold: 250,    pct: 0.30, claimed: false },
-      { id: 'rx1k',    threshold: 1000,   pct: 0.25, claimed: false },
-      { id: 'rx5k',    threshold: 5000,   pct: 0.20, claimed: false },
-      { id: 'rx25k',   threshold: 25000,  pct: 0.15, claimed: false },
-      { id: 'rx100k',  threshold: 100000, pct: 0.10, claimed: false },
-    ],
-    totalRxFilled: 0,
-
-    prestigeCount:      0,
-    prestigeMultiplier: 1.0,
-
-    totalEarned:   0,
-    lastSaved:     Date.now(),
-    statsSamples:  [],
-    playStartedAt: Date.now(),
-    achievements:  {},
-  };
-}
-
-// ─── PERSISTENCE ──────────────────────────────────────────────
-function save() {
-  state.lastSaved = Date.now();
-  try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-    setSaveStatus('saved');
-  } catch (e) {
-    console.warn('[IdleRx] Save failed:', e);
-    setSaveStatus('error');
-  }
-}
-
-function load() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return newState();
-    const parsed = JSON.parse(raw);
-    if (!parsed) return newState();
-    if (parsed.version === VERSION) return ensureShape(parsed);
-    // V1–V4: clean break. Shape is incompatible; start fresh.
-    console.info('[IdleRx] Old save version. Starting fresh.');
-    return newState();
-  } catch (e) {
-    console.warn('[IdleRx] Corrupt save. Starting fresh.', e);
-    return newState();
-  }
-}
-
-// ensureShape: defensively backfill missing V4 fields on a V4 save.
-function ensureShape(s) {
-  if (!s.buffers || typeof s.buffers !== 'object') s.buffers = {};
-  for (const t of [1,2,3,4]) {
-    if (!s.buffers[t]) s.buffers[t] = { fillToCheck: 0, checkToPack: 0 };
-  }
-  if (!Array.isArray(s.statsSamples)) s.statsSamples = [];
-  if (!s.playStartedAt) s.playStartedAt = Date.now();
-  if (!s.globalUpgrades) s.globalUpgrades = { dispensing: 0, verification: 0, fulfillment: 0 };
-  if (!s.unassignedStaff) s.unassignedStaff = { fill: 0, check: 0, pack: 0 };
-  if (!s.staffPerTier) s.staffPerTier = {
-    1:{fill:0,check:0,pack:0}, 2:{fill:0,check:0,pack:0},
-    3:{fill:0,check:0,pack:0}, 4:{fill:0,check:0,pack:0}
-  };
-  if (s.stationsOwned == null) s.stationsOwned = 1;
-  if (!s.achievements) s.achievements = {};
-  return s;
-}
-
-function setSaveStatus(status) {
-  const el = document.getElementById('save-status');
-  el.dataset.status = status;
-  const labels = { saved: '⬤ Saved', error: '⬤ Error', saving: '⬤ Saving…' };
-  el.textContent = labels[status] ?? '⬤ —';
-}
-
-// ─── HELPERS ──────────────────────────────────────────────────
-// Number formatter: 1234567 → "1.23M"
-function fmt(n) {
-  if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
-  if (n >= 1e9)  return (n / 1e9 ).toFixed(2) + 'B';
-  if (n >= 1e6)  return (n / 1e6 ).toFixed(2) + 'M';
-  if (n >= 1e3)  return (n / 1e3 ).toFixed(2) + 'K';
-  if (n >= 100)  return Math.floor(n).toString();
-  return n.toFixed(2);
-}
-
-// Rx counts — no dollar sign, whole numbers only in display
-function fmtRx(n) {
-  const v = Math.floor(n);
-  if (v >= 1e12) return (v / 1e12).toFixed(2) + 'T';
-  if (v >= 1e9)  return (v / 1e9 ).toFixed(2) + 'B';
-  if (v >= 1e6)  return (v / 1e6 ).toFixed(2) + 'M';
-  if (v >= 1e3)  return (v / 1e3 ).toFixed(2) + 'K';
-  return v.toString();
-}
-
-// Cost formulas
-function staffCost(role) {
-  return Math.floor(CONFIG.staffBase[role] * (CONFIG.staffScale ** totalStaffOfRole(role)));
-}
-function stationCost() {
-  return Math.floor(CONFIG.stationBase * (CONFIG.stationScale ** (state.stationsOwned - 2)));
-}
-function buildingCost() {
-  return Math.floor(CONFIG.buildingBase * (CONFIG.buildingScale ** (state.buildingLevel - 1)));
-}
-function marketingCost() {
-  return Math.floor(CONFIG.marketingBase * (CONFIG.marketingScale ** state.marketingLevel));
-}
-
-// Station pool helpers
-function maxStations(level) {
-  return (level + 1) * (level + 2) / 2 + 2;
-}
-function maxStaff() {
-  return state.stationsOwned * CONFIG.WORKERS_PER_STATION;
-}
-function totalStaffOfRole(role) {
-  let n = state.unassignedStaff[role] || 0;
-  for (const t of [1,2,3,4]) n += (state.staffPerTier[t]?.[role] || 0);
-  return n;
-}
-function totalStaffAll() {
-  let n = 0;
-  for (const role of ['fill','check','pack']) n += totalStaffOfRole(role);
-  return n;
-}
-function freeStaffSlots() { return maxStaff() - totalStaffAll(); }
-
-const STAGE_BUFF = { fill: 'efficientWorkflow', check: 'peerReview', pack: 'betterPackaging' };
-
-function marketingMult() { return 1 + state.marketingLevel * CONFIG.marketingStep; }
-
-function incomeMult() {
-  let m = marketingMult() * state.prestigeMultiplier;
-  if (state.upgrades.expeditedShipping) m *= 1.10;
-  return m;
-}
-
-// ─── PIPELINE ANALYTICS (V4 — pool-based) ─────────────────────
-
-// Ensure all four tier buffers exist (defensive).
-function ensureBuffers() {
-  for (const t of [1,2,3,4]) {
-    if (!state.buffers[t]) state.buffers[t] = { fillToCheck: 0, checkToPack: 0 };
-  }
-}
-
-// Per-slot rate for a given tier and role, factoring global upgrades.
-function slotRate(tier, role) {
-  const tierMod = CONFIG.tierSpeedMod[tier][role];
-  const seconds = CONFIG.stageSpeed[role] * tierMod * state.speedMult;
-  let rate      = 1 / seconds;
-  // Global one-time upgrade buffs
-  const gBuff = STAGE_BUFF[role];
-  if (gBuff && state.upgrades[gBuff]) rate *= CONFIG.upgradeBuff;
-  // Global station upgrade buffs
-  for (const key in CONFIG.globalStationUpgrades) {
-    const def = CONFIG.globalStationUpgrades[key];
-    if (def.stage === role) {
-      const lvl = state.globalUpgrades[key] || 0;
-      rate *= (1 + lvl * def.stepPct);
-    }
-  }
-  return rate;
-}
-
-// stageRate(tier, role): total rx/s capacity for assigned workers of that tier/role.
-function stageRate(tier, role) {
-  const workers = state.staffPerTier[tier]?.[role] || 0;
-  return workers > 0 ? slotRate(tier, role) * workers : 0;
-}
-
-// activeSlots(role): count assigned workers of that role across all tiers.
-function activeSlots(role) {
-  let n = 0;
-  for (const t of [1,2,3,4]) n += (state.staffPerTier[t]?.[role] || 0);
-  return n;
-}
-
-// Which tiers currently have at least one assigned worker of any role.
-function activeTiers() {
-  const set = new Set();
-  for (const t of [1,2,3,4]) {
-    const s = state.staffPerTier[t];
-    if (s && (s.fill + s.check + s.pack) > 0) set.add(t);
-  }
-  return [...set].sort((a,b) => a-b);
-}
-
-// Aggregate stage rate across all tiers (for pipeline card display).
-function aggStageRate(role) {
-  let total = 0;
-  for (const t of [1,2,3,4]) total += stageRate(t, role);
-  return total;
-}
-
-// Per-tier throughput = min of its three stage rates.
-function tierThroughput(tier) {
-  return Math.min(stageRate(tier,'fill'), stageRate(tier,'check'), stageRate(tier,'pack'));
-}
-
-// Total throughput = sum of per-tier throughputs.
-function calcThroughput() {
-  let total = 0;
-  for (const t of activeTiers()) total += tierThroughput(t);
-  return total;
-}
-
-// Income rate = Σ tierThroughput(T) × tierValue(T) × incomeMult()
-function calcIncomeRate() {
-  let raw = 0;
-  for (const t of activeTiers()) raw += tierThroughput(t) * CONFIG.tiers[t-1].value;
-  return raw * incomeMult();
-}
-
-// Returns { tier, keys: [...] } for the most-constrained active tier.
-function bottleneckInfo() {
-  const tiers = activeTiers();
-  if (!tiers.length) return { tier: null, keys: [] };
-  let worstTier = tiers[0], worstTp = Infinity;
-  for (const t of tiers) {
-    const tp = tierThroughput(t);
-    if (tp < worstTp) { worstTp = tp; worstTier = t; }
-  }
-  const r = { fill: stageRate(worstTier,'fill'), check: stageRate(worstTier,'check'), pack: stageRate(worstTier,'pack') };
-  const min = Math.min(r.fill, r.check, r.pack);
-  const slow = Object.keys(r).filter(k => r[k] === min);
-  return { tier: worstTier, keys: slow.length < 3 ? slow : [] };
-}
-
-function bottleneckKeys() {
-  return bottleneckInfo().keys;
-}
-
-function findBottleneck() {
-  const bn = bottleneckInfo();
-  if (!bn.tier || !bn.keys.length) return '✓ BALANCED';
-  const tierName = CONFIG.tiers[bn.tier-1].name;
-  return `${bn.keys.map(s => s.toUpperCase()).join(', ')} · ${tierName}`;
-}
-
-// Returns the next unclaimed milestone + progress, or null if all claimed.
-function nextMilestone() {
-  const rx = state.totalRxFilled || 0;
-  for (const m of state.milestones) {
-    if (!m.claimed) return { ...m, remaining: Math.max(0, m.threshold - rx), current: rx };
-  }
-  return null;
-}
-
-// ─── ENGINE ───────────────────────────────────────────────────
-function advance(dt) {
-  ensureBuffers();
-  let income = 0;
-
-  for (const tier of [1,2,3,4]) {
-    const fillRate  = stageRate(tier, 'fill');
-    const checkRate = stageRate(tier, 'check');
-    const packRate  = stageRate(tier, 'pack');
-    const buf = state.buffers[tier];
-
-    // FILL — infinite upstream; produces into this tier's fill→check buffer
-    buf.fillToCheck += fillRate * dt;
-
-    // CHECK — drains fill→check into check→pack
-    const checked = Math.min(checkRate * dt, buf.fillToCheck);
-    buf.fillToCheck -= checked;
-    buf.checkToPack += checked;
-
-    // PACK — drains check→pack; money lands here
-    const packed = Math.min(packRate * dt, buf.checkToPack);
-    buf.checkToPack -= packed;
-
-    income += packed * CONFIG.tiers[tier-1].value;
-    state.totalRxFilled = (state.totalRxFilled || 0) + packed;
-    if (packed > 0.001) {
-      _moneyPopAccum[tier] = (_moneyPopAccum[tier] || 0) + packed * CONFIG.tiers[tier-1].value * incomeMult();
-    }
-  }
-
-  income *= incomeMult();
-  state.money       += income;
-  state.totalEarned  = (state.totalEarned || 0) + income;
-
-  checkMilestones();
-  checkAchievements();
-}
-
-function checkMilestones() {
-  for (const m of (state.milestones || [])) {
-    if (!m.claimed && state.totalRxFilled >= m.threshold) {
-      m.claimed = true;
-      state.speedMult *= (1 - m.pct);
-      queueToast(`✦ ${m.threshold} prescriptions filled — processing speed +${Math.round(m.pct * 100)}%`);
-    }
-  }
-}
-
-function checkAchievements() {
-  for (const def of CONFIG.achievements) {
-    if (state.achievements[def.id]) continue;
-    if (!def.trigger(state)) continue;
-    state.achievements[def.id] = true;
-    if (def.reward > 0) state.money += def.reward;
-    queueAchievementToast(`✦ ${def.name} — ${def.desc}${def.reward > 0 ? ' (+$' + fmt(def.reward) + ')' : ''}`);
-  }
-}
-
-// Real toast — replaces the 2A stub
-function queueToast(msg) {
-  const c = el('toast-container');
-  if (!c) return;
-  const t = document.createElement('div');
-  t.className = 'toast';
-  t.textContent = msg;
-  c.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('show'));
-  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3000);
-}
-
-function queueAchievementToast(msg) {
-  const c = el('toast-container');
-  if (!c) return;
-  const t = document.createElement('div');
-  t.className = 'toast toast-achievement';
-  t.textContent = msg;
-  c.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('show'));
-  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 4500);
-}
-
-// startGameLoop: 250ms delta-timed tick. Framerate-independent.
-function startGameLoop() {
-  let last = Date.now();
-  setInterval(() => {
-    const now = Date.now();
-    advance((now - last) / 1000);
-    last = now;
-    render();
-  }, CONFIG.tickMs);
-}
-
-// ─── SHOP ACTIONS ─────────────────────────────────────────────
-
-function hireWorker(role) {
-  const cost = staffCost(role);
-  if (state.money < cost) return;
-  if (freeStaffSlots() <= 0) return;
-  state.money -= cost;
-  state.unassignedStaff[role] = (state.unassignedStaff[role] || 0) + 1;
-  checkAchievements();
-  save(); render();
-}
-
-function fireWorker(role, tier) {
-  // tier = null → fire from unassigned pool
-  if (tier === null) {
-    if ((state.unassignedStaff[role] || 0) < 1) return;
-    state.unassignedStaff[role]--;
-  } else {
-    if ((state.staffPerTier[tier]?.[role] || 0) < 1) return;
-    state.staffPerTier[tier][role]--;
-  }
-  save(); render();
-}
-
-function assignWorker(tier, role) {
-  if ((state.unassignedStaff[role] || 0) < 1) return;
-  state.unassignedStaff[role]--;
-  state.staffPerTier[tier][role] = (state.staffPerTier[tier][role] || 0) + 1;
-  save(); render();
-}
-
-function unassignWorker(tier, role) {
-  if ((state.staffPerTier[tier]?.[role] || 0) < 1) return;
-  state.staffPerTier[tier][role]--;
-  state.unassignedStaff[role] = (state.unassignedStaff[role] || 0) + 1;
-  save(); render();
-}
-
-function buyStation() {
-  const cost = stationCost();
-  if (state.money < cost) return;
-  if (state.stationsOwned >= maxStations(state.buildingLevel)) return;
-  state.money -= cost;
-  state.stationsOwned++;
-  checkAchievements();
-  save(); render();
-}
-
-function buyBuilding() {
-  const cost = buildingCost();
-  if (state.money < cost) return;
-  state.money -= cost;
-  state.buildingLevel++;
-  checkAchievements();
-  save(); render();
-}
-
-function buyTier(n) {
-  const tier = CONFIG.tiers[n - 1];
-  if (state.drugTier >= n)      return;
-  if (state.drugTier !== n - 1) return;
-  if (state.money < tier.unlock) return;
-  state.money -= tier.unlock;
-  state.drugTier = n;
-  checkAchievements();
-  save(); render();
-}
-
-function buyMarketing() {
-  const cost = marketingCost();
-  if (state.money < cost) return;
-  state.money -= cost;
-  state.marketingLevel++;
-  checkAchievements();
-  save(); render();
-}
-
-function buyUpgrade(id) {
-  const def = CONFIG.upgrades.find(u => u.id === id);
-  if (!def || state.upgrades[id]) return;
-  if (state.money < def.cost) return;
-  state.money -= def.cost;
-  state.upgrades[id] = true;
-  checkAchievements();
-  save(); render();
-}
-
-function globalUpgradeCost(trackKey) {
-  const def = CONFIG.globalStationUpgrades[trackKey];
-  const lvl = state.globalUpgrades[trackKey] || 0;
-  return Math.floor(def.base * (def.scale ** lvl));
-}
-
-function buyGlobalUpgrade(trackKey) {
-  const def = CONFIG.globalStationUpgrades[trackKey];
-  if (!def) return;
-  const lvl = state.globalUpgrades[trackKey] || 0;
-  if (lvl >= CONFIG.globalStationUpgradeMaxLevel) return;
-  const cost = globalUpgradeCost(trackKey);
-  if (state.money < cost) return;
-  state.money -= cost;
-  state.globalUpgrades[trackKey] = lvl + 1;
-  checkAchievements();
-  save(); render();
-}
-
-function prestigeAvailable() { return state.totalEarned >= CONFIG.prestigeUnlock; }
-
-function calcPrestigeMult() {
-  return 1 + (Math.log10(Math.max(state.totalEarned, 1)) - 5) * 0.5;
-}
-
-function doPrestige() {
-  if (!prestigeAvailable()) return;
-  const keep = {
-    totalEarned:        state.totalEarned,
-    prestigeCount:      state.prestigeCount + 1,
-    prestigeMultiplier: Math.max(state.prestigeMultiplier, calcPrestigeMult()),
-    achievements:       state.achievements,
-  };
-  state = Object.assign(newState(), keep);
-  checkAchievements();
-  save(); render();
-}
-
-// ─── STATS SAMPLER + MODAL ────────────────────────────────────
-
-function pushStatsSample() {
-  if (!Array.isArray(state.statsSamples)) state.statsSamples = [];
-  state.statsSamples.push({ t: Date.now(), earned: state.totalEarned || 0 });
-  const over = state.statsSamples.length - CONFIG.statsMaxSamples;
-  if (over > 0) state.statsSamples.splice(0, over);
-}
-
-function startStatsSampler() {
-  pushStatsSample();
-  setInterval(pushStatsSample, CONFIG.statsSampleMs);
-}
-
-function openStatsModal()  { closeUpgradeModal(); renderStats(); el('stats-modal').classList.remove('hidden'); }
-function closeStatsModal() { el('stats-modal').classList.add('hidden'); }
-
-function renderStats() {
-  const grid   = el('stats-grid');
-  const playMs = Date.now() - (state.playStartedAt || Date.now());
-  const rows   = [
-    ['Lifetime Earned',  '$' + fmt(state.totalEarned || 0)],
-    ['Current Balance',  '$' + fmt(state.money)],
-    ['Total Rx Filled',  fmtRx(state.totalRxFilled || 0)],
-    ['Income Rate',      '$' + fmt(calcIncomeRate()) + '/s'],
-    ['Throughput',       fmtRx(calcThroughput()) + ' rx/s'],
-    ['Active Tiers',     activeTiers().map(t => CONFIG.tiers[t-1].name).join(', ') || '—'],
-    ['Stations',         `${state.stationsOwned}/${maxStations(state.buildingLevel)}`],
-    ['Building Level',   'Lv. ' + state.buildingLevel],
-    ['Marketing Level',  state.marketingLevel],
-    ['Prestige Count',   state.prestigeCount],
-    ['Prestige Mult',    state.prestigeMultiplier.toFixed(2) + '×'],
-    ['Time Played',      fmtDuration(playMs)],
-  ];
-  grid.innerHTML = rows.map(([k, v]) =>
-    `<div class="stat-row"><span class="stat-k">${k}</span><span class="stat-v mono">${v}</span></div>`
-  ).join('');
-  drawSparkline();
-  renderAchievements();
-}
-
-function renderAchievements() {
-  const grid = el('stats-achievements-grid');
-  if (!grid) return;
-  grid.innerHTML = CONFIG.achievements.map(def => {
-    const claimed = !!state.achievements[def.id];
-    return `<div class="achievement-chip ${claimed ? 'is-claimed' : 'is-locked'}">` +
-      `<span class="ach-name">${claimed ? def.name : '???'}</span>` +
-      `<span class="ach-desc">${claimed ? def.desc : 'Not yet unlocked'}` +
-        `${claimed && def.reward > 0 ? ' · +$' + fmt(def.reward) : ''}</span>` +
-      `</div>`;
-  }).join('');
-}
-
-function drawSparkline() {
-  const svg     = el('stats-spark');
-  const samples = state.statsSamples || [];
-  const W = 320, H = 80, pad = 4;
-  if (samples.length < 2) {
-    svg.innerHTML = `<text x="160" y="44" text-anchor="middle" fill="#9b8568" font-size="11" font-family="Inter,sans-serif">Collecting data…</text>`;
-    return;
-  }
-  const xs   = samples.map(s => s.t);
-  const ys   = samples.map(s => s.earned);
-  const minX = xs[0], maxX = xs[xs.length - 1];
-  const minY = 0,     maxY = Math.max(...ys, 1);
-  const sx = v => pad + (W - 2*pad) * (maxX === minX ? 0 : (v - minX) / (maxX - minX));
-  const sy = v => (H - pad) - (H - 2*pad) * (maxY === minY ? 0 : (v - minY) / (maxY - minY));
-  const pts     = samples.map(s => `${sx(s.t).toFixed(1)},${sy(s.earned).toFixed(1)}`).join(' ');
-  const areaPts = `${pad},${H - pad} ${pts} ${W - pad},${H - pad}`;
-  svg.innerHTML =
-    `<polygon points="${areaPts}" fill="rgba(47,125,91,0.12)" stroke="none"/>` +
-    `<polyline points="${pts}" fill="none" stroke="#2f7d5b" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
-}
-
-function openUpgradeModal()  { closeStaffModal(); renderUpgradeModal(); el('upgrade-modal').classList.remove('hidden'); }
-function closeUpgradeModal() { el('upgrade-modal').classList.add('hidden'); }
-function renderUpgradeModal() {
-  renderStationUpgrades();
-  renderUpgradeList();
-
-  const fs = el('franchise-section');
-  if (fs) {
-    if (prestigeAvailable()) {
-      fs.style.display = '';
-      el('cost-prestige').textContent = `→ ${calcPrestigeMult().toFixed(2)}×`;
-      el('desc-prestige').textContent = state.prestigeCount > 0
-        ? `Reset · ${state.prestigeCount} prior reset(s)`
-        : 'Reset for a permanent bonus';
-    } else {
-      fs.style.display = 'none';
-    }
-  }
-}
-
-function wireShop() {
-  el('btn-station'         ).addEventListener('click', buyStation);
-  el('btn-building'        ).addEventListener('click', buyBuilding);
-  el('btn-marketing'       ).addEventListener('click', buyMarketing);
-  el('btn-tier-2'          ).addEventListener('click', () => buyTier(2));
-  el('btn-tier-3'          ).addEventListener('click', () => buyTier(3));
-  el('btn-tier-4'          ).addEventListener('click', () => buyTier(4));
-  el('btn-prestige'        ).addEventListener('click', openPrestigeModal);
-  el('btn-prestige-cancel' ).addEventListener('click', () => el('prestige-modal').classList.add('hidden'));
-  el('btn-prestige-confirm').addEventListener('click', () => {
-    el('prestige-modal').classList.add('hidden');
-    doPrestige();
-  });
-  el('btn-staff'      ).addEventListener('click', openStaffModal);
-  el('btn-staff-close').addEventListener('click', closeStaffModal);
-  el('btn-staff-done' ).addEventListener('click', closeStaffModal);
-  el('staff-modal'    ).addEventListener('click', (e) => {
-    if (e.target.id === 'staff-modal') closeStaffModal();
-  });
-  el('btn-stats'      ).addEventListener('click', openStatsModal);
-  el('btn-stats-close').addEventListener('click', closeStatsModal);
-  el('stats-modal'    ).addEventListener('click', (e) => {
-    if (e.target.id === 'stats-modal') closeStatsModal();
-  });
-  el('btn-upgrades'    ).addEventListener('click', openUpgradeModal);
-  el('mob-btn-staff'   ).addEventListener('click', openStaffModal);
-  el('mob-btn-upgrades').addEventListener('click', openUpgradeModal);
-  el('mob-btn-stats'   ).addEventListener('click', openStatsModal);
-  // Header pills → staff modal
-  ['fill','check','pack'].forEach(role =>
-    el(`ua-${role}`).addEventListener('click', openStaffModal));
-  // Mobile header row toggle
-  el('header-row-toggle').addEventListener('click', () => {
-    const row = el('header-pills-row');
-    const collapsed = row.classList.toggle('is-collapsed');
-    el('header-row-toggle').setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-    el('header-row-toggle').classList.toggle('is-collapsed', collapsed);
-  });
-  // Tier tab delegation
-  el('tier-tabs').addEventListener('click', (e) => {
-    const tab = e.target.closest('.tier-tab');
-    if (!tab || tab.disabled) return;
-    activeTierTab = parseInt(tab.dataset.tier);
-    render();
-  });
-  // Upgrade modal tab switching (panels built in 5B)
-  el('upgrade-tabs').addEventListener('click', (e) => {
-    const tab = e.target.closest('.upgrade-tab');
-    if (!tab || tab.hidden) return;
-    const target = tab.dataset.upgTab;
-    document.querySelectorAll('.upgrade-tab').forEach(t => t.classList.toggle('is-active', t.dataset.upgTab === target));
-    document.querySelectorAll('.upgrade-panel').forEach(p =>
-      p.hidden = (p.id !== `upgrade-panel-${target}`));
-  });
-  el('btn-upgrade-close').addEventListener('click', closeUpgradeModal);
-  el('upgrade-modal').addEventListener('click', (e) => {
-    if (e.target.id === 'upgrade-modal') closeUpgradeModal();
-  });
-  // Hire flow wired in 5C (wireHireModal)
-}
-
-function openPrestigeModal() {
-  if (!prestigeAvailable()) return;
-  el('prestige-preview').textContent = `→ ${calcPrestigeMult().toFixed(2)}×`;
-  el('prestige-modal').classList.remove('hidden');
-}
-
-// ─── OFFLINE PROGRESS ─────────────────────────────────────────
-// Simulates time elapsed since last save using advance().
-// 1000 samples keeps it fast; the continuous-rate model is accurate at any dt.
-function applyOffline() {
-  const elapsed = Math.min(Date.now() - state.lastSaved, CONFIG.offlineCapMs);
-  if (elapsed < 1000) return null;  // under 1s — not worth showing modal
-  const moneyBefore = state.money;
-  const SAMPLES = 1000;
-  const step = (elapsed / 1000) / SAMPLES;  // seconds per sample
-  for (let i = 0; i < SAMPLES; i++) advance(step);
-  return { elapsed, earned: state.money - moneyBefore };
-}
-
-function fmtDuration(ms) {
-  const totalSec = Math.floor(ms / 1000);
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  if (h > 0) return `${h}h ${m}m`;
-  if (m > 0) return `${m}m ${s}s`;
-  return `${s}s`;
-}
-
-function showOfflineModal(earned, elapsed) {
-  el('offline-modal').querySelector('.modal-body').innerHTML =
-    `Away for <strong>${fmtDuration(elapsed)}</strong>. Your pharmacy kept running:`;
-  el('offline-earned').textContent = '$' + fmt(earned);
-  el('offline-modal').classList.remove('hidden');
-  // { once: true } — auto-removes listener after first click, no stacking
-  el('btn-offline-close').addEventListener('click', () => {
-    el('offline-modal').classList.add('hidden');
-  }, { once: true });
-}
-
-// Tiny DOM shorthand
-function el(id) { return document.getElementById(id); }
-
-// ─── TIER LINE PANEL ──────────────────────────────────────────
-let activeTierTab = 1;            // the "view tier" — drives floor scene + assignment. NOT persisted.
-function viewTier() { return activeTierTab; }
-
-let _tierPanelSig = '';
-let _upgradeListSig = '';
-let _stationUpgradeSig = '';
-let _figuresSig = { fill: '', check: '', pack: '' };
-
-// ─── FLOOR SCENE FIGURES ──────────────────────────────────────
-// Density display for a station cluster.
-// Sparse 1–3 = N figures; Packed 4–8 = 3 + badge; Dense 9+ = 3 + glow badge.
-function renderFigures(role) {
-  const container = el(`figures-${role}`);
-  if (!container) return;
-  const n   = state.staffPerTier[viewTier()]?.[role] || 0;
-  const sig = role + ':' + n;
-  if (_figuresSig[role] === sig) return;   // no change → skip rebuild (keeps hop delays stable)
-  _figuresSig[role] = sig;
-
-  let figs, badge = '', dense = false;
-  if (n <= 3)      { figs = n; }
-  else if (n <= 8) { figs = 3; badge = n; }
-  else             { figs = 3; badge = n; dense = true; }
-
-  container.classList.toggle('is-dense', dense);
-  container.classList.toggle('is-empty', n === 0);
-
-  let html = '';
-  for (let i = 0; i < figs; i++) {
-    const delay = (Math.random() * 4).toFixed(2);
-    const dur   = (3.6 + Math.random() * 1.6).toFixed(2);
-    html += `<span class="worker-fig" style="--hop-delay:${delay}s;--hop-dur:${dur}s">
-        <svg viewBox="0 0 40 56"><use href="#worker-${role}"/></svg>
-      </span>`;
-  }
-  if (badge) html += `<span class="fig-badge ${dense ? 'is-dense ' : ''}role-${role}">×${badge}</span>`;
-  container.innerHTML = html || '<span class="cluster-empty-hint"></span>';
-}
-
-function renderTierLinePanel() {
-  // Update tab states (cheap, safe every tick)
-  for (let t = 1; t <= 4; t++) {
-    const tab = document.querySelector(`.tier-tab[data-tier="${t}"]`);
-    if (!tab) continue;
-    const unlocked = state.drugTier >= t;
-    tab.disabled = !unlocked;
-    tab.classList.toggle('is-active', activeTierTab === t);
-  }
-  // Guard: if active tab got locked, reset to 1
-  if (state.drugTier < activeTierTab) activeTierTab = 1;
-
-  const tier = activeTierTab;
-
-  // Signature: rebuild ONLY when tab or worker counts change. Otherwise just
-  // patch the rate text so we never destroy a button mid-tap on mobile.
-  const sig = tier + ':' +
-    ['fill','check','pack'].map(r =>
-      (state.staffPerTier[tier]?.[r] || 0) + '/' + (state.unassignedStaff[r] || 0)
-    ).join(',');
-
-  if (sig === _tierPanelSig) {
-    // Structure unchanged — just refresh the live rate readouts.
-    const stages = document.querySelectorAll('#tier-line-panel .tier-line-stage');
-    ['fill','check','pack'].forEach((role, i) => {
-      const rateEl = stages[i]?.querySelector('.tls-rate');
-      if (rateEl) rateEl.textContent = `${stageRate(tier, role).toFixed(2)} rx/s`;
-    });
-    return;
-  }
-  _tierPanelSig = sig;
-
-  const panel = el('tier-line-panel');
-  panel.innerHTML = '';
-  const line    = document.createElement('div');
-  line.className = 'tier-line';
-  line.dataset.tier = tier;
-
-  for (const role of ['fill', 'check', 'pack']) {
-    const count  = state.staffPerTier[tier]?.[role] || 0;
-    const rate   = stageRate(tier, role);
-    const canAdd = (state.unassignedStaff[role] || 0) > 0;
-    const canSub = count > 0;
-
-    const stage = document.createElement('div');
-    stage.className = 'tier-line-stage';
-    stage.innerHTML =
-      `<div class="tls-header">` +
-        `<span class="tls-role-badge role-${role}">${role.toUpperCase()}</span>` +
-        `<span class="tls-rate">${rate.toFixed(2)} rx/s</span>` +
-      `</div>` +
-      `<div class="tls-controls">` +
-        `<button class="tls-btn tls-minus" data-tier="${tier}" data-role="${role}" ${canSub ? '' : 'disabled'}>` +
-          `<svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg>` +
-        `</button>` +
-        `<span class="tls-count">${count}</span>` +
-        `<button class="tls-btn tls-plus" data-tier="${tier}" data-role="${role}" ${canAdd ? '' : 'disabled'}>` +
-          `<svg width="10" height="10" viewBox="0 0 10 10"><rect x="4" y="0" width="2" height="10" rx="1" fill="currentColor"/><rect x="0" y="4" width="10" height="2" rx="1" fill="currentColor"/></svg>` +
-        `</button>` +
-      `</div>`;
-
-    stage.querySelector('.tls-plus' ).addEventListener('click', () => { assignWorker(tier, role);   render(); });
-    stage.querySelector('.tls-minus').addEventListener('click', () => { unassignWorker(tier, role); render(); });
-    line.appendChild(stage);
-  }
-  panel.appendChild(line);
-}
-
-// ─── STATION UPGRADES (GLOBAL) ────────────────────────────────
-function renderStationUpgrades() {
-  const ul = el('station-upgrade-list');
-  if (!ul) return;
-  const sig = Object.keys(CONFIG.globalStationUpgrades).map(key =>
-    (state.globalUpgrades[key] || 0) + (state.money >= globalUpgradeCost(key) ? 'a' : 'n')
-  ).join('');
-  if (sig === _stationUpgradeSig) return;
-  _stationUpgradeSig = sig;
-
-  ul.innerHTML = '';
-  for (const key in CONFIG.globalStationUpgrades) {
-    const def    = CONFIG.globalStationUpgrades[key];
-    const lvl    = state.globalUpgrades[key] || 0;
-    const maxed  = lvl >= CONFIG.globalStationUpgradeMaxLevel;
-    const cost   = globalUpgradeCost(key);
-    const afford = !maxed && state.money >= cost;
-    const nextName = maxed ? def.names[def.names.length - 1] : def.names[lvl];
-
-    const item = document.createElement('div');
-    item.className = 'shop-item' + (afford ? ' can-afford' : '');
-    item.innerHTML =
-      `<div class="si-info">` +
-        `<span class="si-name">${nextName}</span>` +
-        `<span class="si-desc">${def.stage.toUpperCase()} +${Math.round((lvl + (maxed ? 0 : 1)) * def.stepPct * 100)}%` +
-          (maxed ? ' · MAXED' : '') + `</span>` +
-      `</div>` +
-      `<button class="btn-buy" data-gupg="${key}" ${(maxed || !afford) ? 'disabled' : ''}>` +
-        `<span class="btn-cost mono">${maxed ? 'MAXED' : '$' + fmt(cost)}</span>` +
-      `</button>`;
-    ul.appendChild(item);
-  }
-  ul.querySelectorAll('[data-gupg]').forEach(b =>
-    b.addEventListener('click', () => buyGlobalUpgrade(b.dataset.gupg)));
-}
-
-// ─── STAFF MODAL ──────────────────────────────────────────────
-// ─── HIRE MODAL ───────────────────────────────────────────────
-// Pick `n` distinct random candidates from a role pool.
-function pickCandidates(role, n) {
-  const pool = (CONFIG.candidatePool[role] || []).slice();
-  for (let i = pool.length - 1; i > 0; i--) {       // Fisher–Yates
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  return pool.slice(0, Math.min(n, pool.length));
-}
-
-function renderHirePanel(role) {
-  const panel = el(`hire-panel-${role}`);
-  if (!panel) return;
-  const cost   = staffCost(role);
-  const atCap  = freeStaffSlots() <= 0;
-  const canHire = !atCap && state.money >= cost;
-
-  const n = 2 + Math.floor(Math.random() * 2);       // 2 or 3
-  const cands = pickCandidates(role, n);
-
-  panel.innerHTML = cands.map(c =>
-    `<div class="hire-card">
-      <div class="hire-card-figure">
-        <svg viewBox="0 0 40 56" class="hire-figure role-${role}"><use href="#worker-${role}"/></svg>
-      </div>
-      <div class="hire-card-name">${c.name}</div>
-      <div class="hire-card-title">${c.title}</div>
-      <div class="hire-card-bio">${c.bio}</div>
-      <button class="btn-buy hire-card-btn" data-hire-role="${role}" ${canHire ? '' : 'disabled'}>
-        <span class="btn-cost mono">$${fmt(cost)}</span>
-      </button>
-    </div>`
-  ).join('');
-
-  panel.querySelectorAll('[data-hire-role]').forEach(b =>
-    b.addEventListener('click', () => {
-      hireWorker(b.dataset.hireRole);
-      renderHireModal();
-      render();
-    }));
-}
-
-function renderHireModal() {
-  const atCap = freeStaffSlots() <= 0;
-  const note  = el('hire-cap-note');
-  if (note) {
-    note.hidden = !atCap;
-    note.textContent = atCap ? 'Station capacity full — build more stations to hire.' : '';
-  }
-  for (const role of ['fill','check','pack']) renderHirePanel(role);
-}
-
-function openHireModal()  { renderHireModal(); el('hire-modal').classList.remove('hidden'); }
-function closeHireModal() { el('hire-modal').classList.add('hidden'); }
-
-// ─── SCENE CARD CONTROLS ─────────────────────────────────────
-function wireSceneCards() {
-  for (const role of ['fill','check','pack']) {
-    el(`ctrl-${role}-plus` ).addEventListener('click', () => { assignWorker(viewTier(), role);   render(); });
-    el(`ctrl-${role}-minus`).addEventListener('click', () => { unassignWorker(viewTier(), role); render(); });
-  }
-  el('btn-floor-toggle').addEventListener('click', toggleDenseView);
-}
-
-function toggleDenseView() {
-  const dense = el('pipeline-wrap').hidden;   // currently hidden → switching TO dense
-  el('pipeline-wrap').hidden = !dense;
-  el('floor-scene').hidden   = dense;
-  try { localStorage.setItem('idleRx_denseView', dense ? '1' : '0'); } catch(e) {}
-}
-
-function wireHireModal() {
-  el('btn-hire-more').addEventListener('click', openHireModal);
-  el('btn-hire-close').addEventListener('click', closeHireModal);
-  el('hire-modal').addEventListener('click', (e) => {
-    if (e.target.id === 'hire-modal') closeHireModal();
-  });
-  el('hire-tabs').addEventListener('click', (e) => {
-    const tab = e.target.closest('.hire-tab');
-    if (!tab) return;
-    const target = tab.dataset.hireTab;
-    document.querySelectorAll('.hire-tab').forEach(t => t.classList.toggle('is-active', t.dataset.hireTab === target));
-    document.querySelectorAll('.hire-panel').forEach(p => p.hidden = (p.id !== `hire-panel-${target}`));
-  });
-}
-
-function openStaffModal()  { closeUpgradeModal(); renderStaffModal(); el('staff-modal').classList.remove('hidden'); }
-function closeStaffModal() { el('staff-modal').classList.add('hidden'); }
-
-function renderStaffModal() {
-  // Pool row
-  const pool = el('staff-pool-row');
-  if (!pool) return;
-  pool.innerHTML = '';
-  for (const role of ['fill','check','pack']) {
-    const count = state.unassignedStaff[role] || 0;
-    const chip  = document.createElement('div');
-    chip.className = 'staff-pool-chip';
-    chip.innerHTML =
-      `<span class="staff-pool-chip-role role-${role}">${role.toUpperCase()}</span>` +
-      `<span class="staff-pool-chip-count">${count}</span>` +
-      `<button class="tls-btn" data-fire-pool="${role}" ${count < 1 ? 'disabled' : ''} title="Fire (no refund)">` +
-        `<svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 2l6 6M8 2L2 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>` +
-      `</button>`;
-    pool.appendChild(chip);
-  }
-  pool.querySelectorAll('[data-fire-pool]').forEach(b =>
-    b.addEventListener('click', () => { fireWorker(b.dataset.firePool, null); renderStaffModal(); render(); }));
-
-  // Tier blocks
-  const tiersEl = el('staff-tiers-section');
-  tiersEl.innerHTML = '';
-  for (let t = 1; t <= 4; t++) {
-    const unlocked = state.drugTier >= t;
-    const block    = document.createElement('div');
-    block.className = 'staff-tier-block' + (unlocked ? '' : ' is-locked');
-    const tierName  = CONFIG.tiers[t-1].name;
-    let rolesHtml   = '';
-    for (const role of ['fill','check','pack']) {
-      const count  = state.staffPerTier[t]?.[role] || 0;
-      const canAdd = unlocked && (state.unassignedStaff[role] || 0) > 0;
-      const canSub = unlocked && count > 0;
-      rolesHtml +=
-        `<div class="staff-role-row">` +
-          `<span class="staff-role-label role-${role}">${role[0].toUpperCase()}</span>` +
-          `<button class="tls-btn tls-minus" data-dir="un" data-assign-tier="${t}" data-assign-role="${role}" ${canSub ? '' : 'disabled'}>` +
-            `<svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg>` +
-          `</button>` +
-          `<span class="tls-count" style="font-size:15px">${count}</span>` +
-          `<button class="tls-btn tls-plus" data-dir="as" data-assign-tier="${t}" data-assign-role="${role}" ${canAdd ? '' : 'disabled'}>` +
-            `<svg width="10" height="10" viewBox="0 0 10 10"><rect x="4" y="0" width="2" height="10" rx="1" fill="currentColor"/><rect x="0" y="4" width="10" height="2" rx="1" fill="currentColor"/></svg>` +
-          `</button>` +
-          `<button class="tls-btn" data-fire-tier="${t}" data-fire-role="${role}" ${canSub ? '' : 'disabled'} title="Fire (no refund)">` +
-            `<svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 2l6 6M8 2L2 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>` +
-          `</button>` +
-        `</div>`;
-    }
-    block.innerHTML =
-      `<div class="staff-tier-label">${unlocked ? 'TIER ' + t + ' — ' + tierName.toUpperCase() : tierName.toUpperCase() + ' (LOCKED)'}</div>` +
-      `<div class="staff-tier-roles">${rolesHtml}</div>`;
-    block.querySelectorAll('[data-assign-tier]').forEach(b => {
-      b.addEventListener('click', () => {
-        const tier = parseInt(b.dataset.assignTier);
-        const role = b.dataset.assignRole;
-        if (b.dataset.dir === 'as') assignWorker(tier, role);
-        else                        unassignWorker(tier, role);
-        renderStaffModal(); render();
-      });
-    });
-    block.querySelectorAll('[data-fire-tier]').forEach(b => {
-      b.addEventListener('click', () => {
-        fireWorker(b.dataset.fireRole, parseInt(b.dataset.fireTier));
-        renderStaffModal(); render();
-      });
-    });
-    tiersEl.appendChild(block);
+/* ═══════════════════════════════════════════════════════════════
+   IDLE PHARMACY — styles.css
+   Aesthetic: Warm apothecary × professional idle game
+   Fonts: Fraunces (display/brand) + Inter (UI/numbers)
+═══════════════════════════════════════════════════════════════ */
+
+/* ─── CUSTOM PROPERTIES ─────────────────────────────────────── */
+:root {
+  /* Backgrounds — warm paper */
+  --bg:          #f4ede0;
+  --bg-2:        #ece0cf;
+  --surface:     #fffaf2;
+  --surface-2:   #f7eedd;
+  --surface-hi:  #fdf3e3;
+
+  /* Borders — warm tan / wood */
+  --border:      #d9c3a3;
+  --border-hi:   #b98a4e;
+  --border-gold: #c9962f;
+
+  /* Accents */
+  --accent:      #2f7d5b;
+  --accent-dim:  rgba(47, 125, 91, 0.12);
+  --accent-glow: rgba(47, 125, 91, 0.10);
+  --gold:        #c9962f;
+  --gold-dim:    rgba(201, 150, 47, 0.14);
+  --warn:        #b5602a;
+  --danger:      #a83e2b;
+
+  /* Role pip colors */
+  --role-fill:   #2f7d5b;
+  --role-check:  #3a6ea5;
+  --role-pack:   #c9962f;
+
+  /* Worker sprite palette (Phase 5) */
+  --worker-head:  #d8c2a4;
+  --worker-leg:   #6b563f;
+  --worker-fill:  #8fb8d8;
+  --coat-white:   #f3ede0;
+  --shirt-brown:  #8a5a3b;
+
+  /* Backlog threshold colors */
+  --bk-green:  #2f7d5b;
+  --bk-yellow: #c9962f;
+  --bk-red:    #a83e2b;
+
+  /* Text — dark walnut on linen */
+  --text-hi:     #3d2817;
+  --text-body:   #6b563f;
+  --text-dim:    #9b8568;
+  --text-muted:  #b8a787;
+
+  /* Typography */
+  --font-ui:     'Fraunces', Georgia, serif;
+  --font-body:   'Inter', system-ui, sans-serif;
+  --font-mono:   'Inter', system-ui, sans-serif;
+
+  /* Radii */
+  --r-sm:  8px;
+  --r-md:  12px;
+  --r-lg:  18px;
+  --r-xl:  22px;
+
+  /* Layout */
+  --header-h: 60px;
+  --shop-w:   300px;
+}
+
+/* ─── RESET ──────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-body);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Tabular nums on all number-bearing elements */
+.mono,
+.hstat-value,
+.metric-val,
+.buf-val,
+#sb-throughput,
+.btn-cost,
+.modal-earned,
+#r-stations, #r-slots, #r-fill, #r-check, #r-pack, #r-free {
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── BACKGROUND TEXTURE ─────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(120, 90, 50, 0.05) 1px, transparent 1px);
+  background-size: 22px 22px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 40% at 50% -5%, rgba(201, 150, 47, 0.10) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── APP SHELL ──────────────────────────────────────────────── */
+#app {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* ─── HEADER ─────────────────────────────────────────────────── */
+#header {
+  height: var(--header-h);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(244, 237, 224, 0.95);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 8px rgba(90, 60, 30, 0.06);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.brand-mark {
+  font-family: var(--font-ui);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.08);
+}
+
+.brand-name {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--text-hi);
+  text-transform: uppercase;
+}
+
+.header-stats {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.hstat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px 18px;
+}
+
+.hstat-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.hstat-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-hi);
+  white-space: nowrap;
+}
+
+.hstat-value.mono {
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.hstat-sep {
+  width: 1px;
+  height: 26px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.save-status {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: color 0.3s;
+}
+
+.save-status[data-status="saved"]  { color: var(--accent); }
+.save-status[data-status="error"]  { color: var(--danger); }
+.save-status[data-status="saving"] { color: var(--warn);   }
+
+/* ─── MAIN LAYOUT ────────────────────────────────────────────── */
+#main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+  position: relative;
+}
+
+/* ─── PIPELINE WRAP ──────────────────────────────────────────── */
+#pipeline-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px 24px;
+  overflow: auto;
+  min-width: 0;
+}
+
+/* ─── PIPELINE (HORIZONTAL FLOW) ─────────────────────────────── */
+#pipeline {
+  display: flex;
+  align-items: center;
+}
+
+/* ─── STAGE CARDS ────────────────────────────────────────────── */
+.stage-card {
+  width: 160px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 20px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  transition: border-color 0.25s, box-shadow 0.25s;
+  box-shadow: 0 2px 8px rgba(90, 60, 30, 0.06);
+}
+
+.stage-card::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 2px;
+  background: var(--border);
+  border-radius: 0 0 3px 3px;
+  transition: background 0.25s;
+}
+
+.stage-card:hover {
+  border-color: var(--border-hi);
+  box-shadow: 0 4px 16px rgba(90, 60, 30, 0.10);
+}
+
+.stage-card.is-active {
+  border-color: var(--border-hi);
+  box-shadow: 0 0 0 1px var(--accent-dim), 0 4px 16px rgba(47, 125, 91, 0.10);
+}
+
+.stage-card.is-active::before {
+  background: var(--accent);
+}
+
+.stage-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--text-hi);
+  text-align: center;
+}
+
+.stage-role {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-align: center;
+  margin-top: -8px;
+  letter-spacing: 0.04em;
+}
+
+/* ─── STAGE METRICS ──────────────────────────────────────────── */
+.stage-metrics {
+  display: flex;
+  gap: 5px;
+}
+
+.metric {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 4px 6px;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.metric.active-metric {
+  background: var(--accent-dim);
+  border-color: rgba(47, 125, 91, 0.3);
+}
+
+.metric-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-hi);
+  line-height: 1;
+}
+
+.active-metric .metric-val {
+  color: var(--accent);
+}
+
+.metric-key {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ─── PROGRESS BAR ───────────────────────────────────────────── */
+.stage-progress-wrap {
+  height: 3px;
+  background: var(--surface-2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.stage-progress {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+  border-radius: 2px;
+  transition: width 0.25s linear;
+}
+
+@keyframes rx-progress {
+  0%   { width: 0%;   opacity: 0.7; }
+  88%  { width: 100%; opacity: 1;   }
+  100% { width: 100%; opacity: 1;   }
+}
+
+/* Per-stage animation durations match stageSpeed: fill=5s, check=3s, pack=10s */
+#card-fill.is-active  .stage-progress { transition: none; animation: rx-progress  5s ease-in-out infinite; }
+#card-check.is-active .stage-progress { transition: none; animation: rx-progress  3s ease-in-out infinite; }
+#card-pack.is-active  .stage-progress { transition: none; animation: rx-progress 10s ease-in-out infinite; }
+
+.stage-card.is-bottleneck {
+  border-color: rgba(181, 96, 42, 0.5);
+  box-shadow: 0 0 0 1px rgba(181, 96, 42, 0.10), 0 4px 16px rgba(181, 96, 42, 0.08);
+}
+.stage-card.is-bottleneck::before {
+  background: var(--warn);
+}
+.stage-card.is-bottleneck .stage-progress {
+  background: linear-gradient(90deg, rgba(181, 96, 42, 0.25), var(--warn));
+}
+
+/* ─── FLOW NODES (buffer + arrow) ────────────────────────────── */
+.flow-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  flex-shrink: 0;
+}
+
+.flow-buffer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  min-width: 76px;
+  transition: border-color 0.2s, background 0.2s;
+  box-shadow: 0 1px 4px rgba(90, 60, 30, 0.06);
+}
+
+.flow-buffer.has-rx {
+  border-color: var(--border-gold);
+  background: var(--gold-dim);
+}
+
+.buf-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+}
+
+.buf-label {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+
+.flow-arrow {
+  font-size: 18px;
+  color: var(--text-muted);
+  line-height: 1;
+}
+
+/* ─── PHARMACY FLOOR ─────────────────────────────────────────── */
+#floor-wrap {
+  width: 100%;
+  max-width: 680px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+  box-shadow: 0 2px 8px rgba(90, 60, 30, 0.06);
+}
+
+#floor-roster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 12px;
+  color: var(--text-body);
+  margin-bottom: 12px;
+}
+
+#floor-roster b {
+  color: var(--text-hi);
+  font-weight: 700;
+}
+
+.roster-sep {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.pip-fill  { color: var(--role-fill);  }
+.pip-check { color: var(--role-check); }
+.pip-pack  { color: var(--role-pack);  }
+
+#floor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-muted) transparent;
+}
+
+#floor-grid::-webkit-scrollbar       { width: 3px; }
+#floor-grid::-webkit-scrollbar-track { background: transparent; }
+#floor-grid::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 2px; }
+
+.station-tile {
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  justify-content: center;
+}
+
+/* floor-hint removed with floor grid */
+
+/* ─── COLLAPSIBLE STATS BAR ──────────────────────────────────── */
+#stats-bar {
+  width: 100%;
+  max-width: 680px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(90, 60, 30, 0.06);
+}
+
+#stats-bar-collapsed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+}
+
+.stats-bar-income {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.stats-bar-chevron {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s, color 0.15s;
+}
+
+.stats-bar-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.stats-bar-chevron:hover { color: var(--text-hi); }
+
+#stats-bar-expanded {
+  border-top: 1px solid var(--border);
+  padding: 10px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stats-bar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: 11px;
+}
+
+.sb-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.sb-sep { color: var(--text-muted); }
+
+#sb-bottleneck {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--warn);
+}
+
+#stats-bar.is-balanced #sb-bottleneck { color: var(--accent); }
+
+.milestone-row { align-items: center; gap: 8px; }
+
+.milestone-progress-wrap {
+  flex: 1;
+  min-width: 80px;
+  height: 4px;
+  background: var(--surface-2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.milestone-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+#sb-milestone-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.modal-body strong {
+  color: var(--text-hi);
+  font-weight: 700;
+}
+
+/* ─── RX INTAKE NODE ─────────────────────────────────────────── */
+.intake-node .flow-buffer {
+  position: relative;
+  overflow: hidden;
+}
+
+.intake-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgba(47, 125, 91, 0.2) 0%, transparent 70%);
+  animation: intake-pulse-anim var(--pulse-rate, 1s) ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes intake-pulse-anim {
+  0%, 100% { opacity: 0; transform: scale(0.8); }
+  50%       { opacity: 1; transform: scale(1.0); }
+}
+
+/* ─── CONVEYOR BELT ──────────────────────────────────────────── */
+#pipeline-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+#conveyor-belt {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 24px;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.belt-lane {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.belt-lane::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--border) 0px,
+    var(--border) 12px,
+    transparent 12px,
+    transparent 20px
+  );
+  transform: translateY(-50%);
+  opacity: 0.5;
+}
+
+#pipeline {
+  position: relative;
+  z-index: 1;
+}
+
+.belt-pill {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: color 0.3s;
+}
+
+.belt-pill.is-active {
+  opacity: 1;
+  animation: belt-travel var(--belt-speed, 4s) linear infinite;
+  animation-delay: calc(var(--belt-offset, 0%) * -1 * var(--belt-speed, 4s) / 100);
+}
+
+@keyframes belt-travel {
+  from { left: -16px; }
+  to   { left: calc(100% + 16px); }
+}
+
+/* ─── TOTE STACKS ────────────────────────────────────────────── */
+.tote-stack {
+  position: relative;
+  width: 32px;
+  height: 40px;
+  flex-shrink: 0;
+  margin-bottom: 4px;
+}
+
+.tote {
+  position: absolute;
+  left: 0;
+  width: 32px;
+  height: 14px;
+  background: color-mix(in srgb, var(--tote-color) 25%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--tote-color) 50%, var(--border));
+  border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  transition: opacity 0.3s;
+}
+
+.tote::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 4px;
+  background: color-mix(in srgb, var(--tote-color) 40%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--tote-color) 50%, var(--border));
+  border-radius: 2px 2px 0 0;
+}
+
+/* ─── MONEY POPS ─────────────────────────────────────────────── */
+#money-pops {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 10;
+  width: 0;
+  height: 0;
+  overflow: visible;
+}
+
+.money-pop {
+  position: absolute;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  top: var(--pop-y, 0px);
+  left: var(--pop-x, 0px);
+  text-shadow:
+    -1px -1px 0 rgba(255,255,255,0.9),
+     1px -1px 0 rgba(255,255,255,0.9),
+    -1px  1px 0 rgba(255,255,255,0.9),
+     1px  1px 0 rgba(255,255,255,0.9),
+     0 2px 6px rgba(61,40,23,0.25);
+}
+
+.money-pop.is-animating {
+  animation: money-pop-rise 1.4s ease-out forwards;
+}
+
+@keyframes money-pop-rise {
+  0%   { opacity: 0; transform: translateY(0px);   }
+  12%  { opacity: 1; transform: translateY(-10px); }
+  70%  { opacity: 1; transform: translateY(-38px); }
+  100% { opacity: 0; transform: translateY(-56px); }
+}
+
+/* ─── SHOP TABS ──────────────────────────────────────────────── */
+#shop-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 0 14px;
+  background: var(--surface);
+  position: sticky;
+  top: 53px;
+  z-index: 2;
+}
+
+.shop-tab {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 9px 12px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+
+.shop-tab:hover { color: var(--text-hi); }
+
+.shop-tab.is-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.shop-tab.prestige-tab.is-active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+
+.shop-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.shop-panel[hidden] { display: none; }
+
+/* ─── STAFF HIRE SECTION ─────────────────────────────────────── */
+.staff-hire-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.staff-hire-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.staff-hire-item {
+  flex: 1 1 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+.staff-hire-role {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.staff-hire-role.role-fill  { background: var(--role-fill);  }
+.staff-hire-role.role-check { background: var(--role-check); }
+.staff-hire-role.role-pack  { background: var(--role-pack);  }
+
+.staff-hire-desc {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.staff-hire-btn {
+  width: 100%;
+  margin-top: 2px;
+}
+
+/* ─── SHOP ───────────────────────────────────────────────────── */
+#shop {
+  position: fixed;
+  top: var(--header-h);
+  right: 0;
+  bottom: 0;
+  width: var(--shop-w);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-muted) transparent;
+  z-index: 50;
+  transform: translateX(100%);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: -4px 0 20px rgba(61, 40, 23, 0.12);
+}
+
+#shop.is-open {
+  transform: translateX(0);
+}
+
+/* Backdrop */
+#shop-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(61, 40, 23, 0.40);
+  z-index: 49;
+}
+
+#shop-backdrop.is-open {
+  display: block;
+}
+
+#shop::-webkit-scrollbar       { width: 3px; }
+#shop::-webkit-scrollbar-track { background: transparent; }
+#shop::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 2px; }
+
+.shop-header {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Shop close button sits inline in the header flex row */
+#btn-shop-close {
+  position: static;
+  font-size: 20px;
+  color: var(--text-dim);
+  background: none;
+  border: none;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+  transition: color 0.15s;
+}
+#btn-shop-close:hover { color: var(--text-hi); }
+
+.shop-header h2 {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--text-hi);
+  text-transform: uppercase;
+}
+
+.shop-section {
+  padding: 12px 14px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.shop-section:last-child {
+  border-bottom: none;
+  padding-bottom: 28px;
+}
+
+.shop-section-title {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  padding-left: 2px;
+}
+
+.shop-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 8px;
+  border-radius: var(--r-md);
+  margin-bottom: 4px;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+  cursor: default;
+}
+
+.shop-item:hover {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+.si-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.si-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-hi);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.si-desc {
+  font-size: 10px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── BUY BUTTONS ────────────────────────────────────────────── */
+.btn-buy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 9px;
+  background: var(--accent-dim);
+  border: 1px solid rgba(47, 125, 91, 0.30);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+  font-family: var(--font-body);
+  min-width: 64px;
+  flex-shrink: 0;
+}
+
+.btn-buy:hover:not(:disabled) {
+  background: rgba(47, 125, 91, 0.20);
+  box-shadow: 0 2px 8px rgba(47, 125, 91, 0.15);
+  transform: translateY(-1px);
+}
+
+.btn-buy:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-buy:disabled {
+  opacity: 0.30;
+  cursor: not-allowed;
+}
+
+@keyframes afford-ready {
+  0%, 100% { border-color: rgba(47, 125, 91, 0.30); }
+  50%       { border-color: rgba(47, 125, 91, 0.70); }
+}
+
+.shop-item.can-afford .btn-buy:not(:disabled) {
+  animation: afford-ready 2.5s ease-in-out infinite;
+}
+
+.shop-item.is-locked {
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+.btn-cost {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* Building — brass/gold accent */
+.btn-building {
+  background: var(--gold-dim);
+  border-color: rgba(201, 150, 47, 0.35);
+}
+
+.btn-building .btn-cost {
+  color: var(--gold);
+}
+
+.btn-building:hover:not(:disabled) {
+  background: rgba(201, 150, 47, 0.22);
+  box-shadow: 0 2px 8px rgba(201, 150, 47, 0.18);
+}
+
+/* Prestige — subtle gold */
+.btn-prestige {
+  background: var(--gold-dim);
+  border-color: rgba(201, 150, 47, 0.35);
+}
+
+.btn-prestige .btn-cost {
+  color: var(--gold);
+}
+
+/* ─── MODAL ──────────────────────────────────────────────────── */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(61, 40, 23, 0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--r-xl);
+  padding: 40px 48px;
+  text-align: center;
+  width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-shadow:
+    0 0 0 1px rgba(201, 150, 47, 0.08),
+    0 24px 60px rgba(61, 40, 23, 0.20);
+}
+
+.modal-icon {
+  font-family: var(--font-ui);
+  font-size: 42px;
+  color: var(--gold);
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.08);
+}
+
+.modal-title {
+  font-family: var(--font-ui);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-hi);
+  letter-spacing: -0.01em;
+}
+
+.modal-body {
+  font-size: 13px;
+  color: var(--text-body);
+  line-height: 1.65;
+}
+
+.modal-earned {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.modal-btn {
+  margin-top: 4px;
+  padding: 11px 32px;
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+}
+
+.modal-btn:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(47, 125, 91, 0.25);
+}
+
+.modal-btn:active {
+  transform: translateY(0);
+}
+
+/* Ghost variant — Cancel button in prestige modal */
+.modal-btn.ghost {
+  background: transparent;
+  color: var(--text-body);
+  border-color: var(--border);
+}
+
+.modal-btn.ghost:hover {
+  background: var(--surface-2);
+  box-shadow: none;
+  opacity: 1;
+}
+
+.prestige-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+/* ─── TOASTS ─────────────────────────────────────────────────── */
+#toast-container {
+  position: fixed;
+  top: 72px;
+  right: 20px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-left: 4px solid var(--gold);
+  color: var(--text-hi);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  box-shadow: 0 6px 20px rgba(61, 40, 23, 0.14);
+  opacity: 0;
+  transform: translateX(20px);
+  transition: opacity 0.3s, transform 0.3s;
+  max-width: 280px;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ─── UTILITIES ──────────────────────────────────────────────── */
+.hidden { display: none !important; }
+
+/* ═══════════════════════════════════════════════════════════════
+   PHASE 3 — Tier colors, station tiles, modals, stats
+═══════════════════════════════════════════════════════════════ */
+
+/* ─── TIER COLOR TOKENS ──────────────────────────────────────── */
+:root {
+  --tier-1: #2f7d5b;   /* Generics  — green  */
+  --tier-2: #3a6ea5;   /* Brand     — blue   */
+  --tier-3: #b5862a;   /* Specialty — amber  (darkened for contrast) */
+  --tier-4: #a83e2b;   /* Biologics — red    */
+}
+
+/* ─── HEADER STATS BUTTON ────────────────────────────────────── */
+.header-btn {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-body);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 6px 12px;
+  margin-right: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  flex-shrink: 0;
+}
+
+/* Push the header button group right — auto margin on the FIRST button (Staff) */
+#btn-staff {
+  margin-left: auto;
+}
+.header-btn:hover {
+  background: var(--surface-hi);
+  border-color: var(--border-hi);
+  transform: translateY(-1px);
+}
+
+/* station-tile, tile-pips, tier-badge, tile-upgrades removed — floor grid replaced by tier line panel */
+
+/* ─── MODAL CLOSE BUTTON (shared) ───────────────────────────── */
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.modal-close:hover { color: var(--text-hi); }
+
+/* station-modal, tier-picker, upgrade-tracks removed — replaced by staff modal + global station upgrades */
+
+/* ─── STATS MODAL ────────────────────────────────────────────── */
+.stats-modal-box {
+  width: 420px;
+  align-items: stretch;
+  text-align: left;
+  gap: 14px;
+  position: relative;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 18px;
+}
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.stat-k { font-size: 11px; color: var(--text-dim); }
+.stat-v { font-size: 12px; color: var(--text-hi); font-weight: 600; font-variant-numeric: tabular-nums; }
+.stats-chart-wrap { margin-top: 4px; }
+.stats-chart-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+#stats-spark {
+  width: 100%;
+  height: 80px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  display: block;
+}
+
+/* ─── MILESTONE READOUT ──────────────────────────────────────── */
+#milestone-readout {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gold);
+}
+
+/* ─── HEADER BUTTON SVG ICONS ───────────────────────────────── */
+.header-btn-icon {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.header-btn-icon svg { flex-shrink: 0; }
+
+/* ─── TIER TABS ──────────────────────────────────────────────── */
+#tier-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.tier-tab {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-body);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.tier-tab:disabled { opacity: 0.35; cursor: not-allowed; }
+.tier-tab.is-active { color: #fff; border-color: transparent; }
+.tier-tab-1.is-active { background: var(--tier-1); }
+.tier-tab-2.is-active { background: var(--tier-2); }
+.tier-tab-3.is-active { background: var(--tier-3); }
+.tier-tab-4.is-active { background: var(--tier-4); }
+
+/* ─── TIER LINE PANEL ────────────────────────────────────────── */
+.tier-line {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.tier-line-stage {
+  flex: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.tls-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.tls-role-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.tls-role-badge.role-fill  { background: var(--role-fill);  }
+.tls-role-badge.role-check { background: var(--role-check); }
+.tls-role-badge.role-pack  { background: var(--role-pack);  }
+.tls-rate {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.tls-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tls-count {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-hi);
+  font-variant-numeric: tabular-nums;
+  min-width: 20px;
+  text-align: center;
+}
+.tls-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-body);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, border-color 0.12s, transform 0.1s;
+  flex-shrink: 0;
+  touch-action: manipulation;
+}
+.tls-btn:hover:not(:disabled) {
+  background: var(--surface-hi);
+  border-color: var(--border-hi);
+  transform: translateY(-1px);
+}
+.tls-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+.tls-plus:not(:disabled) {
+  border-color: rgba(47, 125, 91, 0.4);
+  color: var(--accent);
+}
+.tls-plus:not(:disabled):hover {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+
+/* ─── STAFF MODAL ────────────────────────────────────────────── */
+.staff-modal-box {
+  width: min(480px, calc(100vw - 32px));
+  align-items: stretch;
+  text-align: left;
+  gap: 16px;
+  position: relative;
+}
+.staff-section-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.staff-pool-section,
+.staff-tiers-section { display: flex; flex-direction: column; gap: 6px; }
+.staff-pool-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.staff-pool-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.staff-pool-chip-role {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.staff-pool-chip-role.role-fill  { background: var(--role-fill);  }
+.staff-pool-chip-role.role-check { background: var(--role-check); }
+.staff-pool-chip-role.role-pack  { background: var(--role-pack);  }
+.staff-pool-chip-count {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-hi);
+  font-variant-numeric: tabular-nums;
+  min-width: 16px;
+}
+.staff-tier-block {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+}
+.staff-tier-block.is-locked { opacity: 0.35; }
+.staff-tier-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-hi);
+  margin-bottom: 8px;
+}
+.staff-tier-roles {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.staff-role-row {
+  flex: 1 1 130px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.staff-role-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #fff;
+  padding: 2px 5px;
+  border-radius: 3px;
+  min-width: 18px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.staff-role-label.role-fill  { background: var(--role-fill);  }
+.staff-role-label.role-check { background: var(--role-check); }
+.staff-role-label.role-pack  { background: var(--role-pack);  }
+.staff-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+}
+.staff-capacity-note { font-size: 11px; color: var(--text-dim); }
+
+/* ═══════════════════════════════════════════════════════════════
+   PHASE 3.6 — end of new rules
+═══════════════════════════════════════════════════════════════ */
+
+/* ─── GLOBAL MODAL WIDTH CLAMP (all screen sizes) ───────────── */
+.stats-modal-box {
+  width: min(420px, calc(100vw - 32px));
+}
+
+/* ─── MOBILE NAV BAR (hidden on desktop) ─────────────────────── */
+#mobile-nav {
+  display: none;
+}
+
+@media (max-width: 600px) {
+
+  /* Allow page to scroll vertically on mobile */
+  html, body {
+    overflow: auto;
+    height: auto;
   }
 
-  // Footer
-  const capNote = el('staff-cap-note');
-  if (capNote) capNote.textContent = `${totalStaffAll()}/${maxStaff()} staff slots used`;
+  #app {
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  /* ── Header: tighten up, hide secondary stats ── */
+  #header {
+    padding: 0 14px;
+    gap: 8px;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: var(--header-h);
+  }
+
+  /* Hide Tier and Building from header on mobile — stats modal covers it */
+  .hstat:nth-child(5),
+  .hstat:nth-child(7),
+  .hstat-sep:nth-child(4),
+  .hstat-sep:nth-child(6) {
+    display: none;
+  }
+
+  .hstat { padding: 4px 10px; }
+  .hstat-value { font-size: 13px; }
+
+  /* Hide header buttons on mobile — replaced by bottom nav */
+  #btn-shop,
+  #btn-stats {
+    display: none;
+  }
+
+  .save-status { margin-left: 0; }
+
+  /* ── Main layout: single column ── */
+  #main {
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  /* ── Pipeline: stack vertically ── */
+  #pipeline {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+  }
+
+  /* Stage cards: full width */
+  .stage-card {
+    width: 100%;
+    border-radius: var(--r-md);
+    padding: 14px 16px 10px;
+    gap: 8px;
+  }
+
+  /* Flow nodes: horizontal separators between stacked cards */
+  .flow-node {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: 4px 16px;
+    gap: 8px;
+  }
+
+  .flow-buffer {
+    flex-direction: row;
+    gap: 6px;
+    padding: 5px 10px;
+    min-width: unset;
+  }
+
+  .flow-arrow {
+    transform: rotate(90deg);
+    font-size: 14px;
+  }
+
+  /* ── Pipeline wrap ── */
+  #pipeline-wrap {
+    padding: 12px 12px 72px;
+    gap: 12px;
+    width: 100%;
+    overflow: visible;
+    justify-content: flex-start;
+  }
+
+  /* ── Floor wrap: full width ── */
+  #floor-wrap {
+    max-width: 100%;
+    border-radius: var(--r-md);
+  }
+
+  /* ── Stats bar: full width on mobile ── */
+  #stats-bar {
+    max-width: 100%;
+    border-radius: var(--r-sm);
+  }
+
+  /* ── Shop: bottom sheet on mobile ── */
+  #shop {
+    top: unset;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 75dvh;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    box-shadow: 0 -4px 24px rgba(61, 40, 23, 0.16);
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 62;   /* ABOVE backdrop (61) and mobile nav (60) */
+  }
+
+  #shop.is-open {
+    transform: translateY(0);
+  }
+
+  /* Sheet drag handle — decorative */
+  .shop-header::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 12px;
+  }
+
+  /* Backdrop: above mobile nav, below the shop sheet itself */
+  #shop-backdrop.is-open {
+    z-index: 61;
+  }
+
+  /* ── Bottom nav bar: visible on mobile ── */
+  #mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 60;
+    gap: 0;
+  }
+
+  .mobile-nav-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-body);
+    background: none;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    gap: 6px;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .mobile-nav-btn:active {
+    background: var(--surface-2);
+    color: var(--text-hi);
+  }
+
+  .mobile-nav-btn:first-child  { border-right: 1px solid var(--border); }
+  .mobile-nav-btn:nth-child(2) { border-right: 1px solid var(--border); }
+
+  /* ── Tier tabs mobile ── */
+  #tier-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+  }
+  .tier-line { gap: 5px; }
+  .tier-line-stage { padding: 8px 4px 6px; }
+  .tls-count { font-size: 16px; }
+
+  /* Modals: allow internal scroll + safe-area padding so footer/Done is reachable */
+  .modal {
+    align-items: flex-start;
+    padding: 16px 0;
+    overflow-y: auto;
+  }
+  .modal-box,
+  .staff-modal-box,
+  .stats-modal-box {
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    margin: auto;
+  }
+
+  /* Toast: tighter right margin on mobile */
+  #toast-container {
+    right: 12px;
+  }
+
+  /* Belt hidden on mobile — too narrow to be legible */
+  #conveyor-belt { display: none; }
+
+  /* Tote stacks: smaller on mobile */
+  .tote-stack { width: 24px; height: 32px; }
+  .tote       { width: 24px; height: 11px; }
+
+  /* Shop tabs: equal width */
+  .shop-tab { flex: 1; text-align: center; padding: 9px 6px; }
+
+  /* Staff hire row: stack vertically on small screens */
+  .staff-hire-item { flex: 1 1 100%; }
+
 }
 
-// patchStaffModal: update counts + disabled states WITHOUT destroying buttons.
-// Safe to call on every render tick. No innerHTML churn = no mid-tap teardown.
-function patchStaffModal() {
-  // Pool chips
-  for (const role of ['fill','check','pack']) {
-    const count = state.unassignedStaff[role] || 0;
-    const chip  = document.querySelector(`.staff-pool-chip [data-fire-pool="${role}"]`);
-    if (chip) {
-      const countEl = chip.parentElement.querySelector('.staff-pool-chip-count');
-      if (countEl) countEl.textContent = count;
-      chip.disabled = count < 1;
-    }
-  }
-  // Tier rows
-  for (let t = 1; t <= 4; t++) {
-    const unlocked = state.drugTier >= t;
-    for (const role of ['fill','check','pack']) {
-      const count = state.staffPerTier[t]?.[role] || 0;
-      const plus  = document.querySelector(`[data-assign-tier="${t}"][data-assign-role="${role}"][data-dir="as"]`);
-      const minus = document.querySelector(`[data-assign-tier="${t}"][data-assign-role="${role}"][data-dir="un"]`);
-      const fire  = document.querySelector(`[data-fire-tier="${t}"][data-fire-role="${role}"]`);
-      if (plus)  plus.disabled  = !(unlocked && (state.unassignedStaff[role] || 0) > 0);
-      if (minus) minus.disabled = !(unlocked && count > 0);
-      if (fire)  fire.disabled  = !(unlocked && count > 0);
-      if (minus) {
-        const countEl = minus.parentElement.querySelector('.tls-count');
-        if (countEl) countEl.textContent = count;
-      }
-    }
-  }
-  const capNote = el('staff-cap-note');
-  if (capNote) capNote.textContent = `${totalStaffAll()}/${maxStaff()} staff slots used`;
+/* ─── ACHIEVEMENT TOAST ──────────────────────────────────────── */
+.toast-achievement {
+  border-left-color: var(--gold);
+  background: var(--surface-hi);
 }
 
-// ─── MODULE-LEVEL ANIMATION STATE ────────────────────────────
-const _moneyPopQueue = [];
-let   _popPoolIdx    = 0;
-let   _lastConveyorUpdate = 0;
-const _moneyPopAccum  = { 1: 0, 2: 0, 3: 0, 4: 0 };
-let   _moneyPopLastFlush = 0;
-
-// ─── UPGRADE LIST (signature-gated) ──────────────────────────
-function renderUpgradeList() {
-  const sig = CONFIG.upgrades.map(u =>
-    (!!state.upgrades[u.id] ? '1' : '0') + (state.money >= u.cost ? 'a' : 'n')
-  ).join('');
-  if (sig === _upgradeListSig) return;
-  _upgradeListSig = sig;
-
-  const ul = el('upgrade-list');
-  ul.innerHTML = '';
-  for (const u of CONFIG.upgrades) {
-    const owned  = !!state.upgrades[u.id];
-    const afford = !owned && state.money >= u.cost;
-    const item   = document.createElement('div');
-    item.className = 'shop-item' + (afford ? ' can-afford' : '');
-    item.innerHTML =
-      `<div class="si-info">` +
-        `<span class="si-name">${u.name}</span>` +
-        `<span class="si-desc">${u.desc}</span>` +
-      `</div>` +
-      `<button class="btn-buy" data-upg="${u.id}" ${(owned || !afford) ? 'disabled' : ''}>` +
-        `<span class="btn-cost mono">${owned ? 'OWNED' : '$' + fmt(u.cost)}</span>` +
-      `</button>`;
-    ul.appendChild(item);
-  }
-  ul.querySelectorAll('[data-upg]').forEach(b =>
-    b.addEventListener('click', () => buyUpgrade(b.dataset.upg)));
+/* ─── ACHIEVEMENTS GRID ──────────────────────────────────────── */
+.stats-achievements-wrap {
+  margin-top: 8px;
 }
 
-// ─── TOTE STACKS ──────────────────────────────────────────────
-function renderToteStack(elementId, bufferValue, throughput, roleColor) {
-  const container = el(elementId);
-  if (!container) return;
-  const ratio     = throughput > 0 ? bufferValue / (throughput * 5) : 0;
-  const toteCount = Math.min(5, Math.floor(ratio * 5));
-  if (container.dataset.toteCount === String(toteCount)) return;
-  container.dataset.toteCount = toteCount;
-  container.innerHTML = '';
-  for (let i = 0; i < toteCount; i++) {
-    const tote = document.createElement('div');
-    tote.className = 'tote';
-    tote.style.setProperty('--tote-color', roleColor);
-    tote.style.bottom = (i * 7) + 'px';
-    tote.style.zIndex = i;
-    container.appendChild(tote);
-  }
+#stats-achievements-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-muted) transparent;
 }
 
-// ─── BACKLOG BADGE ────────────────────────────────────────────
-// Returns true if level is red (triggers belt-backup class).
-// green <5s, yellow 5–15s, red >15s of queue vs downstream rate.
-function renderBacklog(badgeId, bufferValue, downstreamRate) {
-  const badge = el(badgeId);
-  if (!badge) return false;
-  const secs  = downstreamRate > 0 ? bufferValue / downstreamRate : (bufferValue > 0 ? Infinity : 0);
-  let level   = 'green';
-  if (secs > 15)     level = 'red';
-  else if (secs >= 5) level = 'yellow';
-  badge.textContent = fmtRx(bufferValue);
-  badge.dataset.level = level;
-  badge.classList.toggle('is-empty', bufferValue < 0.5);
-  return level === 'red';
+.achievement-chip {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: border-color 0.2s;
 }
 
-// ─── CONVEYOR BELT ────────────────────────────────────────────
-function renderConveyor() {
-  const now = Date.now();
-  if (now - _lastConveyorUpdate < 240) return;
-  _lastConveyorUpdate = now;
-
-  const tp             = calcThroughput();
-  const activeTierList = activeTiers();
-  const dominant       = activeTierList[activeTierList.length - 1] || 1;
-  const tierColors     = ['var(--tier-1)', 'var(--tier-2)', 'var(--tier-3)', 'var(--tier-4)'];
-  const beltColor      = tierColors[dominant - 1];
-  const speed          = Math.max(1.5, 8 - tp * 0.65).toFixed(2);
-  const activePills    = tp < 0.05 ? 0 : Math.min(12, Math.max(1, Math.round(tp * 1.8)));
-
-  // Determine red backup state from scene-belt class (set by renderBacklog)
-  const redBackup = el('scene-belt')?.classList.contains('belt-backup');
-
-  document.querySelectorAll('#scene-belt-lane .belt-pill, #belt-lane .belt-pill').forEach((pill, i) => {
-    const active = i < activePills;
-    pill.classList.toggle('is-active', active);
-    pill.classList.toggle('is-backup', active && redBackup);
-    if (active) {
-      const offset = (i / activePills * 100).toFixed(1);
-      pill.style.setProperty('--belt-offset', offset + '%');
-      pill.style.setProperty('--belt-speed', (redBackup ? (parseFloat(speed) * 1.8).toFixed(2) : speed) + 's');
-      pill.style.color = beltColor;
-    }
-  });
+.achievement-chip.is-claimed {
+  border-color: var(--border-gold);
+  background: var(--gold-dim);
 }
 
-// ─── MONEY POPS ───────────────────────────────────────────────
-function flushMoneyPops() {
-  const now = Date.now();
-  if (now - _moneyPopLastFlush < 1000) return;
-  _moneyPopLastFlush = now;
-
-  const tierColors = ['var(--tier-1)', 'var(--tier-2)', 'var(--tier-3)', 'var(--tier-4)'];
-  const pops = document.querySelectorAll('.money-pop');
-  if (!pops.length) return;
-
-  for (const tier of [1, 2, 3, 4]) {
-    const accum = _moneyPopAccum[tier] || 0;
-    if (accum < 0.5) { _moneyPopAccum[tier] = 0; continue; }
-    const pop = pops[_popPoolIdx % pops.length];
-    _popPoolIdx++;
-    pop.textContent = '+$' + Math.round(accum);
-    pop.style.color = tierColors[tier - 1];
-    const laneX = [-52, -18, 18, 52][tier - 1];
-    const jitter = Math.round(Math.random() * 10 - 5);
-    pop.style.setProperty('--pop-x', (laneX + jitter) + 'px');
-    pop.style.setProperty('--pop-y', ([0, -8, -4, -12][tier - 1]) + 'px');
-    pop.classList.remove('is-animating');
-    void pop.offsetWidth;
-    pop.classList.add('is-animating');
-    _moneyPopAccum[tier] = 0;
-  }
+.achievement-chip.is-locked {
+  opacity: 0.4;
 }
 
-// ─── RENDER ───────────────────────────────────────────────────
-function render() {
-  const tier = CONFIG.tiers[state.drugTier - 1];
-  const bk   = bottleneckKeys();
-
-  // ── Header ──
-  el('money-display' ).textContent = '$' + fmt(state.money);
-  el('income-rate'   ).textContent = '$' + fmt(calcIncomeRate()) + '/s';
-  el('tier-name'     ).textContent = tier.name;
-  el('building-level').textContent = 'Lv. ' + state.buildingLevel;
-
-  // ── Per-stage AGGREGATE metrics (summed across all tiers) ──
-  for (const role of ['fill', 'check', 'pack']) {
-    el(`${role}-active`).textContent = activeSlots(role);
-    el(`${role}-rate`  ).textContent = aggStageRate(role).toFixed(2);
-  }
-
-  // ── Buffers (aggregate across all tiers for display) ──
-  const aggFillToCheck = [1,2,3,4].reduce((s,t) => s + (state.buffers[t]?.fillToCheck || 0), 0);
-  const aggCheckToPack = [1,2,3,4].reduce((s,t) => s + (state.buffers[t]?.checkToPack || 0), 0);
-  el('buf-fill' ).textContent = fmtRx(aggFillToCheck);
-  el('buf-check').textContent = fmtRx(aggCheckToPack);
-
-  // ── Stats bar ──
-  const incomeRate = calcIncomeRate();
-  el('sb-income-rate' ).textContent = '$' + fmt(incomeRate) + '/s';
-  el('sb-income-rate-2').textContent = '$' + fmt(incomeRate) + '/s';
-  el('sb-throughput'  ).textContent = fmtRx(calcThroughput()) + ' rx/s';
-  el('sb-bottleneck'  ).textContent = findBottleneck();
-  el('sb-total-earned').textContent = '$' + fmt(state.totalEarned || 0);
-  el('stats-bar').classList.toggle('is-balanced', bk.length === 0);
-
-  // ── Milestone (stats bar progress bar) ──
-  const nm = nextMilestone();
-  if (nm) {
-    const pct = Math.min(100, (nm.current / nm.threshold) * 100);
-    el('sb-milestone-text').textContent =
-      `+${Math.round(nm.pct*100)}% at ${fmtRx(nm.threshold)} rx (${fmtRx(nm.remaining)} to go)`;
-    el('sb-milestone-bar').style.width = pct.toFixed(1) + '%';
-  } else {
-    el('sb-milestone-text').textContent = 'All milestones claimed ✓';
-    el('sb-milestone-bar').style.width = '100%';
-  }
-
-  // ── Rx Intake node ──
-  el('intake-rate').textContent = aggStageRate('fill').toFixed(2) + '/s';
-  el('intake-pulse').style.setProperty('--pulse-rate', Math.max(0.3, 2 - calcThroughput() * 0.5).toFixed(2) + 's');
-
-  // ── Visual state classes ──
-  for (const role of ['fill', 'check', 'pack']) {
-    el(`card-${role}`).classList.toggle('is-active',     activeSlots(role) > 0);
-    el(`card-${role}`).classList.toggle('is-bottleneck', bk.includes(role));
-  }
-  el('buf-fill' ).closest('.flow-buffer').classList.toggle('has-rx', aggFillToCheck > 0.01);
-  el('buf-check').closest('.flow-buffer').classList.toggle('has-rx', aggCheckToPack > 0.01);
-
-  // ── Tote stacks ──
-  renderToteStack('totes-fill',  aggFillToCheck, aggStageRate('check'), 'var(--role-fill)');
-  renderToteStack('totes-check', aggCheckToPack, aggStageRate('pack'),  'var(--role-check)');
-
-  // ── Scene totes + backlog badges (must run before renderConveyor reads belt-backup) ──
-  const redFill  = renderBacklog('scene-backlog-fill',  aggFillToCheck, aggStageRate('check'));
-  const redCheck = renderBacklog('scene-backlog-check', aggCheckToPack, aggStageRate('pack'));
-  renderToteStack('scene-totes-fill',  aggFillToCheck, aggStageRate('check'), 'var(--role-fill)');
-  renderToteStack('scene-totes-check', aggCheckToPack, aggStageRate('pack'),  'var(--role-check)');
-  el('scene-belt')?.classList.toggle('belt-backup', redFill || redCheck);
-
-  // ── Conveyor belt ──
-  renderConveyor();
-
-  // ── Money pops ──
-  flushMoneyPops();
-
-  // ── Header unassigned pills ──
-  for (const role of ['fill','check','pack']) {
-    const count = state.unassignedStaff[role] || 0;
-    const pill  = el(`ua-${role}`);
-    if (pill) {
-      if (pill.textContent !== String(count)) {
-        pill.textContent = count;
-        // brief pulse when a new worker lands in the pool
-        if (count > (pill._lastCount ?? 0)) {
-          pill.classList.remove('pulse'); void pill.offsetWidth; pill.classList.add('pulse');
-        }
-        pill._lastCount = count;
-      }
-      pill.classList.toggle('is-empty', count === 0);
-    }
-  }
-
-  // ── Dense-view roster (only when present) ──
-  if (el('r-stations')) {
-    el('r-stations').textContent = `${state.stationsOwned}/${maxStations(state.buildingLevel)}`;
-    el('r-capacity').textContent = maxStaff();
-    el('r-free').textContent     = freeStaffSlots();
-  }
-
-  // ── Floor scene ──
-  for (const role of ['fill','check','pack']) {
-    renderFigures(role);
-    const tier   = viewTier();
-    const cnt    = state.staffPerTier[tier]?.[role] || 0;
-    const canAdd = (state.unassignedStaff[role] || 0) > 0;
-    el(`ctrl-${role}-count`).textContent    = cnt;
-    el(`ctrl-${role}-plus`).disabled        = !canAdd;
-    el(`ctrl-${role}-minus`).disabled       = cnt <= 0;
-    el(`scene-rate-${role}`).textContent    = stageRate(tier, role).toFixed(2);
-  }
-  // view-tier color strip
-  const strip = el('scene-tier-strip');
-  if (strip) strip.style.background = `var(--tier-${viewTier()})`;
-
-  // ── Tier line panel ──
-  renderTierLinePanel();
-
-  // ── Station upgrades ──
-  renderStationUpgrades();
-
-  // ── Staff modal live update (if open) ──
-  // Do NOT rebuild innerHTML on the tick — it destroys buttons mid-tap on mobile.
-  // Instead patch live numbers in place. Full rebuild happens on open + on action.
-  if (!el('staff-modal').classList.contains('hidden')) patchStaffModal();
-
-  // ── Station buy ──
-  const atStationCap = state.stationsOwned >= maxStations(state.buildingLevel);
-  el('cost-station').textContent = '$' + fmt(stationCost());
-  el('desc-station').textContent = atStationCap
-    ? `${state.stationsOwned}/${maxStations(state.buildingLevel)} — upgrade building`
-    : `+1 station (+${CONFIG.WORKERS_PER_STATION} staff slots)`;
-  el('btn-station').disabled = atStationCap || state.money < stationCost();
-  el('si-station' ).classList.toggle('can-afford', !atStationCap && state.money >= stationCost());
-
-  // ── Building ──
-  el('cost-building').textContent = '$' + fmt(buildingCost());
-  el('btn-building' ).disabled    = state.money < buildingCost();
-  el('building-desc').textContent = `Floor cap → ${maxStations(state.buildingLevel + 1)} stations`;
-  el('si-building'  ).classList.toggle('can-afford', state.money >= buildingCost());
-
-  // ── Tier buttons ──
-  for (let n = 2; n <= 4; n++) {
-    const t           = CONFIG.tiers[n - 1];
-    const owned       = state.drugTier >= n;
-    const prevMissing = state.drugTier < n - 1;
-    const canAfford   = state.money >= t.unlock;
-    const btn = el(`btn-tier-${n}`);
-    btn.disabled = owned || prevMissing || !canAfford;
-    btn.querySelector('.btn-cost').textContent = owned ? 'OWNED' : '$' + fmt(t.unlock);
-    el(`si-tier-${n}`).classList.toggle('can-afford', !owned && !prevMissing && canAfford);
-    el(`si-tier-${n}`).classList.toggle('is-locked',  prevMissing);
-  }
-
-  // ── Marketing ──
-  el('cost-marketing').textContent = '$' + fmt(marketingCost());
-  el('desc-marketing').textContent = `Demand ${marketingMult().toFixed(2)}× income`;
-  el('btn-marketing' ).disabled    = state.money < marketingCost();
-  el('si-marketing'  ).classList.toggle('can-afford', state.money >= marketingCost());
-
-  // ── Upgrades (signature-gated rebuild) ──
-  renderUpgradeList();
-
-  // ── Prestige availability flag (Upgrade modal reads this) ──
-  // Franchise Reset section visibility handled in renderUpgradeModal().
-
-  // ── Franchise Reset visibility (Upgrade modal open) ──
-  if (!el('upgrade-modal').classList.contains('hidden')) {
-    const fs = el('franchise-section');
-    if (fs) {
-      const avail = prestigeAvailable();
-      fs.style.display = avail ? '' : 'none';
-      if (avail) {
-        el('cost-prestige').textContent = `→ ${calcPrestigeMult().toFixed(2)}×`;
-      }
-    }
-  }
+.ach-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-hi);
 }
 
-// ─── INIT CONVEYOR + MONEY POPS ──────────────────────────────
-function initConveyor() {
-  for (const laneId of ['belt-lane', 'scene-belt-lane']) {
-    const lane = el(laneId);
-    if (!lane) continue;
-    for (let i = 0; i < 12; i++) {
-      const pill = document.createElement('div');
-      pill.className = 'belt-pill';
-      pill.dataset.poolIdx = i;
-      pill.innerHTML =
-        `<svg width="10" height="16" viewBox="0 0 10 16">` +
-          `<rect x="1" y="4" width="8" height="10" rx="3" fill="currentColor"/>` +
-          `<rect x="2" y="1" width="6" height="5" rx="2" fill="currentColor" opacity="0.6"/>` +
-        `</svg>`;
-      lane.appendChild(pill);
-    }
-  }
+.ach-desc {
+  font-size: 10px;
+  color: var(--text-dim);
 }
 
-function initMoneyPops() {
-  const container = el('money-pops');
-  if (!container) return;
-  for (let i = 0; i < 6; i++) {
-    const pop = document.createElement('div');
-    pop.className = 'money-pop';
-    pop.dataset.poolIdx = i;
-    container.appendChild(pop);
-  }
+/* ═══════════════════════════════════════════════════════════════
+   PHASE 5 — Floor scene, header hub, modals, conveyor polish
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Header 2-row ── */
+.header-2row { display:flex; align-items:center; gap:16px; flex-wrap:nowrap; }
+.header-left  { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.header-center { flex:1; display:flex; flex-direction:column; gap:4px; min-width:0; overflow:hidden; }
+.header-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.header-row-pills { gap:8px; }
+.pills-label { margin-right:2px; }
+.header-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.header-row-toggle { display:none; }
+
+/* Override old header brand/stats layout for 2-row */
+.header-2row .brand { display:none; }
+.header-2row .header-stats { display:none; }
+
+/* ── Unassigned pills ── */
+.ua-pill {
+  min-width:30px; height:24px; padding:0 8px; border-radius:12px;
+  border:1px solid var(--border); background:var(--surface);
+  font:600 12px/24px var(--font-body); color:#fff; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:4px;
+  transition:transform .12s ease, opacity .2s ease;
+}
+.ua-pill-fill  { background:var(--role-fill);  border-color:var(--role-fill);  }
+.ua-pill-check { background:var(--role-check); border-color:var(--role-check); }
+.ua-pill-pack  { background:var(--role-pack);  border-color:var(--role-pack);  }
+.ua-pill.is-empty { opacity:.4; }
+.ua-pill:hover { transform:scale(1.07); }
+.ua-pill.pulse { animation:pillPulse .5s ease; }
+@keyframes pillPulse { 0%{transform:scale(1)} 40%{transform:scale(1.25)} 100%{transform:scale(1)} }
+
+/* ── Header icon buttons ── */
+.header-btn-label { font-size:12px; }
+
+/* ── Upgrade modal ── */
+.upgrade-modal-box { max-width:540px; width:92vw; max-height:80vh; display:flex; flex-direction:column; }
+.upgrade-modal-box .modal-title { margin-bottom:0; }
+#upgrade-tabs {
+  display:flex; gap:0; margin:10px 0 0; border-bottom:2px solid var(--border); flex-shrink:0;
+}
+.upgrade-tab {
+  flex:1; padding:9px 4px; border:none; background:none; cursor:pointer;
+  font:600 12px var(--font-body); color:var(--text-dim); letter-spacing:.02em;
+  border-bottom:2px solid transparent; margin-bottom:-2px; transition:color .15s;
+}
+.upgrade-tab.is-active { color:var(--accent); border-bottom-color:var(--accent); }
+.upgrade-tab:hover:not(.is-active) { color:var(--text-body); }
+.upgrade-panel { overflow-y:auto; flex:1; padding-top:4px; }
+.upgrade-panel[hidden] { display:none; }
+
+/* Franchise reset section */
+.franchise-section { margin-top:18px; padding-top:14px; border-top:2px dashed var(--border-gold); }
+.franchise-title { color:var(--gold) !important; }
+.franchise-blurb { font-size:12px; color:var(--text-dim); margin:4px 0 10px; line-height:1.5; }
+
+/* ── Hire modal ── */
+.hire-modal-box { max-width:520px; width:92vw; }
+#hire-tabs {
+  display:flex; gap:0; margin:10px 0 14px; border-bottom:2px solid var(--border);
+}
+.hire-tab {
+  flex:1; padding:9px 4px; border:none; background:none; cursor:pointer;
+  font:600 12px var(--font-body); color:var(--text-dim);
+  border-bottom:2px solid transparent; margin-bottom:-2px; transition:color .15s;
+}
+.hire-tab.is-active { color:var(--accent); border-bottom-color:var(--accent); }
+.hire-panel { display:flex; gap:10px; flex-wrap:wrap; min-height:160px; }
+.hire-panel[hidden] { display:none; }
+
+/* Hire cards */
+.hire-card {
+  flex:1 1 140px; min-width:130px; background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r-md); padding:12px 10px; display:flex; flex-direction:column;
+  align-items:center; gap:4px; transition:border-color .15s;
+}
+.hire-card:hover { border-color:var(--accent); }
+.hire-card-figure { width:40px; height:54px; margin-bottom:2px; }
+.hire-card-figure svg { width:100%; height:100%; }
+.hire-card-name  { font:600 13px var(--font-ui); color:var(--text-hi); text-align:center; }
+.hire-card-title { font-size:10px; color:var(--accent); text-align:center; }
+.hire-card-bio   { font-size:11px; color:var(--text-dim); text-align:center; min-height:28px; line-height:1.4; }
+.hire-card-btn   { margin-top:auto; width:100%; }
+.hire-cap-note {
+  background:var(--gold-dim); color:var(--warn); padding:8px 10px;
+  border-radius:var(--r-sm); font-size:12px; margin-bottom:8px;
 }
 
-// ─── INIT ─────────────────────────────────────────────────────
-function init() {
-  state = load();
+/* Staff hire CTA */
+.staff-hire-cta { margin:10px 0 4px; }
+.staff-hire-more { width:100%; }
 
-  // Apply offline earnings before first render so opening balance is accurate
-  const offline = applyOffline();
+/* ── Floor scene ── */
+#floor-scene {
+  position:relative; display:flex; flex-direction:column; gap:10px;
+  padding:14px 14px 10px; background:var(--surface); border-radius:var(--r-md);
+  border:1px solid var(--border); margin:12px 12px 0;
+}
+.floor-toggle-wrap { position:absolute; top:8px; right:10px; z-index:3; }
+.floor-toggle {
+  display:flex; align-items:center; gap:5px; padding:5px 9px; border-radius:var(--r-sm);
+  border:1px solid var(--border); background:var(--surface-hi); color:var(--text-dim);
+  cursor:pointer; font:500 11px var(--font-body); transition:color .15s;
+}
+.floor-toggle:hover { color:var(--text-body); }
 
-  render();
+/* belt */
+#scene-belt {
+  position:relative; height:52px; border-radius:var(--r-sm);
+  background:repeating-linear-gradient(90deg, var(--surface-2) 0 14px, var(--bg-2) 14px 28px);
+  border:1px solid var(--border); overflow:visible; margin-top:4px;
+}
+.scene-belt-lane { position:absolute; inset:0; overflow:hidden; border-radius:var(--r-sm); }
+.scene-belt-lane .belt-pill {
+  position:absolute; top:50%; transform:translateY(-50%); opacity:0;
+  left:var(--belt-offset,0%);
+  animation:beltScroll var(--belt-speed,4s) linear infinite var(--belt-delay,0s);
+}
+.scene-belt-lane .belt-pill.is-active { opacity:1; }
+.scene-belt-lane .belt-pill.is-backup { animation-timing-function:steps(8,end); }
+@keyframes beltScroll { from{left:-4%} to{left:104%} }
 
-  // Autosave on interval + tab close
-  setInterval(save, AUTOSAVE_MS);
-  window.addEventListener('beforeunload', save);
-
-  wireShop();
-  wireHireModal();
-  wireSceneCards();
-  initConveyor();
-  initMoneyPops();
-
-  // Restore dense-view preference
-  try {
-    if (localStorage.getItem('idleRx_denseView') === '1') {
-      el('pipeline-wrap').hidden = false;
-      el('floor-scene').hidden   = true;
-    }
-  } catch(e) {}
-
-  startGameLoop();
-  startStatsSampler();
-
-  // Modal fires after loop is running; non-blocking, close button dismisses it
-  if (offline && offline.earned >= 0.01) {
-    showOfflineModal(offline.earned, offline.elapsed);
-  }
+/* totes above belt */
+.scene-totes { position:absolute; bottom:50px; width:40px; height:44px; pointer-events:none; }
+.scene-totes-fill  { left:28%; }
+.scene-totes-check { left:62%; }
+.scene-totes .tote {
+  position:absolute; width:22px; height:8px; border-radius:2px;
+  background:var(--tote-color, var(--accent)); left:0;
 }
 
-document.addEventListener('DOMContentLoaded', init);
-</script>
-</body>
-</html>
+/* backlog badge below belt */
+.scene-backlog {
+  position:absolute; top:56px; transform:translateX(-50%);
+  min-width:28px; padding:2px 7px; border-radius:10px;
+  font:700 11px var(--font-body); text-align:center; transition:background .3s, color .3s;
+  pointer-events:none;
+}
+.scene-backlog-fill  { left:30%; }
+.scene-backlog-check { left:65%; }
+.scene-backlog[data-level="green"]  { background:var(--accent-dim);       color:var(--bk-green);  }
+.scene-backlog[data-level="yellow"] { background:var(--gold-dim);          color:var(--bk-yellow); }
+.scene-backlog[data-level="red"]    { background:rgba(168,62,43,.16);      color:var(--bk-red);    }
+.scene-backlog.is-empty { opacity:.4; }
+
+/* tier strip */
+#scene-tier-strip { height:4px; border-radius:2px; transition:background .4s ease; }
+
+/* worker clusters */
+#scene-floor { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; min-height:80px; margin-top:4px; }
+.station-cluster { display:flex; align-items:flex-end; justify-content:center; padding-bottom:4px; }
+.cluster-figures {
+  position:relative; display:flex; align-items:flex-end; gap:4px; min-height:62px;
+  justify-content:center;
+}
+.cluster-figures.is-empty::after {
+  content:''; width:100px; height:2px;
+  border-bottom:2px dashed var(--border); align-self:flex-end; display:block;
+}
+.worker-fig {
+  width:30px; height:46px; display:inline-block; flex-shrink:0;
+  animation:workerHop var(--hop-dur,4s) ease-in-out var(--hop-delay,0s) infinite;
+}
+.worker-fig svg { width:100%; height:100%; display:block; }
+.cluster-figures.is-dense .worker-fig:not(:first-child) { margin-left:-12px; }
+@keyframes workerHop {
+  0%,82%  { transform:translateY(0); }
+  88%     { transform:translateY(-6px); }
+  94%     { transform:translateY(1px); }
+  100%    { transform:translateY(0); }
+}
+.fig-badge {
+  align-self:center; margin-left:4px; padding:2px 6px; border-radius:10px;
+  font:700 11px var(--font-body); color:#fff; flex-shrink:0;
+}
+.fig-badge.role-fill  { background:var(--role-fill);  }
+.fig-badge.role-check { background:var(--role-check); }
+.fig-badge.role-pack  { background:var(--role-pack);  }
+.fig-badge.is-dense { box-shadow:0 0 8px 2px currentColor; }
+
+/* compact station cards */
+#scene-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.scene-card {
+  background:var(--surface-2); border:1px solid var(--border);
+  border-radius:var(--r-md); padding:10px 8px;
+}
+.scene-card-head {
+  display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;
+}
+.scene-card-label {
+  font:700 11px var(--font-body); padding:2px 7px; border-radius:8px; color:#fff;
+  letter-spacing:.04em;
+}
+.scene-card-label.role-fill  { background:var(--role-fill);  }
+.scene-card-label.role-check { background:var(--role-check); }
+.scene-card-label.role-pack  { background:var(--role-pack);  }
+.scene-card-rate { font-size:11px; color:var(--text-dim); }
+.scene-card-controls { display:flex; align-items:center; justify-content:center; gap:10px; }
+.stage-ctrl-btn {
+  width:28px; height:28px; border-radius:8px; border:1px solid var(--border);
+  background:var(--surface-hi); color:var(--text-hi); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:background .12s;
+}
+.stage-ctrl-btn:hover:not(:disabled) { background:var(--accent-dim); border-color:var(--accent); }
+.stage-ctrl-btn:disabled { opacity:.3; cursor:default; }
+.stage-ctrl-count { min-width:22px; text-align:center; font:600 15px var(--font-body); color:var(--text-hi); }
+
+/* tier tabs inside floor scene */
+#floor-scene #tier-tabs {
+  display:flex; gap:4px; margin-top:4px; border-bottom:none;
+}
+
+/* dense-view hidden guard */
+#pipeline-wrap[hidden] { display:none !important; }
+#floor-scene[hidden]   { display:none !important; }
+
+/* ── Mobile ── */
+@media (max-width:640px) {
+  .header-btn-label { display:none; }
+  .header-row-toggle {
+    display:flex; align-items:center; justify-content:center;
+    width:26px; height:26px; border-radius:6px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text-dim); cursor:pointer; flex-shrink:0;
+  }
+  .header-row-toggle.is-collapsed svg { transform:rotate(-90deg); }
+  .header-row-pills.is-collapsed { display:none; }
+  #scene-floor, #scene-cards { gap:6px; }
+  .worker-fig { width:24px; height:38px; }
+  #floor-scene { margin:8px 8px 0; padding:10px; }
+  .hire-card { min-width:110px; }
+}
