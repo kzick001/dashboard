@@ -13,65 +13,179 @@
 <div id="app">
 
   <!-- ═══ HEADER ═══════════════════════════════════════════════ -->
-  <header id="header">
-    <div class="brand">
+  <header id="header" class="header-2row">
+    <div class="header-left">
       <span class="brand-mark">℞</span>
       <span class="brand-name">IDLE PHARMACY</span>
     </div>
-    <div class="header-stats">
-      <div class="hstat">
-        <span class="hstat-label">Balance</span>
-        <span class="hstat-value mono" id="money-display">$0.00</span>
+
+    <div class="header-center" id="header-center">
+      <div class="header-row header-row-stats">
+        <div class="hstat">
+          <span class="hstat-label">Balance</span>
+          <span class="hstat-value mono" id="money-display">$0.00</span>
+        </div>
+        <div class="hstat-sep"></div>
+        <div class="hstat">
+          <span class="hstat-label">Rate</span>
+          <span class="hstat-value mono" id="income-rate">$0.00/s</span>
+        </div>
+        <div class="hstat-sep"></div>
+        <div class="hstat">
+          <span class="hstat-label">Tier</span>
+          <span class="hstat-value" id="tier-name">Generics</span>
+        </div>
+        <div class="hstat-sep"></div>
+        <div class="hstat">
+          <span class="hstat-label">Building</span>
+          <span class="hstat-value" id="building-level">Lv. 1</span>
+        </div>
       </div>
-      <div class="hstat-sep"></div>
-      <div class="hstat">
-        <span class="hstat-label">Rate</span>
-        <span class="hstat-value mono" id="income-rate">$0.00/s</span>
-      </div>
-      <div class="hstat-sep"></div>
-      <div class="hstat">
-        <span class="hstat-label">Tier</span>
-        <span class="hstat-value" id="tier-name">Generics</span>
-      </div>
-      <div class="hstat-sep"></div>
-      <div class="hstat">
-        <span class="hstat-label">Building</span>
-        <span class="hstat-value" id="building-level">Lv. 1</span>
+      <div class="header-row header-row-pills" id="header-pills-row">
+        <span class="hstat-label pills-label">Unassigned</span>
+        <button class="ua-pill ua-pill-fill"  id="ua-fill"  title="Unassigned Technicians — tap to assign">0</button>
+        <button class="ua-pill ua-pill-check" id="ua-check" title="Unassigned Pharmacists — tap to assign">0</button>
+        <button class="ua-pill ua-pill-pack"  id="ua-pack"  title="Unassigned Packers — tap to assign">0</button>
       </div>
     </div>
-    <button id="btn-staff" class="header-btn header-btn-icon" title="Edit Staff">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="6" cy="4" r="2.5" stroke="currentColor" stroke-width="1.5"/>
-        <path d="M1 13c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        <circle cx="12" cy="5" r="1.75" stroke="currentColor" stroke-width="1.3"/>
-        <path d="M10 13c0-1.657.895-3.124 2.25-3.854" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+
+    <!-- Mobile-only: collapse/expand the pills row -->
+    <button id="header-row-toggle" class="header-row-toggle" aria-expanded="true" aria-label="Toggle details">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      Staff
     </button>
-    <button id="btn-shop" class="header-btn header-btn-icon" title="Shop">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M2 2h1.5l2 7h6l1.5-5H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="7" cy="13" r="1" fill="currentColor"/>
-        <circle cx="11" cy="13" r="1" fill="currentColor"/>
-      </svg>
-      Shop
-    </button>
-    <button id="btn-stats" class="header-btn header-btn-icon" title="Stats">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="2" y="9" width="3" height="5" rx="1" fill="currentColor" opacity="0.5"/>
-        <rect x="6.5" y="5" width="3" height="9" rx="1" fill="currentColor" opacity="0.75"/>
-        <rect x="11" y="2" width="3" height="12" rx="1" fill="currentColor"/>
-      </svg>
-      Stats
-    </button>
-    <div class="save-status" id="save-status" data-status="saved">⬤ Saved</div>
+
+    <div class="header-right">
+      <button id="btn-staff" class="header-btn header-btn-icon" title="Staff">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="6" cy="4" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M1 13c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="12" cy="5" r="1.75" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M10 13c0-1.657.895-3.124 2.25-3.854" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        <span class="header-btn-label">Staff</span>
+      </button>
+      <button id="btn-upgrades" class="header-btn header-btn-icon" title="Upgrades">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M11.5 2.5a3 3 0 0 0-4 4l-5 5 1.5 1.5 5-5a3 3 0 0 0 4-4l-2 2-1.5-1.5 2-2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+        </svg>
+        <span class="header-btn-label">Upgrades</span>
+      </button>
+      <button id="btn-stats" class="header-btn header-btn-icon" title="Stats">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <rect x="2" y="9" width="3" height="5" rx="1" fill="currentColor" opacity="0.5"/>
+          <rect x="6.5" y="5" width="3" height="9" rx="1" fill="currentColor" opacity="0.75"/>
+          <rect x="11" y="2" width="3" height="12" rx="1" fill="currentColor"/>
+        </svg>
+        <span class="header-btn-label">Stats</span>
+      </button>
+      <div class="save-status" id="save-status" data-status="saved">⬤ Saved</div>
+    </div>
   </header>
 
   <!-- ═══ MAIN ════════════════════════════════════════════════ -->
   <main id="main">
 
-    <!-- Pipeline + Throughput Bar -->
-    <div id="pipeline-wrap">
+    <!-- ═══ FLOOR SCENE (default view) ═══ -->
+    <div id="floor-scene">
+
+      <!-- SVG sprite defs — worker figures referenced via <use> -->
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+          <!-- Fill worker: light blue technician -->
+          <g id="worker-fill">
+            <circle cx="20" cy="7" r="6" fill="var(--worker-head)"/>
+            <rect x="11" y="14" width="18" height="22" rx="4" fill="var(--worker-fill)"/>
+            <rect x="11" y="36" width="7"  height="14" rx="3" fill="var(--worker-leg)"/>
+            <rect x="22" y="36" width="7"  height="14" rx="3" fill="var(--worker-leg)"/>
+          </g>
+          <!-- Check worker: white coat pharmacist -->
+          <g id="worker-check">
+            <circle cx="20" cy="7" r="6" fill="var(--worker-head)"/>
+            <rect x="11" y="14" width="18" height="22" rx="4" fill="var(--coat-white)"/>
+            <rect x="11" y="36" width="7"  height="14" rx="3" fill="var(--worker-leg)"/>
+            <rect x="22" y="36" width="7"  height="14" rx="3" fill="var(--worker-leg)"/>
+          </g>
+          <!-- Pack worker: brown shirt packer -->
+          <g id="worker-pack">
+            <circle cx="20" cy="7" r="6" fill="var(--worker-head)"/>
+            <rect x="11" y="14" width="18" height="22" rx="4" fill="var(--shirt-brown)"/>
+            <rect x="11" y="36" width="7"  height="14" rx="3" fill="var(--worker-leg)"/>
+            <rect x="22" y="36" width="7"  height="14" rx="3" fill="var(--worker-leg)"/>
+          </g>
+        </defs>
+      </svg>
+
+      <div class="floor-toggle-wrap">
+        <button id="btn-floor-toggle" class="floor-toggle" title="Toggle detailed view">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <rect x="1" y="2" width="12" height="2" rx="1" fill="currentColor"/>
+            <rect x="1" y="6" width="12" height="2" rx="1" fill="currentColor"/>
+            <rect x="1" y="10" width="12" height="2" rx="1" fill="currentColor"/>
+          </svg>
+          <span>Detailed</span>
+        </button>
+      </div>
+
+      <!-- Conveyor + totes + backlog badges -->
+      <div id="scene-belt">
+        <div class="scene-belt-lane" id="scene-belt-lane"></div>
+        <div class="scene-totes scene-totes-fill"  id="scene-totes-fill"></div>
+        <div class="scene-totes scene-totes-check" id="scene-totes-check"></div>
+        <div class="scene-backlog scene-backlog-fill"  id="scene-backlog-fill">0</div>
+        <div class="scene-backlog scene-backlog-check" id="scene-backlog-check">0</div>
+      </div>
+
+      <!-- view-tier color strip -->
+      <div id="scene-tier-strip"></div>
+
+      <!-- Worker clusters -->
+      <div id="scene-floor">
+        <div class="station-cluster" id="cluster-fill"><div class="cluster-figures" id="figures-fill"></div></div>
+        <div class="station-cluster" id="cluster-check"><div class="cluster-figures" id="figures-check"></div></div>
+        <div class="station-cluster" id="cluster-pack"><div class="cluster-figures" id="figures-pack"></div></div>
+      </div>
+
+      <!-- Compact station cards -->
+      <div id="scene-cards">
+        <div class="scene-card" id="scene-card-fill">
+          <div class="scene-card-head"><span class="scene-card-label role-fill">FILL</span><span class="scene-card-rate mono" id="scene-rate-fill">0.00</span></div>
+          <div class="scene-card-controls">
+            <button class="stage-ctrl-btn stage-ctrl-minus" id="ctrl-fill-minus" disabled><svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg></button>
+            <span class="stage-ctrl-count" id="ctrl-fill-count">0</span>
+            <button class="stage-ctrl-btn stage-ctrl-plus"  id="ctrl-fill-plus"  disabled><svg width="10" height="10" viewBox="0 0 10 10"><rect x="4" width="2" height="10" rx="1" fill="currentColor"/><rect y="4" width="10" height="2" rx="1" fill="currentColor"/></svg></button>
+          </div>
+        </div>
+        <div class="scene-card" id="scene-card-check">
+          <div class="scene-card-head"><span class="scene-card-label role-check">CHECK</span><span class="scene-card-rate mono" id="scene-rate-check">0.00</span></div>
+          <div class="scene-card-controls">
+            <button class="stage-ctrl-btn stage-ctrl-minus" id="ctrl-check-minus" disabled><svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg></button>
+            <span class="stage-ctrl-count" id="ctrl-check-count">0</span>
+            <button class="stage-ctrl-btn stage-ctrl-plus"  id="ctrl-check-plus"  disabled><svg width="10" height="10" viewBox="0 0 10 10"><rect x="4" width="2" height="10" rx="1" fill="currentColor"/><rect y="4" width="10" height="2" rx="1" fill="currentColor"/></svg></button>
+          </div>
+        </div>
+        <div class="scene-card" id="scene-card-pack">
+          <div class="scene-card-head"><span class="scene-card-label role-pack">PACK</span><span class="scene-card-rate mono" id="scene-rate-pack">0.00</span></div>
+          <div class="scene-card-controls">
+            <button class="stage-ctrl-btn stage-ctrl-minus" id="ctrl-pack-minus" disabled><svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg></button>
+            <span class="stage-ctrl-count" id="ctrl-pack-count">0</span>
+            <button class="stage-ctrl-btn stage-ctrl-plus"  id="ctrl-pack-plus"  disabled><svg width="10" height="10" viewBox="0 0 10 10"><rect x="4" width="2" height="10" rx="1" fill="currentColor"/><rect y="4" width="10" height="2" rx="1" fill="currentColor"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tier tabs (drives floor scene + assignment) -->
+      <div id="tier-tabs">
+        <button class="tier-tab tier-tab-1 is-active" data-tier="1">Generics</button>
+        <button class="tier-tab tier-tab-2" data-tier="2" disabled>Brand</button>
+        <button class="tier-tab tier-tab-3" data-tier="3" disabled>Specialty</button>
+        <button class="tier-tab tier-tab-4" data-tier="4" disabled>Biologics</button>
+      </div>
+    </div>
+
+    <!-- ═══ DENSE VIEW (pipeline) — hidden by default ═══ -->
+    <div id="pipeline-wrap" hidden>
       <div id="pipeline-track">
 
         <!-- Conveyor belt layer (behind cards) -->
@@ -178,28 +292,14 @@
       <!-- Pharmacy Floor -->
       <div id="floor-wrap">
 
-        <!-- Tier line tabs -->
-        <div id="tier-tabs">
-          <button class="tier-tab tier-tab-1 is-active" data-tier="1">Generics</button>
-          <button class="tier-tab tier-tab-2" data-tier="2" disabled>Brand</button>
-          <button class="tier-tab tier-tab-3" data-tier="3" disabled>Specialty</button>
-          <button class="tier-tab tier-tab-4" data-tier="4" disabled>Biologics</button>
-        </div>
-
         <!-- Tier line panel — content rebuilt by render() -->
         <div id="tier-line-panel"></div>
 
-        <!-- Capacity + unassigned readout -->
+        <!-- Capacity readout (unassigned now in header pills) -->
         <div id="floor-roster">
           <span class="roster-item">Stations <b id="r-stations">1/3</b></span>
           <span class="roster-sep">·</span>
           <span class="roster-item">Capacity <b id="r-capacity">3</b></span>
-          <span class="roster-sep">·</span>
-          <span class="roster-item">Unassigned
-            <b class="pip-fill"  id="r-ua-fill">1</b>F
-            <b class="pip-check" id="r-ua-check">1</b>C
-            <b class="pip-pack"  id="r-ua-pack">1</b>P
-          </span>
           <span class="roster-sep">·</span>
           <span class="roster-item">Free slots <b id="r-free">0</b></span>
         </div>
@@ -243,130 +343,7 @@
 
     </div><!-- /pipeline-wrap -->
 
-    <!-- ═══ SHOP ══════════════════════════════════════════════ -->
-    <aside id="shop">
-      <div class="shop-header">
-        <h2>SHOP</h2>
-        <button class="modal-close" id="btn-shop-close">×</button>
-      </div>
-
-      <!-- Tab strip -->
-      <div id="shop-tabs">
-        <button class="shop-tab is-active" data-tab="build">Build</button>
-        <button class="shop-tab" data-tab="boost">Boost</button>
-        <button class="shop-tab prestige-tab" data-tab="prestige" id="shop-tab-prestige" hidden>Prestige</button>
-      </div>
-
-      <!-- BUILD tab -->
-      <div class="shop-panel is-active" id="shop-panel-build">
-
-        <div class="shop-section">
-          <div class="shop-section-title">Stations</div>
-          <div class="shop-item" id="si-station">
-            <div class="si-info">
-              <span class="si-name">Build Station</span>
-              <span class="si-desc" id="desc-station">+1 station (3 slots)</span>
-            </div>
-            <button class="btn-buy" id="btn-station" disabled>
-              <span class="btn-cost mono" id="cost-station">$--</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="shop-section">
-          <div class="shop-section-title">Infrastructure</div>
-          <div class="shop-item" id="si-building">
-            <div class="si-info">
-              <span class="si-name">Upgrade Building</span>
-              <span class="si-desc" id="building-desc">Floor cap → 8 stations</span>
-            </div>
-            <button class="btn-buy btn-building" id="btn-building" disabled>
-              <span class="btn-cost mono" id="cost-building">$--</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="shop-section">
-          <div class="shop-section-title">Station Upgrades</div>
-          <div id="station-upgrade-list"><!-- injected by render() --></div>
-        </div>
-
-        <div class="shop-section">
-          <div class="shop-section-title">Drug Tiers</div>
-          <div class="shop-item" id="si-tier-2">
-            <div class="si-info">
-              <span class="si-name">Brand Name</span>
-              <span class="si-desc">$40/rx · 4× value</span>
-            </div>
-            <button class="btn-buy" id="btn-tier-2" disabled>
-              <span class="btn-cost mono">$1.00K</span>
-            </button>
-          </div>
-          <div class="shop-item" id="si-tier-3">
-            <div class="si-info">
-              <span class="si-name">Specialty Rx</span>
-              <span class="si-desc">$160/rx · 16× value</span>
-            </div>
-            <button class="btn-buy" id="btn-tier-3" disabled>
-              <span class="btn-cost mono">$25.00K</span>
-            </button>
-          </div>
-          <div class="shop-item" id="si-tier-4">
-            <div class="si-info">
-              <span class="si-name">Biologics</span>
-              <span class="si-desc">$640/rx · 64× value</span>
-            </div>
-            <button class="btn-buy" id="btn-tier-4" disabled>
-              <span class="btn-cost mono">$500.00K</span>
-            </button>
-          </div>
-        </div>
-
-      </div><!-- /shop-panel-build -->
-
-      <!-- BOOST tab -->
-      <div class="shop-panel" id="shop-panel-boost" hidden>
-
-        <div class="shop-section">
-          <div class="shop-section-title">Marketing</div>
-          <div class="shop-item" id="si-marketing">
-            <div class="si-info">
-              <span class="si-name">Run Ad Campaign</span>
-              <span class="si-desc" id="desc-marketing">Demand 1.00× income</span>
-            </div>
-            <button class="btn-buy" id="btn-marketing" disabled>
-              <span class="btn-cost mono" id="cost-marketing">$--</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="shop-section">
-          <div class="shop-section-title">Upgrades</div>
-          <div id="upgrade-list"><!-- injected by render() --></div>
-        </div>
-
-      </div><!-- /shop-panel-boost -->
-
-      <!-- PRESTIGE tab (hidden until $1M lifetime earned) -->
-      <div class="shop-panel" id="shop-panel-prestige" hidden>
-        <div class="shop-section">
-          <div class="shop-section-title">Prestige</div>
-          <div class="shop-item" id="si-prestige">
-            <div class="si-info">
-              <span class="si-name">Sell the Franchise</span>
-              <span class="si-desc" id="desc-prestige">Reset for a permanent bonus</span>
-            </div>
-            <button class="btn-buy btn-prestige" id="btn-prestige">
-              <span class="btn-cost mono" id="cost-prestige">+0.0×</span>
-            </button>
-          </div>
-        </div>
-      </div><!-- /shop-panel-prestige -->
-
-    </aside><!-- /shop -->
-
-    <!-- Shop backdrop — visible when #shop.is-open -->
-    <div id="shop-backdrop"></div>
+    <!-- Shop sidebar removed in Phase 5 — all actions live in the Upgrade modal -->
 
   </main>
 
@@ -412,6 +389,114 @@
     </div>
   </div>
 
+  <!-- ═══ UPGRADE MODAL ══════════════════════════════════════ -->
+  <div id="upgrade-modal" class="modal hidden">
+    <div class="modal-box upgrade-modal-box">
+      <button class="modal-close" id="btn-upgrade-close">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <h2 class="modal-title">Upgrades</h2>
+
+      <div id="upgrade-tabs">
+        <button class="upgrade-tab is-active" data-upg-tab="build">Build</button>
+        <button class="upgrade-tab" data-upg-tab="equipment">Equipment</button>
+        <button class="upgrade-tab" data-upg-tab="improvements">Improvements</button>
+        <button class="upgrade-tab" data-upg-tab="marketing">Marketing</button>
+      </div>
+
+      <!-- BUILD -->
+      <div class="upgrade-panel is-active" id="upgrade-panel-build">
+        <div class="shop-section">
+          <div class="shop-section-title">Stations</div>
+          <div class="shop-item" id="si-station">
+            <div class="si-info">
+              <span class="si-name">Build Station</span>
+              <span class="si-desc" id="desc-station">+1 station (3 slots)</span>
+            </div>
+            <button class="btn-buy" id="btn-station" disabled>
+              <span class="btn-cost mono" id="cost-station">$--</span>
+            </button>
+          </div>
+        </div>
+        <div class="shop-section">
+          <div class="shop-section-title">Infrastructure</div>
+          <div class="shop-item" id="si-building">
+            <div class="si-info">
+              <span class="si-name">Upgrade Building</span>
+              <span class="si-desc" id="building-desc">Floor cap → 8 stations</span>
+            </div>
+            <button class="btn-buy btn-building" id="btn-building" disabled>
+              <span class="btn-cost mono" id="cost-building">$--</span>
+            </button>
+          </div>
+        </div>
+        <div class="shop-section">
+          <div class="shop-section-title">Drug Tiers</div>
+          <div class="shop-item" id="si-tier-2">
+            <div class="si-info"><span class="si-name">Brand Name</span><span class="si-desc">$40/rx · 4× value</span></div>
+            <button class="btn-buy" id="btn-tier-2" disabled><span class="btn-cost mono">$1.00K</span></button>
+          </div>
+          <div class="shop-item" id="si-tier-3">
+            <div class="si-info"><span class="si-name">Specialty Rx</span><span class="si-desc">$160/rx · 16× value</span></div>
+            <button class="btn-buy" id="btn-tier-3" disabled><span class="btn-cost mono">$25.00K</span></button>
+          </div>
+          <div class="shop-item" id="si-tier-4">
+            <div class="si-info"><span class="si-name">Biologics</span><span class="si-desc">$640/rx · 64× value</span></div>
+            <button class="btn-buy" id="btn-tier-4" disabled><span class="btn-cost mono">$500.00K</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- EQUIPMENT -->
+      <div class="upgrade-panel" id="upgrade-panel-equipment" hidden>
+        <div class="shop-section">
+          <div class="shop-section-title">Station Equipment</div>
+          <div id="station-upgrade-list"><!-- injected --></div>
+        </div>
+      </div>
+
+      <!-- IMPROVEMENTS -->
+      <div class="upgrade-panel" id="upgrade-panel-improvements" hidden>
+        <div class="shop-section">
+          <div class="shop-section-title">One-Time Improvements</div>
+          <div id="upgrade-list"><!-- injected --></div>
+        </div>
+      </div>
+
+      <!-- MARKETING + FRANCHISE RESET -->
+      <div class="upgrade-panel" id="upgrade-panel-marketing" hidden>
+        <div class="shop-section">
+          <div class="shop-section-title">Marketing</div>
+          <div class="shop-item" id="si-marketing">
+            <div class="si-info">
+              <span class="si-name">Run Ad Campaign</span>
+              <span class="si-desc" id="desc-marketing">Demand 1.00× income</span>
+            </div>
+            <button class="btn-buy" id="btn-marketing" disabled>
+              <span class="btn-cost mono" id="cost-marketing">$--</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="shop-section franchise-section" id="franchise-section" style="display:none">
+          <div class="shop-section-title franchise-title">Franchise Reset</div>
+          <p class="franchise-blurb">Sell the franchise and reopen with a permanent income multiplier. Achievements carry over.</p>
+          <div class="shop-item" id="si-prestige">
+            <div class="si-info">
+              <span class="si-name">Sell the Franchise</span>
+              <span class="si-desc" id="desc-prestige">Reset for a permanent bonus</span>
+            </div>
+            <button class="btn-buy btn-prestige" id="btn-prestige">
+              <span class="btn-cost mono" id="cost-prestige">+0.0×</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══ STAFF MODAL ══════════════════════════════════════ -->
   <div id="staff-modal" class="modal hidden">
     <div class="modal-box staff-modal-box">
@@ -422,32 +507,9 @@
       </button>
       <h2 class="modal-title">Edit Staff</h2>
 
-      <!-- Hire section -->
-      <div class="staff-hire-section">
-        <div class="staff-section-label">HIRE STAFF</div>
-        <div class="staff-hire-row">
-          <div class="staff-hire-item" id="shi-fill">
-            <span class="staff-hire-role role-fill">FILL</span>
-            <span class="staff-hire-desc" id="shi-desc-fill">→ unassigned pool</span>
-            <button class="btn-buy staff-hire-btn" id="shi-btn-fill" disabled>
-              <span class="btn-cost mono" id="shi-cost-fill">$--</span>
-            </button>
-          </div>
-          <div class="staff-hire-item" id="shi-check">
-            <span class="staff-hire-role role-check">CHECK</span>
-            <span class="staff-hire-desc" id="shi-desc-check">→ unassigned pool</span>
-            <button class="btn-buy staff-hire-btn" id="shi-btn-check" disabled>
-              <span class="btn-cost mono" id="shi-cost-check">$--</span>
-            </button>
-          </div>
-          <div class="staff-hire-item" id="shi-pack">
-            <span class="staff-hire-role role-pack">PACK</span>
-            <span class="staff-hire-desc" id="shi-desc-pack">→ unassigned pool</span>
-            <button class="btn-buy staff-hire-btn" id="shi-btn-pack" disabled>
-              <span class="btn-cost mono" id="shi-cost-pack">$--</span>
-            </button>
-          </div>
-        </div>
+      <!-- Hire entry point -->
+      <div class="staff-hire-cta">
+        <button class="modal-btn staff-hire-more" id="btn-hire-more">+ Hire More Staff</button>
       </div>
 
       <!-- Unassigned pool -->
@@ -470,6 +532,27 @@
     </div>
   </div>
 
+  <!-- ═══ HIRE MODAL ═════════════════════════════════════════ -->
+  <div id="hire-modal" class="modal hidden">
+    <div class="modal-box hire-modal-box">
+      <button class="modal-close" id="btn-hire-close">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <h2 class="modal-title">Hire Staff</h2>
+      <div class="hire-cap-note" id="hire-cap-note" hidden></div>
+      <div id="hire-tabs">
+        <button class="hire-tab is-active" data-hire-tab="fill">Technicians</button>
+        <button class="hire-tab" data-hire-tab="check">Pharmacists</button>
+        <button class="hire-tab" data-hire-tab="pack">Packers</button>
+      </div>
+      <div class="hire-panel is-active" id="hire-panel-fill"></div>
+      <div class="hire-panel" id="hire-panel-check" hidden></div>
+      <div class="hire-panel" id="hire-panel-pack" hidden></div>
+    </div>
+  </div>
+
   <!-- ═══ TOAST CONTAINER ════════════════════════════════════ -->
   <div id="toast-container"></div>
 
@@ -484,13 +567,11 @@
       </svg>
       Staff
     </button>
-    <button class="mobile-nav-btn" id="mob-btn-shop">
+    <button class="mobile-nav-btn" id="mob-btn-upgrades">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M2 2h1.5l2 7h6l1.5-5H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="7" cy="13" r="1" fill="currentColor"/>
-        <circle cx="11" cy="13" r="1" fill="currentColor"/>
+        <path d="M11.5 2.5a3 3 0 0 0-4 4l-5 5 1.5 1.5 5-5a3 3 0 0 0 4-4l-2 2-1.5-1.5 2-2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
       </svg>
-      Shop
+      Upgrades
     </button>
     <button class="mobile-nav-btn" id="mob-btn-stats">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -605,6 +686,37 @@ const CONFIG = {
   // ── Phase 3: stats time-series sampler
   statsSampleMs:   30_000,
   statsMaxSamples: 400,
+
+  // Hire candidate pools — cosmetic only, no stat differences
+  candidatePool: {
+    fill: [
+      { name: 'Marcus Webb',    title: 'Pharmacy Technician',   bio: 'Methodical counter. Never a short fill.' },
+      { name: 'Priya Nair',     title: 'Certified Tech (CPhT)',  bio: 'Trains the new hires on QA.' },
+      { name: 'Dana Kowalski',  title: 'Dispensing Tech',        bio: 'Fifteen years on the bench.' },
+      { name: 'Theo Brandt',    title: 'Pharmacy Technician',    bio: 'Fast hands, steady counts.' },
+      { name: 'Lena Castillo',  title: 'Lead Technician',        bio: 'Keeps the bench moving.' },
+      { name: 'Omar Haddad',    title: 'Certified Tech (CPhT)',  bio: 'Zero rejected claims last quarter.' },
+      { name: 'Grace Im',       title: 'Pharmacy Technician',    bio: 'Color-codes everything. It works.' },
+    ],
+    check: [
+      { name: 'Dr. Osei',       title: 'Staff Pharmacist',       bio: 'Catches every interaction.' },
+      { name: 'Dr. Yuen',       title: 'PharmD, BCPS',           bio: 'Wrote the DUR policy.' },
+      { name: 'Dr. Reyes',      title: 'Pharmacy Director',      bio: 'Regulators love her.' },
+      { name: 'Dr. Halloran',   title: 'Staff Pharmacist',       bio: 'Unhurried and precise.' },
+      { name: 'Dr. Beckett',    title: 'PharmD',                 bio: 'Counsels every patient.' },
+      { name: 'Dr. Vance',      title: 'Clinical Pharmacist',    bio: 'Reads the chart twice.' },
+      { name: 'Dr. Sato',       title: 'PharmD, BCPS',           bio: 'Quiet, thorough, fast.' },
+    ],
+    pack: [
+      { name: 'Hector Lima',    title: 'Fulfillment Associate',  bio: 'Every label, perfect.' },
+      { name: 'Simone Park',    title: 'Lead Packer',            bio: 'Runs the end-of-day tally unasked.' },
+      { name: 'Jerome Tucker',  title: 'Fulfillment Supervisor', bio: 'Trains the floor in two days.' },
+      { name: 'Bianca Rossi',   title: 'Packer',                 bio: 'Never a mispack.' },
+      { name: 'Cole Mathers',   title: 'Fulfillment Associate',  bio: 'Boxes like a machine.' },
+      { name: 'Aisha Bello',    title: 'Lead Packer',            bio: 'Keeps the totes flowing.' },
+      { name: 'Devon Pratt',    title: 'Packer',                 bio: 'Calm under a full queue.' },
+    ],
+  },
 };
 
 // ─── STATE ────────────────────────────────────────────────────
@@ -1130,7 +1242,7 @@ function startStatsSampler() {
   setInterval(pushStatsSample, CONFIG.statsSampleMs);
 }
 
-function openStatsModal()  { closeShopModal(); renderStats(); el('stats-modal').classList.remove('hidden'); }
+function openStatsModal()  { closeUpgradeModal(); renderStats(); el('stats-modal').classList.remove('hidden'); }
 function closeStatsModal() { el('stats-modal').classList.add('hidden'); }
 
 function renderStats() {
@@ -1191,14 +1303,24 @@ function drawSparkline() {
     `<polyline points="${pts}" fill="none" stroke="#2f7d5b" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
 }
 
-function openShopModal() {
-  el('shop').classList.add('is-open');
-  el('shop-backdrop').classList.add('is-open');
-}
+function openUpgradeModal()  { closeStaffModal(); renderUpgradeModal(); el('upgrade-modal').classList.remove('hidden'); }
+function closeUpgradeModal() { el('upgrade-modal').classList.add('hidden'); }
+function renderUpgradeModal() {
+  renderStationUpgrades();
+  renderUpgradeList();
 
-function closeShopModal() {
-  el('shop').classList.remove('is-open');
-  el('shop-backdrop').classList.remove('is-open');
+  const fs = el('franchise-section');
+  if (fs) {
+    if (prestigeAvailable()) {
+      fs.style.display = '';
+      el('cost-prestige').textContent = `→ ${calcPrestigeMult().toFixed(2)}×`;
+      el('desc-prestige').textContent = state.prestigeCount > 0
+        ? `Reset · ${state.prestigeCount} prior reset(s)`
+        : 'Reset for a permanent bonus';
+    } else {
+      fs.style.display = 'none';
+    }
+  }
 }
 
 function wireShop() {
@@ -1225,12 +1347,20 @@ function wireShop() {
   el('stats-modal'    ).addEventListener('click', (e) => {
     if (e.target.id === 'stats-modal') closeStatsModal();
   });
-  el('btn-shop'      ).addEventListener('click', openShopModal);
-  el('btn-shop-close').addEventListener('click', closeShopModal);
-  el('shop-backdrop' ).addEventListener('click', closeShopModal);
-  el('mob-btn-staff' ).addEventListener('click', openStaffModal);
-  el('mob-btn-shop'  ).addEventListener('click', openShopModal);
-  el('mob-btn-stats' ).addEventListener('click', openStatsModal);
+  el('btn-upgrades'    ).addEventListener('click', openUpgradeModal);
+  el('mob-btn-staff'   ).addEventListener('click', openStaffModal);
+  el('mob-btn-upgrades').addEventListener('click', openUpgradeModal);
+  el('mob-btn-stats'   ).addEventListener('click', openStatsModal);
+  // Header pills → staff modal
+  ['fill','check','pack'].forEach(role =>
+    el(`ua-${role}`).addEventListener('click', openStaffModal));
+  // Mobile header row toggle
+  el('header-row-toggle').addEventListener('click', () => {
+    const row = el('header-pills-row');
+    const collapsed = row.classList.toggle('is-collapsed');
+    el('header-row-toggle').setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    el('header-row-toggle').classList.toggle('is-collapsed', collapsed);
+  });
   // Tier tab delegation
   el('tier-tabs').addEventListener('click', (e) => {
     const tab = e.target.closest('.tier-tab');
@@ -1238,35 +1368,20 @@ function wireShop() {
     activeTierTab = parseInt(tab.dataset.tier);
     render();
   });
-  // Shop tab switching
-  el('shop-tabs').addEventListener('click', (e) => {
-    const tab = e.target.closest('.shop-tab');
+  // Upgrade modal tab switching (panels built in 5B)
+  el('upgrade-tabs').addEventListener('click', (e) => {
+    const tab = e.target.closest('.upgrade-tab');
     if (!tab || tab.hidden) return;
-    const target = tab.dataset.tab;
-    document.querySelectorAll('.shop-tab').forEach(t => t.classList.toggle('is-active', t.dataset.tab === target));
-    document.querySelectorAll('.shop-panel').forEach(p => { p.hidden = !p.id.endsWith(target); });
+    const target = tab.dataset.upgTab;
+    document.querySelectorAll('.upgrade-tab').forEach(t => t.classList.toggle('is-active', t.dataset.upgTab === target));
+    document.querySelectorAll('.upgrade-panel').forEach(p =>
+      p.hidden = (p.id !== `upgrade-panel-${target}`));
   });
-  // Stats bar toggle
-  el('stats-bar-toggle').addEventListener('click', () => {
-    const expanded = el('stats-bar-expanded');
-    const isHidden = expanded.hidden;
-    expanded.hidden = !isHidden;
-    el('stats-bar-toggle').setAttribute('aria-expanded', isHidden ? 'true' : 'false');
-    el('stats-bar-toggle').classList.toggle('is-open', isHidden);
-    try { localStorage.setItem('idleRx_statsBar', isHidden ? '1' : '0'); } catch(e) {}
+  el('btn-upgrade-close').addEventListener('click', closeUpgradeModal);
+  el('upgrade-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'upgrade-modal') closeUpgradeModal();
   });
-  // Restore stats bar preference
-  try {
-    if (localStorage.getItem('idleRx_statsBar') === '1') {
-      el('stats-bar-expanded').hidden = false;
-      el('stats-bar-toggle').classList.add('is-open');
-      el('stats-bar-toggle').setAttribute('aria-expanded', 'true');
-    }
-  } catch(e) {}
-  // Hire buttons in staff modal
-  el('shi-btn-fill' ).addEventListener('click', () => hireWorker('fill'));
-  el('shi-btn-check').addEventListener('click', () => hireWorker('check'));
-  el('shi-btn-pack' ).addEventListener('click', () => hireWorker('pack'));
+  // Hire flow wired in 5C (wireHireModal)
 }
 
 function openPrestigeModal() {
@@ -1313,11 +1428,44 @@ function showOfflineModal(earned, elapsed) {
 function el(id) { return document.getElementById(id); }
 
 // ─── TIER LINE PANEL ──────────────────────────────────────────
-let activeTierTab = 1;
+let activeTierTab = 1;            // the "view tier" — drives floor scene + assignment. NOT persisted.
+function viewTier() { return activeTierTab; }
 
 let _tierPanelSig = '';
 let _upgradeListSig = '';
 let _stationUpgradeSig = '';
+let _figuresSig = { fill: '', check: '', pack: '' };
+
+// ─── FLOOR SCENE FIGURES ──────────────────────────────────────
+// Density display for a station cluster.
+// Sparse 1–3 = N figures; Packed 4–8 = 3 + badge; Dense 9+ = 3 + glow badge.
+function renderFigures(role) {
+  const container = el(`figures-${role}`);
+  if (!container) return;
+  const n   = state.staffPerTier[viewTier()]?.[role] || 0;
+  const sig = role + ':' + n;
+  if (_figuresSig[role] === sig) return;   // no change → skip rebuild (keeps hop delays stable)
+  _figuresSig[role] = sig;
+
+  let figs, badge = '', dense = false;
+  if (n <= 3)      { figs = n; }
+  else if (n <= 8) { figs = 3; badge = n; }
+  else             { figs = 3; badge = n; dense = true; }
+
+  container.classList.toggle('is-dense', dense);
+  container.classList.toggle('is-empty', n === 0);
+
+  let html = '';
+  for (let i = 0; i < figs; i++) {
+    const delay = (Math.random() * 4).toFixed(2);
+    const dur   = (3.6 + Math.random() * 1.6).toFixed(2);
+    html += `<span class="worker-fig" style="--hop-delay:${delay}s;--hop-dur:${dur}s">
+        <svg viewBox="0 0 40 56"><use href="#worker-${role}"/></svg>
+      </span>`;
+  }
+  if (badge) html += `<span class="fig-badge ${dense ? 'is-dense ' : ''}role-${role}">×${badge}</span>`;
+  container.innerHTML = html || '<span class="cluster-empty-hint"></span>';
+}
 
 function renderTierLinePanel() {
   // Update tab states (cheap, safe every tick)
@@ -1424,7 +1572,94 @@ function renderStationUpgrades() {
 }
 
 // ─── STAFF MODAL ──────────────────────────────────────────────
-function openStaffModal()  { closeShopModal(); renderStaffModal(); el('staff-modal').classList.remove('hidden'); }
+// ─── HIRE MODAL ───────────────────────────────────────────────
+// Pick `n` distinct random candidates from a role pool.
+function pickCandidates(role, n) {
+  const pool = (CONFIG.candidatePool[role] || []).slice();
+  for (let i = pool.length - 1; i > 0; i--) {       // Fisher–Yates
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, Math.min(n, pool.length));
+}
+
+function renderHirePanel(role) {
+  const panel = el(`hire-panel-${role}`);
+  if (!panel) return;
+  const cost   = staffCost(role);
+  const atCap  = freeStaffSlots() <= 0;
+  const canHire = !atCap && state.money >= cost;
+
+  const n = 2 + Math.floor(Math.random() * 2);       // 2 or 3
+  const cands = pickCandidates(role, n);
+
+  panel.innerHTML = cands.map(c =>
+    `<div class="hire-card">
+      <div class="hire-card-figure">
+        <svg viewBox="0 0 40 56" class="hire-figure role-${role}"><use href="#worker-${role}"/></svg>
+      </div>
+      <div class="hire-card-name">${c.name}</div>
+      <div class="hire-card-title">${c.title}</div>
+      <div class="hire-card-bio">${c.bio}</div>
+      <button class="btn-buy hire-card-btn" data-hire-role="${role}" ${canHire ? '' : 'disabled'}>
+        <span class="btn-cost mono">$${fmt(cost)}</span>
+      </button>
+    </div>`
+  ).join('');
+
+  panel.querySelectorAll('[data-hire-role]').forEach(b =>
+    b.addEventListener('click', () => {
+      hireWorker(b.dataset.hireRole);
+      renderHireModal();
+      render();
+    }));
+}
+
+function renderHireModal() {
+  const atCap = freeStaffSlots() <= 0;
+  const note  = el('hire-cap-note');
+  if (note) {
+    note.hidden = !atCap;
+    note.textContent = atCap ? 'Station capacity full — build more stations to hire.' : '';
+  }
+  for (const role of ['fill','check','pack']) renderHirePanel(role);
+}
+
+function openHireModal()  { renderHireModal(); el('hire-modal').classList.remove('hidden'); }
+function closeHireModal() { el('hire-modal').classList.add('hidden'); }
+
+// ─── SCENE CARD CONTROLS ─────────────────────────────────────
+function wireSceneCards() {
+  for (const role of ['fill','check','pack']) {
+    el(`ctrl-${role}-plus` ).addEventListener('click', () => { assignWorker(viewTier(), role);   render(); });
+    el(`ctrl-${role}-minus`).addEventListener('click', () => { unassignWorker(viewTier(), role); render(); });
+  }
+  el('btn-floor-toggle').addEventListener('click', toggleDenseView);
+}
+
+function toggleDenseView() {
+  const dense = el('pipeline-wrap').hidden;   // currently hidden → switching TO dense
+  el('pipeline-wrap').hidden = !dense;
+  el('floor-scene').hidden   = dense;
+  try { localStorage.setItem('idleRx_denseView', dense ? '1' : '0'); } catch(e) {}
+}
+
+function wireHireModal() {
+  el('btn-hire-more').addEventListener('click', openHireModal);
+  el('btn-hire-close').addEventListener('click', closeHireModal);
+  el('hire-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'hire-modal') closeHireModal();
+  });
+  el('hire-tabs').addEventListener('click', (e) => {
+    const tab = e.target.closest('.hire-tab');
+    if (!tab) return;
+    const target = tab.dataset.hireTab;
+    document.querySelectorAll('.hire-tab').forEach(t => t.classList.toggle('is-active', t.dataset.hireTab === target));
+    document.querySelectorAll('.hire-panel').forEach(p => p.hidden = (p.id !== `hire-panel-${target}`));
+  });
+}
+
+function openStaffModal()  { closeUpgradeModal(); renderStaffModal(); el('staff-modal').classList.remove('hidden'); }
 function closeStaffModal() { el('staff-modal').classList.add('hidden'); }
 
 function renderStaffModal() {
@@ -1533,18 +1768,6 @@ function patchStaffModal() {
   }
   const capNote = el('staff-cap-note');
   if (capNote) capNote.textContent = `${totalStaffAll()}/${maxStaff()} staff slots used`;
-  // Hire buttons
-  for (const role of ['fill','check','pack']) {
-    const cost   = staffCost(role);
-    const noSlot = freeStaffSlots() <= 0;
-    const btn    = el(`shi-btn-${role}`);
-    const desc   = el(`shi-desc-${role}`);
-    const costEl = el(`shi-cost-${role}`);
-    if (!btn) continue;
-    if (costEl) costEl.textContent = '$' + fmt(cost);
-    if (desc)   desc.textContent   = noSlot ? 'No free slots' : '→ unassigned pool';
-    btn.disabled = noSlot || state.money < cost;
-  }
 }
 
 // ─── MODULE-LEVEL ANIMATION STATE ────────────────────────────
@@ -1602,6 +1825,22 @@ function renderToteStack(elementId, bufferValue, throughput, roleColor) {
   }
 }
 
+// ─── BACKLOG BADGE ────────────────────────────────────────────
+// Returns true if level is red (triggers belt-backup class).
+// green <5s, yellow 5–15s, red >15s of queue vs downstream rate.
+function renderBacklog(badgeId, bufferValue, downstreamRate) {
+  const badge = el(badgeId);
+  if (!badge) return false;
+  const secs  = downstreamRate > 0 ? bufferValue / downstreamRate : (bufferValue > 0 ? Infinity : 0);
+  let level   = 'green';
+  if (secs > 15)     level = 'red';
+  else if (secs >= 5) level = 'yellow';
+  badge.textContent = fmtRx(bufferValue);
+  badge.dataset.level = level;
+  badge.classList.toggle('is-empty', bufferValue < 0.5);
+  return level === 'red';
+}
+
 // ─── CONVEYOR BELT ────────────────────────────────────────────
 function renderConveyor() {
   const now = Date.now();
@@ -1616,13 +1855,17 @@ function renderConveyor() {
   const speed          = Math.max(1.5, 8 - tp * 0.65).toFixed(2);
   const activePills    = tp < 0.05 ? 0 : Math.min(12, Math.max(1, Math.round(tp * 1.8)));
 
-  document.querySelectorAll('.belt-pill').forEach((pill, i) => {
+  // Determine red backup state from scene-belt class (set by renderBacklog)
+  const redBackup = el('scene-belt')?.classList.contains('belt-backup');
+
+  document.querySelectorAll('#scene-belt-lane .belt-pill, #belt-lane .belt-pill').forEach((pill, i) => {
     const active = i < activePills;
     pill.classList.toggle('is-active', active);
+    pill.classList.toggle('is-backup', active && redBackup);
     if (active) {
       const offset = (i / activePills * 100).toFixed(1);
       pill.style.setProperty('--belt-offset', offset + '%');
-      pill.style.setProperty('--belt-speed', speed + 's');
+      pill.style.setProperty('--belt-speed', (redBackup ? (parseFloat(speed) * 1.8).toFixed(2) : speed) + 's');
       pill.style.color = beltColor;
     }
   });
@@ -1645,7 +1888,10 @@ function flushMoneyPops() {
     _popPoolIdx++;
     pop.textContent = '+$' + Math.round(accum);
     pop.style.color = tierColors[tier - 1];
-    pop.style.setProperty('--pop-x', (Math.random() * 40 - 20).toFixed(0) + 'px');
+    const laneX = [-52, -18, 18, 52][tier - 1];
+    const jitter = Math.round(Math.random() * 10 - 5);
+    pop.style.setProperty('--pop-x', (laneX + jitter) + 'px');
+    pop.style.setProperty('--pop-y', ([0, -8, -4, -12][tier - 1]) + 'px');
     pop.classList.remove('is-animating');
     void pop.offsetWidth;
     pop.classList.add('is-animating');
@@ -1713,19 +1959,57 @@ function render() {
   renderToteStack('totes-fill',  aggFillToCheck, aggStageRate('check'), 'var(--role-fill)');
   renderToteStack('totes-check', aggCheckToPack, aggStageRate('pack'),  'var(--role-check)');
 
+  // ── Scene totes + backlog badges (must run before renderConveyor reads belt-backup) ──
+  const redFill  = renderBacklog('scene-backlog-fill',  aggFillToCheck, aggStageRate('check'));
+  const redCheck = renderBacklog('scene-backlog-check', aggCheckToPack, aggStageRate('pack'));
+  renderToteStack('scene-totes-fill',  aggFillToCheck, aggStageRate('check'), 'var(--role-fill)');
+  renderToteStack('scene-totes-check', aggCheckToPack, aggStageRate('pack'),  'var(--role-check)');
+  el('scene-belt')?.classList.toggle('belt-backup', redFill || redCheck);
+
   // ── Conveyor belt ──
   renderConveyor();
 
   // ── Money pops ──
   flushMoneyPops();
 
-  // ── Floor roster ──
-  el('r-stations' ).textContent = `${state.stationsOwned}/${maxStations(state.buildingLevel)}`;
-  el('r-capacity' ).textContent = maxStaff();
-  el('r-ua-fill'  ).textContent = state.unassignedStaff.fill  || 0;
-  el('r-ua-check' ).textContent = state.unassignedStaff.check || 0;
-  el('r-ua-pack'  ).textContent = state.unassignedStaff.pack  || 0;
-  el('r-free'     ).textContent = freeStaffSlots();
+  // ── Header unassigned pills ──
+  for (const role of ['fill','check','pack']) {
+    const count = state.unassignedStaff[role] || 0;
+    const pill  = el(`ua-${role}`);
+    if (pill) {
+      if (pill.textContent !== String(count)) {
+        pill.textContent = count;
+        // brief pulse when a new worker lands in the pool
+        if (count > (pill._lastCount ?? 0)) {
+          pill.classList.remove('pulse'); void pill.offsetWidth; pill.classList.add('pulse');
+        }
+        pill._lastCount = count;
+      }
+      pill.classList.toggle('is-empty', count === 0);
+    }
+  }
+
+  // ── Dense-view roster (only when present) ──
+  if (el('r-stations')) {
+    el('r-stations').textContent = `${state.stationsOwned}/${maxStations(state.buildingLevel)}`;
+    el('r-capacity').textContent = maxStaff();
+    el('r-free').textContent     = freeStaffSlots();
+  }
+
+  // ── Floor scene ──
+  for (const role of ['fill','check','pack']) {
+    renderFigures(role);
+    const tier   = viewTier();
+    const cnt    = state.staffPerTier[tier]?.[role] || 0;
+    const canAdd = (state.unassignedStaff[role] || 0) > 0;
+    el(`ctrl-${role}-count`).textContent    = cnt;
+    el(`ctrl-${role}-plus`).disabled        = !canAdd;
+    el(`ctrl-${role}-minus`).disabled       = cnt <= 0;
+    el(`scene-rate-${role}`).textContent    = stageRate(tier, role).toFixed(2);
+  }
+  // view-tier color strip
+  const strip = el('scene-tier-strip');
+  if (strip) strip.style.background = `var(--tier-${viewTier()})`;
 
   // ── Tier line panel ──
   renderTierLinePanel();
@@ -1775,44 +2059,38 @@ function render() {
   // ── Upgrades (signature-gated rebuild) ──
   renderUpgradeList();
 
-  // ── Prestige ──
-  const showPrestige = prestigeAvailable();
-  const prestigeTab = el('shop-tab-prestige');
-  if (prestigeTab) prestigeTab.hidden = !showPrestige;
-  if (showPrestige) {
-    const m = calcPrestigeMult();
-    el('cost-prestige').textContent = `→ ${m.toFixed(2)}×`;
-    el('desc-prestige').textContent = state.prestigeCount > 0
-      ? `Reset · ${state.prestigeCount} prior reset(s)`
-      : 'Reset for a permanent bonus';
-    // Only show prestige panel if prestige tab is currently active
-    const prestigePanelActive = !el('shop-panel-prestige').hidden;
-    if (!prestigePanelActive) el('shop-panel-prestige').hidden = true;
-  } else {
-    el('shop-panel-prestige').hidden = true;
-    // If prestige panel was active, fall back to Build tab
-    if (!el('shop-panel-build').hidden === false) {
-      el('shop-panel-build').hidden = false;
-      document.querySelectorAll('.shop-tab').forEach(t =>
-        t.classList.toggle('is-active', t.dataset.tab === 'build'));
+  // ── Prestige availability flag (Upgrade modal reads this) ──
+  // Franchise Reset section visibility handled in renderUpgradeModal().
+
+  // ── Franchise Reset visibility (Upgrade modal open) ──
+  if (!el('upgrade-modal').classList.contains('hidden')) {
+    const fs = el('franchise-section');
+    if (fs) {
+      const avail = prestigeAvailable();
+      fs.style.display = avail ? '' : 'none';
+      if (avail) {
+        el('cost-prestige').textContent = `→ ${calcPrestigeMult().toFixed(2)}×`;
+      }
     }
   }
 }
 
 // ─── INIT CONVEYOR + MONEY POPS ──────────────────────────────
 function initConveyor() {
-  const lane = el('belt-lane');
-  if (!lane) return;
-  for (let i = 0; i < 12; i++) {
-    const pill = document.createElement('div');
-    pill.className = 'belt-pill';
-    pill.dataset.poolIdx = i;
-    pill.innerHTML =
-      `<svg width="10" height="16" viewBox="0 0 10 16">` +
-        `<rect x="1" y="4" width="8" height="10" rx="3" fill="currentColor"/>` +
-        `<rect x="2" y="1" width="6" height="5" rx="2" fill="currentColor" opacity="0.6"/>` +
-      `</svg>`;
-    lane.appendChild(pill);
+  for (const laneId of ['belt-lane', 'scene-belt-lane']) {
+    const lane = el(laneId);
+    if (!lane) continue;
+    for (let i = 0; i < 12; i++) {
+      const pill = document.createElement('div');
+      pill.className = 'belt-pill';
+      pill.dataset.poolIdx = i;
+      pill.innerHTML =
+        `<svg width="10" height="16" viewBox="0 0 10 16">` +
+          `<rect x="1" y="4" width="8" height="10" rx="3" fill="currentColor"/>` +
+          `<rect x="2" y="1" width="6" height="5" rx="2" fill="currentColor" opacity="0.6"/>` +
+        `</svg>`;
+      lane.appendChild(pill);
+    }
   }
 }
 
@@ -1841,8 +2119,19 @@ function init() {
   window.addEventListener('beforeunload', save);
 
   wireShop();
+  wireHireModal();
+  wireSceneCards();
   initConveyor();
   initMoneyPops();
+
+  // Restore dense-view preference
+  try {
+    if (localStorage.getItem('idleRx_denseView') === '1') {
+      el('pipeline-wrap').hidden = false;
+      el('floor-scene').hidden   = true;
+    }
+  } catch(e) {}
+
   startGameLoop();
   startStatsSampler();
 
