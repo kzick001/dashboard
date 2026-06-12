@@ -362,6 +362,11 @@ function updateNavActive() {
   document.querySelectorAll('.mobile-nav-btn[data-route]').forEach(el => {
     el.classList.toggle('active', el.dataset.route === routeBase);
   });
+  // Profile btn has no data-route — highlight when on profile or settings
+  const profileBtn = document.getElementById('mobile-profile-btn');
+  if (profileBtn) {
+    profileBtn.classList.toggle('active', routeBase === 'profile' || routeBase === 'settings');
+  }
 }
 
 /* ------------------------------------------------------------ mobile sheet */
@@ -533,15 +538,19 @@ async function handleAuthSubmit(e, mode) {
 
 /* ------------------------------------------------------------ router */
 const ROUTES = [
-  { pattern: /^home$|^$/, view: viewHome },
-  { pattern: /^recipe\/(.+)$/, view: viewRecipe, param: 1 },
-  { pattern: /^my-recipes$/, view: viewMyRecipes },
-  { pattern: /^components$/, view: viewComponents },
-  { pattern: /^builder$/, view: viewBuilder },
-  { pattern: /^profile\/(.+)$/, view: viewProfile, param: 1 },
-  { pattern: /^settings$/, view: viewSettings },
-  { pattern: /^admin$/, view: viewAdmin },
+  { pattern: /^home$|^$/, view: viewHome, title: 'Recipes' },
+  { pattern: /^recipe\/(.+)$/, view: viewRecipe, param: 1, title: null }, // set dynamically
+  { pattern: /^my-recipes$/, view: viewMyRecipes, title: 'My Recipes' },
+  { pattern: /^components$/, view: viewComponents, title: 'Components' },
+  { pattern: /^builder$/, view: viewBuilder, title: 'Meal Builder' },
+  { pattern: /^profile\/(.+)$/, view: viewProfile, param: 1, title: null }, // set dynamically
+  { pattern: /^settings$/, view: viewSettings, title: 'Settings' },
+  { pattern: /^admin$/, view: viewAdmin, title: 'Admin' },
 ];
+
+function setPageTitle(title) {
+  document.title = title ? `${title} — Cooksmith` : 'Cooksmith';
+}
 
 function route(hash) {
   if (hash && hash !== location.hash) {
@@ -560,6 +569,7 @@ function router() {
       const param = r.param ? m[r.param] : undefined;
       AppState.currentView = raw.split('/')[0];
       setSidebar(false);
+      if (r.title) setPageTitle(r.title);
       r.view(param);
       updateNavActive();
       return;
@@ -571,6 +581,27 @@ function router() {
 }
 
 window.addEventListener('hashchange', router);
+
+// Warn on navigate-away from builder with unsaved work
+window.addEventListener('hashchange', (e) => {
+  const leaving = (new URL(e.oldURL)).hash === '#builder';
+  if (leaving && builderMeal.length > 0) {
+    // hashchange already fired; we can't cancel it, but we can bounce back
+    // and show a confirm modal instead
+    const newHash = (new URL(e.newURL)).hash;
+    history.replaceState(null, '', e.oldURL);
+    showConfirmModal({
+      title: 'Leave Meal Builder?',
+      body: `You have ${builderMeal.length} component${builderMeal.length !== 1 ? 's' : ''} assembled that haven't been saved as a recipe.`,
+      confirmLabel: 'Leave anyway',
+      danger: false,
+      onConfirm: async () => {
+        builderMeal = [];
+        location.hash = newHash;
+      },
+    });
+  }
+});
 
 /* ------------------------------------------------------------ sidebar helper */
 function setSidebar(visible, contentHtml = '') {
@@ -704,10 +735,18 @@ function renderFeedCards(items) {
   const grid = document.getElementById('home-grid');
   if (!grid) return;
   if (!items.length) {
+    const isGuest = !AppState.currentUser;
     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
       ${icon('book')}
       <div class="empty-state-title">No recipes found</div>
-      <div class="empty-state-body">Try a different tag or search term.</div>
+      <div class="empty-state-body">${isGuest
+        ? 'Create an account to start publishing your own recipes.'
+        : 'Try a different tag or search term, or create your first recipe.'
+      }</div>
+      ${isGuest
+        ? `<button class="btn btn-primary" onclick="showAuthModal('register')">Create account</button>`
+        : `<a href="#my-recipes" class="btn btn-primary">${icon('plus')} New Recipe</a>`
+      }
     </div>`;
     return;
   }
@@ -757,13 +796,20 @@ function skeletonCards(n) {
 
 /* ------------------------------------------------------------ Recipe Detail */
 function viewRecipe(slug) {
-  setView(`<div class="empty-state">${skeletonCards(1)}</div>`);
+  setView(`<div style="max-width:720px;display:flex;flex-direction:column;gap:var(--s4);">
+    <div class="skeleton skeleton-card" style="height:300px;border-radius:var(--r2);"></div>
+    <div class="skeleton skeleton-title"></div>
+    <div class="skeleton skeleton-text" style="width:40%;"></div>
+    <div class="skeleton skeleton-text"></div>
+    <div class="skeleton skeleton-text" style="width:75%;"></div>
+  </div>`);
   loadRecipeDetail(slug);
 }
 
 async function loadRecipeDetail(slug) {
   try {
     const { recipe, components } = await api('GET', `/recipes/${slug}`);
+    setPageTitle(recipe.name);
     const tags = safeParseJSON(recipe.tags, []);
     const isOwner = AppState.currentUser?.id === recipe.user_id;
 
@@ -827,7 +873,7 @@ async function loadRecipeDetail(slug) {
             </div>
           </div>
           ${isOwner ? `<div style="display:flex;gap:var(--s2);">
-            <a href="#my-recipes" class="btn btn-ghost btn-sm">${icon('edit')} Edit</a>
+            <button class="btn btn-ghost btn-sm" id="recipe-detail-edit-btn">${icon('edit')} Edit</button>
           </div>` : ''}
         </div>
 
@@ -869,6 +915,13 @@ async function loadRecipeDetail(slug) {
         saveProgress(progressKey, recipe.id);
       });
     });
+
+    // Edit button (owner only)
+    if (isOwner) {
+      document.getElementById('recipe-detail-edit-btn')?.addEventListener('click', () => {
+        showRecipeModal(recipe);
+      });
+    }
 
     // Extract as Component buttons
     document.querySelectorAll('.comp-extract-btn').forEach(btn => {
@@ -1405,13 +1458,18 @@ async function showRecipeModal(existing = null) {
 
     const name = overlay.querySelector('#rm-name').value.trim();
     if (!name) { errEl.textContent = 'Recipe name is required.'; errEl.classList.remove('hidden'); return; }
+    if (name.length > 120) { errEl.textContent = 'Recipe name must be 120 characters or less.'; errEl.classList.remove('hidden'); return; }
 
     const tagsRaw = overlay.querySelector('#rm-tags').value;
+    const tagsClean = tagsRaw.split(',').map(t => t.trim().toLowerCase()).filter(t => t.length > 0 && t.length <= 40);
+    const servingsRaw = parseInt(overlay.querySelector('#rm-servings').value, 10);
+    const servings = isNaN(servingsRaw) || servingsRaw < 1 ? 1 : Math.min(servingsRaw, 100);
+
     const body = {
       name,
       description: overlay.querySelector('#rm-description').value.trim(),
-      servings: parseInt(overlay.querySelector('#rm-servings').value, 10) || 1,
-      tags: tagsRaw.split(',').map(t => t.trim()).filter(Boolean),
+      servings,
+      tags: tagsClean,
       notes: overlay.querySelector('#rm-notes').value.trim(),
       components: mealRows.map(r => ({ component_id: r.component_id, sort_order: r.sort_order })),
     };
@@ -2081,40 +2139,64 @@ function showBuilderSaveModal() {
 
 /* ------------------------------------------------------------ Profile */
 function viewProfile(username) {
-  setView(`<div class="empty-state">${skeletonCards(2)}</div>`);
+  setView(`<div class="empty-state" style="padding:var(--s16);">${icon('user')}</div>`);
   loadProfile(username);
 }
 
 async function loadProfile(username) {
   try {
     const { user, recipes } = await api('GET', `/users/${username}`);
+    setPageTitle(user.username);
+    const isOwn = AppState.currentUser?.username === username;
     const avatarHtml = user.avatar_url
       ? `<img src="${user.avatar_url}" alt="${user.username}">`
       : icon('user');
 
+    // If own profile, also load drafts count via /recipes/mine
+    let draftCount = 0;
+    if (isOwn) {
+      try {
+        const mine = await api('GET', '/recipes/mine');
+        draftCount = (mine.items || []).filter(r => r.visibility === 'draft').length;
+      } catch { /* non-fatal */ }
+    }
+
+    const joinYear = user.created_at ? new Date(user.created_at).getFullYear() : null;
+
     setView(`
       <div class="profile-header">
-        <div class="profile-avatar">${avatarHtml}</div>
+        <div class="profile-avatar" style="width:80px;height:80px;font-size:0;">${avatarHtml}</div>
         <div class="profile-info">
           <div class="profile-name">${user.username}</div>
           ${user.bio ? `<div class="profile-bio">${user.bio}</div>` : ''}
+          <div style="display:flex;align-items:center;gap:var(--s4);margin-top:var(--s3);flex-wrap:wrap;">
+            <span class="data-time" style="font-size:.8rem;">${icon('book')} ${recipes.length} published recipe${recipes.length !== 1 ? 's' : ''}</span>
+            ${isOwn && draftCount ? `<span class="data-time" style="font-size:.8rem;">${icon('edit')} ${draftCount} draft${draftCount !== 1 ? 's' : ''}</span>` : ''}
+            ${joinYear ? `<span class="data-time" style="font-size:.8rem;">${icon('clock')} Member since ${joinYear}</span>` : ''}
+          </div>
         </div>
-        ${AppState.currentUser?.username === username
-          ? `<a href="#settings" class="btn btn-ghost btn-sm">${icon('settings')} Edit profile</a>`
-          : ''}
+        ${isOwn ? `<a href="#settings" class="btn btn-ghost btn-sm">${icon('settings')} Edit profile</a>` : ''}
       </div>
+
       <div class="section-title">Published Recipes</div>
       <div class="card-grid">
         ${recipes.length
           ? recipes.map(r => recipeCard({ ...r, author_username: username })).join('')
           : `<div class="empty-state" style="grid-column:1/-1">
               ${icon('book')}
-              <div class="empty-state-title">No published recipes</div>
+              <div class="empty-state-title">No published recipes yet</div>
+              ${isOwn ? `<div class="empty-state-body">Publish a recipe from My Recipes to show it here.</div>
+                <a href="#my-recipes" class="btn btn-ghost">Go to My Recipes</a>` : ''}
              </div>`}
       </div>
     `);
   } catch (err) {
-    setView(`<div class="empty-state"><div class="empty-state-title">User not found.</div></div>`);
+    setView(`<div class="empty-state">
+      ${icon('user')}
+      <div class="empty-state-title">User not found</div>
+      <div class="empty-state-body">This profile doesn't exist or has been removed.</div>
+      <a href="#home" class="btn btn-ghost">Back to recipes</a>
+    </div>`);
   }
 }
 
@@ -2122,6 +2204,11 @@ async function loadProfile(username) {
 function viewSettings() {
   if (!requireAuth()) return;
   const user = AppState.currentUser;
+
+  const avatarHtml = user.avatar_url
+    ? `<img src="${user.avatar_url}" alt="${user.username}" id="settings-avatar-img">`
+    : `<span id="settings-avatar-img">${icon('user')}</span>`;
+
   setView(`
     <div class="view-header">
       <div class="view-title">Settings</div>
@@ -2130,61 +2217,111 @@ function viewSettings() {
     <div class="settings-section">
       <div class="settings-section-title">Profile</div>
       <div style="display:flex;flex-direction:column;gap:var(--s4);">
+        <div style="display:flex;align-items:center;gap:var(--s4);">
+          <div class="profile-avatar" style="width:64px;height:64px;">${avatarHtml}</div>
+          <div>
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer;">
+              ${icon('upload')} Change avatar
+              <input type="file" id="avatar-file" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none;" />
+            </label>
+            <div class="text-sm text-muted" style="margin-top:4px;" id="avatar-status"></div>
+          </div>
+        </div>
         <div class="form-group">
           <label for="set-username">Username</label>
-          <input type="text" id="set-username" value="${user.username}" />
+          <input type="text" id="set-username" value="${user.username}" maxlength="40" />
+        </div>
+        <div class="form-group">
+          <label for="set-email">Email</label>
+          <input type="email" id="set-email" value="${user.email || ''}" disabled
+            style="opacity:0.5;cursor:not-allowed;" />
+          <span class="form-hint">Email cannot be changed.</span>
         </div>
         <div class="form-group">
           <label for="set-bio">Bio</label>
-          <textarea id="set-bio">${user.bio || ''}</textarea>
+          <textarea id="set-bio" maxlength="1000">${user.bio || ''}</textarea>
         </div>
-        <div><button class="btn btn-primary" id="save-profile-btn">Save profile</button></div>
-        <div class="form-error hidden" id="profile-error"></div>
+        <div style="display:flex;align-items:center;gap:var(--s3);">
+          <button class="btn btn-primary" id="save-profile-btn">Save profile</button>
+          <div class="form-error hidden" id="profile-error"></div>
+        </div>
       </div>
     </div>
 
     <div class="settings-section">
       <div class="settings-section-title">Change Password</div>
-      <div style="display:flex;flex-direction:column;gap:var(--s4);">
+      <div style="display:flex;flex-direction:column;gap:var(--s4);max-width:400px;">
         <div class="form-group">
           <label for="set-cur-pw">Current password</label>
-          <input type="password" id="set-cur-pw" />
+          <input type="password" id="set-cur-pw" autocomplete="current-password" />
         </div>
         <div class="form-group">
           <label for="set-new-pw">New password</label>
-          <input type="password" id="set-new-pw" />
+          <input type="password" id="set-new-pw" autocomplete="new-password" />
         </div>
         <div class="form-group">
           <label for="set-confirm-pw">Confirm new password</label>
-          <input type="password" id="set-confirm-pw" />
+          <input type="password" id="set-confirm-pw" autocomplete="new-password" />
         </div>
-        <div><button class="btn btn-primary" id="save-pw-btn">Change password</button></div>
-        <div class="form-error hidden" id="pw-error"></div>
+        <div style="display:flex;align-items:center;gap:var(--s3);">
+          <button class="btn btn-primary" id="save-pw-btn">Change password</button>
+          <div class="form-error hidden" id="pw-error"></div>
+        </div>
       </div>
     </div>
 
     <div class="settings-section danger-zone">
       <div class="danger-zone-title">Delete Account</div>
-      <div class="danger-zone-body">This permanently deletes your account and all recipes. Type your username to confirm.</div>
-      <div class="form-group" style="margin-bottom:var(--s3);">
-        <input type="text" id="delete-confirm" placeholder="${user.username}" />
-      </div>
+      <div class="danger-zone-body">Permanently deletes your account, all recipes, and all components. This cannot be undone.</div>
       <button class="btn btn-danger" id="delete-account-btn">${icon('trash')} Delete my account</button>
-      <div class="form-error hidden" id="delete-error"></div>
     </div>
   `);
 
+  // Avatar upload
+  document.getElementById('avatar-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const statusEl = document.getElementById('avatar-status');
+    statusEl.textContent = 'Uploading…';
+    statusEl.style.color = 'var(--text-muted)';
+    try {
+      const { uploadUrl, deliveryUrl } = await api('POST', '/users/me/avatar', {
+        contentType: file.type, size: file.size,
+      });
+      await uploadImage(uploadUrl, file);
+      const { user: updated } = await api('PUT', '/users/me', { avatar_url: deliveryUrl });
+      AppState.currentUser = updated;
+      renderNav();
+      // Update avatar preview in place
+      const avatarEl = document.getElementById('settings-avatar-img');
+      if (avatarEl) {
+        const img = document.createElement('img');
+        img.src = deliveryUrl;
+        img.alt = updated.username;
+        img.id = 'settings-avatar-img';
+        avatarEl.replaceWith(img);
+      }
+      statusEl.textContent = 'Avatar updated.';
+      statusEl.style.color = 'var(--success-text)';
+    } catch (err) {
+      statusEl.textContent = ERROR_MESSAGES[err.code] || err.message;
+      statusEl.style.color = 'var(--danger)';
+    }
+  });
+
+  // Save profile
   document.getElementById('save-profile-btn').addEventListener('click', async () => {
     const errEl = document.getElementById('profile-error');
+    const btn   = document.getElementById('save-profile-btn');
     errEl.classList.add('hidden');
-    const btn = document.getElementById('save-profile-btn');
     btn.disabled = true;
+    btn.textContent = 'Saving…';
     try {
-      const data = await api('PUT', '/users/me', {
+      const { user: updated } = await api('PUT', '/users/me', {
         username: document.getElementById('set-username').value.trim(),
         bio: document.getElementById('set-bio').value.trim(),
       });
-      AppState.currentUser = data.user;
+      AppState.currentUser = updated;
       renderNav();
       toast('Profile updated.', 'success');
     } catch (err) {
@@ -2192,20 +2329,28 @@ function viewSettings() {
       errEl.classList.remove('hidden');
     }
     btn.disabled = false;
+    btn.textContent = 'Save profile';
   });
 
+  // Change password
   document.getElementById('save-pw-btn').addEventListener('click', async () => {
     const errEl = document.getElementById('pw-error');
+    const btn   = document.getElementById('save-pw-btn');
     errEl.classList.add('hidden');
-    const btn = document.getElementById('save-pw-btn');
-    const newPw = document.getElementById('set-new-pw').value;
+    const newPw   = document.getElementById('set-new-pw').value;
     const confirm = document.getElementById('set-confirm-pw').value;
     if (newPw !== confirm) {
       errEl.textContent = 'Passwords do not match.';
       errEl.classList.remove('hidden');
       return;
     }
+    if (newPw.length < 8) {
+      errEl.textContent = 'New password must be at least 8 characters.';
+      errEl.classList.remove('hidden');
+      return;
+    }
     btn.disabled = true;
+    btn.textContent = 'Saving…';
     try {
       await api('PUT', '/users/me', {
         current_password: document.getElementById('set-cur-pw').value,
@@ -2220,31 +2365,87 @@ function viewSettings() {
       errEl.classList.remove('hidden');
     }
     btn.disabled = false;
+    btn.textContent = 'Change password';
   });
 
-  document.getElementById('delete-account-btn').addEventListener('click', async () => {
-    const confirmVal = document.getElementById('delete-confirm').value.trim();
-    const errEl = document.getElementById('delete-error');
+  // Delete account
+  document.getElementById('delete-account-btn').addEventListener('click', () => {
+    const username = AppState.currentUser.username;
+    showConfirmModal({
+      title: 'Delete account',
+      body: `This will permanently delete <strong>${username}</strong> and all associated recipes and components. To confirm, type your username below.`,
+      confirmLabel: 'Delete my account',
+      danger: true,
+      onConfirm: async () => {
+        // Inline confirm-username prompt inside the modal isn't possible with
+        // showConfirmModal, so we use a dedicated flow here instead.
+      },
+    });
+    // Use a custom flow that requires typing the username
+    showDeleteAccountModal();
+  });
+}
+
+function showDeleteAccountModal() {
+  const username = AppState.currentUser.username;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay open';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:420px;">
+      <div class="modal-header">
+        <span class="modal-title" style="color:#e85a4a;">Delete account</span>
+        <button class="btn btn-ghost btn-icon" id="dam-close">${icon('close')}</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-secondary);font-size:.88rem;margin-bottom:var(--s4);">
+          This permanently deletes <strong>${username}</strong>, all your recipes, and all your components. There is no undo.
+        </p>
+        <div class="form-group">
+          <label for="dam-confirm">Type <strong>${username}</strong> to confirm</label>
+          <input type="text" id="dam-confirm" placeholder="${username}" />
+        </div>
+        <div class="form-error hidden" id="dam-error"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="dam-cancel">Cancel</button>
+        <button class="btn btn-danger" id="dam-delete" disabled>${icon('trash')} Delete my account</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.querySelector('#dam-close').addEventListener('click', close);
+  overlay.querySelector('#dam-cancel').addEventListener('click', close);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+
+  const input  = overlay.querySelector('#dam-confirm');
+  const delBtn = overlay.querySelector('#dam-delete');
+  input.addEventListener('input', () => {
+    delBtn.disabled = input.value.trim() !== username;
+  });
+
+  delBtn.addEventListener('click', async () => {
+    const errEl = overlay.querySelector('#dam-error');
     errEl.classList.add('hidden');
-    if (confirmVal !== AppState.currentUser.username) {
-      errEl.textContent = 'Username does not match.';
-      errEl.classList.remove('hidden');
-      return;
-    }
-    const btn = document.getElementById('delete-account-btn');
-    btn.disabled = true;
+    delBtn.disabled = true;
+    delBtn.textContent = 'Deleting…';
     try {
-      await api('DELETE', '/users/me', { confirm_username: confirmVal });
+      await api('DELETE', '/users/me', { confirm_username: input.value.trim() });
       clearAuth();
       renderNav();
+      close();
       toast('Account deleted.');
       route('#home');
     } catch (err) {
       errEl.textContent = ERROR_MESSAGES[err.code] || err.message;
       errEl.classList.remove('hidden');
-      btn.disabled = false;
+      delBtn.disabled = false;
+      delBtn.innerHTML = `${icon('trash')} Delete my account`;
     }
   });
+
+  requestAnimationFrame(() => input.focus());
 }
 
 /* ------------------------------------------------------------ Admin */
@@ -2270,13 +2471,28 @@ function viewAdmin() {
     </div>
 
     <div class="section">
+      <div class="section-title">Recipe Moderation</div>
+      <div class="filter-row" style="margin-bottom:var(--s3);">
+        <div class="search-wrap" style="flex:1;">
+          ${icon('search')}
+          <input type="search" id="mod-search" placeholder="Search by name or author…" />
+        </div>
+        <button class="btn btn-ghost btn-sm" id="mod-load-btn">Load recipes</button>
+      </div>
+      <div id="admin-mod-wrap"></div>
+      <div id="admin-mod-pag" class="pagination hidden"></div>
+    </div>
+
+    <div class="section">
       <div class="section-title">Error Logs</div>
-      <div style="display:flex;gap:var(--s3);align-items:center;margin-bottom:var(--s3);">
+      <div class="filter-row" style="margin-bottom:var(--s3);">
         <select id="admin-log-level" style="width:auto;min-width:120px;">
           <option value="">All levels</option>
           <option>error</option><option>warn</option><option>info</option>
         </select>
-        <button class="btn btn-danger btn-sm" id="clear-logs-btn">${icon('trash')} Clear logs</button>
+        <input type="date" id="log-date-from" style="width:auto;" title="From date" />
+        <input type="date" id="log-date-to" style="width:auto;" title="To date" />
+        <button class="btn btn-danger btn-sm" id="clear-logs-btn" style="margin-left:auto;">${icon('trash')} Clear all logs</button>
       </div>
       <div id="admin-logs-wrap"><div class="skeleton skeleton-card" style="height:180px;"></div></div>
       <div id="admin-logs-pag" class="pagination hidden"></div>
@@ -2286,17 +2502,131 @@ function viewAdmin() {
   loadAdminUsers();
   loadAdminLogs({ page: 1 });
 
+  // Recipe moderation
+  let modPage = 1;
+  let modQuery = '';
+  const modSearch = document.getElementById('mod-search');
+
+  async function loadMod(page = 1) {
+    modPage = page;
+    const wrap = document.getElementById('admin-mod-wrap');
+    const pag  = document.getElementById('admin-mod-pag');
+    wrap.innerHTML = `<div class="skeleton skeleton-card" style="height:100px;"></div>`;
+    try {
+      const params = new URLSearchParams({ page, limit: 20 });
+      const data = await api('GET', `/recipes?${params}`);
+      let items = data.items || [];
+
+      // Client-side filter by name or author
+      const q = modQuery.toLowerCase();
+      if (q) items = items.filter(r =>
+        r.name.toLowerCase().includes(q) ||
+        (r.author_username || '').toLowerCase().includes(q)
+      );
+
+      if (!items.length) {
+        wrap.innerHTML = `<div class="empty-state" style="padding:var(--s8) 0;">
+          ${icon('search')}
+          <div class="empty-state-title">No recipes found</div>
+        </div>`;
+        pag.classList.add('hidden');
+        return;
+      }
+
+      wrap.innerHTML = `<div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead><tr><th>Recipe</th><th>Author</th><th>Status</th><th>Created</th><th></th></tr></thead>
+          <tbody>
+            ${items.map(r => `
+              <tr>
+                <td><a href="#recipe/${r.slug}" target="_blank" style="color:var(--accent-text);">${r.name}</a></td>
+                <td class="text-sm"><a href="#profile/${r.author_username}">${r.author_username || '—'}</a></td>
+                <td>${visibilityBadge(r.visibility)}</td>
+                <td class="text-sm text-muted font-mono">${r.created_at?.slice(0,10)}</td>
+                <td>
+                  ${r.visibility !== 'admin_removed'
+                    ? `<button class="btn btn-danger btn-sm mod-remove-btn" data-slug="${r.slug}" data-name="${r.name.replace(/"/g,'&quot;')}">${icon('trash')} Remove</button>`
+                    : `<span class="text-sm text-muted">Removed</span>`}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>`;
+
+      wrap.querySelectorAll('.mod-remove-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const { slug, name } = btn.dataset;
+          showConfirmModal({
+            title: 'Remove recipe',
+            body: `Soft-delete <strong>${name}</strong>? It will be hidden from all users but not permanently deleted.`,
+            confirmLabel: 'Remove',
+            danger: true,
+            onConfirm: async () => {
+              try {
+                await api('DELETE', `/admin/recipes/${slug}`);
+                toast(`"${name}" removed.`, 'success');
+                loadMod(modPage);
+              } catch (err) { toast(ERROR_MESSAGES[err.code] || err.message, 'error'); }
+            },
+          });
+        });
+      });
+
+      const totalPages = Math.ceil(data.total / data.limit);
+      if (totalPages > 1) {
+        pag.classList.remove('hidden');
+        pag.innerHTML = `
+          <button class="btn btn-ghost btn-sm" ${page <= 1 ? 'disabled' : ''} id="mod-pag-prev">${icon('chevron-up')} Prev</button>
+          <span class="page-info">${page} / ${totalPages}</span>
+          <button class="btn btn-ghost btn-sm" ${page >= totalPages ? 'disabled' : ''} id="mod-pag-next">Next ${icon('chevron-down')}</button>
+        `;
+        document.getElementById('mod-pag-prev')?.addEventListener('click', () => loadMod(page - 1));
+        document.getElementById('mod-pag-next')?.addEventListener('click', () => loadMod(page + 1));
+      } else {
+        pag.classList.add('hidden');
+      }
+    } catch (err) {
+      wrap.innerHTML = `<div class="form-error">Failed to load recipes: ${ERROR_MESSAGES[err.code] || err.message}</div>`;
+    }
+  }
+
+  document.getElementById('mod-load-btn').addEventListener('click', () => {
+    modQuery = modSearch.value.trim();
+    loadMod(1);
+  });
+  let modTimer;
+  modSearch.addEventListener('input', () => {
+    clearTimeout(modTimer);
+    modTimer = setTimeout(() => { modQuery = modSearch.value.trim(); loadMod(1); }, 400);
+  });
+
+  // Log filters
   document.getElementById('admin-log-level').addEventListener('change', () => {
     loadAdminLogs({ page: 1, level: document.getElementById('admin-log-level').value });
   });
+  document.getElementById('log-date-from').addEventListener('change', () => {
+    loadAdminLogs({ page: 1, level: document.getElementById('admin-log-level').value });
+  });
+  document.getElementById('log-date-to').addEventListener('change', () => {
+    loadAdminLogs({ page: 1, level: document.getElementById('admin-log-level').value });
+  });
 
-  document.getElementById('clear-logs-btn').addEventListener('click', async () => {
-    if (!confirm('Clear all error logs? This cannot be undone.')) return;
-    try {
-      await api('DELETE', '/admin/errors');
-      toast('Logs cleared.', 'success');
-      loadAdminLogs({ page: 1 });
-    } catch (err) { toast(ERROR_MESSAGES[err.code] || err.message, 'error'); }
+  // Clear logs
+  document.getElementById('clear-logs-btn').addEventListener('click', () => {
+    showConfirmModal({
+      title: 'Clear all logs',
+      body: 'Delete every error log entry? This cannot be undone.',
+      confirmLabel: 'Clear logs',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await api('DELETE', '/admin/errors');
+          toast('Logs cleared.', 'success');
+          loadAdminLogs({ page: 1 });
+        } catch (err) { toast(ERROR_MESSAGES[err.code] || err.message, 'error'); }
+      },
+    });
   });
 }
 
@@ -2320,10 +2650,11 @@ async function loadAdminUsers() {
                 <td class="text-sm text-muted font-mono">${u.created_at?.slice(0,10)}</td>
                 <td>
                   ${u.id !== AppState.currentUser.id
-                    ? `<button class="btn btn-ghost btn-sm" onclick="toggleUserRole(${u.id},'${u.role}')">
-                        ${u.role === 'admin' ? 'Demote' : 'Promote'}
+                    ? `<button class="btn btn-ghost btn-sm role-toggle-btn"
+                         data-id="${u.id}" data-role="${u.role}" data-username="${u.username}">
+                         ${u.role === 'admin' ? 'Demote' : 'Promote'}
                        </button>`
-                    : ''}
+                    : '<span class="text-sm text-muted">You</span>'}
                 </td>
               </tr>
             `).join('')}
@@ -2331,32 +2662,55 @@ async function loadAdminUsers() {
         </table>
       </div>
     `;
+
+    wrap.querySelectorAll('.role-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const { id, role, username } = btn.dataset;
+        const newRole = role === 'admin' ? 'user' : 'admin';
+        showConfirmModal({
+          title: newRole === 'admin' ? 'Promote to admin' : 'Demote to user',
+          body: `Change <strong>${username}</strong>'s role to <strong>${newRole}</strong>?`,
+          confirmLabel: newRole === 'admin' ? 'Promote' : 'Demote',
+          danger: newRole !== 'admin',
+          onConfirm: async () => {
+            try {
+              await api('PATCH', `/admin/users/${id}/role`, { role: newRole });
+              toast(`${username} is now ${newRole}.`, 'success');
+              loadAdminUsers();
+            } catch (err) { toast(ERROR_MESSAGES[err.code] || err.message, 'error'); }
+          },
+        });
+      });
+    });
   } catch (err) {
     wrap.innerHTML = `<div class="form-error">Failed to load users.</div>`;
   }
 }
 
-window.toggleUserRole = async function(id, currentRole) {
-  const newRole = currentRole === 'admin' ? 'user' : 'admin';
-  try {
-    await api('PATCH', `/admin/users/${id}/role`, { role: newRole });
-    toast(`Role updated to ${newRole}.`, 'success');
-    loadAdminUsers();
-  } catch (err) { toast(ERROR_MESSAGES[err.code] || err.message, 'error'); }
-};
-
 async function loadAdminLogs({ page = 1, level = '' } = {}) {
   const wrap = document.getElementById('admin-logs-wrap');
   const pag  = document.getElementById('admin-logs-pag');
   if (!wrap) return;
+
+  const dateFrom = document.getElementById('log-date-from')?.value || '';
+  const dateTo   = document.getElementById('log-date-to')?.value   || '';
+
   try {
     const params = new URLSearchParams({ page, limit: 50 });
     if (level) params.set('level', level);
     const data = await api('GET', `/admin/errors?${params}`);
-    const items = data.items || [];
+    let items = data.items || [];
+
+    // Client-side date range filter on loaded page
+    if (dateFrom) items = items.filter(l => l.created_at >= dateFrom);
+    if (dateTo)   items = items.filter(l => l.created_at <= dateTo + 'T23:59:59');
 
     if (!items.length) {
-      wrap.innerHTML = `<div class="empty-state">${icon('check')}<div class="empty-state-title">No logs</div></div>`;
+      wrap.innerHTML = `<div class="empty-state" style="padding:var(--s8) 0;">
+        ${icon('check')}
+        <div class="empty-state-title">No logs</div>
+        <div class="empty-state-body">${dateFrom || dateTo ? 'No logs match the date filter.' : 'The log is empty.'}</div>
+      </div>`;
       pag.classList.add('hidden');
       return;
     }
@@ -2366,14 +2720,15 @@ async function loadAdminLogs({ page = 1, level = '' } = {}) {
         <table class="data-table">
           <thead><tr><th>Time</th><th>Level</th><th>Context</th><th>Message</th></tr></thead>
           <tbody>
-            ${items.map(l => `
-              <tr class="expandable-row" onclick="this.querySelector('.expand-content')?.classList.toggle('hidden')">
+            ${items.map((l, i) => `
+              <tr class="expandable-row" data-log-idx="${i}">
                 <td class="font-mono text-sm" style="white-space:nowrap;">${l.created_at?.slice(0,19)}</td>
                 <td><span class="badge badge-${l.level}">${l.level}</span></td>
                 <td class="text-sm">${l.context}</td>
                 <td class="text-sm">
-                  ${l.message}
-                  ${l.stack ? `<div class="expand-content hidden">${l.stack}</div>` : ''}
+                  <div>${l.message}</div>
+                  ${l.stack ? `<div class="expand-content hidden" id="log-stack-${i}">${escapeHtml(l.stack)}</div>` : ''}
+                  ${l.stack ? `<button class="btn btn-ghost btn-sm log-expand-btn" data-target="log-stack-${i}" style="margin-top:4px;font-size:.72rem;">${icon('chevron-down')} Stack trace</button>` : ''}
                 </td>
               </tr>
             `).join('')}
@@ -2381,6 +2736,20 @@ async function loadAdminLogs({ page = 1, level = '' } = {}) {
         </table>
       </div>
     `;
+
+    // Wire stack expand buttons (no whole-row click — avoids accidental triggers)
+    wrap.querySelectorAll('.log-expand-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const target = document.getElementById(btn.dataset.target);
+        if (!target) return;
+        const open = !target.classList.contains('hidden');
+        target.classList.toggle('hidden', open);
+        btn.innerHTML = open
+          ? `${icon('chevron-down')} Stack trace`
+          : `${icon('chevron-up')} Hide trace`;
+      });
+    });
 
     const totalPages = Math.ceil(data.total / data.limit);
     if (totalPages > 1) {
@@ -2390,8 +2759,8 @@ async function loadAdminLogs({ page = 1, level = '' } = {}) {
         <span class="page-info">${page} / ${totalPages}</span>
         <button class="btn btn-ghost btn-sm" ${page >= totalPages ? 'disabled' : ''} id="log-pag-next">Next ${icon('chevron-down')}</button>
       `;
-      document.getElementById('log-pag-prev')?.addEventListener('click', () => loadAdminLogs({ page: page-1, level }));
-      document.getElementById('log-pag-next')?.addEventListener('click', () => loadAdminLogs({ page: page+1, level }));
+      document.getElementById('log-pag-prev')?.addEventListener('click', () => loadAdminLogs({ page: page - 1, level }));
+      document.getElementById('log-pag-next')?.addEventListener('click', () => loadAdminLogs({ page: page + 1, level }));
     } else {
       pag.classList.add('hidden');
     }
@@ -2404,6 +2773,14 @@ async function loadAdminLogs({ page = 1, level = '' } = {}) {
 function safeParseJSON(val, fallback) {
   if (Array.isArray(val) || (val && typeof val === 'object')) return val;
   try { return JSON.parse(val); } catch { return fallback; }
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 /* ============================================================ Boot */
