@@ -3,11 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Idle Pharmacy</title>
+  <title>Idle Pharmacy // Phase6</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <style>
+    /* ── Worker fallback: prevents 300px default if stylesheet lags or mismatches ── */
+    :root {
+      --worker-head: #d8c2a4;
+      --worker-leg:  #6b563f;
+      --worker-fill: #8fb8d8;
+      --coat-white:  #f3ede0;
+      --shirt-brown: #8a5a3b;
+    }
+    .worker-fig { width: 30px; height: 46px; display: inline-block; flex-shrink: 0; }
+    .worker-fig svg { width: 100%; height: 100%; display: block; }
+    .hire-card-figure svg { width: 100%; height: 100%; display: block; }
+  </style>
 </head>
 <body>
 <div id="app">
@@ -31,21 +45,17 @@
           <span class="hstat-value mono" id="income-rate">$0.00/s</span>
         </div>
         <div class="hstat-sep"></div>
-        <div class="hstat">
-          <span class="hstat-label">Tier</span>
-          <span class="hstat-value" id="tier-name">Generics</span>
+        <div class="hstat hstat-wage" id="wage-clock-stat" title="Payroll due this shift">
+          <span class="hstat-label">Payroll</span>
+          <span class="wage-clock-wrap">
+            <svg class="wage-arc" width="30" height="30" viewBox="0 0 36 36" aria-hidden="true">
+              <circle class="wage-arc-track" cx="18" cy="18" r="15.9" fill="none" stroke-width="3.2"/>
+              <circle class="wage-arc-fill" id="wage-arc-fill" cx="18" cy="18" r="15.9" fill="none" stroke-width="3.2"
+                      stroke-dasharray="100 100" stroke-dashoffset="0" transform="rotate(-90 18 18)" pathLength="100"/>
+            </svg>
+            <span class="wage-clock-amount mono" id="wage-clock-amount">$0</span>
+          </span>
         </div>
-        <div class="hstat-sep"></div>
-        <div class="hstat">
-          <span class="hstat-label">Building</span>
-          <span class="hstat-value" id="building-level">Lv. 1</span>
-        </div>
-      </div>
-      <div class="header-row header-row-pills" id="header-pills-row">
-        <span class="hstat-label pills-label">Unassigned</span>
-        <button class="ua-pill ua-pill-fill"  id="ua-fill"  title="Unassigned Technicians — tap to assign">0</button>
-        <button class="ua-pill ua-pill-check" id="ua-check" title="Unassigned Pharmacists — tap to assign">0</button>
-        <button class="ua-pill ua-pill-pack"  id="ua-pack"  title="Unassigned Packers — tap to assign">0</button>
       </div>
     </div>
 
@@ -117,18 +127,34 @@
         </defs>
       </svg>
 
-      <div class="floor-toggle-wrap">
-        <button id="btn-floor-toggle" class="floor-toggle" title="Toggle detailed view">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <rect x="1" y="2" width="12" height="2" rx="1" fill="currentColor"/>
-            <rect x="1" y="6" width="12" height="2" rx="1" fill="currentColor"/>
-            <rect x="1" y="10" width="12" height="2" rx="1" fill="currentColor"/>
-          </svg>
-          <span>Detailed</span>
-        </button>
+      <!-- Tier tabs above belt (UI #4) -->
+      <div id="tier-tabs">
+        <button class="tier-tab tier-tab-1 is-active" data-tier="1">Generics</button>
+        <button class="tier-tab tier-tab-2" data-tier="2" disabled>Brand</button>
+        <button class="tier-tab tier-tab-3" data-tier="3" disabled>Specialty</button>
+        <button class="tier-tab tier-tab-4" data-tier="4" disabled>Biologics</button>
       </div>
 
-      <!-- Conveyor + totes + backlog badges -->
+      <!-- view-tier color strip — hidden; kept for JS compat -->
+      <div id="scene-tier-strip"></div>
+
+      <!-- Inbox: incoming Rx awaiting fill (UI #7) -->
+      <div id="scene-inbox" title="Incoming prescriptions awaiting fill">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M3 13l3-8h12l3 8M3 13v6h18v-6M3 13h5l1 2h6l1-2h5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+        <span class="inbox-label">Inbox</span>
+        <span class="inbox-badge mono" id="inbox-badge">0</span>
+      </div>
+
+      <!-- Worker clusters (UI #6: above belt) -->
+      <div id="scene-floor">
+        <div class="station-cluster" id="cluster-fill"><div class="cluster-figures" id="figures-fill"></div></div>
+        <div class="station-cluster" id="cluster-check"><div class="cluster-figures" id="figures-check"></div></div>
+        <div class="station-cluster" id="cluster-pack"><div class="cluster-figures" id="figures-pack"></div></div>
+      </div>
+
+      <!-- Conveyor + totes + backlog badges (UI #6: below workers) -->
       <div id="scene-belt">
         <div class="scene-belt-lane" id="scene-belt-lane"></div>
         <div class="scene-totes scene-totes-fill"  id="scene-totes-fill"></div>
@@ -137,20 +163,13 @@
         <div class="scene-backlog scene-backlog-check" id="scene-backlog-check">0</div>
       </div>
 
-      <!-- view-tier color strip -->
-      <div id="scene-tier-strip"></div>
-
-      <!-- Worker clusters -->
-      <div id="scene-floor">
-        <div class="station-cluster" id="cluster-fill"><div class="cluster-figures" id="figures-fill"></div></div>
-        <div class="station-cluster" id="cluster-check"><div class="cluster-figures" id="figures-check"></div></div>
-        <div class="station-cluster" id="cluster-pack"><div class="cluster-figures" id="figures-pack"></div></div>
-      </div>
-
-      <!-- Compact station cards -->
+      <!-- Compact station cards (UI #5: centered labels + Rx/sec) -->
       <div id="scene-cards">
         <div class="scene-card" id="scene-card-fill">
-          <div class="scene-card-head"><span class="scene-card-label role-fill">FILL</span><span class="scene-card-rate mono" id="scene-rate-fill">0.00</span></div>
+          <div class="scene-card-head">
+            <span class="scene-card-label role-fill">FILL</span>
+            <span class="scene-card-rate mono"><span id="scene-rate-fill">0.00</span> Rx/sec</span>
+          </div>
           <div class="scene-card-controls">
             <button class="stage-ctrl-btn stage-ctrl-minus" id="ctrl-fill-minus" disabled><svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg></button>
             <span class="stage-ctrl-count" id="ctrl-fill-count">0</span>
@@ -158,7 +177,10 @@
           </div>
         </div>
         <div class="scene-card" id="scene-card-check">
-          <div class="scene-card-head"><span class="scene-card-label role-check">CHECK</span><span class="scene-card-rate mono" id="scene-rate-check">0.00</span></div>
+          <div class="scene-card-head">
+            <span class="scene-card-label role-check">CHECK</span>
+            <span class="scene-card-rate mono"><span id="scene-rate-check">0.00</span> Rx/sec</span>
+          </div>
           <div class="scene-card-controls">
             <button class="stage-ctrl-btn stage-ctrl-minus" id="ctrl-check-minus" disabled><svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg></button>
             <span class="stage-ctrl-count" id="ctrl-check-count">0</span>
@@ -166,182 +188,30 @@
           </div>
         </div>
         <div class="scene-card" id="scene-card-pack">
-          <div class="scene-card-head"><span class="scene-card-label role-pack">PACK</span><span class="scene-card-rate mono" id="scene-rate-pack">0.00</span></div>
+          <div class="scene-card-head">
+            <span class="scene-card-label role-pack">PACK</span>
+            <span class="scene-card-rate mono"><span id="scene-rate-pack">0.00</span> Rx/sec</span>
+          </div>
           <div class="scene-card-controls">
             <button class="stage-ctrl-btn stage-ctrl-minus" id="ctrl-pack-minus" disabled><svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg></button>
             <span class="stage-ctrl-count" id="ctrl-pack-count">0</span>
             <button class="stage-ctrl-btn stage-ctrl-plus"  id="ctrl-pack-plus"  disabled><svg width="10" height="10" viewBox="0 0 10 10"><rect x="4" width="2" height="10" rx="1" fill="currentColor"/><rect y="4" width="10" height="2" rx="1" fill="currentColor"/></svg></button>
           </div>
+          <div id="money-pops" aria-hidden="true"></div>
         </div>
       </div>
 
-      <!-- Tier tabs (drives floor scene + assignment) -->
-      <div id="tier-tabs">
-        <button class="tier-tab tier-tab-1 is-active" data-tier="1">Generics</button>
-        <button class="tier-tab tier-tab-2" data-tier="2" disabled>Brand</button>
-        <button class="tier-tab tier-tab-3" data-tier="3" disabled>Specialty</button>
-        <button class="tier-tab tier-tab-4" data-tier="4" disabled>Biologics</button>
+      <!-- Unassigned pills below cards (UI Header #2) -->
+      <div id="floor-unassigned">
+        <span class="ua-label">Unassigned</span>
+        <button class="ua-pill ua-pill-fill"  id="ua-fill"  title="Unassigned Technicians">Tech 0</button>
+        <button class="ua-pill ua-pill-check" id="ua-check" title="Unassigned Pharmacists">Rph 0</button>
+        <button class="ua-pill ua-pill-pack"  id="ua-pack"  title="Unassigned Packers">Packer 0</button>
       </div>
+
     </div>
 
-    <!-- ═══ DENSE VIEW (pipeline) — hidden by default ═══ -->
-    <div id="pipeline-wrap" hidden>
-      <div id="pipeline-track">
-
-        <!-- Conveyor belt layer (behind cards) -->
-        <div id="conveyor-belt">
-          <div class="belt-lane" id="belt-lane"></div>
-        </div>
-
-        <!-- Stage cards + buffers -->
-        <div id="pipeline">
-
-          <!-- RX INTAKE -->
-          <div class="flow-node intake-node">
-            <div class="flow-buffer intake-buffer">
-              <span class="buf-val mono" id="intake-rate">0</span>
-              <span class="buf-label">Rx Intake</span>
-              <span class="intake-pulse" id="intake-pulse"></span>
-            </div>
-            <div class="flow-arrow">→</div>
-          </div>
-
-          <!-- FILL STAGE -->
-          <div class="stage-card" id="card-fill">
-            <div class="stage-label">FILL</div>
-            <div class="stage-role">Technicians</div>
-            <div class="stage-metrics">
-              <div class="metric active-metric">
-                <span class="metric-val" id="fill-active">1</span>
-                <span class="metric-key">Workers</span>
-              </div>
-              <div class="metric">
-                <span class="metric-val" id="fill-rate">0.20</span>
-                <span class="metric-key">rx/s</span>
-              </div>
-            </div>
-            <div class="stage-progress-wrap">
-              <div class="stage-progress" id="fill-progress"></div>
-            </div>
-          </div>
-
-          <!-- BUFFER: Fill → Check -->
-          <div class="flow-node">
-            <div class="flow-buffer" id="buf-fill-node">
-              <div class="tote-stack" id="totes-fill"></div>
-              <span class="buf-val mono" id="buf-fill">0</span>
-              <span class="buf-label">queued</span>
-            </div>
-            <div class="flow-arrow">→</div>
-          </div>
-
-          <!-- CHECK STAGE -->
-          <div class="stage-card" id="card-check">
-            <div class="stage-label">CHECK</div>
-            <div class="stage-role">Pharmacists</div>
-            <div class="stage-metrics">
-              <div class="metric active-metric">
-                <span class="metric-val" id="check-active">1</span>
-                <span class="metric-key">Workers</span>
-              </div>
-              <div class="metric">
-                <span class="metric-val" id="check-rate">0.33</span>
-                <span class="metric-key">rx/s</span>
-              </div>
-            </div>
-            <div class="stage-progress-wrap">
-              <div class="stage-progress" id="check-progress"></div>
-            </div>
-          </div>
-
-          <!-- BUFFER: Check → Pack -->
-          <div class="flow-node">
-            <div class="flow-buffer" id="buf-check-node">
-              <div class="tote-stack" id="totes-check"></div>
-              <span class="buf-val mono" id="buf-check">0</span>
-              <span class="buf-label">queued</span>
-            </div>
-            <div class="flow-arrow">→</div>
-          </div>
-
-          <!-- PACK STAGE -->
-          <div class="stage-card" id="card-pack">
-            <div class="stage-label">PACK</div>
-            <div class="stage-role">Packers</div>
-            <div class="stage-metrics">
-              <div class="metric active-metric">
-                <span class="metric-val" id="pack-active">1</span>
-                <span class="metric-key">Workers</span>
-              </div>
-              <div class="metric">
-                <span class="metric-val" id="pack-rate">0.10</span>
-                <span class="metric-key">rx/s</span>
-              </div>
-            </div>
-            <div class="stage-progress-wrap">
-              <div class="stage-progress" id="pack-progress"></div>
-            </div>
-          </div>
-
-          <!-- Money pops (anchored to pack card) -->
-          <div id="money-pops" aria-hidden="true"></div>
-
-        </div><!-- /pipeline -->
-      </div><!-- /pipeline-track -->
-
-      <!-- Pharmacy Floor -->
-      <div id="floor-wrap">
-
-        <!-- Tier line panel — content rebuilt by render() -->
-        <div id="tier-line-panel"></div>
-
-        <!-- Capacity readout (unassigned now in header pills) -->
-        <div id="floor-roster">
-          <span class="roster-item">Stations <b id="r-stations">1/3</b></span>
-          <span class="roster-sep">·</span>
-          <span class="roster-item">Capacity <b id="r-capacity">3</b></span>
-          <span class="roster-sep">·</span>
-          <span class="roster-item">Free slots <b id="r-free">0</b></span>
-        </div>
-
-      </div>
-
-      <!-- Collapsible Stats Bar -->
-      <div id="stats-bar">
-        <div id="stats-bar-collapsed">
-          <span class="stats-bar-income mono" id="sb-income-rate">$0.00/s</span>
-          <button id="stats-bar-toggle" class="stats-bar-chevron" aria-label="Expand stats" aria-expanded="false">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-        </div>
-        <div id="stats-bar-expanded" hidden>
-          <div class="stats-bar-row">
-            <span class="sb-label">THROUGHPUT</span>
-            <span class="mono" id="sb-throughput">0 rx/s</span>
-            <span class="sb-sep">·</span>
-            <span class="sb-label">BOTTLENECK</span>
-            <span id="sb-bottleneck">✓ BALANCED</span>
-          </div>
-          <div class="stats-bar-row">
-            <span class="sb-label">TOTAL EARNED</span>
-            <span class="mono" id="sb-total-earned">$0.00</span>
-            <span class="sb-sep">·</span>
-            <span class="sb-label">INCOME RATE</span>
-            <span class="mono" id="sb-income-rate-2">$0.00/s</span>
-          </div>
-          <div class="stats-bar-row milestone-row">
-            <span class="sb-label">NEXT MILESTONE</span>
-            <span id="sb-milestone-text">—</span>
-            <div class="milestone-progress-wrap">
-              <div class="milestone-progress-fill" id="sb-milestone-bar"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /pipeline-wrap -->
+    <!-- Dense view removed in Phase 6E -->
 
     <!-- Shop sidebar removed in Phase 5 — all actions live in the Upgrade modal -->
 
@@ -514,7 +384,8 @@
 
       <!-- Unassigned pool -->
       <div class="staff-pool-section">
-        <div class="staff-section-label">UNASSIGNED POOL</div>
+        <div class="staff-section-label">UNASSIGNED POOL <span class="staff-slots-inline" id="staff-slots-inline">0/0 slots</span></div>
+        <div class="staff-payroll-summary" id="staff-payroll-summary">Payroll: $0/shift · next in 0:00</div>
         <div class="staff-pool-row" id="staff-pool-row">
           <!-- injected by renderStaffModal() -->
         </div>
@@ -528,6 +399,18 @@
       <div class="staff-modal-footer">
         <span class="staff-capacity-note" id="staff-cap-note">3/3 staff slots used</span>
         <button class="modal-btn" id="btn-staff-done">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ FIRE CONFIRM MODAL ════════════════════════════════ -->
+  <div id="fire-confirm-modal" class="modal hidden">
+    <div class="modal-box" style="max-width:320px">
+      <h2 class="modal-title" style="font-size:18px">Fire staff?</h2>
+      <p class="modal-body" id="fire-confirm-text">Are you sure?</p>
+      <div class="prestige-actions">
+        <button class="modal-btn ghost" id="fire-cancel">Cancel</button>
+        <button class="modal-btn" id="fire-confirm" style="background:var(--bk-red)">Fire</button>
       </div>
     </div>
   </div>
@@ -597,97 +480,16 @@
 // ═══════════════════════════════════════════════════════════════
 
 // ─── CONFIG ───────────────────────────────────────────────────
-const VERSION          = 5;
+const VERSION          = 6;
 const SAVE_KEY         = 'idleRx_save';
 const AUTOSAVE_MS      = 10_000;
 const WORKERS_PER_STATION = 3;
+const ROLE_LABEL       = { fill: 'Tech', check: 'Rph', pack: 'Packer' };
 
-const CONFIG = {
-  tickMs:        250,
-  offlineCapMs:  24 * 60 * 60 * 1000,
+const CONFIG = window.GAME_CONFIG;
 
-  // Asymmetric base seconds-per-rx per active slot. Check fastest, Pack slowest.
-  stageSpeed:    { check: 3, fill: 5, pack: 10 },
-
-  staffBase:     { fill: 10, check: 25, pack: 10 },
-  staffScale:    1.15,
-
-  stationBase:   100,      // cost of the FIRST purchased station (3rd overall)
-  stationScale:  4,
-
-  buildingBase:  150,
-  buildingScale: 8,
-
-  // Marketing
-  marketingBase:  500,
-  marketingScale: 3.5,
-  marketingStep:  0.25,    // +25% income per level
-
-  // Prestige
-  prestigeUnlock: 1_000_000,
-
-  // One-time passive upgrades
-  upgrades: [
-    { id: 'efficientWorkflow', name: 'Efficient Workflow', desc: 'Fill +20% throughput',  cost: 5_000,  stage: 'fill'  },
-    { id: 'peerReview',        name: 'Peer Review',        desc: 'Check +20% throughput', cost: 15_000, stage: 'check' },
-    { id: 'betterPackaging',   name: 'Better Packaging',   desc: 'Pack +20% throughput',  cost: 2_000,  stage: 'pack'  },
-    { id: 'expeditedShipping', name: 'Expedited Shipping', desc: 'Income +10% flat',      cost: 50_000, stage: null    },
-  ],
-  upgradeBuff: 1.20,
-
-  // Achievement definitions
-  achievements: [
-    { id: 'first_fill',    name: 'First Technician',   desc: 'Hired your first Fill worker',        reward: 50,      trigger: s => totalStaffOfRole('fill')  >= 1 },
-    { id: 'first_check',   name: 'First Pharmacist',   desc: 'Hired your first Check worker',       reward: 50,      trigger: s => totalStaffOfRole('check') >= 1 },
-    { id: 'first_pack',    name: 'First Packer',       desc: 'Hired your first Pack worker',        reward: 50,      trigger: s => totalStaffOfRole('pack')  >= 1 },
-    { id: 'first_station', name: 'Open Floor Plan',    desc: 'Built your first station',            reward: 200,     trigger: s => s.stationsOwned >= 2 },
-    { id: 'tier_2',        name: 'Brand Recognition',  desc: 'Unlocked Brand Name drugs',           reward: 1_000,   trigger: s => s.drugTier >= 2 },
-    { id: 'tier_3',        name: 'Prior Auth Approved',desc: 'Unlocked Specialty Rx',               reward: 10_000,  trigger: s => s.drugTier >= 3 },
-    { id: 'tier_4',        name: 'Biologic License',   desc: 'Unlocked Biologics',                  reward: 100_000, trigger: s => s.drugTier >= 4 },
-    { id: 'rx_100',        name: 'Century Mark',       desc: 'Filled 100 prescriptions',            reward: 100,     trigger: s => (s.totalRxFilled || 0) >= 100 },
-    { id: 'rx_1k',         name: 'Thousand Strong',    desc: 'Filled 1,000 prescriptions',          reward: 500,     trigger: s => (s.totalRxFilled || 0) >= 1_000 },
-    { id: 'rx_10k',        name: 'High Volume',        desc: 'Filled 10,000 prescriptions',         reward: 5_000,   trigger: s => (s.totalRxFilled || 0) >= 10_000 },
-    { id: 'rx_100k',       name: 'Industrial Scale',   desc: 'Filled 100,000 prescriptions',        reward: 50_000,  trigger: s => (s.totalRxFilled || 0) >= 100_000 },
-    { id: 'earn_1k',       name: 'First Grand',        desc: '$1,000 lifetime earned',              reward: 100,     trigger: s => (s.totalEarned || 0) >= 1_000 },
-    { id: 'earn_100k',     name: 'Six Figures',        desc: '$100,000 lifetime earned',            reward: 2_500,   trigger: s => (s.totalEarned || 0) >= 100_000 },
-    { id: 'earn_1m',       name: 'Franchise Material', desc: '$1,000,000 lifetime earned',          reward: 25_000,  trigger: s => (s.totalEarned || 0) >= 1_000_000 },
-    { id: 'first_prestige',name: 'Sold the Franchise', desc: 'Completed your first prestige reset', reward: 0,       trigger: s => s.prestigeCount >= 1 },
-  ],
-
-  tiers: [
-    { name: 'Generics',  value: 10,  unlock: 0       },
-    { name: 'Brand',     value: 40,  unlock: 1_000   },
-    { name: 'Specialty', value: 160, unlock: 25_000  },
-    { name: 'Biologics', value: 640, unlock: 500_000 },
-  ],
-
-  // ── Phase 3: per-tier processing modifiers (multiplier on stageSpeed; higher = slower)
-  tierSpeedMod: {
-    1: { fill: 1.0, check: 1.0, pack: 1.0 },
-    2: { fill: 1.0, check: 1.3, pack: 1.0 },
-    3: { fill: 1.2, check: 1.6, pack: 1.4 },
-    4: { fill: 1.3, check: 2.2, pack: 1.8 },
-  },
-
-  // Station capacity
-  WORKERS_PER_STATION: 3,
-
-  // Global station upgrade tracks (replaces per-station upgrades)
-  globalStationUpgrades: {
-    dispensing:   { stage: 'fill',  base: 250, scale: 5, stepPct: 0.15,
-                    names: ['Calibrated Counting Trays', 'Automated Tablet Counter', 'Robotic Dispensing Cell'] },
-    verification: { stage: 'check', base: 400, scale: 5, stepPct: 0.15,
-                    names: ['Dual-Monitor Terminal', 'Barcode Scan-Verify', 'Intelligent DUR Alerts'] },
-    fulfillment:  { stage: 'pack',  base: 200, scale: 5, stepPct: 0.15,
-                    names: ['Supply Dispensers', 'Automated Label Printer', 'Conveyor Sortation'] },
-  },
-  globalStationUpgradeMaxLevel: 3,
-
-  // ── Phase 3: stats time-series sampler
-  statsSampleMs:   30_000,
-  statsMaxSamples: 400,
-
-  // Hire candidate pools — cosmetic only, no stat differences
+// Baked-in fallback flavor — used if flavor.json fetch fails (e.g. local file://).
+const FLAVOR_FALLBACK = {
   candidatePool: {
     fill: [
       { name: 'Marcus Webb',    title: 'Pharmacy Technician',   bio: 'Methodical counter. Never a short fill.' },
@@ -775,6 +577,7 @@ function newState() {
 
     totalEarned:   0,
     lastSaved:     Date.now(),
+    wageTimerMs:   0,
     statsSamples:  [],
     playStartedAt: Date.now(),
     achievements:  {},
@@ -825,6 +628,7 @@ function ensureShape(s) {
   };
   if (s.stationsOwned == null) s.stationsOwned = 1;
   if (!s.achievements) s.achievements = {};
+  if (s.wageTimerMs == null) s.wageTimerMs = 0;
   return s;
 }
 
@@ -861,10 +665,12 @@ function staffCost(role) {
   return Math.floor(CONFIG.staffBase[role] * (CONFIG.staffScale ** totalStaffOfRole(role)));
 }
 function stationCost() {
-  return Math.floor(CONFIG.stationBase * (CONFIG.stationScale ** (state.stationsOwned - 2)));
+  const ramp = CONFIG.difficultyRamp?.[state.drugTier] || 1;
+  return Math.floor(CONFIG.stationBase * ramp * (CONFIG.stationScale ** (state.stationsOwned - 2)));
 }
 function buildingCost() {
-  return Math.floor(CONFIG.buildingBase * (CONFIG.buildingScale ** (state.buildingLevel - 1)));
+  const ramp = CONFIG.difficultyRamp?.[state.drugTier] || 1;
+  return Math.floor(CONFIG.buildingBase * ramp * (CONFIG.buildingScale ** (state.buildingLevel - 1)));
 }
 function marketingCost() {
   return Math.floor(CONFIG.marketingBase * (CONFIG.marketingScale ** state.marketingLevel));
@@ -897,6 +703,45 @@ function incomeMult() {
   let m = marketingMult() * state.prestigeMultiplier;
   if (state.upgrades.expeditedShipping) m *= 1.10;
   return m;
+}
+
+// Total payroll due per shift. Assigned workers pay tier-scaled wage; unassigned pay base.
+function calcPayrollPerShift() {
+  let total = 0;
+  for (const role of ['fill','check','pack']) {
+    const base = CONFIG.wages[role];
+    total += (state.unassignedStaff[role] || 0) * base; // unassigned = tier-1 rate
+    for (const t of [1,2,3,4]) {
+      const n = state.staffPerTier[t]?.[role] || 0;
+      total += n * base * (CONFIG.wageTierMult[t] || 1);
+    }
+  }
+  return total;
+}
+// Per-second wage burn (for net-rate display).
+function wageBurnPerSec() { return calcPayrollPerShift() / (CONFIG.shiftMs / 1000); }
+
+let _payrollMissedFlag = false;
+let _inboxBacklog = 0;
+let _pendingFire = null;
+function requestFire(role, tier) {
+  _pendingFire = { role, tier };
+  el('fire-confirm-text').textContent = `Are you sure you want to fire 1 ${ROLE_LABEL[role]}?`;
+  el('fire-confirm-modal').classList.remove('hidden');
+}
+function payWages(dt) {
+  state.wageTimerMs += dt * 1000;
+  if (state.wageTimerMs < CONFIG.shiftMs) return;
+  state.wageTimerMs -= CONFIG.shiftMs; // carry remainder, not reset-to-zero
+  const due = calcPayrollPerShift();
+  if (due <= 0) return;
+  if (state.money >= due) {
+    state.money -= due;
+  } else {
+    state.money = 0;
+    _payrollMissedFlag = true;
+    queueToast(`⚠ Payroll missed — short $${fmt(due)}`);
+  }
 }
 
 // ─── PIPELINE ANALYTICS (V4 — pool-based) ─────────────────────
@@ -1044,6 +889,13 @@ function advance(dt) {
   income *= incomeMult();
   state.money       += income;
   state.totalEarned  = (state.totalEarned || 0) + income;
+
+  payWages(dt);
+
+  // Inbox backlog: synthetic demand vs fill capacity
+  const fillCap = aggStageRate('fill');
+  const intakeDemand = activeTiers().length; // 1 Rx/s per active tier as synthetic demand
+  _inboxBacklog = Math.max(0, _inboxBacklog + (intakeDemand - fillCap) * dt);
 
   checkMilestones();
   checkAchievements();
@@ -1311,25 +1163,45 @@ function renderUpgradeModal() {
 
   const fs = el('franchise-section');
   if (fs) {
-    if (prestigeAvailable()) {
-      fs.style.display = '';
+    fs.style.display = '';
+    const avail = prestigeAvailable();
+    el('btn-prestige').disabled = !avail;
+    if (avail) {
       el('cost-prestige').textContent = `→ ${calcPrestigeMult().toFixed(2)}×`;
       el('desc-prestige').textContent = state.prestigeCount > 0
         ? `Reset · ${state.prestigeCount} prior reset(s)`
         : 'Reset for a permanent bonus';
     } else {
-      fs.style.display = 'none';
+      const earned = state.totalEarned;
+      const need = CONFIG.prestigeUnlock;
+      const pct = Math.round((earned / need) * 100);
+      el('cost-prestige').textContent = 'Coming Soon';
+      el('desc-prestige').textContent = `Unlock at $${fmt(need)} earned (${pct}%)`;
     }
   }
 }
 
+// Wrap any buy action behind an inline confirm (check / X). Prevents misclicks.
+function withConfirm(btn, doBuy) {
+  if (btn.dataset.confirming === '1') return; // already showing
+  btn.dataset.confirming = '1';
+  const orig = btn.innerHTML;
+  btn.classList.add('confirm-mode');
+  btn.innerHTML =
+    `<span class="confirm-yes" title="Confirm"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 7l3 3 7-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>` +
+    `<span class="confirm-no" title="Cancel"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>`;
+  const restore = () => { btn.innerHTML = orig; btn.classList.remove('confirm-mode'); btn.dataset.confirming = '0'; };
+  btn.querySelector('.confirm-yes').onclick = (e) => { e.stopPropagation(); restore(); doBuy(); };
+  btn.querySelector('.confirm-no').onclick  = (e) => { e.stopPropagation(); restore(); };
+}
+
 function wireShop() {
-  el('btn-station'         ).addEventListener('click', buyStation);
-  el('btn-building'        ).addEventListener('click', buyBuilding);
-  el('btn-marketing'       ).addEventListener('click', buyMarketing);
-  el('btn-tier-2'          ).addEventListener('click', () => buyTier(2));
-  el('btn-tier-3'          ).addEventListener('click', () => buyTier(3));
-  el('btn-tier-4'          ).addEventListener('click', () => buyTier(4));
+  el('btn-station'         ).addEventListener('click', (e) => withConfirm(e.currentTarget, buyStation));
+  el('btn-building'        ).addEventListener('click', (e) => withConfirm(e.currentTarget, buyBuilding));
+  el('btn-marketing'       ).addEventListener('click', (e) => withConfirm(e.currentTarget, buyMarketing));
+  el('btn-tier-2'          ).addEventListener('click', (e) => withConfirm(e.currentTarget, () => buyTier(2)));
+  el('btn-tier-3'          ).addEventListener('click', (e) => withConfirm(e.currentTarget, () => buyTier(3)));
+  el('btn-tier-4'          ).addEventListener('click', (e) => withConfirm(e.currentTarget, () => buyTier(4)));
   el('btn-prestige'        ).addEventListener('click', openPrestigeModal);
   el('btn-prestige-cancel' ).addEventListener('click', () => el('prestige-modal').classList.add('hidden'));
   el('btn-prestige-confirm').addEventListener('click', () => {
@@ -1341,6 +1213,13 @@ function wireShop() {
   el('btn-staff-done' ).addEventListener('click', closeStaffModal);
   el('staff-modal'    ).addEventListener('click', (e) => {
     if (e.target.id === 'staff-modal') closeStaffModal();
+  });
+  el('fire-cancel').addEventListener('click', () => el('fire-confirm-modal').classList.add('hidden'));
+  el('fire-confirm').addEventListener('click', () => {
+    if (_pendingFire) fireWorker(_pendingFire.role, _pendingFire.tier);
+    _pendingFire = null;
+    el('fire-confirm-modal').classList.add('hidden');
+    renderStaffModal(); render();
   });
   el('btn-stats'      ).addEventListener('click', openStatsModal);
   el('btn-stats-close').addEventListener('click', closeStatsModal);
@@ -1354,12 +1233,21 @@ function wireShop() {
   // Header pills → staff modal
   ['fill','check','pack'].forEach(role =>
     el(`ua-${role}`).addEventListener('click', openStaffModal));
-  // Mobile header row toggle
+  // Mobile header row toggle — now toggles floor-unassigned strip
   el('header-row-toggle').addEventListener('click', () => {
-    const row = el('header-pills-row');
+    const row = el('floor-unassigned');
+    if (!row) return;
     const collapsed = row.classList.toggle('is-collapsed');
     el('header-row-toggle').setAttribute('aria-expanded', collapsed ? 'false' : 'true');
     el('header-row-toggle').classList.toggle('is-collapsed', collapsed);
+  });
+  // Stats bar expand/collapse
+  el('stats-bar-toggle').addEventListener('click', () => {
+    const exp = el('stats-bar-expanded');
+    const opening = exp.hidden;
+    exp.hidden = !opening;
+    el('stats-bar-toggle').setAttribute('aria-expanded', opening ? 'true' : 'false');
+    el('stats-bar-toggle').classList.toggle('is-open', opening);
   });
   // Tier tab delegation
   el('tier-tabs').addEventListener('click', (e) => {
@@ -1399,7 +1287,9 @@ function applyOffline() {
   const moneyBefore = state.money;
   const SAMPLES = 1000;
   const step = (elapsed / 1000) / SAMPLES;  // seconds per sample
+  const frozenTimer = state.wageTimerMs;        // freeze wage timer offline
   for (let i = 0; i < SAMPLES; i++) advance(step);
+  state.wageTimerMs = frozenTimer;              // restore — wages pause while away
   return { elapsed, earned: state.money - moneyBefore };
 }
 
@@ -1460,7 +1350,7 @@ function renderFigures(role) {
     const delay = (Math.random() * 4).toFixed(2);
     const dur   = (3.6 + Math.random() * 1.6).toFixed(2);
     html += `<span class="worker-fig" style="--hop-delay:${delay}s;--hop-dur:${dur}s">
-        <svg viewBox="0 0 40 56"><use href="#worker-${role}"/></svg>
+        <svg width="30" height="46" viewBox="0 0 40 56"><use href="#worker-${role}"/></svg>
       </span>`;
   }
   if (badge) html += `<span class="fig-badge ${dense ? 'is-dense ' : ''}role-${role}">×${badge}</span>`;
@@ -1515,7 +1405,7 @@ function renderTierLinePanel() {
     stage.className = 'tier-line-stage';
     stage.innerHTML =
       `<div class="tls-header">` +
-        `<span class="tls-role-badge role-${role}">${role.toUpperCase()}</span>` +
+        `<span class="tls-role-badge role-${role}">${ROLE_LABEL[role]}</span>` +
         `<span class="tls-rate">${rate.toFixed(2)} rx/s</span>` +
       `</div>` +
       `<div class="tls-controls">` +
@@ -1568,7 +1458,7 @@ function renderStationUpgrades() {
     ul.appendChild(item);
   }
   ul.querySelectorAll('[data-gupg]').forEach(b =>
-    b.addEventListener('click', () => buyGlobalUpgrade(b.dataset.gupg)));
+    b.addEventListener('click', (e) => withConfirm(e.currentTarget, () => buyGlobalUpgrade(b.dataset.gupg))));
 }
 
 // ─── STAFF MODAL ──────────────────────────────────────────────
@@ -1596,11 +1486,12 @@ function renderHirePanel(role) {
   panel.innerHTML = cands.map(c =>
     `<div class="hire-card">
       <div class="hire-card-figure">
-        <svg viewBox="0 0 40 56" class="hire-figure role-${role}"><use href="#worker-${role}"/></svg>
+        <svg width="40" height="56" viewBox="0 0 40 56" class="hire-figure role-${role}"><use href="#worker-${role}"/></svg>
       </div>
       <div class="hire-card-name">${c.name}</div>
       <div class="hire-card-title">${c.title}</div>
       <div class="hire-card-bio">${c.bio}</div>
+      <div class="hire-card-wage">Wage: $${fmt(CONFIG.wages[role])}/shift</div>
       <button class="btn-buy hire-card-btn" data-hire-role="${role}" ${canHire ? '' : 'disabled'}>
         <span class="btn-cost mono">$${fmt(cost)}</span>
       </button>
@@ -1608,11 +1499,11 @@ function renderHirePanel(role) {
   ).join('');
 
   panel.querySelectorAll('[data-hire-role]').forEach(b =>
-    b.addEventListener('click', () => {
+    b.addEventListener('click', (e) => withConfirm(e.currentTarget, () => {
       hireWorker(b.dataset.hireRole);
       renderHireModal();
       render();
-    }));
+    })));
 }
 
 function renderHireModal() {
@@ -1634,14 +1525,6 @@ function wireSceneCards() {
     el(`ctrl-${role}-plus` ).addEventListener('click', () => { assignWorker(viewTier(), role);   render(); });
     el(`ctrl-${role}-minus`).addEventListener('click', () => { unassignWorker(viewTier(), role); render(); });
   }
-  el('btn-floor-toggle').addEventListener('click', toggleDenseView);
-}
-
-function toggleDenseView() {
-  const dense = el('pipeline-wrap').hidden;   // currently hidden → switching TO dense
-  el('pipeline-wrap').hidden = !dense;
-  el('floor-scene').hidden   = dense;
-  try { localStorage.setItem('idleRx_denseView', dense ? '1' : '0'); } catch(e) {}
 }
 
 function wireHireModal() {
@@ -1672,7 +1555,7 @@ function renderStaffModal() {
     const chip  = document.createElement('div');
     chip.className = 'staff-pool-chip';
     chip.innerHTML =
-      `<span class="staff-pool-chip-role role-${role}">${role.toUpperCase()}</span>` +
+      `<span class="staff-pool-chip-role role-${role}">${ROLE_LABEL[role]}</span>` +
       `<span class="staff-pool-chip-count">${count}</span>` +
       `<button class="tls-btn" data-fire-pool="${role}" ${count < 1 ? 'disabled' : ''} title="Fire (no refund)">` +
         `<svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 2l6 6M8 2L2 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>` +
@@ -1680,38 +1563,38 @@ function renderStaffModal() {
     pool.appendChild(chip);
   }
   pool.querySelectorAll('[data-fire-pool]').forEach(b =>
-    b.addEventListener('click', () => { fireWorker(b.dataset.firePool, null); renderStaffModal(); render(); }));
+    b.addEventListener('click', () => requestFire(b.dataset.firePool, null)));
 
   // Tier blocks
   const tiersEl = el('staff-tiers-section');
   tiersEl.innerHTML = '';
   for (let t = 1; t <= 4; t++) {
     const unlocked = state.drugTier >= t;
-    const block    = document.createElement('div');
-    block.className = 'staff-tier-block' + (unlocked ? '' : ' is-locked');
+    if (!unlocked) continue; // hide locked tiers (UI Staff #2)
+    const block = document.createElement('div');
+    block.className = 'staff-tier-block';
     const tierName  = CONFIG.tiers[t-1].name;
     let rolesHtml   = '';
     for (const role of ['fill','check','pack']) {
       const count  = state.staffPerTier[t]?.[role] || 0;
-      const canAdd = unlocked && (state.unassignedStaff[role] || 0) > 0;
-      const canSub = unlocked && count > 0;
+      const canAdd = (state.unassignedStaff[role] || 0) > 0;
+      const canSub = count > 0;
       rolesHtml +=
         `<div class="staff-role-row">` +
-          `<span class="staff-role-label role-${role}">${role[0].toUpperCase()}</span>` +
-          `<button class="tls-btn tls-minus" data-dir="un" data-assign-tier="${t}" data-assign-role="${role}" ${canSub ? '' : 'disabled'}>` +
-            `<svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg>` +
-          `</button>` +
-          `<span class="tls-count" style="font-size:15px">${count}</span>` +
-          `<button class="tls-btn tls-plus" data-dir="as" data-assign-tier="${t}" data-assign-role="${role}" ${canAdd ? '' : 'disabled'}>` +
-            `<svg width="10" height="10" viewBox="0 0 10 10"><rect x="4" y="0" width="2" height="10" rx="1" fill="currentColor"/><rect x="0" y="4" width="10" height="2" rx="1" fill="currentColor"/></svg>` +
-          `</button>` +
-          `<button class="tls-btn" data-fire-tier="${t}" data-fire-role="${role}" ${canSub ? '' : 'disabled'} title="Fire (no refund)">` +
-            `<svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 2l6 6M8 2L2 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>` +
-          `</button>` +
+          `<span class="staff-role-label role-${role}">${ROLE_LABEL[role]}</span>` +
+          `<span class="tls-count">${count}</span>` +
+          `<span class="vstepper">` +
+            `<button class="vstep-up"   data-dir="as" data-assign-tier="${t}" data-assign-role="${role}" ${canAdd?'':'disabled'} aria-label="Assign">` +
+              `<svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 5l4-4 4 4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg></button>` +
+            `<button class="vstep-down" data-dir="un" data-assign-tier="${t}" data-assign-role="${role}" ${canSub?'':'disabled'} aria-label="Unassign">` +
+              `<svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg></button>` +
+          `</span>` +
+          `<button class="tls-btn fire-btn" data-fire-tier="${t}" data-fire-role="${role}" ${canSub?'':'disabled'} title="Fire">` +
+            `<svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 2l6 6M8 2L2 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>` +
         `</div>`;
     }
     block.innerHTML =
-      `<div class="staff-tier-label">${unlocked ? 'TIER ' + t + ' — ' + tierName.toUpperCase() : tierName.toUpperCase() + ' (LOCKED)'}</div>` +
+      `<div class="staff-tier-label">TIER ${t} — ${tierName.toUpperCase()}</div>` +
       `<div class="staff-tier-roles">${rolesHtml}</div>`;
     block.querySelectorAll('[data-assign-tier]').forEach(b => {
       b.addEventListener('click', () => {
@@ -1723,17 +1606,22 @@ function renderStaffModal() {
       });
     });
     block.querySelectorAll('[data-fire-tier]').forEach(b => {
-      b.addEventListener('click', () => {
-        fireWorker(b.dataset.fireRole, parseInt(b.dataset.fireTier));
-        renderStaffModal(); render();
-      });
+      b.addEventListener('click', () => requestFire(b.dataset.fireRole, parseInt(b.dataset.fireTier)));
     });
     tiersEl.appendChild(block);
+  }
+  if (state.drugTier < 2) {
+    const hint = document.createElement('div');
+    hint.className = 'staff-tier-hint';
+    hint.textContent = 'Unlock more drug tiers to expand your floor.';
+    tiersEl.appendChild(hint);
   }
 
   // Footer
   const capNote = el('staff-cap-note');
   if (capNote) capNote.textContent = `${totalStaffAll()}/${maxStaff()} staff slots used`;
+  const ssi = el('staff-slots-inline');
+  if (ssi) ssi.textContent = `${totalStaffAll()}/${maxStaff()} slots`;
 }
 
 // patchStaffModal: update counts + disabled states WITHOUT destroying buttons.
@@ -1768,9 +1656,15 @@ function patchStaffModal() {
   }
   const capNote = el('staff-cap-note');
   if (capNote) capNote.textContent = `${totalStaffAll()}/${maxStaff()} staff slots used`;
+  const ssi2 = el('staff-slots-inline');
+  if (ssi2) ssi2.textContent = `${totalStaffAll()}/${maxStaff()} slots`;
+  const ps = el('staff-payroll-summary');
+  if (ps) {
+    const remMs = Math.max(0, CONFIG.shiftMs - state.wageTimerMs);
+    const mm = Math.floor(remMs / 60000), ss = Math.floor((remMs % 60000) / 1000);
+    ps.textContent = `Payroll: $${fmt(calcPayrollPerShift())}/shift · next in ${mm}:${String(ss).padStart(2,'0')}`;
+  }
 }
-
-// ─── MODULE-LEVEL ANIMATION STATE ────────────────────────────
 const _moneyPopQueue = [];
 let   _popPoolIdx    = 0;
 let   _lastConveyorUpdate = 0;
@@ -1803,15 +1697,20 @@ function renderUpgradeList() {
     ul.appendChild(item);
   }
   ul.querySelectorAll('[data-upg]').forEach(b =>
-    b.addEventListener('click', () => buyUpgrade(b.dataset.upg)));
+    b.addEventListener('click', (e) => withConfirm(e.currentTarget, () => buyUpgrade(b.dataset.upg))));
 }
 
 // ─── TOTE STACKS ──────────────────────────────────────────────
 function renderToteStack(elementId, bufferValue, throughput, roleColor) {
   const container = el(elementId);
   if (!container) return;
-  const ratio     = throughput > 0 ? bufferValue / (throughput * 5) : 0;
-  const toteCount = Math.min(5, Math.floor(ratio * 5));
+  // Stack scales with the raw backlog, independent of downstream rate.
+  // A stalled stage (rate ~0) with a real queue therefore shows a FULL stack
+  // instead of an empty one. Log scale: 1 tote ~1rx, 5 totes ~200rx+.
+  let toteCount = 0;
+  if (bufferValue >= 0.5) {
+    toteCount = Math.min(5, 1 + Math.floor(Math.log10(bufferValue + 1) * 2.1));
+  }
   if (container.dataset.toteCount === String(toteCount)) return;
   container.dataset.toteCount = toteCount;
   container.innerHTML = '';
@@ -1852,20 +1751,25 @@ function renderConveyor() {
   const dominant       = activeTierList[activeTierList.length - 1] || 1;
   const tierColors     = ['var(--tier-1)', 'var(--tier-2)', 'var(--tier-3)', 'var(--tier-4)'];
   const beltColor      = tierColors[dominant - 1];
-  const speed          = Math.max(1.5, 8 - tp * 0.65).toFixed(2);
-  const activePills    = tp < 0.05 ? 0 : Math.min(12, Math.max(1, Math.round(tp * 1.8)));
+  // Logarithmic: speed ramps and density rises with throughput, both saturating.
+  const lg             = Math.log10(tp + 1);
+  const speed          = Math.max(1.0, 7 - lg * 3.2).toFixed(2);
+  const activePills    = tp < 0.05 ? 0 : Math.min(12, Math.max(1, Math.round(lg * 7)));
 
   // Determine red backup state from scene-belt class (set by renderBacklog)
   const redBackup = el('scene-belt')?.classList.contains('belt-backup');
 
-  document.querySelectorAll('#scene-belt-lane .belt-pill, #belt-lane .belt-pill').forEach((pill, i) => {
+  document.querySelectorAll('#scene-belt-lane .belt-pill').forEach((pill, i) => {
     const active = i < activePills;
     pill.classList.toggle('is-active', active);
     pill.classList.toggle('is-backup', active && redBackup);
     if (active) {
-      const offset = (i / activePills * 100).toFixed(1);
+      // On backup, compress pills toward the backlog (right) side — visual queue.
+      const spread = redBackup ? 45 : 100;
+      const originPct = redBackup ? 55 : 0;
+      const offset = (originPct + (i / activePills) * spread).toFixed(1);
       pill.style.setProperty('--belt-offset', offset + '%');
-      pill.style.setProperty('--belt-speed', (redBackup ? (parseFloat(speed) * 1.8).toFixed(2) : speed) + 's');
+      pill.style.setProperty('--belt-speed', speed + 's');
       pill.style.color = beltColor;
     }
   });
@@ -1906,9 +1810,21 @@ function render() {
 
   // ── Header ──
   el('money-display' ).textContent = '$' + fmt(state.money);
-  el('income-rate'   ).textContent = '$' + fmt(calcIncomeRate()) + '/s';
-  el('tier-name'     ).textContent = tier.name;
-  el('building-level').textContent = 'Lv. ' + state.buildingLevel;
+  // Net rate = income − wage burn; color-coded (easy win #1)
+  const burn = wageBurnPerSec();
+  const net  = calcIncomeRate() - burn;
+  const rateEl = el('income-rate');
+  rateEl.textContent = (net >= 0 ? '$' : '–$') + fmt(Math.abs(net)) + '/s';
+  rateEl.classList.toggle('rate-positive', net >= 0);
+  rateEl.classList.toggle('rate-negative', net < 0);
+  // Wage clock: depleting arc (full at shift start → empty at deduction)
+  const remainFrac = 1 - Math.min(1, state.wageTimerMs / CONFIG.shiftMs);
+  const arc = el('wage-arc-fill');
+  if (arc) arc.setAttribute('stroke-dashoffset', (100 - remainFrac * 100).toFixed(1));
+  const wca = el('wage-clock-amount');
+  if (wca) wca.textContent = '$' + fmt(calcPayrollPerShift());
+  el('wage-clock-stat')?.classList.toggle('wage-flash', _payrollMissedFlag);
+  if (_payrollMissedFlag) { setTimeout(() => { _payrollMissedFlag = false; el('wage-clock-stat')?.classList.remove('wage-flash'); }, 1200); }
 
   // ── Per-stage AGGREGATE metrics (summed across all tiers) ──
   for (const role of ['fill', 'check', 'pack']) {
@@ -1929,6 +1845,8 @@ function render() {
   el('sb-throughput'  ).textContent = fmtRx(calcThroughput()) + ' rx/s';
   el('sb-bottleneck'  ).textContent = findBottleneck();
   el('sb-total-earned').textContent = '$' + fmt(state.totalEarned || 0);
+  el('sb-payroll').textContent = '–$' + fmt(calcPayrollPerShift()) + '/shift';
+  el('sb-burn').textContent    = '$' + fmt(wageBurnPerSec()) + '/s';
   el('stats-bar').classList.toggle('is-balanced', bk.length === 0);
 
   // ── Milestone (stats bar progress bar) ──
@@ -1972,13 +1890,19 @@ function render() {
   // ── Money pops ──
   flushMoneyPops();
 
-  // ── Header unassigned pills ──
+  // ── Inbox backlog badge ──
+  const inboxEl = el('inbox-badge');
+  if (inboxEl) inboxEl.textContent = Math.round(_inboxBacklog);
+
+  // ── Floor unassigned pills ──
+  const PILL_LABEL = { fill: 'Tech', check: 'Rph', pack: 'Packer' };
   for (const role of ['fill','check','pack']) {
     const count = state.unassignedStaff[role] || 0;
     const pill  = el(`ua-${role}`);
     if (pill) {
-      if (pill.textContent !== String(count)) {
-        pill.textContent = count;
+      const label = PILL_LABEL[role] + ' ' + count;
+      if (pill.textContent !== label) {
+        pill.textContent = label;
         // brief pulse when a new worker lands in the pool
         if (count > (pill._lastCount ?? 0)) {
           pill.classList.remove('pulse'); void pill.offsetWidth; pill.classList.add('pulse');
@@ -2077,7 +2001,7 @@ function render() {
 
 // ─── INIT CONVEYOR + MONEY POPS ──────────────────────────────
 function initConveyor() {
-  for (const laneId of ['belt-lane', 'scene-belt-lane']) {
+  for (const laneId of ['scene-belt-lane']) {
     const lane = el(laneId);
     if (!lane) continue;
     for (let i = 0; i < 12; i++) {
@@ -2106,7 +2030,21 @@ function initMoneyPops() {
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
+async function loadFlavor() {
+  try {
+    const res = await fetch('flavor.json');
+    if (!res.ok) throw new Error('bad status');
+    const data = await res.json();
+    CONFIG.candidatePool = data.candidatePool || FLAVOR_FALLBACK.candidatePool;
+  } catch (e) {
+    console.info('[IdleRx] flavor.json unavailable, using fallback.');
+    CONFIG.candidatePool = FLAVOR_FALLBACK.candidatePool;
+  }
+}
+
 function init() {
+  CONFIG.candidatePool = FLAVOR_FALLBACK.candidatePool; // sync default so hire works immediately
+  loadFlavor(); // async upgrade; non-blocking
   state = load();
 
   // Apply offline earnings before first render so opening balance is accurate
@@ -2123,14 +2061,6 @@ function init() {
   wireSceneCards();
   initConveyor();
   initMoneyPops();
-
-  // Restore dense-view preference
-  try {
-    if (localStorage.getItem('idleRx_denseView') === '1') {
-      el('pipeline-wrap').hidden = false;
-      el('floor-scene').hidden   = true;
-    }
-  } catch(e) {}
 
   startGameLoop();
   startStatsSampler();
