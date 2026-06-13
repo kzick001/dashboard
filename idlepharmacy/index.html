@@ -505,33 +505,81 @@ const CONFIG = window.GAME_CONFIG;
 // Baked-in fallback flavor — used if flavor.json fetch fails (e.g. local file://).
 const FLAVOR_FALLBACK = {
   candidatePool: {
-    fill: [
-      { name: 'Marcus Webb',    title: 'Pharmacy Technician',   bio: 'Methodical counter. Never a short fill.' },
-      { name: 'Priya Nair',     title: 'Certified Tech (CPhT)',  bio: 'Trains the new hires on QA.' },
-      { name: 'Dana Kowalski',  title: 'Dispensing Tech',        bio: 'Fifteen years on the bench.' },
-      { name: 'Theo Brandt',    title: 'Pharmacy Technician',    bio: 'Fast hands, steady counts.' },
-      { name: 'Lena Castillo',  title: 'Lead Technician',        bio: 'Keeps the bench moving.' },
-      { name: 'Omar Haddad',    title: 'Certified Tech (CPhT)',  bio: 'Zero rejected claims last quarter.' },
-      { name: 'Grace Im',       title: 'Pharmacy Technician',    bio: 'Color-codes everything. It works.' },
+    names: [
+      { name: 'Laura',       gender: 'f'  },
+      { name: 'Phia',        gender: 'f'  },
+      { name: 'Mitch',       gender: 'm'  },
+      { name: 'Carolee',     gender: 'f'  },
+      { name: 'Geo',         gender: 'nb' },
+      { name: 'Jasmine',     gender: 'f'  },
+      { name: 'Caleb',       gender: 'm'  },
+      { name: 'Pa',          gender: 'nb' },
+      { name: 'Gaochoua',    gender: 'f'  },
+      { name: 'Dr. Phil',    gender: 'm'  },
+      { name: 'Dr. Melissa', gender: 'f'  },
+      { name: 'Dr. Jason',   gender: 'm'  },
+      { name: 'Dr. Nancy',   gender: 'f'  },
+      { name: 'Dr. Andy',    gender: 'm'  },
+      { name: 'Dr. Anam',    gender: 'nb' },
+      { name: 'Dr. Mary',    gender: 'f'  },
+      { name: 'Dr. Jeff',    gender: 'm'  },
+      { name: 'Dr. Alyse',   gender: 'f'  },
+      { name: 'Ty',          gender: 'm'  },
+      { name: 'Madi',        gender: 'f'  },
+      { name: 'Zeph',        gender: 'nb' },
+      { name: 'Mario',       gender: 'm'  },
+      { name: 'Belen',       gender: 'f'  },
+      { name: 'Dan',         gender: 'm'  },
+      { name: 'Krystal',     gender: 'f'  },
+      { name: 'Andrew',      gender: 'm'  },
     ],
-    check: [
-      { name: 'Dr. Osei',       title: 'Staff Pharmacist',       bio: 'Catches every interaction.' },
-      { name: 'Dr. Yuen',       title: 'PharmD, BCPS',           bio: 'Wrote the DUR policy.' },
-      { name: 'Dr. Reyes',      title: 'Pharmacy Director',      bio: 'Regulators love her.' },
-      { name: 'Dr. Halloran',   title: 'Staff Pharmacist',       bio: 'Unhurried and precise.' },
-      { name: 'Dr. Beckett',    title: 'PharmD',                 bio: 'Counsels every patient.' },
-      { name: 'Dr. Vance',      title: 'Clinical Pharmacist',    bio: 'Reads the chart twice.' },
-      { name: 'Dr. Sato',       title: 'PharmD, BCPS',           bio: 'Quiet, thorough, fast.' },
-    ],
-    pack: [
-      { name: 'Hector Lima',    title: 'Fulfillment Associate',  bio: 'Every label, perfect.' },
-      { name: 'Simone Park',    title: 'Lead Packer',            bio: 'Runs the end-of-day tally unasked.' },
-      { name: 'Jerome Tucker',  title: 'Fulfillment Supervisor', bio: 'Trains the floor in two days.' },
-      { name: 'Bianca Rossi',   title: 'Packer',                 bio: 'Never a mispack.' },
-      { name: 'Cole Mathers',   title: 'Fulfillment Associate',  bio: 'Boxes like a machine.' },
-      { name: 'Aisha Bello',    title: 'Lead Packer',            bio: 'Keeps the totes flowing.' },
-      { name: 'Devon Pratt',    title: 'Packer',                 bio: 'Calm under a full queue.' },
-    ],
+    fill: {
+      titles: [
+        'Certified Tech (CPhT)', 'Dispensing Tech', 'Pharmacy Technician', 'Lead Technician',
+      ],
+      bios: [
+        'Survived six winters in the CVS trenches. Flinches violently at any sound resembling a drive-thru alert.',
+        'Cures Acute Insurance Rejection Syndrome. Dispels prior authorization blockers with professionalism, and occasionally, violence.',
+        'Specialty drug enthusiast. Handles $15,000 biologics with the delicate care of a bomb squad technician.',
+        'Escaped the Corner of Happy and Hell. Can count to 90 by fives in their sleep while actively administering immunizations.',
+        'The Hieroglyphics Translator. Converts doctor scribbles and hostile shorthand into flawless standard sigs.',
+        'Guardian of the cold-chain. Will literally bite you if the fridge door stays open for more than four seconds.',
+        'Purple Heart recipient from the Great Flu Shot Offensive. Never leaves a script behind.',
+        'Spots suspicious out-of-state prescriptions from across the room. Absolute steel trap.',
+        'Escaped through a Walgreens drive-thru window and walked straight here. Their eyes have seen things.',
+      ],
+    },
+    check: {
+      titles: [
+        'Staff Pharmacist', 'Pharmacy Director', 'PharmD', 'Clinical Pharmacist', 'PharmD, BCPS',
+      ],
+      bios: [
+        'Cures Severe Polypharmacy Blindness with a single authoritative stroke of their red pen.',
+        'Former retail manager. Deeply suspicious when allowed to sit down for a full lunch break.',
+        'Verifies $20,000 auto-injectors. Heart rate never spikes. Forehead sweats actual ice water.',
+        'Eradicates Phantom Refill Syndrome before it infects the active billing queue.',
+        'Certified in high-stakes retail drive-thru de-escalation. Only has three fingers on their left hand.',
+        'Chief Temperature Officer. Will drop everything and sprint to the thermostat if indoor ambient temperature breaches 65F.',
+        'Certified in high-stakes PBM phone tree navigation. Interrogates insurance helpdesks for sport.',
+        "Veterinary specialty wizard. Translates a cat's weight into a flawless compounded liquid dose.",
+        'Wrote the manual on DUR survival. Can enter override codes blindfolded while riding a horse.',
+      ],
+    },
+    pack: {
+      titles: [
+        'Fulfillment Associate', 'Packer', 'Lead Packer', 'Fulfillment Supervisor',
+      ],
+      bios: [
+        "Master of Ice-Pack Tetris. Deeply believes birds aren't real. Harbors an unyielding distrust of all logistics networks.",
+        'Can unearth a single canceled order from a mountain of outgoing packages three seconds before the USPS driver arrives.',
+        'Plays the tape gun like a musical instrument. Dispenses packing tape at exactly 120 beats per minute.',
+        'Can assemble six boxes simultaneously while scream-singing the entire lyrics to "Uptown Funk".',
+        'Balances frozen gel packs like a professional juggler. Their hands are permanently 40 degrees Fahrenheit.',
+        'Operates entirely by echolocation in the warehouse. Memorizes the exact physical coordinates of every outgoing tote.',
+        'Can identify the exact weight of a package just by looking at it. Accurate to within half an ounce.',
+        'The Heavy Box Whisperer. Tapes 40-pound bulk specialty orders shut with a single hand while drinking a Monster Energy.',
+      ],
+    },
   },
 };
 
@@ -1375,9 +1423,9 @@ function renderFigures(role) {
   container.classList.toggle('is-tight', figs >= 3 && !dense);
   container.classList.toggle('is-empty', n === 0);
 
-  const useImg = CONFIG.sprites?._figureOk?.[role] && CONFIG.sprites.figures[role];
+  const useImg = CONFIG.sprites?._figureOk?.[role] && CONFIG.sprites.figures[role]?.[0];
   const inner  = useImg
-    ? `<img class="worker-sprite" src="${CONFIG.sprites.figures[role]}" alt="" draggable="false">`
+    ? `<img class="worker-sprite" src="${CONFIG.sprites.figures[role][0]}" alt="" draggable="false">`
     : `<svg width="30" height="46" viewBox="0 0 40 56"><use href="#worker-${role}"/></svg>`;
   let html = '';
   for (let i = 0; i < figs; i++) {
@@ -1500,14 +1548,54 @@ function renderStationUpgrades() {
 
 // ─── STAFF MODAL ──────────────────────────────────────────────
 // ─── HIRE MODAL ───────────────────────────────────────────────
-// Pick `n` distinct random candidates from a role pool.
-function pickCandidates(role, n) {
-  const pool = (CONFIG.candidatePool[role] || []).slice();
-  for (let i = pool.length - 1; i > 0; i--) {       // Fisher–Yates
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
+// Pick a random portrait for a candidate, by role + gender.
+// Falls back to the combined pool for the role if the gendered
+// pool is empty (e.g. _nb pools before NB-specific art exists).
+function pickPortrait(role, gender) {
+  const portraits = CONFIG.sprites?.portraits || {};
+  const specific = portraits[`${role}_${gender}`];
+  if (specific && specific.length) {
+    return specific[Math.floor(Math.random() * specific.length)];
   }
-  return pool.slice(0, Math.min(n, pool.length));
+  const combined = ['m', 'f', 'nb'].flatMap(g => portraits[`${role}_${g}`] || []);
+  if (combined.length) {
+    return combined[Math.floor(Math.random() * combined.length)];
+  }
+  return null;
+}
+
+// Draw one randomized candidate: name+gender, title, and bio are each
+// pulled independently from shared pools. Title and bio are role-specific —
+// names are global and recombine freely across roles.
+function pickCandidate(role) {
+  const pool   = CONFIG.candidatePool || {};
+  const names  = pool.names         || [];
+  const titles = pool[role]?.titles || [];
+  const bios   = pool[role]?.bios   || [];
+
+  const n = names[Math.floor(Math.random() * names.length)]  || { name: '???', gender: 'nb' };
+  const t = titles[Math.floor(Math.random() * titles.length)] || '';
+  const b = bios[Math.floor(Math.random() * bios.length)]     || '';
+
+  return { name: n.name, gender: n.gender, title: t, bio: b };
+}
+
+// Generate `n` candidates for a hire panel. Guards against showing the
+// exact same name+title+bio combo twice in one panel (astronomically
+// unlikely with full pools, but cheap to prevent).
+function pickCandidates(role, n) {
+  const seen = new Set();
+  const out  = [];
+  let guard  = 0;
+  while (out.length < n && guard < n * 20) {
+    guard++;
+    const c   = pickCandidate(role);
+    const key = `${c.name}|${c.title}|${c.bio}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(c);
+  }
+  return out;
 }
 
 function renderHirePanel(role) {
@@ -1518,19 +1606,21 @@ function renderHirePanel(role) {
   const canHire = !atCap && state.money >= cost;
 
   const n = 2 + Math.floor(Math.random() * 2);       // 2 or 3
-  const cands = pickCandidates(role, n);
+  const cands = pickCandidates(role, n).map(c => ({
+    ...c,
+    portrait: pickPortrait(role, c.gender),
+  }));
 
-  const portraitFor = (name) => {
-    const url = CONFIG.sprites?.portraits?.[name];
+  const portraitFor = (c) => {
     const svg = `<svg width=&quot;40&quot; height=&quot;56&quot; viewBox=&quot;0 0 40 56&quot;><use href=&quot;#worker-${role}&quot;/></svg>`;
-    return url
-      ? `<img class="hire-portrait" src="${url}" alt="" draggable="false" onerror="this.outerHTML='${svg}'">`
+    return c.portrait
+      ? `<img class="hire-portrait" src="${c.portrait}" alt="" draggable="false" onerror="this.outerHTML='${svg}'">`
       : `<svg width="40" height="56" viewBox="0 0 40 56" class="hire-figure role-${role}"><use href="#worker-${role}"/></svg>`;
   };
   panel.innerHTML = cands.map(c =>
     `<div class="hire-card">
-      <div class="hire-card-figure ${CONFIG.sprites?.portraits?.[c.name] ? 'has-portrait' : ''}">
-        ${portraitFor(c.name)}
+      <div class="hire-card-figure ${c.portrait ? 'has-portrait' : ''}">
+        ${portraitFor(c)}
       </div>
       <div class="hire-card-name">${c.name}</div>
       <div class="hire-card-title">${c.title}</div>
@@ -2099,8 +2189,9 @@ async function loadSprites() {
     CONFIG.sprites.figures   = data.figures   || {};
     CONFIG.sprites.portraits = data.portraits || {};
     // Verify each figure image up-front so renderFigures never flickers (D10).
+    // Figures are pooled arrays; this phase uses index [0] only.
     for (const role of ['fill','check','pack']) {
-      const url = CONFIG.sprites.figures[role];
+      const url = CONFIG.sprites.figures[role]?.[0];
       if (!url) continue;
       const img = new Image();
       img.onload  = () => { CONFIG.sprites._figureOk[role] = true; _figuresSig[role] = ''; };
