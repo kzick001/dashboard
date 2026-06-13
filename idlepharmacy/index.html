@@ -28,45 +28,13 @@
 
   <!-- ═══ HEADER ═══════════════════════════════════════════════ -->
   <header id="header" class="header-2row">
-    <div class="header-left">
-      <span class="brand-mark">℞</span>
-      <span class="brand-name">IDLE PHARMACY</span>
-    </div>
-
-    <div class="header-center" id="header-center">
-      <div class="header-row header-row-stats">
-        <div class="hstat">
-          <span class="hstat-label">Balance</span>
-          <span class="hstat-value mono" id="money-display">$0.00</span>
-        </div>
-        <div class="hstat-sep"></div>
-        <div class="hstat">
-          <span class="hstat-label">Rate</span>
-          <span class="hstat-value mono" id="income-rate">$0.00/s</span>
-        </div>
-        <div class="hstat-sep"></div>
-        <div class="hstat hstat-wage" id="wage-clock-stat" title="Payroll due this shift">
-          <span class="hstat-label">Payroll</span>
-          <span class="wage-clock-wrap">
-            <svg class="wage-arc" width="30" height="30" viewBox="0 0 36 36" aria-hidden="true">
-              <circle class="wage-arc-track" cx="18" cy="18" r="15.9" fill="none" stroke-width="3.2"/>
-              <circle class="wage-arc-fill" id="wage-arc-fill" cx="18" cy="18" r="15.9" fill="none" stroke-width="3.2"
-                      stroke-dasharray="100 100" stroke-dashoffset="0" transform="rotate(-90 18 18)" pathLength="100"/>
-            </svg>
-            <span class="wage-clock-amount mono" id="wage-clock-amount">$0</span>
-          </span>
-        </div>
+    <div class="header-bar-top">
+      <div class="header-left">
+        <span class="brand-mark">℞</span>
+        <span class="brand-name">IDLE PHARMACY</span>
       </div>
-    </div>
 
-    <!-- Mobile-only: collapse/expand the pills row -->
-    <button id="header-row-toggle" class="header-row-toggle" aria-expanded="true" aria-label="Toggle details">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-
-    <div class="header-right">
+      <div class="header-right">
       <button id="btn-staff" class="header-btn header-btn-icon" title="Staff">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <circle cx="6" cy="4" r="2.5" stroke="currentColor" stroke-width="1.5"/>
@@ -91,6 +59,31 @@
         <span class="header-btn-label">Stats</span>
       </button>
       <div class="save-status" id="save-status" data-status="saved">⬤ Saved</div>
+      </div>
+    </div>
+
+    <div class="header-bar-stats" id="header-stats-scroll">
+      <div class="hstat">
+        <span class="hstat-label">Balance</span>
+        <span class="hstat-value mono" id="money-display">$0.00</span>
+      </div>
+      <div class="hstat-sep"></div>
+      <div class="hstat">
+        <span class="hstat-label">Rate</span>
+        <span class="hstat-value mono" id="income-rate">$0.00/s</span>
+      </div>
+      <div class="hstat-sep"></div>
+      <div class="hstat hstat-wage" id="wage-clock-stat" title="Payroll due this shift">
+        <span class="hstat-label">Payroll</span>
+        <span class="wage-clock-wrap">
+          <svg class="wage-arc" width="30" height="30" viewBox="0 0 36 36" aria-hidden="true">
+            <circle class="wage-arc-track" cx="18" cy="18" r="15.9" fill="none" stroke-width="3.2"/>
+            <circle class="wage-arc-fill" id="wage-arc-fill" cx="18" cy="18" r="15.9" fill="none" stroke-width="3.2"
+                    stroke-dasharray="100 100" stroke-dashoffset="0" transform="rotate(-90 18 18)" pathLength="100"/>
+          </svg>
+          <span class="wage-clock-amount mono" id="wage-clock-amount">$0</span>
+        </span>
+      </div>
     </div>
   </header>
 
@@ -127,7 +120,7 @@
         </defs>
       </svg>
 
-      <!-- Tier tabs above belt (UI #4) -->
+      <!-- Tier tabs above belt -->
       <div id="tier-tabs">
         <button class="tier-tab tier-tab-1 is-active" data-tier="1">Generics</button>
         <button class="tier-tab tier-tab-2" data-tier="2" disabled>Brand</button>
@@ -138,70 +131,91 @@
       <!-- view-tier color strip — hidden; kept for JS compat -->
       <div id="scene-tier-strip"></div>
 
-      <!-- Inbox: incoming Rx awaiting fill (UI #7) -->
-      <div id="scene-inbox" title="Incoming prescriptions awaiting fill">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-          <path d="M3 13l3-8h12l3 8M3 13v6h18v-6M3 13h5l1 2h6l1-2h5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-        </svg>
-        <span class="inbox-label">Inbox</span>
-        <span class="inbox-badge mono" id="inbox-badge">0</span>
-      </div>
+      <!-- Horizontally scrollable production track (drag-to-scroll) -->
+      <div id="production-track">
+        <div id="production-inner">
 
-      <!-- Worker clusters (UI #6: above belt) -->
-      <div id="scene-floor">
-        <div class="station-cluster" id="cluster-fill"><div class="cluster-figures" id="figures-fill"></div></div>
-        <div class="station-cluster" id="cluster-check"><div class="cluster-figures" id="figures-check"></div></div>
-        <div class="station-cluster" id="cluster-pack"><div class="cluster-figures" id="figures-pack"></div></div>
-      </div>
+          <!-- Worker band: intake tray + 3 staffed columns -->
+          <div id="scene-floor">
+            <div class="prod-col prod-col-intake">
+              <div class="intake-tray" id="intake-tray" title="Incoming prescriptions awaiting fill">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 13l3-8h12l3 8M3 13v6h18v-6M3 13h5l1 2h6l1-2h5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </div>
+            <div class="prod-col">
+              <div class="station-cluster" id="cluster-fill"><div class="cluster-figures" id="figures-fill"></div></div>
+            </div>
+            <div class="prod-col">
+              <div class="station-cluster" id="cluster-check"><div class="cluster-figures" id="figures-check"></div></div>
+            </div>
+            <div class="prod-col">
+              <div class="station-cluster" id="cluster-pack">
+                <div class="cluster-figures" id="figures-pack"></div>
+                <div id="money-pops" aria-hidden="true"></div>
+              </div>
+            </div>
 
-      <!-- Conveyor + totes + backlog badges (UI #6: below workers) -->
-      <div id="scene-belt">
-        <div class="scene-belt-lane" id="scene-belt-lane"></div>
-        <div class="scene-totes scene-totes-fill"  id="scene-totes-fill"></div>
-        <div class="scene-totes scene-totes-check" id="scene-totes-check"></div>
-        <div class="scene-backlog scene-backlog-fill"  id="scene-backlog-fill">0</div>
-        <div class="scene-backlog scene-backlog-check" id="scene-backlog-check">0</div>
-      </div>
-
-      <!-- Compact station cards (UI #5: centered labels + Rx/sec) -->
-      <div id="scene-cards">
-        <div class="scene-card" id="scene-card-fill">
-          <div class="scene-card-head">
-            <span class="scene-card-label role-fill">FILL</span>
-            <span class="scene-card-rate mono"><span id="scene-rate-fill">0.00</span> Rx/sec</span>
+            <!-- Backlog totes between worker columns, riding above the belt -->
+            <div class="scene-totes scene-totes-fill"  id="scene-totes-fill"></div>
+            <div class="scene-backlog scene-backlog-fill"  id="scene-backlog-fill">0</div>
+            <div class="scene-totes scene-totes-check" id="scene-totes-check"></div>
+            <div class="scene-backlog scene-backlog-check" id="scene-backlog-check">0</div>
           </div>
-          <div class="scene-card-controls">
-            <button class="stage-ctrl-btn stage-ctrl-minus" id="ctrl-fill-minus" disabled><svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg></button>
-            <span class="stage-ctrl-count" id="ctrl-fill-count">0</span>
-            <button class="stage-ctrl-btn stage-ctrl-plus"  id="ctrl-fill-plus"  disabled><svg width="10" height="10" viewBox="0 0 10 10"><rect x="4" width="2" height="10" rx="1" fill="currentColor"/><rect y="4" width="10" height="2" rx="1" fill="currentColor"/></svg></button>
+
+          <!-- Conveyor belt runs under the whole track -->
+          <div id="scene-belt">
+            <div class="scene-belt-lane" id="scene-belt-lane"></div>
           </div>
+
+          <!-- Cards band: intake card + 3 station cards -->
+          <div id="scene-cards">
+            <div class="scene-card scene-card-intake" id="scene-card-intake">
+              <div class="scene-card-head">
+                <span class="scene-card-label role-intake">INTAKE</span>
+                <span class="scene-card-rate"><span class="inbox-badge mono" id="inbox-badge">0</span> queued</span>
+              </div>
+            </div>
+            <div class="scene-card" id="scene-card-fill">
+              <div class="scene-card-head">
+                <span class="scene-card-label role-fill">FILL</span>
+                <span class="scene-card-rate mono"><span id="scene-rate-fill">0</span> Rx/min</span>
+              </div>
+              <div class="scene-card-controls">
+                <button class="stage-ctrl-btn stage-ctrl-minus" id="ctrl-fill-minus" disabled><svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg></button>
+                <span class="stage-ctrl-count" id="ctrl-fill-count">0</span>
+                <button class="stage-ctrl-btn stage-ctrl-plus" id="ctrl-fill-plus" disabled><svg width="10" height="10" viewBox="0 0 10 10"><rect x="4" width="2" height="10" rx="1" fill="currentColor"/><rect y="4" width="10" height="2" rx="1" fill="currentColor"/></svg></button>
+              </div>
+            </div>
+            <div class="scene-card" id="scene-card-check">
+              <div class="scene-card-head">
+                <span class="scene-card-label role-check">CHECK</span>
+                <span class="scene-card-rate mono"><span id="scene-rate-check">0</span> Rx/min</span>
+              </div>
+              <div class="scene-card-controls">
+                <button class="stage-ctrl-btn stage-ctrl-minus" id="ctrl-check-minus" disabled><svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg></button>
+                <span class="stage-ctrl-count" id="ctrl-check-count">0</span>
+                <button class="stage-ctrl-btn stage-ctrl-plus" id="ctrl-check-plus" disabled><svg width="10" height="10" viewBox="0 0 10 10"><rect x="4" width="2" height="10" rx="1" fill="currentColor"/><rect y="4" width="10" height="2" rx="1" fill="currentColor"/></svg></button>
+              </div>
+            </div>
+            <div class="scene-card" id="scene-card-pack">
+              <div class="scene-card-head">
+                <span class="scene-card-label role-pack">PACK</span>
+                <span class="scene-card-rate mono"><span id="scene-rate-pack">0</span> Rx/min</span>
+              </div>
+              <div class="scene-card-controls">
+                <button class="stage-ctrl-btn stage-ctrl-minus" id="ctrl-pack-minus" disabled><svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg></button>
+                <span class="stage-ctrl-count" id="ctrl-pack-count">0</span>
+                <button class="stage-ctrl-btn stage-ctrl-plus" id="ctrl-pack-plus" disabled><svg width="10" height="10" viewBox="0 0 10 10"><rect x="4" width="2" height="10" rx="1" fill="currentColor"/><rect y="4" width="10" height="2" rx="1" fill="currentColor"/></svg></button>
+              </div>
+            </div>
+          </div>
+
         </div>
-        <div class="scene-card" id="scene-card-check">
-          <div class="scene-card-head">
-            <span class="scene-card-label role-check">CHECK</span>
-            <span class="scene-card-rate mono"><span id="scene-rate-check">0.00</span> Rx/sec</span>
-          </div>
-          <div class="scene-card-controls">
-            <button class="stage-ctrl-btn stage-ctrl-minus" id="ctrl-check-minus" disabled><svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg></button>
-            <span class="stage-ctrl-count" id="ctrl-check-count">0</span>
-            <button class="stage-ctrl-btn stage-ctrl-plus"  id="ctrl-check-plus"  disabled><svg width="10" height="10" viewBox="0 0 10 10"><rect x="4" width="2" height="10" rx="1" fill="currentColor"/><rect y="4" width="10" height="2" rx="1" fill="currentColor"/></svg></button>
-          </div>
-        </div>
-        <div class="scene-card" id="scene-card-pack">
-          <div class="scene-card-head">
-            <span class="scene-card-label role-pack">PACK</span>
-            <span class="scene-card-rate mono"><span id="scene-rate-pack">0.00</span> Rx/sec</span>
-          </div>
-          <div class="scene-card-controls">
-            <button class="stage-ctrl-btn stage-ctrl-minus" id="ctrl-pack-minus" disabled><svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg></button>
-            <span class="stage-ctrl-count" id="ctrl-pack-count">0</span>
-            <button class="stage-ctrl-btn stage-ctrl-plus"  id="ctrl-pack-plus"  disabled><svg width="10" height="10" viewBox="0 0 10 10"><rect x="4" width="2" height="10" rx="1" fill="currentColor"/><rect y="4" width="10" height="2" rx="1" fill="currentColor"/></svg></button>
-          </div>
-          <div id="money-pops" aria-hidden="true"></div>
-        </div>
       </div>
 
-      <!-- Unassigned pills below cards (UI Header #2) -->
+      <!-- Unassigned pills (fixed, outside the scroll track) -->
       <div id="floor-unassigned">
         <span class="ua-label">Unassigned</span>
         <button class="ua-pill ua-pill-fill"  id="ua-fill"  title="Unassigned Technicians">Tech 0</button>
@@ -249,7 +263,7 @@
       <h2 class="modal-title">Pharmacy Stats</h2>
       <div class="stats-grid" id="stats-grid"><!-- stat rows injected --></div>
       <div class="stats-chart-wrap">
-        <div class="stats-chart-label">Cumulative Earnings</div>
+        <div class="stats-chart-label">Throughput (rx/s · last 2 min)</div>
         <svg id="stats-spark" viewBox="0 0 320 80" preserveAspectRatio="none"></svg>
       </div>
       <div class="stats-achievements-wrap">
@@ -648,6 +662,13 @@ function fmt(n) {
   if (n >= 1e3)  return (n / 1e3 ).toFixed(2) + 'K';
   if (n >= 100)  return Math.floor(n).toString();
   return n.toFixed(2);
+}
+
+// Rx/sec → whole Rx/min string. Clamps to 1 when active but rounds <1 (D8).
+function fmtRxMin(ratePerSec) {
+  const perMin = ratePerSec * 60;
+  if (perMin <= 0) return '0';
+  return String(Math.max(1, Math.round(perMin)));
 }
 
 // Rx counts — no dollar sign, whole numbers only in display
@@ -1089,9 +1110,17 @@ function pushStatsSample() {
   if (over > 0) state.statsSamples.splice(0, over);
 }
 
+const _tpSamples = [];                 // in-memory throughput ring (D5); not persisted
+const _TP_MAX = 60;                    // ~2 min at 2s cadence
+function pushTpSample() {
+  _tpSamples.push({ t: Date.now(), tp: calcThroughput() });
+  if (_tpSamples.length > _TP_MAX) _tpSamples.shift();
+}
 function startStatsSampler() {
   pushStatsSample();
   setInterval(pushStatsSample, CONFIG.statsSampleMs);
+  pushTpSample();
+  setInterval(pushTpSample, 2000);     // lively throughput readout
 }
 
 function openStatsModal()  { closeUpgradeModal(); renderStats(); el('stats-modal').classList.remove('hidden'); }
@@ -1135,22 +1164,30 @@ function renderAchievements() {
 }
 
 function drawSparkline() {
-  const svg     = el('stats-spark');
-  const samples = state.statsSamples || [];
-  const W = 320, H = 80, pad = 4;
-  if (samples.length < 2) {
+  const svg = el('stats-spark');
+  if (!svg) return;
+  const s = _tpSamples;
+  const W = 320, H = 80, padL = 26, padR = 6, padT = 8, padB = 14;
+  if (s.length < 2) {
     svg.innerHTML = `<text x="160" y="44" text-anchor="middle" fill="#9b8568" font-size="11" font-family="Inter,sans-serif">Collecting data…</text>`;
     return;
   }
-  const xs   = samples.map(s => s.t);
-  const ys   = samples.map(s => s.earned);
+  const xs = s.map(p => p.t), ys = s.map(p => p.tp);
   const minX = xs[0], maxX = xs[xs.length - 1];
-  const minY = 0,     maxY = Math.max(...ys, 1);
-  const sx = v => pad + (W - 2*pad) * (maxX === minX ? 0 : (v - minX) / (maxX - minX));
-  const sy = v => (H - pad) - (H - 2*pad) * (maxY === minY ? 0 : (v - minY) / (maxY - minY));
-  const pts     = samples.map(s => `${sx(s.t).toFixed(1)},${sy(s.earned).toFixed(1)}`).join(' ');
-  const areaPts = `${pad},${H - pad} ${pts} ${W - pad},${H - pad}`;
+  const maxY = Math.max(...ys, 0.001);
+  const sx = v => padL + (W - padL - padR) * (maxX === minX ? 1 : (v - minX) / (maxX - minX));
+  const sy = v => (H - padB) - (H - padT - padB) * (v / maxY);
+  const pts     = s.map(p => `${sx(p.t).toFixed(1)},${sy(p.tp).toFixed(1)}`).join(' ');
+  const areaPts = `${sx(minX).toFixed(1)},${(H-padB).toFixed(1)} ${pts} ${sx(maxX).toFixed(1)},${(H-padB).toFixed(1)}`;
+  const spanSec = Math.round((maxX - minX) / 1000);
+  const yTop = maxY >= 10 ? Math.round(maxY) : maxY.toFixed(1);
   svg.innerHTML =
+    `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="var(--border)" stroke-width="1"/>` +
+    `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="var(--border)" stroke-width="1"/>` +
+    `<text x="${padL-4}" y="${padT+8}" text-anchor="end" fill="#9b8568" font-size="9" font-family="Inter,sans-serif">${yTop}</text>` +
+    `<text x="${padL-4}" y="${H-padB}" text-anchor="end" fill="#9b8568" font-size="9" font-family="Inter,sans-serif">0</text>` +
+    `<text x="${padL+2}" y="${H-3}" text-anchor="start" fill="#9b8568" font-size="9" font-family="Inter,sans-serif">-${spanSec}s</text>` +
+    `<text x="${W-padR}" y="${H-3}" text-anchor="end" fill="#9b8568" font-size="9" font-family="Inter,sans-serif">now</text>` +
     `<polygon points="${areaPts}" fill="rgba(47,125,91,0.12)" stroke="none"/>` +
     `<polyline points="${pts}" fill="none" stroke="#2f7d5b" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
 }
@@ -1186,10 +1223,16 @@ function withConfirm(btn, doBuy) {
   if (btn.dataset.confirming === '1') return; // already showing
   btn.dataset.confirming = '1';
   const orig = btn.innerHTML;
+  const cost = btn.querySelector('.btn-cost')?.textContent || 'Confirm';
   btn.classList.add('confirm-mode');
   btn.innerHTML =
-    `<span class="confirm-yes" title="Confirm"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 7l3 3 7-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>` +
-    `<span class="confirm-no" title="Cancel"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>`;
+    `<span class="confirm-yes" title="Confirm purchase">` +
+      `<svg width="13" height="13" viewBox="0 0 14 14"><path d="M2 7l3 3 7-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>` +
+      `<span class="confirm-cost mono">${cost}</span>` +
+    `</span>` +
+    `<span class="confirm-no" title="Cancel">` +
+      `<svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>` +
+    `</span>`;
   const restore = () => { btn.innerHTML = orig; btn.classList.remove('confirm-mode'); btn.dataset.confirming = '0'; };
   btn.querySelector('.confirm-yes').onclick = (e) => { e.stopPropagation(); restore(); doBuy(); };
   btn.querySelector('.confirm-no').onclick  = (e) => { e.stopPropagation(); restore(); };
@@ -1233,14 +1276,7 @@ function wireShop() {
   // Header pills → staff modal
   ['fill','check','pack'].forEach(role =>
     el(`ua-${role}`).addEventListener('click', openStaffModal));
-  // Mobile header row toggle — now toggles floor-unassigned strip
-  el('header-row-toggle').addEventListener('click', () => {
-    const row = el('floor-unassigned');
-    if (!row) return;
-    const collapsed = row.classList.toggle('is-collapsed');
-    el('header-row-toggle').setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-    el('header-row-toggle').classList.toggle('is-collapsed', collapsed);
-  });
+  // Header chevron removed in 6.2 — unassigned row is always visible.
 
   // Tier tab delegation
   el('tier-tabs').addEventListener('click', (e) => {
@@ -1336,15 +1372,18 @@ function renderFigures(role) {
   else             { figs = 3; badge = n; dense = true; }
 
   container.classList.toggle('is-dense', dense);
+  container.classList.toggle('is-tight', figs >= 3 && !dense);
   container.classList.toggle('is-empty', n === 0);
 
+  const useImg = CONFIG.sprites?._figureOk?.[role] && CONFIG.sprites.figures[role];
+  const inner  = useImg
+    ? `<img class="worker-sprite" src="${CONFIG.sprites.figures[role]}" alt="" draggable="false">`
+    : `<svg width="30" height="46" viewBox="0 0 40 56"><use href="#worker-${role}"/></svg>`;
   let html = '';
   for (let i = 0; i < figs; i++) {
     const delay = (Math.random() * 4).toFixed(2);
     const dur   = (3.6 + Math.random() * 1.6).toFixed(2);
-    html += `<span class="worker-fig" style="--hop-delay:${delay}s;--hop-dur:${dur}s">
-        <svg width="30" height="46" viewBox="0 0 40 56"><use href="#worker-${role}"/></svg>
-      </span>`;
+    html += `<span class="worker-fig" style="--hop-delay:${delay}s;--hop-dur:${dur}s">${inner}</span>`;
   }
   if (badge) html += `<span class="fig-badge ${dense ? 'is-dense ' : ''}role-${role}">×${badge}</span>`;
   container.innerHTML = html || '<span class="cluster-empty-hint"></span>';
@@ -1356,8 +1395,13 @@ function renderTierLinePanel() {
     const tab = document.querySelector(`.tier-tab[data-tier="${t}"]`);
     if (!tab) continue;
     const unlocked = state.drugTier >= t;
+    const wasHidden = tab.hidden;
+    tab.hidden   = !unlocked;            // locked tiers fully hidden
     tab.disabled = !unlocked;
     tab.classList.toggle('is-active', activeTierTab === t);
+    if (wasHidden && unlocked) {         // easy win #2: pop on unlock
+      tab.classList.remove('tab-pop'); void tab.offsetWidth; tab.classList.add('tab-pop');
+    }
   }
   // Guard: if active tab got locked, reset to 1
   if (state.drugTier < activeTierTab) activeTierTab = 1;
@@ -1476,10 +1520,17 @@ function renderHirePanel(role) {
   const n = 2 + Math.floor(Math.random() * 2);       // 2 or 3
   const cands = pickCandidates(role, n);
 
+  const portraitFor = (name) => {
+    const url = CONFIG.sprites?.portraits?.[name];
+    const svg = `<svg width=&quot;40&quot; height=&quot;56&quot; viewBox=&quot;0 0 40 56&quot;><use href=&quot;#worker-${role}&quot;/></svg>`;
+    return url
+      ? `<img class="hire-portrait" src="${url}" alt="" draggable="false" onerror="this.outerHTML='${svg}'">`
+      : `<svg width="40" height="56" viewBox="0 0 40 56" class="hire-figure role-${role}"><use href="#worker-${role}"/></svg>`;
+  };
   panel.innerHTML = cands.map(c =>
     `<div class="hire-card">
-      <div class="hire-card-figure">
-        <svg width="40" height="56" viewBox="0 0 40 56" class="hire-figure role-${role}"><use href="#worker-${role}"/></svg>
+      <div class="hire-card-figure ${CONFIG.sprites?.portraits?.[c.name] ? 'has-portrait' : ''}">
+        ${portraitFor(c.name)}
       </div>
       <div class="hire-card-name">${c.name}</div>
       <div class="hire-card-title">${c.title}</div>
@@ -1513,10 +1564,44 @@ function openHireModal()  { renderHireModal(); el('hire-modal').classList.remove
 function closeHireModal() { el('hire-modal').classList.add('hidden'); }
 
 // ─── SCENE CARD CONTROLS ─────────────────────────────────────
+// Pointer drag-to-scroll. 8px threshold protects taps on inner controls (D3).
+function enableDragScroll(containerId) {
+  const elx = el(containerId);
+  if (!elx) return;
+  let down = false, moved = false, startX = 0, startScroll = 0;
+  const THRESH = 8;
+  elx.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    down = true; moved = false;
+    startX = e.clientX; startScroll = elx.scrollLeft;
+  });
+  elx.addEventListener('pointermove', (e) => {
+    if (!down) return;
+    const dx = e.clientX - startX;
+    if (!moved && Math.abs(dx) < THRESH) return;
+    moved = true;
+    elx.scrollLeft = startScroll - dx;
+    elx.classList.add('is-dragging');
+    e.preventDefault();
+  });
+  const end = () => { down = false; setTimeout(() => elx.classList.remove('is-dragging'), 0); };
+  elx.addEventListener('pointerup', end);
+  elx.addEventListener('pointercancel', end);
+  elx.addEventListener('pointerleave', () => { if (down) end(); });
+  // Suppress the click that follows a drag so controls don't fire.
+  elx.addEventListener('click', (e) => {
+    if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; }
+  }, true);
+}
+
+function bumpCount(id) {
+  const c = el(id);
+  if (c) { c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); }
+}
 function wireSceneCards() {
   for (const role of ['fill','check','pack']) {
-    el(`ctrl-${role}-plus` ).addEventListener('click', () => { assignWorker(viewTier(), role);   render(); });
-    el(`ctrl-${role}-minus`).addEventListener('click', () => { unassignWorker(viewTier(), role); render(); });
+    el(`ctrl-${role}-plus` ).addEventListener('click', () => { assignWorker(viewTier(), role);   render(); bumpCount(`ctrl-${role}-count`); });
+    el(`ctrl-${role}-minus`).addEventListener('click', () => { unassignWorker(viewTier(), role); render(); bumpCount(`ctrl-${role}-count`); });
   }
 }
 
@@ -1573,17 +1658,15 @@ function renderStaffModal() {
       const canAdd = (state.unassignedStaff[role] || 0) > 0;
       const canSub = count > 0;
       rolesHtml +=
-        `<div class="staff-role-row">` +
+        `<div class="staff-role-row" data-row-tier="${t}" data-row-role="${role}">` +
           `<span class="staff-role-label role-${role}">${ROLE_LABEL[role]}</span>` +
+          `<button class="staff-step-btn staff-step-minus" data-dir="un" data-assign-tier="${t}" data-assign-role="${role}" ${canSub?'':'disabled'} aria-label="Unassign">` +
+            `<svg width="12" height="2" viewBox="0 0 12 2"><rect width="12" height="2" rx="1" fill="currentColor"/></svg></button>` +
           `<span class="tls-count">${count}</span>` +
-          `<span class="vstepper">` +
-            `<button class="vstep-up"   data-dir="as" data-assign-tier="${t}" data-assign-role="${role}" ${canAdd?'':'disabled'} aria-label="Assign">` +
-              `<svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 5l4-4 4 4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg></button>` +
-            `<button class="vstep-down" data-dir="un" data-assign-tier="${t}" data-assign-role="${role}" ${canSub?'':'disabled'} aria-label="Unassign">` +
-              `<svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg></button>` +
-          `</span>` +
-          `<button class="tls-btn fire-btn" data-fire-tier="${t}" data-fire-role="${role}" ${canSub?'':'disabled'} title="Fire">` +
-            `<svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 2l6 6M8 2L2 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>` +
+          `<button class="staff-step-btn staff-step-plus" data-dir="as" data-assign-tier="${t}" data-assign-role="${role}" ${canAdd?'':'disabled'} aria-label="Assign">` +
+            `<svg width="12" height="12" viewBox="0 0 12 12"><rect x="5" width="2" height="12" rx="1" fill="currentColor"/><rect y="5" width="12" height="2" rx="1" fill="currentColor"/></svg></button>` +
+          `<button class="staff-step-btn fire-btn" data-fire-tier="${t}" data-fire-role="${role}" ${canSub?'':'disabled'} title="Fire (no refund)" aria-label="Fire">` +
+            `<svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>` +
         `</div>`;
     }
     block.innerHTML =
@@ -1595,7 +1678,10 @@ function renderStaffModal() {
         const role = b.dataset.assignRole;
         if (b.dataset.dir === 'as') assignWorker(tier, role);
         else                        unassignWorker(tier, role);
-        renderStaffModal(); render();
+        render(); // patchStaffModal() runs inside render() while modal is open
+        const row = b.closest('.staff-role-row');
+        const c = row?.querySelector('.tls-count');
+        if (c) { c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); }
       });
     });
     block.querySelectorAll('[data-fire-tier]').forEach(b => {
@@ -1641,10 +1727,9 @@ function patchStaffModal() {
       if (plus)  plus.disabled  = !(unlocked && (state.unassignedStaff[role] || 0) > 0);
       if (minus) minus.disabled = !(unlocked && count > 0);
       if (fire)  fire.disabled  = !(unlocked && count > 0);
-      if (minus) {
-        const countEl = minus.parentElement.querySelector('.tls-count');
-        if (countEl) countEl.textContent = count;
-      }
+      const row = document.querySelector(`.staff-role-row[data-row-tier="${t}"][data-row-role="${role}"]`);
+      const countEl = row?.querySelector('.tls-count');
+      if (countEl && countEl.textContent !== String(count)) countEl.textContent = count;
     }
   }
   const capNote = el('staff-cap-note');
@@ -1727,46 +1812,20 @@ function renderBacklog(badgeId, bufferValue, downstreamRate) {
   let level   = 'green';
   if (secs > 15)     level = 'red';
   else if (secs >= 5) level = 'yellow';
+  const prevLevel = badge.dataset.level;
   badge.textContent = fmtRx(bufferValue);
   badge.dataset.level = level;
   badge.classList.toggle('is-empty', bufferValue < 0.5);
+  if ((level === 'yellow' || level === 'red') && level !== prevLevel) {   // easy win #3
+    badge.classList.remove('pulse'); void badge.offsetWidth; badge.classList.add('pulse');
+  }
   return level === 'red';
 }
 
 // ─── CONVEYOR BELT ────────────────────────────────────────────
-function renderConveyor() {
-  const now = Date.now();
-  if (now - _lastConveyorUpdate < 240) return;
-  _lastConveyorUpdate = now;
-
-  const tp             = calcThroughput();
-  const activeTierList = activeTiers();
-  const dominant       = activeTierList[activeTierList.length - 1] || 1;
-  const tierColors     = ['var(--tier-1)', 'var(--tier-2)', 'var(--tier-3)', 'var(--tier-4)'];
-  const beltColor      = tierColors[dominant - 1];
-  // Logarithmic: speed ramps and density rises with throughput, both saturating.
-  const lg             = Math.log10(tp + 1);
-  const speed          = Math.max(1.0, 7 - lg * 3.2).toFixed(2);
-  const activePills    = tp < 0.05 ? 0 : Math.min(12, Math.max(1, Math.round(lg * 7)));
-
-  // Determine red backup state from scene-belt class (set by renderBacklog)
-  const redBackup = el('scene-belt')?.classList.contains('belt-backup');
-
-  document.querySelectorAll('#scene-belt-lane .belt-pill').forEach((pill, i) => {
-    const active = i < activePills;
-    pill.classList.toggle('is-active', active);
-    pill.classList.toggle('is-backup', active && redBackup);
-    if (active) {
-      // On backup, compress pills toward the backlog (right) side — visual queue.
-      const spread = redBackup ? 45 : 100;
-      const originPct = redBackup ? 55 : 0;
-      const offset = (originPct + (i / activePills) * spread).toFixed(1);
-      pill.style.setProperty('--belt-offset', offset + '%');
-      pill.style.setProperty('--belt-speed', speed + 's');
-      pill.style.color = beltColor;
-    }
-  });
-}
+// 6.2: belt is now driven by startConveyorEmitter() (timer-based pill emission).
+// renderConveyor() kept as a no-op so existing render() call sites stay valid.
+function renderConveyor() {}
 
 // ─── MONEY POPS ───────────────────────────────────────────────
 function flushMoneyPops() {
@@ -1785,10 +1844,10 @@ function flushMoneyPops() {
     _popPoolIdx++;
     pop.textContent = '+$' + Math.round(accum);
     pop.style.color = tierColors[tier - 1];
-    const laneX = [-52, -18, 18, 52][tier - 1];
-    const jitter = Math.round(Math.random() * 10 - 5);
+    const laneX = [-30, -10, 10, 30][tier - 1];
+    const jitter = Math.round(Math.random() * 28 - 14);
     pop.style.setProperty('--pop-x', (laneX + jitter) + 'px');
-    pop.style.setProperty('--pop-y', ([0, -8, -4, -12][tier - 1]) + 'px');
+    pop.style.setProperty('--pop-y', ([0, -6, -3, -10][tier - 1]) + 'px');
     pop.classList.remove('is-animating');
     void pop.offsetWidth;
     pop.classList.add('is-animating');
@@ -1810,6 +1869,7 @@ function render() {
   rateEl.textContent = (net >= 0 ? '$' : '–$') + fmt(Math.abs(net)) + '/s';
   rateEl.classList.toggle('rate-positive', net >= 0);
   rateEl.classList.toggle('rate-negative', net < 0);
+  el('wage-clock-stat')?.classList.toggle('wage-warn', net < 0);   // easy win #1
   // Wage clock: depleting arc (full at shift start → empty at deduction)
   const remainFrac = 1 - Math.min(1, state.wageTimerMs / CONFIG.shiftMs);
   const arc = el('wage-arc-fill');
@@ -1836,8 +1896,17 @@ function render() {
   // ── Money pops ──
   flushMoneyPops();
 
-  // ── Inbox backlog badge ──
+  // ── Inbox backlog badge (+ intake pulse on rising count, easy win #4) ──
   const inboxEl = el('inbox-badge');
+  if (inboxEl) {
+    const prev = render._lastInbox ?? 0;
+    const cur  = Math.floor(_inboxBacklog || 0);
+    if (cur > prev) {
+      const card = el('scene-card-intake');
+      if (card) { card.classList.remove('intake-pulse'); void card.offsetWidth; card.classList.add('intake-pulse'); }
+    }
+    render._lastInbox = cur;
+  }
   if (inboxEl) inboxEl.textContent = Math.round(_inboxBacklog);
 
   // ── Floor unassigned pills ──
@@ -1875,7 +1944,7 @@ function render() {
     const cc = el(`ctrl-${role}-count`); if (cc) cc.textContent = cnt;
     const cp = el(`ctrl-${role}-plus`);  if (cp) cp.disabled     = !canAdd;
     const cm = el(`ctrl-${role}-minus`); if (cm) cm.disabled     = cnt <= 0;
-    const sr = el(`scene-rate-${role}`); if (sr) sr.textContent  = stageRate(tier, role).toFixed(2);
+    const sr = el(`scene-rate-${role}`); if (sr) sr.textContent  = fmtRxMin(stageRate(tier, role));
   }
   // view-tier color strip
   const strip = el('scene-tier-strip');
@@ -1946,22 +2015,66 @@ function render() {
 }
 
 // ─── INIT CONVEYOR + MONEY POPS ──────────────────────────────
+let _conveyorPool = [];
 function initConveyor() {
-  for (const laneId of ['scene-belt-lane']) {
-    const lane = el(laneId);
-    if (!lane) continue;
-    for (let i = 0; i < 12; i++) {
-      const pill = document.createElement('div');
-      pill.className = 'belt-pill';
-      pill.dataset.poolIdx = i;
-      pill.innerHTML =
-        `<svg width="10" height="16" viewBox="0 0 10 16">` +
-          `<rect x="1" y="4" width="8" height="10" rx="3" fill="currentColor"/>` +
-          `<rect x="2" y="1" width="6" height="5" rx="2" fill="currentColor" opacity="0.6"/>` +
-        `</svg>`;
-      lane.appendChild(pill);
-    }
+  const lane = el('scene-belt-lane');
+  if (!lane) return;
+  lane.innerHTML = '';
+  _conveyorPool = [];
+  for (let i = 0; i < 16; i++) {
+    const pill = document.createElement('div');
+    pill.className = 'belt-pill';
+    pill._busy = false;
+    pill.innerHTML =
+      `<svg width="10" height="16" viewBox="0 0 10 16">` +
+        `<rect x="1" y="4" width="8" height="10" rx="3" fill="currentColor"/>` +
+        `<rect x="2" y="1" width="6" height="5" rx="2" fill="currentColor" opacity="0.6"/>` +
+      `</svg>`;
+    pill.addEventListener('animationend', () => {
+      pill.classList.remove('is-traveling','is-backup');
+      pill._busy = false;
+    });
+    lane.appendChild(pill);
+    _conveyorPool.push(pill);
   }
+}
+
+// Emit one pill: color = dominant tier, travel time = f(throughput), dim on backup.
+function emitPill() {
+  const pill = _conveyorPool.find(p => !p._busy);
+  if (!pill) return;                              // pool exhausted → visually saturated
+  const tiersL    = activeTiers();
+  const dominant  = tiersL[tiersL.length - 1] || 1;
+  const colors    = ['var(--tier-1)','var(--tier-2)','var(--tier-3)','var(--tier-4)'];
+  const tp        = calcThroughput();
+  const lg        = Math.log10(tp + 1);
+  let   dur       = Math.max(1.6, 6.5 - lg * 2.6);       // TUNABLE
+  const backup    = !!el('scene-belt')?.classList.contains('belt-backup');
+  if (backup) dur *= 1.6;
+  pill.style.color = colors[dominant - 1];
+  pill.style.setProperty('--belt-dur', dur.toFixed(2) + 's');
+  pill._busy = true;
+  pill.classList.toggle('is-backup', backup);
+  pill.classList.remove('is-traveling'); void pill.offsetWidth;
+  pill.classList.add('is-traveling');
+}
+
+let _emitAccumMs = 0, _lastEmitTick = 0;
+function startConveyorEmitter() {
+  _lastEmitTick = Date.now();
+  setInterval(() => {
+    const now = Date.now();
+    const dt  = now - _lastEmitTick;
+    _lastEmitTick = now;
+    const tp  = calcThroughput();
+    if (tp < 0.05) { _emitAccumMs = 0; return; }          // idle belt — no pills (easy win #7)
+    const lg  = Math.log10(tp + 1);
+    let interval = Math.max(180, 1400 / (1 + lg * 2.2));   // ms between pills · TUNABLE
+    if (el('scene-belt')?.classList.contains('belt-backup')) interval *= 1.5;
+    _emitAccumMs += dt;
+    let safety = 8;
+    while (_emitAccumMs >= interval && safety-- > 0) { emitPill(); _emitAccumMs -= interval; }
+  }, 120);
 }
 
 function initMoneyPops() {
@@ -1976,6 +2089,29 @@ function initMoneyPops() {
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
+// ─── SPRITES (optional external assets, SVG fallback) ─────────
+CONFIG.sprites = { figures: {}, portraits: {}, _figureOk: {} };
+async function loadSprites() {
+  try {
+    const res = await fetch('sprites.json');
+    if (!res.ok) throw new Error('no sprites.json');
+    const data = await res.json();
+    CONFIG.sprites.figures   = data.figures   || {};
+    CONFIG.sprites.portraits = data.portraits || {};
+    // Verify each figure image up-front so renderFigures never flickers (D10).
+    for (const role of ['fill','check','pack']) {
+      const url = CONFIG.sprites.figures[role];
+      if (!url) continue;
+      const img = new Image();
+      img.onload  = () => { CONFIG.sprites._figureOk[role] = true; _figuresSig[role] = ''; };
+      img.onerror = () => { CONFIG.sprites._figureOk[role] = false; };
+      img.src = url;
+    }
+  } catch (e) {
+    console.info('[IdleRx] sprites.json unavailable — using SVG figures.');
+  }
+}
+
 async function loadFlavor() {
   try {
     const res = await fetch('flavor.json');
@@ -1990,7 +2126,8 @@ async function loadFlavor() {
 
 function init() {
   CONFIG.candidatePool = FLAVOR_FALLBACK.candidatePool; // sync default so hire works immediately
-  loadFlavor(); // async upgrade; non-blocking
+  loadFlavor();   // async upgrade; non-blocking
+  loadSprites();  // async; SVG fallback until/unless assets verify
   state = load();
 
   // Apply offline earnings before first render so opening balance is accurate
@@ -2005,11 +2142,14 @@ function init() {
   wireShop();
   wireHireModal();
   wireSceneCards();
+  enableDragScroll('production-track');
+  enableDragScroll('header-stats-scroll');
   initConveyor();
   initMoneyPops();
 
   startGameLoop();
   startStatsSampler();
+  startConveyorEmitter();
 
   // Modal fires after loop is running; non-blocking, close button dismisses it
   if (offline && offline.earned >= 0.01) {
