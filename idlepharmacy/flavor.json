@@ -1,0 +1,31 @@
+{
+  "candidatePool": {
+    "fill": [
+      { "name": "Marcus Webb",    "title": "Pharmacy Technician",   "bio": "Methodical counter. Never a short fill." },
+      { "name": "Priya Nair",     "title": "Certified Tech (CPhT)",  "bio": "Trains the new hires on QA." },
+      { "name": "Dana Kowalski",  "title": "Dispensing Tech",        "bio": "Fifteen years on the bench." },
+      { "name": "Theo Brandt",    "title": "Pharmacy Technician",    "bio": "Fast hands, steady counts." },
+      { "name": "Lena Castillo",  "title": "Lead Technician",        "bio": "Keeps the bench moving." },
+      { "name": "Omar Haddad",    "title": "Certified Tech (CPhT)",  "bio": "Zero rejected claims last quarter." },
+      { "name": "Grace Im",       "title": "Pharmacy Technician",    "bio": "Color-codes everything. It works." }
+    ],
+    "check": [
+      { "name": "Dr. Osei",       "title": "Staff Pharmacist",       "bio": "Catches every interaction." },
+      { "name": "Dr. Yuen",       "title": "PharmD, BCPS",           "bio": "Wrote the DUR policy." },
+      { "name": "Dr. Reyes",      "title": "Pharmacy Director",      "bio": "Regulators love her." },
+      { "name": "Dr. Halloran",   "title": "Staff Pharmacist",       "bio": "Unhurried and precise." },
+      { "name": "Dr. Beckett",    "title": "PharmD",                 "bio": "Counsels every patient." },
+      { "name": "Dr. Vance",      "title": "Clinical Pharmacist",    "bio": "Reads the chart twice." },
+      { "name": "Dr. Sato",       "title": "PharmD, BCPS",           "bio": "Quiet, thorough, fast." }
+    ],
+    "pack": [
+      { "name": "Hector Lima",    "title": "Fulfillment Associate",  "bio": "Every label, perfect." },
+      { "name": "Simone Park",    "title": "Lead Packer",            "bio": "Runs the end-of-day tally unasked." },
+      { "name": "Jerome Tucker",  "title": "Fulfillment Supervisor", "bio": "Trains the floor in two days." },
+      { "name": "Bianca Rossi",   "title": "Packer",                 "bio": "Never a mispack." },
+      { "name": "Cole Mathers",   "title": "Fulfillment Associate",  "bio": "Boxes like a machine." },
+      { "name": "Aisha Bello",    "title": "Lead Packer",            "bio": "Keeps the totes flowing." },
+      { "name": "Devon Pratt",    "title": "Packer",                 "bio": "Calm under a full queue." }
+    ]
+  }
+}
