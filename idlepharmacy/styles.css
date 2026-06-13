@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    IDLE PHARMACY — styles.css
+   PHASE 6.0.0
    Aesthetic: Warm apothecary × professional idle game
    Fonts: Fraunces (display/brand) + Inter (UI/numbers)
 ═══════════════════════════════════════════════════════════════ */
@@ -31,6 +32,18 @@
   --role-fill:   #2f7d5b;
   --role-check:  #3a6ea5;
   --role-pack:   #c9962f;
+
+  /* Worker sprite palette (Phase 5) */
+  --worker-head:  #d8c2a4;
+  --worker-leg:   #6b563f;
+  --worker-fill:  #8fb8d8;
+  --coat-white:   #f3ede0;
+  --shirt-brown:  #8a5a3b;
+
+  /* Backlog threshold colors */
+  --bk-green:  #2f7d5b;
+  --bk-yellow: #c9962f;
+  --bk-red:    #a83e2b;
 
   /* Text — dark walnut on linen */
   --text-hi:     #3d2817;
@@ -943,7 +956,17 @@ body::after {
   text-transform: uppercase;
   color: var(--text-dim);
   margin-bottom: 8px;
-  padding-left: 2px;
+  padding-left: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.shop-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  opacity: 0.7;
 }
 
 .shop-item {
@@ -1815,3 +1838,318 @@ body::after {
   font-size: 10px;
   color: var(--text-dim);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   PHASE 5 — Floor scene, header hub, modals, conveyor polish
+═══════════════════════════════════════════════════════════════ */
+
+/* ── 100dvh safety (mobile browser chrome) ── */
+@supports (height: 100dvh) {
+  #app { height: 100dvh; }
+}
+
+/* ── Header 2-row ── */
+.header-2row { display:flex; align-items:center; gap:16px; flex-wrap:nowrap; }
+.header-left  { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.header-center { flex:1; display:flex; flex-direction:column; justify-content:center; gap:6px; min-width:0; height:100%; overflow:hidden; }
+.header-row { display:flex; align-items:center; gap:10px; flex-wrap:nowrap; min-height:20px; }
+.header-row-stats .hstat { padding:0 18px; }
+.header-row-pills { gap:8px; min-height:18px; }
+.pills-label { margin-right:2px; }
+.header-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.header-row-toggle { display:none; }
+
+/* Override old header brand/stats layout for 2-row */
+.header-2row .brand { display:none; }
+.header-2row .header-stats { display:none; }
+
+/* ── Unassigned pills ── */
+.ua-pill {
+  min-width:30px; height:24px; padding:0 8px; border-radius:12px;
+  border:1px solid var(--border); background:var(--surface);
+  font:600 12px/24px var(--font-body); color:#fff; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:4px;
+  transition:transform .12s ease, opacity .2s ease;
+}
+.ua-pill-fill  { background:var(--role-fill);  border-color:var(--role-fill);  }
+.ua-pill-check { background:var(--role-check); border-color:var(--role-check); }
+.ua-pill-pack  { background:var(--role-pack);  border-color:var(--role-pack);  }
+.ua-pill.is-empty { opacity:.35; }
+.ua-pill:hover { transform:scale(1.07); }
+.ua-pill.pulse { animation:pillPulse .5s ease; }
+@keyframes pillPulse { 0%{transform:scale(1)} 40%{transform:scale(1.25)} 100%{transform:scale(1)} }
+
+/* ── Header icon buttons ── */
+.header-btn-label { font-size:12px; }
+
+/* ── Upgrade modal ── */
+.upgrade-modal-box { max-width:540px; width:92vw; max-height:80vh; display:flex; flex-direction:column; min-height:520px; }
+.upgrade-modal-box .modal-title { margin-bottom:0; }
+#upgrade-tabs {
+  display:flex; gap:18px; margin:10px 0 0; border-bottom:2px solid var(--border); flex-shrink:0; padding:0 4px;
+}
+.upgrade-tab {
+  flex:1; padding:9px 4px; border:none; background:none; cursor:pointer;
+  font:600 12px var(--font-body); color:var(--text-dim); letter-spacing:.02em;
+  border-bottom:2px solid transparent; margin-bottom:-2px; transition:color .15s;
+}
+.upgrade-tab.is-active { color:var(--accent); border-bottom-color:var(--accent); }
+.upgrade-tab:hover:not(.is-active) { color:var(--text-body); }
+.upgrade-panel { overflow-y:auto; flex:1; padding-top:4px; min-height:380px; animation:panelFade .18s ease; }
+.upgrade-panel[hidden] { display:none; }
+@keyframes panelFade { from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+
+/* Franchise reset section */
+.franchise-section { margin-top:18px; padding-top:14px; border-top:2px dashed var(--border-gold); }
+.franchise-title { color:var(--gold) !important; }
+.franchise-blurb { font-size:12px; color:var(--text-dim); margin:4px 0 10px; line-height:1.5; }
+
+/* ── Hire modal ── */
+.hire-modal-box { max-width:520px; width:92vw; }
+#hire-tabs {
+  display:flex; gap:0; margin:10px 0 14px; border-bottom:2px solid var(--border);
+}
+.hire-tab {
+  flex:1; padding:9px 4px; border:none; background:none; cursor:pointer;
+  font:600 12px var(--font-body); color:var(--text-dim);
+  border-bottom:2px solid transparent; margin-bottom:-2px; transition:color .15s;
+}
+.hire-tab.is-active { color:var(--accent); border-bottom-color:var(--accent); }
+.hire-panel { display:flex; gap:10px; flex-wrap:wrap; min-height:160px; }
+.hire-panel[hidden] { display:none; }
+
+/* Hire cards */
+.hire-card {
+  flex:1 1 140px; min-width:130px; background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r-md); padding:12px 10px; display:flex; flex-direction:column;
+  align-items:center; gap:4px; transition:border-color .15s;
+}
+.hire-card:hover { border-color:var(--accent); }
+.hire-card-figure { width:40px; height:56px; margin-bottom:2px; }
+.hire-card-figure svg { width:100%; height:100%; display:block; }
+.hire-card-name  { font:600 13px var(--font-ui); color:var(--text-hi); text-align:center; }
+.hire-card-title { font-size:10px; color:var(--accent); text-align:center; }
+.hire-card-bio   { font-size:11px; color:var(--text-dim); text-align:center; min-height:28px; line-height:1.4; }
+.hire-card-btn   { margin-top:auto; width:100%; }
+.hire-cap-note {
+  background:var(--gold-dim); color:var(--warn); padding:8px 10px;
+  border-radius:var(--r-sm); font-size:12px; margin-bottom:8px;
+}
+
+/* Staff hire CTA */
+.staff-hire-cta { margin:10px 0 4px; }
+.staff-hire-more { width:100%; }
+
+/* ── Floor scene ── */
+#floor-scene {
+  position:relative; display:flex; flex-direction:column; gap:10px;
+  padding:14px 14px 10px; background:var(--surface); border-radius:var(--r-md);
+  border:1px solid var(--border); margin:12px auto 0; max-width:780px; width:100%;
+}
+.floor-toggle-wrap { align-self:flex-end; margin-bottom:-2px; z-index:3; }
+.floor-toggle {
+  display:flex; align-items:center; gap:5px; padding:5px 9px; border-radius:var(--r-sm);
+  border:1px solid var(--border); background:var(--surface-hi); color:var(--text-dim);
+  cursor:pointer; font:500 11px var(--font-body); transition:color .15s;
+}
+.floor-toggle:hover { color:var(--text-body); }
+
+/* belt */
+#scene-belt {
+  position:relative; height:52px; border-radius:var(--r-sm);
+  background:repeating-linear-gradient(90deg, var(--surface-2) 0 14px, var(--bg-2) 14px 28px);
+  border:1px solid var(--border); overflow:visible; margin-top:-8px;
+}
+.scene-belt-lane { position:absolute; inset:0; overflow:hidden; border-radius:var(--r-sm); }
+.scene-belt-lane .belt-pill {
+  position:absolute; top:50%; transform:translateY(-50%); opacity:0;
+  left:var(--belt-offset,0%);
+  animation:beltScroll var(--belt-speed,4s) linear infinite var(--belt-delay,0s);
+}
+.scene-belt-lane .belt-pill.is-active { opacity:1; }
+/* is-backup: no longer changes timing; opacity dim used instead */
+.scene-belt-lane .belt-pill.is-backup { opacity:0.55; }
+@keyframes beltScroll { from{left:-4%} to{left:104%} }
+
+/* totes stacked on the belt floor */
+.scene-totes { position:absolute; bottom:6px; width:24px; height:48px; pointer-events:none; }
+.scene-totes-fill  { left:28%; }
+.scene-totes-check { left:62%; }
+.scene-totes .tote {
+  position:absolute; width:24px; height:8px; border-radius:2px;
+  background:var(--tote-color, var(--accent)); left:0;
+  box-shadow:0 1px 2px rgba(90,60,30,.25);
+  animation:toteDrop .25s ease;
+}
+@keyframes toteDrop { from{ transform:translateY(-6px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+
+/* backlog badge below belt */
+.scene-backlog {
+  position:absolute; top:56px; transform:translateX(-50%);
+  min-width:28px; padding:2px 7px; border-radius:10px;
+  font:700 11px var(--font-body); text-align:center; transition:background .3s, color .3s;
+  pointer-events:none;
+}
+.scene-backlog-fill  { left:30%; }
+.scene-backlog-check { left:65%; }
+.scene-backlog[data-level="green"]  { background:var(--accent-dim);       color:var(--bk-green);  }
+.scene-backlog[data-level="yellow"] { background:var(--gold-dim);          color:var(--bk-yellow); }
+.scene-backlog[data-level="red"]    { background:rgba(168,62,43,.16);      color:var(--bk-red);    }
+.scene-backlog.is-empty { opacity:.4; }
+
+/* tier strip — hidden; tier color lives in header */
+#scene-tier-strip { display:none; }
+
+/* worker clusters */
+#scene-floor { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; min-height:80px; margin-top:4px; position:relative; z-index:2; }
+.station-cluster { display:flex; align-items:flex-end; justify-content:center; padding-bottom:4px; }
+.cluster-figures {
+  position:relative; display:flex; align-items:flex-end; gap:4px; min-height:62px;
+  justify-content:center;
+}
+.cluster-figures.is-empty::after {
+  content:''; width:100px; height:2px;
+  border-bottom:2px dashed var(--border); align-self:flex-end; display:block;
+}
+.worker-fig {
+  width:30px; height:46px; display:inline-block; flex-shrink:0;
+  animation:workerHop var(--hop-dur,4s) ease-in-out var(--hop-delay,0s) infinite;
+}
+.worker-fig svg { width:100%; height:100%; display:block; }
+.cluster-figures.is-dense .worker-fig:not(:first-child) { margin-left:-12px; }
+@keyframes workerHop {
+  0%,82%  { transform:translateY(0); }
+  88%     { transform:translateY(-6px); }
+  94%     { transform:translateY(1px); }
+  100%    { transform:translateY(0); }
+}
+.fig-badge {
+  align-self:center; margin-left:4px; padding:2px 6px; border-radius:10px;
+  font:700 11px var(--font-body); color:#fff; flex-shrink:0;
+}
+.fig-badge.role-fill  { background:var(--role-fill);  }
+.fig-badge.role-check { background:var(--role-check); }
+.fig-badge.role-pack  { background:var(--role-pack);  }
+.fig-badge.is-dense { box-shadow:0 0 8px 2px currentColor; }
+
+/* compact station cards */
+#scene-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.scene-card {
+  background:var(--surface-2); border:1px solid var(--border);
+  border-radius:var(--r-md); padding:10px 8px;
+}
+.scene-card-head {
+  display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;
+}
+.scene-card-label {
+  font:700 11px var(--font-body); padding:2px 7px; border-radius:8px; color:#fff;
+  letter-spacing:.04em;
+}
+.scene-card-label.role-fill  { background:var(--role-fill);  }
+.scene-card-label.role-check { background:var(--role-check); }
+.scene-card-label.role-pack  { background:var(--role-pack);  }
+.scene-card-rate { font-size:11px; color:var(--text-dim); }
+.scene-card-controls { display:flex; align-items:center; justify-content:center; gap:10px; }
+.stage-ctrl-btn {
+  width:28px; height:28px; border-radius:8px; border:1px solid var(--border);
+  background:var(--surface-hi); color:var(--text-hi); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:background .12s;
+}
+.stage-ctrl-btn:hover:not(:disabled) { background:var(--accent-dim); border-color:var(--accent); }
+.stage-ctrl-btn:disabled { opacity:.3; cursor:default; }
+.stage-ctrl-count { min-width:22px; text-align:center; font:600 15px var(--font-body); color:var(--text-hi); }
+
+/* tier tabs inside floor scene */
+#floor-scene #tier-tabs {
+  display:flex; gap:4px; margin-top:4px; border-bottom:none;
+}
+
+/* ── Money pops: anchored inside #scene-card-pack ── */
+#scene-card-pack { position:relative; }
+#scene-card-pack #money-pops {
+  position:absolute;
+  bottom:100%;
+  left:50%;
+  transform:translateX(-50%);
+  width:0;
+  height:0;
+  overflow:visible;
+  pointer-events:none;
+  z-index:10;
+}
+
+/* ── Mobile ── */
+@media (max-width:640px) {
+  .header-btn-label { display:none; }
+  .header-row-toggle {
+    display:flex; align-items:center; justify-content:center;
+    width:26px; height:26px; border-radius:6px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text-dim); cursor:pointer; flex-shrink:0;
+  }
+  .header-row-toggle.is-collapsed svg { transform:rotate(-90deg); }
+  .header-row-pills.is-collapsed { display:none; }
+  #scene-floor, #scene-cards { gap:6px; }
+  .worker-fig { width:24px; height:38px; }
+  #floor-scene { margin:8px 8px 0; padding:10px; }
+  .hire-card { min-width:110px; }
+}
+/* ── Phase 6C: Wage clock + net rate color ───────────────────── */
+.hstat-wage { cursor:default; }
+.wage-clock-wrap { display:flex; align-items:center; gap:6px; }
+.wage-arc-track { stroke:var(--border); }
+.wage-arc-fill  { stroke:var(--gold); transition:stroke-dashoffset .25s linear; }
+.wage-clock-amount { font-size:13px; color:var(--text-hi); }
+.hstat-wage .wage-clock-amount { display:none; }
+.hstat-wage:hover .wage-clock-amount,
+.hstat-wage:focus .wage-clock-amount { display:inline; }
+@keyframes wageFlash { 0%,100%{} 50%{ filter:drop-shadow(0 0 6px var(--bk-red)); } }
+.wage-flash .wage-arc-fill { stroke:var(--bk-red); animation:wageFlash .4s ease 3; }
+.rate-positive { color:var(--bk-green) !important; }
+.rate-negative { color:var(--bk-red)   !important; }
+
+/* ── Phase 6E: Floor UI ──────────────────────────────────────── */
+/* Card heads: stacked + centered (UI #5) */
+.scene-card-head { flex-direction:column; align-items:center; gap:3px; }
+.scene-card-rate { font-size:12px; color:var(--text-dim); text-align:center; }
+
+/* Inbox node */
+#scene-inbox {
+  display:flex; align-items:center; gap:6px; padding:4px 10px;
+  color:var(--text-dim); font:500 12px var(--font-body);
+}
+.inbox-badge {
+  background:var(--gold-dim); color:var(--gold); border-radius:10px;
+  padding:1px 7px; font-size:11px; min-width:20px; text-align:center;
+}
+
+/* Floor unassigned pills strip */
+#floor-unassigned {
+  display:flex; align-items:center; gap:6px; padding:6px 4px 2px;
+  flex-wrap:wrap;
+}
+.ua-label { font:500 11px var(--font-body); color:var(--text-dim); }
+#floor-unassigned.is-collapsed { display:none; }
+
+/* Mobile: pills row collapse class reused */
+@media (max-width:640px) {
+  .header-row-pills.is-collapsed { display:none; }
+}
+
+/* ── Phase 6F: Buy confirm + modals ─────────────────────────── */
+.btn-buy.confirm-mode { display:flex; gap:8px; justify-content:center; align-items:center; }
+.confirm-yes { color:var(--bk-green); cursor:pointer; display:flex; align-items:center; }
+.confirm-no  { color:var(--bk-red);   cursor:pointer; display:flex; align-items:center; }
+
+/* Vertical stepper (UI Staff #4) */
+.vstepper { display:inline-flex; flex-direction:column; gap:2px; }
+.vstep-up, .vstep-down {
+  width:24px; height:16px; border:1px solid var(--border); background:var(--surface-hi);
+  border-radius:5px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text-hi);
+}
+.vstep-up:disabled, .vstep-down:disabled { opacity:.3; cursor:default; }
+/* Staff modal extras */
+.fire-btn { color:var(--bk-red); }
+.staff-tier-hint { font:400 12px var(--font-body); color:var(--text-dim); padding:8px 4px; }
+.staff-slots-inline { font:500 11px var(--font-body); color:var(--text-dim); margin-left:6px; }
+.staff-payroll-summary { font:500 12px var(--font-body); color:var(--text-dim); padding:4px 0 6px; }
+.hire-card-wage { font:600 11px var(--font-body); color:var(--gold); margin:2px 0 6px; }
