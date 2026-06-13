@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Idle Pharmacy // Phase6</title>
+  <title>Idle Pharmacy</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
@@ -1241,14 +1241,7 @@ function wireShop() {
     el('header-row-toggle').setAttribute('aria-expanded', collapsed ? 'false' : 'true');
     el('header-row-toggle').classList.toggle('is-collapsed', collapsed);
   });
-  // Stats bar expand/collapse
-  el('stats-bar-toggle').addEventListener('click', () => {
-    const exp = el('stats-bar-expanded');
-    const opening = exp.hidden;
-    exp.hidden = !opening;
-    el('stats-bar-toggle').setAttribute('aria-expanded', opening ? 'true' : 'false');
-    el('stats-bar-toggle').classList.toggle('is-open', opening);
-  });
+
   // Tier tab delegation
   el('tier-tabs').addEventListener('click', (e) => {
     const tab = e.target.closest('.tier-tab');
@@ -1826,56 +1819,9 @@ function render() {
   el('wage-clock-stat')?.classList.toggle('wage-flash', _payrollMissedFlag);
   if (_payrollMissedFlag) { setTimeout(() => { _payrollMissedFlag = false; el('wage-clock-stat')?.classList.remove('wage-flash'); }, 1200); }
 
-  // ── Per-stage AGGREGATE metrics (summed across all tiers) ──
-  for (const role of ['fill', 'check', 'pack']) {
-    el(`${role}-active`).textContent = activeSlots(role);
-    el(`${role}-rate`  ).textContent = aggStageRate(role).toFixed(2);
-  }
-
-  // ── Buffers (aggregate across all tiers for display) ──
+  // ── Aggregate buffer totals (used by scene tote stacks + backlog below) ──
   const aggFillToCheck = [1,2,3,4].reduce((s,t) => s + (state.buffers[t]?.fillToCheck || 0), 0);
   const aggCheckToPack = [1,2,3,4].reduce((s,t) => s + (state.buffers[t]?.checkToPack || 0), 0);
-  el('buf-fill' ).textContent = fmtRx(aggFillToCheck);
-  el('buf-check').textContent = fmtRx(aggCheckToPack);
-
-  // ── Stats bar ──
-  const incomeRate = calcIncomeRate();
-  el('sb-income-rate' ).textContent = '$' + fmt(incomeRate) + '/s';
-  el('sb-income-rate-2').textContent = '$' + fmt(incomeRate) + '/s';
-  el('sb-throughput'  ).textContent = fmtRx(calcThroughput()) + ' rx/s';
-  el('sb-bottleneck'  ).textContent = findBottleneck();
-  el('sb-total-earned').textContent = '$' + fmt(state.totalEarned || 0);
-  el('sb-payroll').textContent = '–$' + fmt(calcPayrollPerShift()) + '/shift';
-  el('sb-burn').textContent    = '$' + fmt(wageBurnPerSec()) + '/s';
-  el('stats-bar').classList.toggle('is-balanced', bk.length === 0);
-
-  // ── Milestone (stats bar progress bar) ──
-  const nm = nextMilestone();
-  if (nm) {
-    const pct = Math.min(100, (nm.current / nm.threshold) * 100);
-    el('sb-milestone-text').textContent =
-      `+${Math.round(nm.pct*100)}% at ${fmtRx(nm.threshold)} rx (${fmtRx(nm.remaining)} to go)`;
-    el('sb-milestone-bar').style.width = pct.toFixed(1) + '%';
-  } else {
-    el('sb-milestone-text').textContent = 'All milestones claimed ✓';
-    el('sb-milestone-bar').style.width = '100%';
-  }
-
-  // ── Rx Intake node ──
-  el('intake-rate').textContent = aggStageRate('fill').toFixed(2) + '/s';
-  el('intake-pulse').style.setProperty('--pulse-rate', Math.max(0.3, 2 - calcThroughput() * 0.5).toFixed(2) + 's');
-
-  // ── Visual state classes ──
-  for (const role of ['fill', 'check', 'pack']) {
-    el(`card-${role}`).classList.toggle('is-active',     activeSlots(role) > 0);
-    el(`card-${role}`).classList.toggle('is-bottleneck', bk.includes(role));
-  }
-  el('buf-fill' ).closest('.flow-buffer').classList.toggle('has-rx', aggFillToCheck > 0.01);
-  el('buf-check').closest('.flow-buffer').classList.toggle('has-rx', aggCheckToPack > 0.01);
-
-  // ── Tote stacks ──
-  renderToteStack('totes-fill',  aggFillToCheck, aggStageRate('check'), 'var(--role-fill)');
-  renderToteStack('totes-check', aggCheckToPack, aggStageRate('pack'),  'var(--role-check)');
 
   // ── Scene totes + backlog badges (must run before renderConveyor reads belt-backup) ──
   const redFill  = renderBacklog('scene-backlog-fill',  aggFillToCheck, aggStageRate('check'));
@@ -1926,10 +1872,10 @@ function render() {
     const tier   = viewTier();
     const cnt    = state.staffPerTier[tier]?.[role] || 0;
     const canAdd = (state.unassignedStaff[role] || 0) > 0;
-    el(`ctrl-${role}-count`).textContent    = cnt;
-    el(`ctrl-${role}-plus`).disabled        = !canAdd;
-    el(`ctrl-${role}-minus`).disabled       = cnt <= 0;
-    el(`scene-rate-${role}`).textContent    = stageRate(tier, role).toFixed(2);
+    const cc = el(`ctrl-${role}-count`); if (cc) cc.textContent = cnt;
+    const cp = el(`ctrl-${role}-plus`);  if (cp) cp.disabled     = !canAdd;
+    const cm = el(`ctrl-${role}-minus`); if (cm) cm.disabled     = cnt <= 0;
+    const sr = el(`scene-rate-${role}`); if (sr) sr.textContent  = stageRate(tier, role).toFixed(2);
   }
   // view-tier color strip
   const strip = el('scene-tier-strip');
@@ -2050,7 +1996,7 @@ function init() {
   // Apply offline earnings before first render so opening balance is accurate
   const offline = applyOffline();
 
-  render();
+  try { render(); } catch (e) { console.error('[IdleRx] first render failed:', e); }
 
   // Autosave on interval + tab close
   setInterval(save, AUTOSAVE_MS);
