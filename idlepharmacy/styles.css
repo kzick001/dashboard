@@ -1,6 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
    IDLE PHARMACY — styles.css
-   PHASE 6.0.0
    Aesthetic: Warm apothecary × professional idle game
    Fonts: Fraunces (display/brand) + Inter (UI/numbers)
 ═══════════════════════════════════════════════════════════════ */
@@ -686,17 +685,6 @@ body::after {
   transition: color 0.3s;
 }
 
-.belt-pill.is-active {
-  opacity: 1;
-  animation: belt-travel var(--belt-speed, 4s) linear infinite;
-  animation-delay: calc(var(--belt-offset, 0%) * -1 * var(--belt-speed, 4s) / 100);
-}
-
-@keyframes belt-travel {
-  from { left: -16px; }
-  to   { left: calc(100% + 16px); }
-}
-
 /* ─── TOTE STACKS ────────────────────────────────────────────── */
 .tote-stack {
   position: relative;
@@ -746,15 +734,18 @@ body::after {
 
 .money-pop {
   position: absolute;
-  font-size: 12px;
-  font-weight: 700;
-  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-ui);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
   top: 0;
   left: var(--pop-x, 0px);
+  text-shadow:
+    0 0 2px #fff, 0 0 3px #fff,
+    0 2px 4px rgba(90,60,30,.45);
 }
 
 .money-pop.is-animating {
@@ -1106,6 +1097,7 @@ body::after {
 }
 
 .modal-box {
+  position: relative;
   background: var(--surface);
   border: 1px solid var(--border-hi);
   border-radius: var(--r-xl);
@@ -1276,17 +1268,23 @@ body::after {
 /* ─── MODAL CLOSE BUTTON (shared) ───────────────────────────── */
 .modal-close {
   position: absolute;
-  top: 14px;
-  right: 16px;
+  top: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
-  font-size: 22px;
+  border-radius: 8px;
   line-height: 1;
-  color: var(--text-dim);
+  color: var(--bk-red);
   cursor: pointer;
-  transition: color 0.15s;
+  transition: background 0.15s, color 0.15s;
+  z-index: 5;
 }
-.modal-close:hover { color: var(--text-hi); }
+.modal-close:hover { background: rgba(168,62,43,.12); }
 
 /* station-modal, tier-picker, upgrade-tracks removed — replaced by staff modal + global station upgrades */
 
@@ -1365,7 +1363,10 @@ body::after {
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .tier-tab:disabled { opacity: 0.35; cursor: not-allowed; }
+.tier-tab[hidden] { display:none; }
 .tier-tab.is-active { color: #fff; border-color: transparent; }
+.tier-tab.tab-pop { animation:tabPop .4s ease; }
+@keyframes tabPop { 0%{ transform:scale(.7); opacity:0; } 60%{ transform:scale(1.08); } 100%{ transform:scale(1); opacity:1; } }
 .tier-tab-1.is-active { background: var(--tier-1); }
 .tier-tab-2.is-active { background: var(--tier-2); }
 .tier-tab-3.is-active { background: var(--tier-3); }
@@ -1519,13 +1520,15 @@ body::after {
   flex-wrap: wrap;
 }
 .staff-role-row {
-  flex: 1 1 130px;
+  flex: 1 1 100%;
   min-width: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
+  gap: 6px;
+  padding: 2px 0;
 }
+.staff-role-row .staff-role-label { margin-right:auto; }
+.staff-role-row .tls-count { min-width:28px; font-size:18px; }
 .staff-role-label {
   font-size: 9px;
   font-weight: 700;
@@ -1773,8 +1776,7 @@ body::after {
     right: 12px;
   }
 
-  /* Belt hidden on mobile — too narrow to be legible */
-  #conveyor-belt { display: none; }
+  /* (dead rule removed — real belt id is #scene-belt; belt scrolls in the track) */
 
   /* Tote stacks: smaller on mobile */
   .tote-stack { width: 24px; height: 32px; }
@@ -1848,20 +1850,26 @@ body::after {
   #app { height: 100dvh; }
 }
 
-/* ── Header 2-row ── */
-.header-2row { display:flex; align-items:center; gap:16px; flex-wrap:nowrap; }
+/* ── Header 2-row (6.2: title row + drag-scroll stats row) ── */
+.header-2row { display:flex; flex-direction:column; gap:8px; }
+.header-bar-top { display:flex; align-items:center; justify-content:space-between; gap:16px; }
 .header-left  { display:flex; align-items:center; gap:8px; flex-shrink:0; }
-.header-center { flex:1; display:flex; flex-direction:column; justify-content:center; gap:6px; min-width:0; height:100%; overflow:hidden; }
-.header-row { display:flex; align-items:center; gap:10px; flex-wrap:nowrap; min-height:20px; }
-.header-row-stats .hstat { padding:0 18px; }
-.header-row-pills { gap:8px; min-height:18px; }
-.pills-label { margin-right:2px; }
 .header-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
-.header-row-toggle { display:none; }
 
-/* Override old header brand/stats layout for 2-row */
+.header-bar-stats {
+  display:flex; align-items:center; gap:0; flex-wrap:nowrap;
+  overflow-x:auto; overflow-y:hidden; min-width:0;
+  scrollbar-width:none; -ms-overflow-style:none;
+  cursor:grab; -webkit-overflow-scrolling:touch;
+}
+.header-bar-stats::-webkit-scrollbar { display:none; }
+.header-bar-stats.is-dragging { cursor:grabbing; }
+.header-bar-stats .hstat { padding:0 18px; flex-shrink:0; }
+
+/* Override old header brand/stats layout */
 .header-2row .brand { display:none; }
 .header-2row .header-stats { display:none; }
+.header-row-toggle { display:none; }
 
 /* ── Unassigned pills ── */
 .ua-pill {
@@ -1962,19 +1970,18 @@ body::after {
 }
 .scene-belt-lane { position:absolute; inset:0; overflow:hidden; border-radius:var(--r-sm); }
 .scene-belt-lane .belt-pill {
-  position:absolute; top:50%; transform:translateY(-50%); opacity:0;
-  left:var(--belt-offset,0%);
-  animation:beltScroll var(--belt-speed,4s) linear infinite var(--belt-delay,0s);
+  position:absolute; top:50%; transform:translateY(-50%); opacity:0; left:-4%;
 }
-.scene-belt-lane .belt-pill.is-active { opacity:1; }
-/* is-backup: no longer changes timing; opacity dim used instead */
-.scene-belt-lane .belt-pill.is-backup { opacity:0.55; }
-@keyframes beltScroll { from{left:-4%} to{left:104%} }
+.scene-belt-lane .belt-pill.is-traveling {
+  animation:beltTravel var(--belt-dur, 4s) linear 1 forwards;
+}
+.scene-belt-lane .belt-pill.is-backup { opacity:0.5; }
+@keyframes beltTravel { 0%{left:-4%; opacity:1;} 95%{opacity:1;} 100%{left:104%; opacity:0;} }
 
-/* totes stacked on the belt floor */
-.scene-totes { position:absolute; bottom:6px; width:24px; height:48px; pointer-events:none; }
-.scene-totes-fill  { left:28%; }
-.scene-totes-check { left:62%; }
+/* totes ride in the worker band, in the gaps between columns (6.2) */
+.scene-totes { position:absolute; bottom:2px; width:24px; height:48px; pointer-events:none; transform:translateX(-50%); }
+.scene-totes-fill  { left:50%; }   /* fill → check gap */
+.scene-totes-check { left:75%; }   /* check → pack gap */
 .scene-totes .tote {
   position:absolute; width:24px; height:8px; border-radius:2px;
   background:var(--tote-color, var(--accent)); left:0;
@@ -1983,15 +1990,16 @@ body::after {
 }
 @keyframes toteDrop { from{ transform:translateY(-6px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
 
-/* backlog badge below belt */
+/* backlog count = pill sitting on top of its tote stack (6.2) */
 .scene-backlog {
-  position:absolute; top:56px; transform:translateX(-50%);
-  min-width:28px; padding:2px 7px; border-radius:10px;
+  position:absolute; top:0; transform:translateX(-50%);
+  min-width:26px; padding:2px 7px; border-radius:10px; z-index:3;
   font:700 11px var(--font-body); text-align:center; transition:background .3s, color .3s;
   pointer-events:none;
 }
-.scene-backlog-fill  { left:30%; }
-.scene-backlog-check { left:65%; }
+.scene-backlog-fill  { left:50%; }
+.scene-backlog-check { left:75%; }
+.scene-backlog.pulse { animation:pillPulse .5s ease; }
 .scene-backlog[data-level="green"]  { background:var(--accent-dim);       color:var(--bk-green);  }
 .scene-backlog[data-level="yellow"] { background:var(--gold-dim);          color:var(--bk-yellow); }
 .scene-backlog[data-level="red"]    { background:rgba(168,62,43,.16);      color:var(--bk-red);    }
@@ -2000,9 +2008,26 @@ body::after {
 /* tier strip — hidden; tier color lives in header */
 #scene-tier-strip { display:none; }
 
-/* worker clusters */
-#scene-floor { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; min-height:80px; margin-top:4px; position:relative; z-index:2; }
-.station-cluster { display:flex; align-items:flex-end; justify-content:center; padding-bottom:4px; }
+/* ── 6.2: production track (drag-scroll) ── */
+#production-track {
+  overflow-x:auto; overflow-y:visible; scrollbar-width:none; -ms-overflow-style:none;
+  cursor:grab; -webkit-overflow-scrolling:touch; touch-action:pan-y;
+}
+#production-track::-webkit-scrollbar { display:none; }
+#production-track.is-dragging { cursor:grabbing; }
+#production-inner { min-width:600px; display:flex; flex-direction:column; gap:10px; }
+
+/* worker clusters — now 4 columns (intake + 3 staffed) */
+#scene-floor { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; min-height:80px; margin-top:4px; position:relative; z-index:2; }
+.prod-col { display:flex; align-items:flex-end; justify-content:center; }
+.prod-col-intake { align-items:flex-end; justify-content:center; }
+.intake-tray {
+  display:flex; align-items:center; justify-content:center;
+  width:48px; height:48px; border-radius:var(--r-md);
+  background:var(--surface-2); border:1px solid var(--border); color:var(--gold);
+  margin-bottom:4px;
+}
+.station-cluster { display:flex; align-items:flex-end; justify-content:center; padding-bottom:4px; position:relative; }
 .cluster-figures {
   position:relative; display:flex; align-items:flex-end; gap:4px; min-height:62px;
   justify-content:center;
@@ -2017,12 +2042,17 @@ body::after {
 }
 .worker-fig svg { width:100%; height:100%; display:block; }
 .cluster-figures.is-dense .worker-fig:not(:first-child) { margin-left:-12px; }
+.cluster-figures.is-tight .worker-fig:not(:first-child) { margin-left:-6px; }
 @keyframes workerHop {
   0%,82%  { transform:translateY(0); }
   88%     { transform:translateY(-6px); }
   94%     { transform:translateY(1px); }
   100%    { transform:translateY(0); }
 }
+/* 6.2 sprites */
+.worker-sprite { width:100%; height:100%; object-fit:contain; object-position:bottom center; display:block; pointer-events:none; }
+.hire-card-figure.has-portrait { width:64px; height:64px; }
+.hire-portrait { width:100%; height:100%; object-fit:cover; border-radius:50%; display:block; background:var(--surface-2); }
 .fig-badge {
   align-self:center; margin-left:4px; padding:2px 6px; border-radius:10px;
   font:700 11px var(--font-body); color:#fff; flex-shrink:0;
@@ -2033,7 +2063,15 @@ body::after {
 .fig-badge.is-dense { box-shadow:0 0 8px 2px currentColor; }
 
 /* compact station cards */
-#scene-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+#scene-cards { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.scene-card-intake { background:var(--surface); border-style:dashed; }
+.scene-card-intake .scene-card-head { gap:4px; }
+.scene-card-label.role-intake { background:var(--gold); }
+.scene-card-intake.intake-pulse { animation:intakePulse .6s ease; }
+@keyframes intakePulse {
+  0%,100% { box-shadow:0 0 0 0 rgba(201,150,47,0); }
+  40%     { box-shadow:0 0 0 3px rgba(201,150,47,.35); }
+}
 .scene-card {
   background:var(--surface-2); border:1px solid var(--border);
   border-radius:var(--r-md); padding:10px 8px;
@@ -2064,18 +2102,14 @@ body::after {
   display:flex; gap:4px; margin-top:4px; border-bottom:none;
 }
 
-/* ── Money pops: anchored inside #scene-card-pack ── */
-#scene-card-pack { position:relative; }
-#scene-card-pack #money-pops {
+/* ── 6.2: money pops anchored above the pack worker cluster ── */
+#cluster-pack { position:relative; }
+#cluster-pack #money-pops {
   position:absolute;
-  bottom:100%;
+  top:-6px;
   left:50%;
   transform:translateX(-50%);
-  width:0;
-  height:0;
-  overflow:visible;
-  pointer-events:none;
-  z-index:10;
+  width:0; height:0; overflow:visible; pointer-events:none; z-index:10;
 }
 
 /* ── Mobile ── */
@@ -2091,6 +2125,7 @@ body::after {
   #scene-floor, #scene-cards { gap:6px; }
   .worker-fig { width:24px; height:38px; }
   #floor-scene { margin:8px 8px 0; padding:10px; }
+  #production-inner { min-width:560px; }
   .hire-card { min-width:110px; }
 }
 /* ── Phase 6C: Wage clock + net rate color ───────────────────── */
@@ -2106,6 +2141,8 @@ body::after {
 .wage-flash .wage-arc-fill { stroke:var(--bk-red); animation:wageFlash .4s ease 3; }
 .rate-positive { color:var(--bk-green) !important; }
 .rate-negative { color:var(--bk-red)   !important; }
+.wage-warn .wage-arc-fill { stroke:var(--warn, #c47a1f); }
+.wage-warn .wage-clock-amount { color:var(--warn, #c47a1f); }
 
 /* ── Phase 6E: Floor UI ──────────────────────────────────────── */
 /* Card heads: stacked + centered (UI #5) */
@@ -2135,18 +2172,39 @@ body::after {
   .header-row-pills.is-collapsed { display:none; }
 }
 
-/* ── Phase 6F: Buy confirm + modals ─────────────────────────── */
-.btn-buy.confirm-mode { display:flex; gap:8px; justify-content:center; align-items:center; }
-.confirm-yes { color:var(--bk-green); cursor:pointer; display:flex; align-items:center; }
-.confirm-no  { color:var(--bk-red);   cursor:pointer; display:flex; align-items:center; }
-
-/* Vertical stepper (UI Staff #4) */
-.vstepper { display:inline-flex; flex-direction:column; gap:2px; }
-.vstep-up, .vstep-down {
-  width:24px; height:16px; border:1px solid var(--border); background:var(--surface-hi);
-  border-radius:5px; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text-hi);
+/* ── 6.2: Buy confirm morph (wide ✓ $cost + red ✗) ── */
+.btn-buy.confirm-mode { display:flex; gap:6px; padding:0; min-width:120px; background:none; border:none; box-shadow:none; animation:none; }
+.confirm-yes {
+  flex:1; min-height:40px; padding:0 10px; gap:5px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--accent); color:#fff; border-radius:var(--r-sm);
+  font:700 12px var(--font-body);
 }
-.vstep-up:disabled, .vstep-down:disabled { opacity:.3; cursor:default; }
+.confirm-yes:hover { opacity:.9; }
+.confirm-cost { font-variant-numeric:tabular-nums; }
+.confirm-no {
+  width:40px; min-height:40px; flex-shrink:0; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(168,62,43,.14); color:var(--bk-red); border-radius:var(--r-sm);
+}
+.confirm-no:hover { background:rgba(168,62,43,.24); }
+
+/* 6.2: horizontal staff stepper — large mobile tap targets */
+.staff-role-row { gap:6px; }
+.staff-step-btn {
+  width:40px; height:40px; flex-shrink:0;
+  border:1px solid var(--border); background:var(--surface-hi); color:var(--text-hi);
+  border-radius:var(--r-sm); cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:background .12s, border-color .12s, transform .1s; touch-action:manipulation;
+}
+.staff-step-btn:hover:not(:disabled) { background:var(--accent-dim); border-color:var(--accent); transform:translateY(-1px); }
+.staff-step-btn:active:not(:disabled) { transform:translateY(0); }
+.staff-step-btn:disabled { opacity:.28; cursor:not-allowed; }
+.staff-step-plus:not(:disabled) { color:var(--accent); border-color:rgba(47,125,91,.4); }
+.staff-step-btn.fire-btn { margin-left:8px; color:var(--bk-red); border-color:rgba(168,62,43,.35); }
+.staff-step-btn.fire-btn:hover:not(:disabled) { background:rgba(168,62,43,.12); border-color:var(--bk-red); }
+.tls-count.bump, .stage-ctrl-count.bump { animation:countBump .28s ease; }
+@keyframes countBump { 0%{ transform:scale(1); } 45%{ transform:scale(1.35); color:var(--accent); } 100%{ transform:scale(1); } }
 /* Staff modal extras */
 .fire-btn { color:var(--bk-red); }
 .staff-tier-hint { font:400 12px var(--font-body); color:var(--text-dim); padding:8px 4px; }
