@@ -1,0 +1,30 @@
+{
+  "figures": {
+    "fill":  ["assets/sprites/figures/female-tech1.png"],
+    "check": ["assets/sprites/figures/female-rph1.png"],
+    "pack":  ["assets/sprites/figures/female-packer1.png"]
+  },
+  "portraits": {
+    "fill_f":  [
+      "assets/sprites/portraits/female-tech1.png",
+      "assets/sprites/portraits/female-tech2.png",
+      "assets/sprites/portraits/female-tech3.png"
+    ],
+    "fill_m":  [
+      "assets/sprites/portraits/male-tech1.png",
+      "assets/sprites/portraits/male-tech2.png"
+    ],
+    "fill_nb": [],
+
+    "check_f":  ["assets/sprites/portraits/female-rph1.png"],
+    "check_m":  ["assets/sprites/portraits/male-rph1.png"],
+    "check_nb": [],
+
+    "pack_f":  ["assets/sprites/portraits/female-packer1.png"],
+    "pack_m":  [
+      "assets/sprites/portraits/male-packer1.png",
+      "assets/sprites/portraits/male-packer2.png"
+    ],
+    "pack_nb": []
+  }
+}
