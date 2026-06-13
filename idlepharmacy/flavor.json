@@ -1,31 +1,92 @@
 {
   "candidatePool": {
-    "fill": [
-      { "name": "Marcus Webb",    "title": "Pharmacy Technician",   "bio": "Methodical counter. Never a short fill." },
-      { "name": "Priya Nair",     "title": "Certified Tech (CPhT)",  "bio": "Trains the new hires on QA." },
-      { "name": "Dana Kowalski",  "title": "Dispensing Tech",        "bio": "Fifteen years on the bench." },
-      { "name": "Theo Brandt",    "title": "Pharmacy Technician",    "bio": "Fast hands, steady counts." },
-      { "name": "Lena Castillo",  "title": "Lead Technician",        "bio": "Keeps the bench moving." },
-      { "name": "Omar Haddad",    "title": "Certified Tech (CPhT)",  "bio": "Zero rejected claims last quarter." },
-      { "name": "Grace Im",       "title": "Pharmacy Technician",    "bio": "Color-codes everything. It works." }
+    "names": [
+      { "name": "Laura",       "gender": "f" },
+      { "name": "Phia",        "gender": "f" },
+      { "name": "Mitch",       "gender": "m" },
+      { "name": "Carolee",     "gender": "f" },
+      { "name": "Geo",         "gender": "nb" },
+      { "name": "Jasmine",     "gender": "f" },
+      { "name": "Caleb",       "gender": "m" },
+      { "name": "Pa",          "gender": "nb" },
+      { "name": "Gaochoua",    "gender": "f" },
+      { "name": "Dr. Phil",    "gender": "m" },
+      { "name": "Dr. Melissa", "gender": "f" },
+      { "name": "Dr. Jason",   "gender": "m" },
+      { "name": "Dr. Nancy",   "gender": "f" },
+      { "name": "Dr. Andy",    "gender": "m" },
+      { "name": "Dr. Anam",    "gender": "nb" },
+      { "name": "Dr. Mary",    "gender": "f" },
+      { "name": "Dr. Jeff",    "gender": "m" },
+      { "name": "Dr. Alyse",   "gender": "f" },
+      { "name": "Ty",          "gender": "m" },
+      { "name": "Madi",        "gender": "f" },
+      { "name": "Zeph",        "gender": "nb" },
+      { "name": "Mario",       "gender": "m" },
+      { "name": "Belen",       "gender": "f" },
+      { "name": "Dan",         "gender": "m" },
+      { "name": "Krystal",     "gender": "f" },
+      { "name": "Andrew",      "gender": "m" }
     ],
-    "check": [
-      { "name": "Dr. Osei",       "title": "Staff Pharmacist",       "bio": "Catches every interaction." },
-      { "name": "Dr. Yuen",       "title": "PharmD, BCPS",           "bio": "Wrote the DUR policy." },
-      { "name": "Dr. Reyes",      "title": "Pharmacy Director",      "bio": "Regulators love her." },
-      { "name": "Dr. Halloran",   "title": "Staff Pharmacist",       "bio": "Unhurried and precise." },
-      { "name": "Dr. Beckett",    "title": "PharmD",                 "bio": "Counsels every patient." },
-      { "name": "Dr. Vance",      "title": "Clinical Pharmacist",    "bio": "Reads the chart twice." },
-      { "name": "Dr. Sato",       "title": "PharmD, BCPS",           "bio": "Quiet, thorough, fast." }
-    ],
-    "pack": [
-      { "name": "Hector Lima",    "title": "Fulfillment Associate",  "bio": "Every label, perfect." },
-      { "name": "Simone Park",    "title": "Lead Packer",            "bio": "Runs the end-of-day tally unasked." },
-      { "name": "Jerome Tucker",  "title": "Fulfillment Supervisor", "bio": "Trains the floor in two days." },
-      { "name": "Bianca Rossi",   "title": "Packer",                 "bio": "Never a mispack." },
-      { "name": "Cole Mathers",   "title": "Fulfillment Associate",  "bio": "Boxes like a machine." },
-      { "name": "Aisha Bello",    "title": "Lead Packer",            "bio": "Keeps the totes flowing." },
-      { "name": "Devon Pratt",    "title": "Packer",                 "bio": "Calm under a full queue." }
-    ]
+
+    "fill": {
+      "titles": [
+        "Certified Tech (CPhT)",
+        "Dispensing Tech",
+        "Pharmacy Technician",
+        "Lead Technician"
+      ],
+      "bios": [
+        "Survived six winters in the CVS trenches. Flinches violently at any sound resembling a drive-thru alert.",
+        "Cures Acute Insurance Rejection Syndrome. Dispels prior authorization blockers with professionalism, and occasionally, violence.",
+        "Specialty drug enthusiast. Handles $15,000 biologics with the delicate care of a bomb squad technician.",
+        "Escaped the Corner of Happy and Hell. Can count to 90 by fives in their sleep while actively administering immunizations.",
+        "The Hieroglyphics Translator. Converts doctor scribbles and hostile shorthand into flawless standard sigs.",
+        "Guardian of the cold-chain. Will literally bite you if the fridge door stays open for more than four seconds.",
+        "Purple Heart recipient from the Great Flu Shot Offensive. Never leaves a script behind.",
+        "Spots suspicious out-of-state prescriptions from across the room. Absolute steel trap.",
+        "Escaped through a Walgreens drive-thru window and walked straight here. Their eyes have seen things."
+      ]
+    },
+
+    "check": {
+      "titles": [
+        "Staff Pharmacist",
+        "Pharmacy Director",
+        "PharmD",
+        "Clinical Pharmacist",
+        "PharmD, BCPS"
+      ],
+      "bios": [
+        "Cures Severe Polypharmacy Blindness with a single authoritative stroke of their red pen.",
+        "Former retail manager. Deeply suspicious when allowed to sit down for a full lunch break.",
+        "Verifies $20,000 auto-injectors. Heart rate never spikes. Forehead sweats actual ice water.",
+        "Eradicates Phantom Refill Syndrome before it infects the active billing queue.",
+        "Certified in high-stakes retail drive-thru de-escalation. Only has three fingers on their left hand.",
+        "Chief Temperature Officer. Will drop everything and sprint to the thermostat if indoor ambient temperature breaches 65F.",
+        "Certified in high-stakes PBM phone tree navigation. Interrogates insurance helpdesks for sport.",
+        "Veterinary specialty wizard. Translates a cat's weight into a flawless compounded liquid dose.",
+        "Wrote the manual on DUR survival. Can enter override codes blindfolded while riding a horse."
+      ]
+    },
+
+    "pack": {
+      "titles": [
+        "Fulfillment Associate",
+        "Packer",
+        "Lead Packer",
+        "Fulfillment Supervisor"
+      ],
+      "bios": [
+        "Master of Ice-Pack Tetris. Deeply believes birds aren't real. Harbors an unyielding distrust of all logistics networks.",
+        "Can unearth a single canceled order from a mountain of outgoing packages three seconds before the USPS driver arrives.",
+        "Plays the tape gun like a musical instrument. Dispenses packing tape at exactly 120 beats per minute.",
+        "Can assemble six boxes simultaneously while scream-singing the entire lyrics to \"Uptown Funk\".",
+        "Balances frozen gel packs like a professional juggler. Their hands are permanently 40 degrees Fahrenheit.",
+        "Operates entirely by echolocation in the warehouse. Memorizes the exact physical coordinates of every outgoing tote.",
+        "Can identify the exact weight of a package just by looking at it. Accurate to within half an ounce.",
+        "The Heavy Box Whisperer. Tapes 40-pound bulk specialty orders shut with a single hand while drinking a Monster Energy."
+      ]
+    }
   }
 }
