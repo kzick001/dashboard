@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Crawler Terminal V6.0.1</title>
+  <title>Showrunner | Crawler Terminal V6.0.2</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300e0c0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='4' width='20' height='16' rx='2'/%3E%3Cpolyline points='6 9 9 12 6 15'/%3E%3Cline x1='12' y1='15' x2='17' y2='15'/%3E%3C/svg%3E">
 
   <svg xmlns="http://www.w3.org/2000/svg" style="display:none;position:absolute">
     <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
@@ -365,7 +366,7 @@
 
 <!-- MAIN HUD -->
 <div id="main-hud" class="hidden">
-  <button id="btn-logout" class="btn-logout-hud" onclick="confirmLogout();" title="Logout">✕</button>
+  <button id="btn-logout" class="btn-logout-hud" onclick="confirmLogout();" title="Logout"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   <div id="ach-pill" onclick="openModal();" title="View achievements">
     <span id="ach-badge">0</span>
   </div>
@@ -434,7 +435,7 @@
   <div class="ach-modal">
     <div class="ach-modal-header">
       <h2>Achievements</h2>
-      <button onclick="closeModal();" class="ach-modal-close" title="Close">✕</button>
+      <button onclick="closeModal();" class="ach-modal-close" title="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
 
     <div class="ach-modal-tabs">
@@ -1266,6 +1267,11 @@ function setGold(val) {
     if (ch) { ch.gold = val; ch.updatedAt = new Date().toISOString(); }
   }, `Gold: ${val} gp`);
 }
+
+/* ══════════════════════════════
+   HEADER / NAMEPLATE
+══════════════════════════════ */
+function updateHeader() {
   get('hud-name').textContent = player?.name || playerName || '—';
   const sub = player ? [player.race, player.class].filter(Boolean).join(' ') : 'Awaiting data...';
   get('hud-sub').textContent = sub || '—';
