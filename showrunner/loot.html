@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Showrunner | Loot Tables V6.0.1</title>
+  <title>Showrunner | Loot Tables V7.0.0</title>
 
   <script>
     const SECURE_PIN = "goddammit_doughnut";
@@ -82,18 +82,18 @@
 
     /* --- Layout Grid --- */
     .showrunner-layout {
-      display: grid; grid-template-columns: 280px 1fr 460px; flex-grow: 1;
+      display: grid; grid-template-columns: 280px 1fr; flex-grow: 1;
       transition: grid-template-columns 0.3s ease; overflow: hidden;
     }
-    .showrunner-layout.left-collapsed { grid-template-columns: 0px 1fr 460px; }
-    .showrunner-layout.right-collapsed { grid-template-columns: 280px 1fr 0px; }
-    .showrunner-layout.left-collapsed.right-collapsed { grid-template-columns: 0px 1fr 0px; }
+    .showrunner-layout.left-collapsed { grid-template-columns: 0px 1fr; }
+    .showrunner-layout.right-collapsed { grid-template-columns: 280px 1fr; }
+    .showrunner-layout.left-collapsed.right-collapsed { grid-template-columns: 0px 1fr; }
 
     @media (max-width: 900px) {
       .showrunner-layout, .showrunner-layout.left-collapsed, .showrunner-layout.right-collapsed { display: flex; flex-direction: column; overflow-y: auto; grid-template-columns: none; }
-      .nav-sidebar, .magazine-sidebar { width: 100%; max-height: 320px; flex-shrink: 0; border: none; border-bottom: 1px solid #333; }
+      .nav-sidebar { width: 100%; max-height: 320px; flex-shrink: 0; border: none; border-bottom: 1px solid #333; }
       .main-stage { overflow: visible; padding: 1.5rem; }
-      .nav-sidebar.mobile-hide, .magazine-sidebar.mobile-hide { display: none; }
+      .nav-sidebar.mobile-hide { display: none; }
     }
 
     /* --- Left Nav Sidebar --- */
@@ -121,31 +121,30 @@
     .sidebar-footer { padding: 0.85rem 1rem; border-top: 1px solid #333; display: flex; flex-direction: column; gap: 0.6rem; flex-shrink: 0; }
 
     /* --- Center Stage --- */
-    .main-stage { overflow-y: auto; padding: 2rem; box-sizing: border-box; background: var(--bg); display: flex; flex-direction: column; align-items: center; }
-    .stage-inner { width: 100%; max-width: 620px; }
-    .stage-title { color: #777; text-transform: uppercase; letter-spacing: 0.12em; margin: 0 0 1.5rem; font-size: 1rem; text-align: center; }
+    .main-stage { overflow-y: auto; padding: 1.5rem 2rem; box-sizing: border-box; background: var(--bg); display: flex; flex-direction: column; align-items: stretch; }
+    .stage-inner { width: 100%; display: flex; flex-direction: column; flex-grow: 1; min-height: 0; }
+    .stage-head { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .stage-title { color: #777; text-transform: uppercase; letter-spacing: 0.12em; margin: 0; font-size: 0.95rem; }
     .stage-title b { color: var(--accent); }
+    .stage-fill { font-size: 0.72rem; color: #666; font-family: monospace; margin-left: auto; }
 
-    .roller-container { background: #111; border: 1px solid #333; padding: 1.75rem; border-radius: 10px; text-align: center; width: 100%; box-shadow: 0 8px 16px rgba(0,0,0,0.5); }
-    /* Collapsible roller (v6.0.1) */
-    .roller-toggle { display: flex; align-items: center; gap: 0.45rem; background: rgba(255,255,255,0.04); border: 1px solid #333; color: #888; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.78rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer; width: 100%; margin-bottom: 1rem; transition: all 0.2s ease; }
-    .roller-toggle:hover { border-color: var(--accent); color: var(--accent); }
-    .roller-toggle svg { transition: transform 0.2s ease; flex-shrink: 0; }
-    .roller-last-label { margin-left: auto; font-family: monospace; font-size: 0.72rem; color: #666; font-weight: normal; text-transform: none; letter-spacing: 0; }
-    .roller-collapse { display: none; margin-bottom: 1rem; }
-    .roller-collapse.open { display: block; }
-    .roller-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
-    .roller-input-group { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
-    .dice-input { background: #050505; color: var(--accent); border: 2px solid #444; border-radius: 10px; font-size: 3rem; text-align: center; width: 130px; padding: 0.4rem; outline: none; font-family: monospace; transition: 0.2s; }
-    .dice-input:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(187, 134, 252, 0.4); }
-    .dice-input::-webkit-outer-spin-button, .dice-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    .dice-hint { color: #555; font-size: 0.8rem; margin-bottom: 1rem; }
+    /* Roll resolver — thin row docked under header */
+    .resolver-row { display: flex; align-items: center; gap: 0.7rem; background: #111; border: 1px solid #333; border-radius: 8px; padding: 0.5rem 0.75rem; margin-bottom: 1rem; flex-shrink: 0; }
+    .resolver-die { flex-shrink: 0; }
+    .dice-input-row { background: #050505; color: var(--accent); border: 2px solid #444; border-radius: 8px; font-size: 1.3rem; text-align: center; width: 72px; padding: 0.25rem 0.3rem; outline: none; font-family: monospace; transition: 0.2s; flex-shrink: 0; }
+    .dice-input-row:focus { border-color: var(--accent); box-shadow: 0 0 12px rgba(187, 134, 252, 0.35); }
+    .dice-input-row::-webkit-outer-spin-button, .dice-input-row::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .btn-resolve-row { background: var(--accent); color: #000; font-size: 0.9rem; font-weight: bold; padding: 0.5rem 1.25rem; border-radius: 7px; border: none; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
+    .btn-resolve-row:hover { background: #d0a3ff; box-shadow: 0 3px 10px rgba(187, 134, 252, 0.4); }
+    .dice-hint { color: #555; font-size: 0.78rem; flex-grow: 1; }
+    .roller-last-label { font-family: monospace; font-size: 0.72rem; color: #888; flex-shrink: 0; }
 
-    .btn-resolve { background: var(--accent); color: #000; font-size: 1.1rem; font-weight: bold; padding: 0.7rem 2rem; border-radius: 8px; border: none; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
-    .btn-resolve:hover { background: #d0a3ff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(187, 134, 252, 0.4); }
-
-    /* --- Result Cards --- */
-    .result-container { width: 100%; margin-top: 1.75rem; }
+    /* --- Result overlay (dismissible card) --- */
+    .result-overlay { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); align-items: center; justify-content: center; padding: 1.5rem; }
+    .result-overlay.open { display: flex; }
+    .result-container { width: 100%; max-width: 540px; max-height: 88vh; overflow-y: auto; position: relative; }
+    .result-close { position: absolute; top: 0.6rem; right: 0.6rem; z-index: 2; background: rgba(0,0,0,0.4); border: 1px solid #444; color: #aaa; width: 30px; height: 30px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: 0.15s; }
+    .result-close:hover { color: #fff; border-color: var(--accent); }
     .result-card { background: #1a1e24; border-top: 4px solid var(--info); padding: 1.75rem; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.8); animation: slideUp 0.3s ease-out forwards; }
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     .result-card.error { border-top-color: var(--danger); background: #2a1518; }
@@ -177,16 +176,19 @@
     .award-btn { flex: 1; min-width: 90px; background: rgba(3, 218, 198, 0.1); border: 1px solid rgba(3, 218, 198, 0.3); color: var(--success); padding: 0.55rem; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
     .award-btn:hover { background: var(--success); color: #000; }
 
-    /* --- Right Sidebar (Items list) --- */
-    .magazine-sidebar { background: var(--mag-bg); border-left: 1px solid #333; display: flex; flex-direction: column; overflow: hidden; }
-    .magazine-header { padding: 0.85rem 1rem; border-bottom: 1px solid #222; background: #111; font-weight: bold; letter-spacing: 0.05em; color: #aaa; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
-    .magazine-list { overflow-y: auto; flex-grow: 1; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    /* --- Item list (center column) --- */
+    .magazine-list { overflow-y: auto; flex-grow: 1; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; min-height: 0; }
 
-    .slot { padding: 0.6rem 0.7rem; border-radius: 6px; font-size: 0.88rem; border: 1px solid transparent; transition: 0.2s; display: flex; align-items: center; gap: 0.6rem; }
+    .slot { padding: 0.55rem 0.7rem; border-radius: 6px; font-size: 0.88rem; border: 1px solid transparent; transition: 0.2s; display: flex; flex-direction: column; gap: 0.35rem; }
     .slot.loaded { background: #1a1a1a; border-color: #333; cursor: pointer; }
     .slot.loaded:hover { border-color: #555; }
+    .slot-main { display: flex; align-items: center; gap: 0.6rem; }
+    .slot-summary { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; padding-left: calc(52px + 0.6rem); font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
+    .slot-summary .sum-badge { font-size: 0.66rem; text-transform: capitalize; padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,0.06); color: #bbb; }
+    .slot-summary .sum-badge.rar { color: #000; font-weight: 600; }
+    .slot-summary .sum-mech { color: #999; }
     .slot-detail { max-height: 0; overflow: hidden; transition: max-height 0.25s ease; padding: 0; border-top: none; }
-    .slot.loaded.expanded .slot-detail { max-height: 200px; border-top: 1px solid #2a2a2a; padding: 0.5rem 0.75rem 0.6rem; }
+    .slot.loaded.expanded .slot-detail { max-height: 240px; border-top: 1px solid #2a2a2a; padding: 0.5rem 0.75rem 0.6rem; margin-top: 0.15rem; }
     .slot-detail-line { font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; }
     .slot-detail-line span { color: var(--text); }
     .slot-detail-badges { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-bottom: 0.3rem; }
@@ -202,7 +204,7 @@
     .slot.empty .roll-tag { color: var(--danger); background: rgba(207,102,121,0.12); }
     .slot.empty .item-name { color: var(--danger); font-style: italic; letter-spacing: 0.05em; }
 
-    .mag-footer { padding: 0.75rem; border-top: 1px solid #222; flex-shrink: 0; }
+    .mag-footer { padding: 0.75rem 0 0; border-top: 1px solid #222; flex-shrink: 0; margin-top: 0.5rem; }
 
     /* --- Buttons (generic) --- */
     .btn { background: var(--card); color: var(--text); border: 1px solid #555; padding: 9px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem; width: 100%; }
@@ -265,16 +267,15 @@
 
   <div class="global-controls">
     <div class="gc-left">
-      <button id="toggle-left" class="btn-icon active" onclick="toggleColumn('left')" title="Toggle Tables panel">☰ TABLES</button>
+      <button id="toggle-left" class="btn-icon active" onclick="toggleColumn('left')" title="Toggle Tables panel"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg> TABLES</button>
     </div>
     <div class="gc-right">
-      <button class="btn-icon" onclick="undo()" title="Undo">⟲ UNDO</button>
-      <button class="btn-icon" onclick="redo()" title="Redo">⟳ REDO</button>
+      <button class="btn-icon" onclick="undo()" title="Undo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> UNDO</button>
+      <button class="btn-icon" onclick="redo()" title="Redo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg> REDO</button>
       <div style="display:flex; align-items:center; gap:6px; margin-left:6px;">
         <span id="sync-dot" class="sync-dot idle" title="Sync status"></span>
         <span id="sync-label" style="font-size:0.72rem; color:#666; letter-spacing:0.05em;">SYNCED</span>
       </div>
-      <button id="toggle-right" class="btn-icon active" onclick="toggleColumn('right')" title="Toggle Items panel" style="margin-left:6px;">ITEMS ☰</button>
     </div>
   </div>
 
@@ -436,42 +437,34 @@
       </div>
     </div>
 
-    <!-- CENTER: Roll & result -->
+    <!-- CENTER: Roll resolver row (anchored under header) + item list -->
     <div class="main-stage">
       <div class="stage-inner">
-        <h2 class="stage-title" id="stage-title">Select a table</h2>
-
-        <div class="roller-collapse" id="roller-collapse">
-          <div class="roller-container">
-          <div class="roller-input-group">
-            <svg viewBox="0 0 24 24" width="40" height="40" stroke="var(--accent)" stroke-width="1.5" fill="none"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-            <input type="number" id="dice-input" class="dice-input" placeholder="00" min="1" onkeydown="if(event.key==='Enter') resolveRoll()">
-          </div>
-          <div class="dice-hint" id="dice-hint">Enter what the player rolled</div>
-          <button class="btn-resolve" onclick="resolveRoll()">Resolve Roll</button>
-          </div>
+        <div class="stage-head">
+          <h2 class="stage-title" id="stage-title">Select a table</h2>
+          <span id="magazine-fill" class="stage-fill"></span>
         </div>
 
-        <button class="roller-toggle" id="roller-toggle" onclick="toggleRoller()" aria-expanded="false">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          Roll Resolver
+        <!-- Roll resolver: thin row docked under the header -->
+        <div class="resolver-row" id="resolver-row">
+          <svg class="resolver-die" viewBox="0 0 24 24" width="22" height="22" stroke="var(--accent)" stroke-width="1.5" fill="none"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          <input type="number" id="dice-input" class="dice-input-row" placeholder="00" min="1" onkeydown="if(event.key==='Enter') resolveRoll()">
+          <button class="btn-resolve-row" onclick="resolveRoll()">Resolve</button>
+          <span class="dice-hint" id="dice-hint">Enter what the player rolled</span>
           <span id="roller-last" class="roller-last-label"></span>
-        </button>
+        </div>
 
-        <div id="result-container" class="result-container"></div>
+        <!-- Item list fills the center -->
+        <div class="magazine-list" id="magazine-list"><!-- rendered --></div>
+        <div class="mag-footer">
+          <button class="btn btn-add" onclick="openItemModal()">+ Add Item</button>
+        </div>
       </div>
     </div>
 
-    <!-- RIGHT: Item list for selected table -->
-    <div class="magazine-sidebar" id="magazine-sidebar">
-      <div class="magazine-header">
-        <span id="magazine-title">Items</span>
-        <span id="magazine-fill" style="font-size:0.72rem; color:#666; font-family:monospace;"></span>
-      </div>
-      <div class="magazine-list" id="magazine-list"><!-- rendered --></div>
-      <div class="mag-footer">
-        <button class="btn btn-add" onclick="openItemModal()">+ Add Item</button>
-      </div>
+    <!-- Result overlay card (dismissible) -->
+    <div id="result-overlay" class="result-overlay" onclick="if(event.target===this) closeResult()">
+      <div id="result-container" class="result-container"></div>
     </div>
 
   </div>
@@ -778,15 +771,6 @@
         layout.classList.toggle('left-collapsed');
         btn.classList.toggle('active');
       }
-    } else {
-      const btn = document.getElementById('toggle-right');
-      if (isMobile) {
-        document.getElementById('magazine-sidebar').classList.toggle('mobile-hide');
-        btn.classList.toggle('active');
-      } else {
-        layout.classList.toggle('right-collapsed');
-        btn.classList.toggle('active');
-      }
     }
   }
 
@@ -835,7 +819,7 @@
     const count = filledCount(view);
     const max = getMaxRoll(view);
     const delBtn = deletable
-      ? `<span class="slot-btn del" style="width:22px;height:22px;" title="Delete table" onclick="event.stopPropagation(); deleteCustomTable('${escAttr(view.id)}')">✕</span>`
+      ? `<span class="slot-btn del" style="width:22px;height:22px;" title="Delete table" onclick="event.stopPropagation(); deleteCustomTable('${escAttr(view.id)}')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>`
       : '';
     return `
       <div class="nav-item ${isActive ? 'active' : ''}" onclick="selectView('${view.category}','${escAttr(view.id)}')">
@@ -860,7 +844,7 @@
     document.getElementById('dice-hint').textContent = `Enter what the player rolled (1–${max})`;
     const di = document.getElementById('dice-input');
     di.max = max; di.value = '';
-    document.getElementById('result-container').innerHTML = '';
+    closeResult();
     setRollerLast('');
 
     renderNav();
@@ -900,17 +884,17 @@
     return null;
   }
 
-  function toggleRoller(forceOpen) {
-    const c = document.getElementById('roller-collapse');
-    const t = document.getElementById('roller-toggle');
-    if (!c) return;
-    const open = forceOpen === true ? true : forceOpen === false ? false : !c.classList.contains('open');
-    c.classList.toggle('open', open);
-    if (t) t.setAttribute('aria-expanded', String(open));
-  }
   function setRollerLast(text) {
     const el = document.getElementById('roller-last');
     if (el) el.textContent = text || '';
+  }
+
+  function openResult() {
+    document.getElementById('result-overlay').classList.add('open');
+  }
+  function closeResult() {
+    document.getElementById('result-overlay').classList.remove('open');
+    document.getElementById('result-container').innerHTML = '';
   }
 
   function resolveRoll() {
@@ -944,10 +928,13 @@
 
   function renderResult(ctx) {
     const rc = document.getElementById('result-container');
+    openResult();
+    const closeBtn = `<button class="result-close" onclick="closeResult()" title="Dismiss"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
 
     if (ctx.status === 'norange') {
       rc.innerHTML = `
         <div class="result-card error">
+          ${closeBtn}
           <h2 class="result-title" style="color:var(--danger)">No Match</h2>
           <p class="result-text">Roll <b>${ctx.roll}</b> doesn't fall in any defined range on this table. Add an item covering that range, or re-roll.</p>
         </div>`;
@@ -956,6 +943,7 @@
     if (ctx.status === 'empty') {
       rc.innerHTML = `
         <div class="result-card error">
+          ${closeBtn}
           <div class="result-matched">Roll ${ctx.roll} → Range ${rangeStr(ctx.range)}</div>
           <h2 class="result-title" style="color:var(--danger)">Slot Empty</h2>
           <p class="result-text">This range was awarded or cleared. The Kouateen are displeased.</p>
@@ -1001,7 +989,8 @@
 
     rc.innerHTML = `
       <div class="result-card">
-        <div class="result-matched">Roll ${ctx.roll} → Range ${rangeStr(stagedRoll.range)} ✓</div>
+        ${closeBtn}
+        <div class="result-matched">Roll ${ctx.roll} → Range ${rangeStr(stagedRoll.range)}</div>
         <h2 class="result-title">${escHtml(i.name)}</h2>
         <div class="result-badges">${badges}</div>
 
@@ -1010,7 +999,7 @@
         ${chargesHtml}
 
         <div class="action-row">
-          <button class="btn-action copy" onclick="copyToClipboard()">⧉ Copy Stats &amp; Description</button>
+          <button class="btn-action copy" onclick="copyToClipboard()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Stats &amp; Description</button>
           <div class="award-label">Transfer to Player</div>
           <div class="award-buttons">${awardBtns}</div>
         </div>
@@ -1077,12 +1066,14 @@
     }, `${item.name} → ${charName}.`);
 
     // Optimistic result swap.
+    openResult();
     document.getElementById('result-container').innerHTML = `
       <div class="result-card success">
+        <button class="result-close" onclick="closeResult()" title="Dismiss"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         <h2 class="result-title" style="color:var(--success)">Payload Delivered</h2>
         <p class="result-text"><b>${escHtml(item.name)}</b> (range ${rangeStr(range)}) sent to <b>${escHtml(charName)}</b>. Slot is now empty.</p>
         <div class="action-row">
-          <button class="btn-action undo" onclick="undo()">⟲ Undo Award</button>
+          <button class="btn-action undo" onclick="undo()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Undo Award</button>
         </div>
       </div>`;
     stagedRoll = null;
@@ -1097,8 +1088,8 @@
     const max = getMaxRoll(currentView);
     const filled = filledCount(currentView);
 
-    document.getElementById('magazine-title').textContent = currentView.id;
-    document.getElementById('magazine-fill').textContent = `${filled} item${filled === 1 ? '' : 's'} · 1–${max}`;
+    const fillEl = document.getElementById('magazine-fill');
+    if (fillEl) fillEl.textContent = `${filled} item${filled === 1 ? '' : 's'} · 1–${max}`;
 
     if (table.length === 0) {
       document.getElementById('magazine-list').innerHTML = `<div class="empty-state">No items yet.<br>Use “+ Add Item” to define a roll range.</div>`;
@@ -1119,22 +1110,43 @@
       if (isEmptyEntry(e)) {
         return `
           <div class="slot empty">
-            <span class="roll-tag">${rng}</span>
-            <span class="item-name">[ EMPTY ]</span>
-            <span class="slot-actions">
-              <button class="slot-btn" title="Edit / fill" onclick="openItemModal(${idx})">✎</button>
-              <button class="slot-btn del" title="Delete entry" onclick="deleteEntry(${idx})">✕</button>
-            </span>
+            <div class="slot-main">
+              <span class="roll-tag">${rng}</span>
+              <span class="item-name">[ EMPTY ]</span>
+              <span class="slot-actions">
+                <button class="slot-btn" title="Edit / fill" onclick="openItemModal(${idx})">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button class="slot-btn del" title="Delete entry" onclick="deleteEntry(${idx})">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </span>
+            </div>
           </div>`;
       }
       const it = e.item;
       const rarColor = RARITY_COLOR[it.rarity] || 'var(--r-common)';
       const isExpanded = expandedMagIdx === idx;
 
-      // Build detail content
+      // Always-visible collapsed summary: rarity + type + quantity/attune + one-line mechanics
+      const m = it.mechanics || {};
+      const summaryBadges = [];
+      summaryBadges.push(`<span class="sum-badge rar" style="background:${rarColor}">${escHtml(it.rarity)}</span>`);
+      if (it.type) summaryBadges.push(`<span class="sum-badge">${escHtml(it.type)}</span>`);
+      if (it.quantity && it.quantity > 1) summaryBadges.push(`<span class="sum-badge">×${it.quantity}</span>`);
+      if (it.requiresAttunement) summaryBadges.push(`<span class="sum-badge">${it.isAttuned ? 'attuned' : 'attune'}</span>`);
+      if (it.charges?.max) summaryBadges.push(`<span class="sum-badge">${it.charges.current}/${it.charges.max} chg</span>`);
+
+      const sumMechParts = [];
+      if (m.toHitBonus != null && m.toHitBonus !== '') sumMechParts.push(`hit ${m.toHitBonus >= 0 ? '+' : ''}${m.toHitBonus}`);
+      if (m.damageBonus) sumMechParts.push(`dmg ${m.damageBonus}`);
+      if (m.acBase != null && m.acBase !== '') sumMechParts.push(`AC ${m.acBase}`);
+      if (m.acMod != null && m.acMod !== '' && m.acMod !== 0) sumMechParts.push(`AC ${m.acMod >= 0 ? '+' : ''}${m.acMod}`);
+      const sumMech = sumMechParts.length ? `<span class="sum-mech">· ${escHtml(sumMechParts.join(' · '))}</span>` : '';
+
+      // Expanded detail content
       let detailLines = [];
       if (it.description) detailLines.push(`<div class="slot-detail-line">${escHtml(it.description)}</div>`);
-      const m = it.mechanics || {};
       const mechParts = [];
       if (m.text) mechParts.push(m.text);
       if (m.toHitBonus != null && m.toHitBonus !== '') mechParts.push(`To-hit ${m.toHitBonus >= 0 ? '+' : ''}${m.toHitBonus}`);
@@ -1142,22 +1154,25 @@
       if (m.acBase != null) mechParts.push(`AC Base: ${m.acBase}`);
       if (m.acMod) mechParts.push(`AC Mod: ${m.acMod >= 0 ? '+' : ''}${m.acMod}`);
       if (mechParts.length) detailLines.push(`<div class="slot-detail-line"><span>Mechanics:</span> ${escHtml(mechParts.join(' · '))}</div>`);
-      if (it.charges?.max) detailLines.push(`<div class="slot-detail-line"><span>Charges:</span> ${it.charges.current}/${it.charges.max}</div>`);
+      if (it.charges?.max) detailLines.push(`<div class="slot-detail-line"><span>Charges:</span> ${it.charges.current}/${it.charges.max}${it.charges.resetType ? ` · resets ${escHtml(it.charges.resetType)}` : ''}</div>`);
       if (it.requiresAttunement) detailLines.push(`<div class="slot-detail-line"><span>Attunement required</span></div>`);
 
       return `
         <div class="slot loaded ${isExpanded ? 'expanded' : ''}" onclick="toggleSlotExpand(${idx})">
-          <span class="roll-tag">${rng}</span>
-          <span class="rarity-pip" style="background:${rarColor}" title="${escAttr(it.rarity)}"></span>
-          <span class="item-name" title="${escAttr(it.name)}">${escHtml(it.name)}</span>
-          <span class="slot-actions" onclick="event.stopPropagation()">
-            <button class="slot-btn" title="Edit" onclick="openItemModal(${idx})">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </button>
-            <button class="slot-btn del" title="Delete" onclick="deleteEntry(${idx})">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </span>
+          <div class="slot-main">
+            <span class="roll-tag">${rng}</span>
+            <span class="rarity-pip" style="background:${rarColor}" title="${escAttr(it.rarity)}"></span>
+            <span class="item-name" title="${escAttr(it.name)}">${escHtml(it.name)}</span>
+            <span class="slot-actions" onclick="event.stopPropagation()">
+              <button class="slot-btn" title="Edit" onclick="openItemModal(${idx})">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="slot-btn del" title="Delete" onclick="deleteEntry(${idx})">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </span>
+          </div>
+          <div class="slot-summary">${summaryBadges.join('')} ${sumMech}</div>
           <div class="slot-detail">${detailLines.join('') || '<div class="slot-detail-line" style="color:#555">No additional details.</div>'}</div>
         </div>`;
     }).join('');
