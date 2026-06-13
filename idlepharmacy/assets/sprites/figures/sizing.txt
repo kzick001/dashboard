@@ -1,0 +1,2 @@
+Figures: 80 × 112 px (5:7 ratio, feet at baseline)
+Portraits: 128 × 128 px (1:1 square, face centered)
