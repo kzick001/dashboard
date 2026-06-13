@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idle Rx Sprite Processor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #e2e8f0;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            margin-bottom: 2rem;
+            font-size: 0.875rem;
+        }
+
+        /* ── Upload Zone ──────────────────────────────────────────────────── */
+        .upload-zone {
+            border: 2px dashed #475569;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.5);
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 2rem;
+        }
+
+        .upload-zone.dragover {
+            border-color: #0ea5e9;
+            background: rgba(6, 182, 212, 0.05);
+        }
+
+        .upload-zone p {
+            margin-bottom: 1rem;
+            color: #cbd5e1;
+        }
+
+        .upload-zone input[type="file"] {
+            display: none;
+        }
+
+        .btn-browse {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-browse:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(6, 182, 212, 0.3);
+        }
+
+        /* ── Controls ──────────────────────────────────────────────────────── */
+        .controls {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: #cbd5e1;
+        }
+
+        .slider-container {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(to right, #475569, #64748b);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #0ea5e9;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #0ea5e9;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .value-display {
+            min-width: 60px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            color: #0ea5e9;
+            font-weight: 600;
+        }
+
+        /* ── File List ─────────────────────────────────────────────────────── */
+        .file-list {
+            margin-bottom: 2rem;
+        }
+
+        .file-list h2 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: #cbd5e1;
+        }
+
+        .file-item {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .file-item.processing {
+            opacity: 0.6;
+        }
+
+        .file-item.done {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .file-name {
+            font-family: "Monaco", "Menlo", monospace;
+            font-size: 0.8125rem;
+            color: #cbd5e1;
+            word-break: break-all;
+        }
+
+        .file-status {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .status-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        /* ── Preview Grid ──────────────────────────────────────────────────── */
+        .preview-section {
+            margin-bottom: 2rem;
+        }
+
+        .preview-section h2 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: #cbd5e1;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .preview-card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .preview-card h3 {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            margin-bottom: 0.75rem;
+        }
+
+        .preview-canvas {
+            width: 100%;
+            height: auto;
+            border: 1px solid #475569;
+            border-radius: 4px;
+            background: #0f172a;
+            display: block;
+        }
+
+        /* ── Actions ──────────────────────────────────────────────────────── */
+        .actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(6, 182, 212, 0.3);
+        }
+
+        .btn-secondary {
+            background: #334155;
+            color: #e2e8f0;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #475569;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ── Info Panel ────────────────────────────────────────────────────── */
+        .info-panel {
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px solid #0ea5e9;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-panel h3 {
+            color: #0ea5e9;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-panel p {
+            font-size: 0.8125rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+
+        /* ── Responsive ────────────────────────────────────────────────────── */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .preview-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 1rem;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Idle Rx Sprite Processor</h1>
+        <p class="subtitle">Convert pixel art characters into game-ready sprites</p>
+
+        <div class="info-panel">
+            <h3>How it works</h3>
+            <p>
+                Drag & drop your PNG files (with transparent backgrounds) to automatically create two versions:
+                <strong>80×112 px figures</strong> (feet anchored to bottom) and <strong>128×128 px portraits</strong> (head/bust crop).
+                Adjust the portrait crop slider in real-time to see previews.
+            </p>
+        </div>
+
+        <!-- Upload Zone -->
+        <div class="upload-zone" id="uploadZone">
+            <p>📁 Drag & drop PNG files here</p>
+            <p style="font-size: 0.8125rem; color: #64748b; margin-bottom: 1rem;">or</p>
+            <button class="btn-browse" id="browseBtn">Browse Files</button>
+            <input type="file" id="fileInput" multiple accept="image/png">
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <label for="bustSlider">Portrait Bust Fraction</label>
+                <div class="slider-container">
+                    <input type="range" id="bustSlider" min="20" max="60" value="42" step="1">
+                    <div class="value-display"><span id="bustValue">42</span>%</div>
+                </div>
+                <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">
+                    Top portion of figure used for portrait. Lower = tighter crop (less torso), Higher = more body.
+                </p>
+            </div>
+        </div>
+
+        <!-- File List -->
+        <div class="file-list">
+            <h2>Queued Files</h2>
+            <div id="fileListContainer"></div>
+            <div id="noFiles" style="color: #64748b; font-size: 0.875rem;">No files yet.</div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+            <button class="btn btn-primary" id="processBtn" disabled>
+                ⚙️ Process All
+            </button>
+            <button class="btn btn-secondary" id="downloadFiguresBtn" disabled>
+                ⬇️ Download Figures (ZIP)
+            </button>
+            <button class="btn btn-secondary" id="downloadPortraitsBtn" disabled>
+                ⬇️ Download Portraits (ZIP)
+            </button>
+            <button class="btn btn-secondary" id="downloadBothBtn" disabled>
+                ⬇️ Download Both (ZIP)
+            </button>
+        </div>
+
+        <!-- Preview -->
+        <div class="preview-section" id="previewSection" style="display: none;">
+            <h2>Preview (first file)</h2>
+            <div class="preview-grid">
+                <div class="preview-card">
+                    <h3>Figure 80×112</h3>
+                    <canvas id="previewFigure" width="80" height="112" class="preview-canvas"></canvas>
+                </div>
+                <div class="preview-card">
+                    <h3>Portrait 128×128</h3>
+                    <canvas id="previewPortrait" width="128" height="128" class="preview-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── State ──────────────────────────────────────────────────────────────
+        const state = {
+            files: [],           // { name, file, figure, portrait, status }
+            bustFraction: 0.42,
+            processing: false,
+        };
+
+        // ── DOM ────────────────────────────────────────────────────────────────
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const browseBtn = document.getElementById('browseBtn');
+        const bustSlider = document.getElementById('bustSlider');
+        const bustValue = document.getElementById('bustValue');
+        const fileListContainer = document.getElementById('fileListContainer');
+        const noFiles = document.getElementById('noFiles');
+        const processBtn = document.getElementById('processBtn');
+        const downloadFiguresBtn = document.getElementById('downloadFiguresBtn');
+        const downloadPortraitsBtn = document.getElementById('downloadPortraitsBtn');
+        const downloadBothBtn = document.getElementById('downloadBothBtn');
+        const previewSection = document.getElementById('previewSection');
+        const previewFigure = document.getElementById('previewFigure');
+        const previewPortrait = document.getElementById('previewPortrait');
+
+        // ── Image Processing Functions ─────────────────────────────────────────
+        function getContentBbox(imageData) {
+            const { data, width, height } = imageData;
+            let minX = width, maxX = -1, minY = height, maxY = -1;
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const alpha = data[(y * width + x) * 4 + 3];
+                    if (alpha > 0) {
+                        minX = Math.min(minX, x);
+                        maxX = Math.max(maxX, x);
+                        minY = Math.min(minY, y);
+                        maxY = Math.max(maxY, y);
+                    }
+                }
+            }
+            if (maxX < minX) return null; // fully transparent
+            return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+        }
+
+        function makeFigure(sourceCanvas, targetW = 80, targetH = 112) {
+            const ctx = sourceCanvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = sourceCanvas.width;
+            tempCanvas.height = sourceCanvas.height;
+            tempCtx.putImageData(imageData, 0, 0);
+
+            const bbox = getContentBbox(imageData);
+            if (!bbox) throw new Error('Image is fully transparent');
+
+            const croppedCanvas = document.createElement('canvas');
+            croppedCanvas.width = bbox.w;
+            croppedCanvas.height = bbox.h;
+            const croppedCtx = croppedCanvas.getContext('2d');
+            croppedCtx.drawImage(tempCanvas, bbox.x, bbox.y, bbox.w, bbox.h, 0, 0, bbox.w, bbox.h);
+
+            const scale = Math.min(targetW / bbox.w, targetH / bbox.h);
+            const newW = Math.round(bbox.w * scale);
+            const newH = Math.round(bbox.h * scale);
+
+            const scaledCanvas = document.createElement('canvas');
+            scaledCanvas.width = newW;
+            scaledCanvas.height = newH;
+            const scaledCtx = scaledCanvas.getContext('2d');
+            scaledCtx.imageSmoothingEnabled = true;
+            scaledCtx.drawImage(croppedCanvas, 0, 0, newW, newH);
+
+            const figure = document.createElement('canvas');
+            figure.width = targetW;
+            figure.height = targetH;
+            const figCtx = figure.getContext('2d');
+            const x = (targetW - newW) / 2;
+            const y = targetH - newH;
+            figCtx.drawImage(scaledCanvas, x, y);
+
+            return figure;
+        }
+
+        function makePortrait(sourceCanvas, bustFraction = 0.42, targetSize = 128) {
+            const ctx = sourceCanvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = sourceCanvas.width;
+            tempCanvas.height = sourceCanvas.height;
+            tempCtx.putImageData(imageData, 0, 0);
+
+            const bbox = getContentBbox(imageData);
+            if (!bbox) throw new Error('Image is fully transparent');
+
+            const croppedCanvas = document.createElement('canvas');
+            croppedCanvas.width = bbox.w;
+            croppedCanvas.height = bbox.h;
+            const croppedCtx = croppedCanvas.getContext('2d');
+            croppedCtx.drawImage(tempCanvas, bbox.x, bbox.y, bbox.w, bbox.h, 0, 0, bbox.w, bbox.h);
+
+            const bustH = Math.round(bbox.h * bustFraction);
+            const bustCanvas = document.createElement('canvas');
+            bustCanvas.width = bbox.w;
+            bustCanvas.height = bustH;
+            const bustCtx = bustCanvas.getContext('2d');
+            bustCtx.drawImage(croppedCanvas, 0, 0, bbox.w, bustH, 0, 0, bbox.w, bustH);
+
+            const side = Math.min(bbox.w, bustH);
+            const left = (bbox.w - side) / 2;
+            const top = (bustH - side) / 2;
+
+            const square = document.createElement('canvas');
+            square.width = side;
+            square.height = side;
+            const squareCtx = square.getContext('2d');
+            squareCtx.drawImage(bustCanvas, left, top, side, side, 0, 0, side, side);
+
+            const portrait = document.createElement('canvas');
+            portrait.width = targetSize;
+            portrait.height = targetSize;
+            const portraitCtx = portrait.getContext('2d');
+            portraitCtx.imageSmoothingEnabled = true;
+            portraitCtx.drawImage(square, 0, 0, targetSize, targetSize);
+
+            return portrait;
+        }
+
+        // ── File Handling ──────────────────────────────────────────────────────
+        function loadImageFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        resolve(canvas);
+                    };
+                    img.onerror = () => reject(new Error('Failed to load image'));
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => reject(new Error('Failed to read file'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function processFile(fileItem) {
+            try {
+                const sourceCanvas = await loadImageFile(fileItem.file);
+                fileItem.figure = makeFigure(sourceCanvas);
+                fileItem.portrait = makePortrait(sourceCanvas, state.bustFraction);
+                fileItem.status = 'done';
+                updateFileList();
+                if (state.files[0] === fileItem) {
+                    updatePreview();
+                }
+            } catch (error) {
+                fileItem.status = 'error: ' + error.message;
+                updateFileList();
+            }
+        }
+
+        function updateFileList() {
+            if (state.files.length === 0) {
+                fileListContainer.innerHTML = '';
+                noFiles.style.display = 'block';
+                processBtn.disabled = true;
+                downloadFiguresBtn.disabled = true;
+                downloadPortraitsBtn.disabled = true;
+                downloadBothBtn.disabled = true;
+                return;
+            }
+            noFiles.style.display = 'none';
+            fileListContainer.innerHTML = state.files.map((f, idx) => {
+                const done = f.status === 'done';
+                const icon = done ? '✓' : f.status.startsWith('error') ? '✗' : '⏳';
+                const iconColor = done ? '#10b981' : f.status.startsWith('error') ? '#ef4444' : '#f59e0b';
+                return `
+                    <div class="file-item ${done ? 'done' : ''}" key="${idx}">
+                        <div class="status-icon" style="color: ${iconColor};">${icon}</div>
+                        <div>
+                            <div class="file-name">${f.name}</div>
+                            <div class="file-status">${f.status}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            const allDone = state.files.every(f => f.status === 'done');
+            processBtn.disabled = state.processing || allDone;
+            downloadFiguresBtn.disabled = !allDone;
+            downloadPortraitsBtn.disabled = !allDone;
+            downloadBothBtn.disabled = !allDone;
+        }
+
+        function updatePreview() {
+            const first = state.files[0];
+            if (!first || !first.figure) return;
+            previewSection.style.display = 'block';
+            const figCtx = previewFigure.getContext('2d');
+            figCtx.clearRect(0, 0, previewFigure.width, previewFigure.height);
+            figCtx.drawImage(first.figure, 0, 0);
+            const portCtx = previewPortrait.getContext('2d');
+            portCtx.clearRect(0, 0, previewPortrait.width, previewPortrait.height);
+            portCtx.drawImage(first.portrait, 0, 0);
+        }
+
+        // ── Download Handling ──────────────────────────────────────────────────
+        function canvasToBlob(canvas) {
+            return new Promise((resolve) => {
+                canvas.toBlob(resolve, 'image/png');
+            });
+        }
+
+        async function downloadAsZip(items, prefix) {
+            // Simple approach: create a blob for each canvas, download individually
+            // Or use a basic zip library. For now, we'll just download them sequentially
+            // (Browser doesn't have native zip; using a workaround or you can use JSZip)
+            // Let's use a simple approach: data URLs
+
+            // If you want true ZIP, add JSZip via CDN:
+            if (typeof JSZip === 'undefined') {
+                alert('Add JSZip library to enable ZIP downloads. For now, downloading individually...');
+                for (const item of items) {
+                    await downloadCanvas(item.figure || item.portrait, item.name, prefix);
+                }
+                return;
+            }
+
+            const zip = new JSZip();
+            for (const item of items) {
+                const canvas = item.figure || item.portrait;
+                const stem = item.name.replace('.png', '');
+                const blob = await canvasToBlob(canvas);
+                zip.file(`${prefix}/${stem}.png`, blob);
+            }
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            downloadBlob(zipBlob, `sprites_${prefix}.zip`);
+        }
+
+        function downloadCanvas(canvas, origName, prefix) {
+            const stem = origName.replace('.png', '');
+            const filename = `${prefix}_${stem}.png`;
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = filename;
+            link.click();
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // ── Event Listeners ────────────────────────────────────────────────────
+        browseBtn.addEventListener('click', () => fileInput.click());
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            for (const file of files) {
+                if (!file.type.startsWith('image/png')) continue;
+                state.files.push({
+                    name: file.name,
+                    file: file,
+                    figure: null,
+                    portrait: null,
+                    status: 'pending',
+                });
+            }
+            updateFileList();
+            processBtn.disabled = false;
+        }
+
+        bustSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value) / 100;
+            state.bustFraction = val;
+            bustValue.textContent = e.target.value;
+            // Reprocess all files with new bust fraction
+            state.files.forEach(f => {
+                f.portrait = null;
+                f.status = 'pending';
+            });
+            updateFileList();
+            processBtn.disabled = false;
+        });
+
+        processBtn.addEventListener('click', async () => {
+            state.processing = true;
+            processBtn.disabled = true;
+            for (const fileItem of state.files) {
+                if (!fileItem.figure) {
+                    await processFile(fileItem);
+                }
+            }
+            state.processing = false;
+            updateFileList();
+        });
+
+        downloadFiguresBtn.addEventListener('click', () => {
+            downloadAsZip(state.files.filter(f => f.figure), 'figures');
+        });
+
+        downloadPortraitsBtn.addEventListener('click', () => {
+            downloadAsZip(state.files.filter(f => f.portrait), 'portraits');
+        });
+
+        downloadBothBtn.addEventListener('click', async () => {
+            if (typeof JSZip === 'undefined') {
+                alert('Add JSZip library for combined ZIP. Downloading separately...');
+                await downloadAsZip(state.files.filter(f => f.figure), 'figures');
+                await downloadAsZip(state.files.filter(f => f.portrait), 'portraits');
+                return;
+            }
+            const zip = new JSZip();
+            for (const item of state.files) {
+                const stem = item.name.replace('.png', '');
+                if (item.figure) {
+                    const blob = await canvasToBlob(item.figure);
+                    zip.file(`figures/${stem}.png`, blob);
+                }
+                if (item.portrait) {
+                    const blob = await canvasToBlob(item.portrait);
+                    zip.file(`portraits/${stem}.png`, blob);
+                }
+            }
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            downloadBlob(zipBlob, 'sprites_both.zip');
+        });
+    </script>
+
+    <!-- JSZip for ZIP support (optional but recommended) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</body>
+</html>
