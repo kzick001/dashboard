@@ -130,7 +130,7 @@ body::after {
 
 /* ─── HEADER ─────────────────────────────────────────────────── */
 #header {
-  height: var(--header-h);
+  min-height: var(--header-h);
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -1965,8 +1965,11 @@ body::after {
 /* belt */
 #scene-belt {
   position:relative; height:52px; border-radius:var(--r-sm);
-  background:repeating-linear-gradient(90deg, var(--surface-2) 0 14px, var(--bg-2) 14px 28px);
+  background:repeating-linear-gradient(90deg,
+    color-mix(in srgb, var(--belt-tint, var(--surface-2)) 18%, var(--surface-2)) 0 14px,
+    color-mix(in srgb, var(--belt-tint, var(--surface-2)) 10%, var(--bg-2)) 14px 28px);
   border:1px solid var(--border); overflow:visible; margin-top:-8px;
+  transition:background .3s ease;
 }
 .scene-belt-lane { position:absolute; inset:0; overflow:hidden; border-radius:var(--r-sm); }
 .scene-belt-lane .belt-pill {
@@ -2071,6 +2074,15 @@ body::after {
 @keyframes intakePulse {
   0%,100% { box-shadow:0 0 0 0 rgba(201,150,47,0); }
   40%     { box-shadow:0 0 0 3px rgba(201,150,47,.35); }
+}
+/* Issue 2: bottleneck highlight scoped to the offending card only — */
+/* box-shadow ring (no transform) so neighbors never reflow. */
+.scene-card.is-bottleneck {
+  animation:cardBottleneck 1.4s ease-in-out infinite;
+}
+@keyframes cardBottleneck {
+  0%,100% { box-shadow:0 0 0 0 rgba(168,62,43,0);   border-color:var(--border); }
+  50%     { box-shadow:0 0 0 3px rgba(168,62,43,.30); border-color:var(--bk-red); }
 }
 .scene-card {
   background:var(--surface-2); border:1px solid var(--border);
