@@ -909,6 +909,16 @@ function bottleneckKeys() {
   return bottleneckInfo().keys;
 }
 
+// Slow stage(s) for a SPECIFIC tier — drives the per-tier floor highlight.
+// Mirrors bottleneckInfo() logic but pinned to the viewed tier (Issue 3).
+function tierBottleneckKeys(tier) {
+  const r = { fill: stageRate(tier,'fill'), check: stageRate(tier,'check'), pack: stageRate(tier,'pack') };
+  const min = Math.min(r.fill, r.check, r.pack);
+  if (min <= 0 && r.fill === 0 && r.check === 0 && r.pack === 0) return [];
+  const slow = Object.keys(r).filter(k => r[k] === min);
+  return slow.length < 3 ? slow : [];   // all-equal = balanced, no highlight
+}
+
 function findBottleneck() {
   const bn = bottleneckInfo();
   if (!bn.tier || !bn.keys.length) return '✓ BALANCED';
@@ -1969,15 +1979,16 @@ function render() {
   el('wage-clock-stat')?.classList.toggle('wage-flash', _payrollMissedFlag);
   if (_payrollMissedFlag) { setTimeout(() => { _payrollMissedFlag = false; el('wage-clock-stat')?.classList.remove('wage-flash'); }, 1200); }
 
-  // ── Aggregate buffer totals (used by scene tote stacks + backlog below) ──
-  const aggFillToCheck = [1,2,3,4].reduce((s,t) => s + (state.buffers[t]?.fillToCheck || 0), 0);
-  const aggCheckToPack = [1,2,3,4].reduce((s,t) => s + (state.buffers[t]?.checkToPack || 0), 0);
+  // ── Viewed-tier buffer totals (per-tier floor view, Issue 3) ──
+  const vt           = viewTier();
+  const vtFillToCheck = state.buffers[vt]?.fillToCheck || 0;
+  const vtCheckToPack = state.buffers[vt]?.checkToPack || 0;
 
   // ── Scene totes + backlog badges (must run before renderConveyor reads belt-backup) ──
-  const redFill  = renderBacklog('scene-backlog-fill',  aggFillToCheck, aggStageRate('check'));
-  const redCheck = renderBacklog('scene-backlog-check', aggCheckToPack, aggStageRate('pack'));
-  renderToteStack('scene-totes-fill',  aggFillToCheck, aggStageRate('check'), 'var(--role-fill)');
-  renderToteStack('scene-totes-check', aggCheckToPack, aggStageRate('pack'),  'var(--role-check)');
+  const redFill  = renderBacklog('scene-backlog-fill',  vtFillToCheck, stageRate(vt,'check'));
+  const redCheck = renderBacklog('scene-backlog-check', vtCheckToPack, stageRate(vt,'pack'));
+  renderToteStack('scene-totes-fill',  vtFillToCheck, stageRate(vt,'check'), 'var(--role-fill)');
+  renderToteStack('scene-totes-check', vtCheckToPack, stageRate(vt,'pack'),  'var(--role-check)');
   el('scene-belt')?.classList.toggle('belt-backup', redFill || redCheck);
 
   // ── Conveyor belt ──
@@ -2036,9 +2047,16 @@ function render() {
     const cm = el(`ctrl-${role}-minus`); if (cm) cm.disabled     = cnt <= 0;
     const sr = el(`scene-rate-${role}`); if (sr) sr.textContent  = fmtRxMin(stageRate(tier, role));
   }
+  // ── Bottleneck highlight: viewed tier only, scoped to the slow card (Issue 2+3) ──
+  const vtSlow = tierBottleneckKeys(viewTier());
+  for (const role of ['fill','check','pack']) {
+    el(`scene-card-${role}`)?.classList.toggle('is-bottleneck', vtSlow.includes(role));
+  }
   // view-tier color strip
   const strip = el('scene-tier-strip');
   if (strip) strip.style.background = `var(--tier-${viewTier()})`;
+  // view-tier belt tint (Issue 4)
+  el('scene-belt')?.style.setProperty('--belt-tint', `var(--tier-${viewTier()})`);
 
   // ── Tier line panel ──
   renderTierLinePanel();
