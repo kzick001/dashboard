@@ -2058,9 +2058,6 @@ function render() {
   // view-tier belt tint (Issue 4)
   el('scene-belt')?.style.setProperty('--belt-tint', `var(--tier-${viewTier()})`);
 
-  // ── Tier line panel ──
-  renderTierLinePanel();
-
   // ── Station upgrades ──
   renderStationUpgrades();
 
