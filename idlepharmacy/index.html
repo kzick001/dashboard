@@ -1447,77 +1447,23 @@ function renderFigures(role) {
   container.innerHTML = html || '<span class="cluster-empty-hint"></span>';
 }
 
-function renderTierLinePanel() {
-  // Update tab states (cheap, safe every tick)
+function renderTierTabs() {
+  // Tab states — reveal/enable tiers as they unlock; keep the active highlight in sync.
+  // (Extracted from the retired renderTierLinePanel; the old #tier-line-panel UI is gone.)
   for (let t = 1; t <= 4; t++) {
     const tab = document.querySelector(`.tier-tab[data-tier="${t}"]`);
     if (!tab) continue;
-    const unlocked = state.drugTier >= t;
+    const unlocked  = state.drugTier >= t;
     const wasHidden = tab.hidden;
     tab.hidden   = !unlocked;            // locked tiers fully hidden
     tab.disabled = !unlocked;
     tab.classList.toggle('is-active', activeTierTab === t);
-    if (wasHidden && unlocked) {         // easy win #2: pop on unlock
+    if (wasHidden && unlocked) {         // pop on unlock
       tab.classList.remove('tab-pop'); void tab.offsetWidth; tab.classList.add('tab-pop');
     }
   }
-  // Guard: if active tab got locked, reset to 1
+  // Guard: if the active tab somehow got locked, fall back to tier 1.
   if (state.drugTier < activeTierTab) activeTierTab = 1;
-
-  const tier = activeTierTab;
-
-  // Signature: rebuild ONLY when tab or worker counts change. Otherwise just
-  // patch the rate text so we never destroy a button mid-tap on mobile.
-  const sig = tier + ':' +
-    ['fill','check','pack'].map(r =>
-      (state.staffPerTier[tier]?.[r] || 0) + '/' + (state.unassignedStaff[r] || 0)
-    ).join(',');
-
-  if (sig === _tierPanelSig) {
-    // Structure unchanged — just refresh the live rate readouts.
-    const stages = document.querySelectorAll('#tier-line-panel .tier-line-stage');
-    ['fill','check','pack'].forEach((role, i) => {
-      const rateEl = stages[i]?.querySelector('.tls-rate');
-      if (rateEl) rateEl.textContent = `${stageRate(tier, role).toFixed(2)} rx/s`;
-    });
-    return;
-  }
-  _tierPanelSig = sig;
-
-  const panel = el('tier-line-panel');
-  panel.innerHTML = '';
-  const line    = document.createElement('div');
-  line.className = 'tier-line';
-  line.dataset.tier = tier;
-
-  for (const role of ['fill', 'check', 'pack']) {
-    const count  = state.staffPerTier[tier]?.[role] || 0;
-    const rate   = stageRate(tier, role);
-    const canAdd = (state.unassignedStaff[role] || 0) > 0;
-    const canSub = count > 0;
-
-    const stage = document.createElement('div');
-    stage.className = 'tier-line-stage';
-    stage.innerHTML =
-      `<div class="tls-header">` +
-        `<span class="tls-role-badge role-${role}">${ROLE_LABEL[role]}</span>` +
-        `<span class="tls-rate">${rate.toFixed(2)} rx/s</span>` +
-      `</div>` +
-      `<div class="tls-controls">` +
-        `<button class="tls-btn tls-minus" data-tier="${tier}" data-role="${role}" ${canSub ? '' : 'disabled'}>` +
-          `<svg width="10" height="2" viewBox="0 0 10 2"><rect width="10" height="2" rx="1" fill="currentColor"/></svg>` +
-        `</button>` +
-        `<span class="tls-count">${count}</span>` +
-        `<button class="tls-btn tls-plus" data-tier="${tier}" data-role="${role}" ${canAdd ? '' : 'disabled'}>` +
-          `<svg width="10" height="10" viewBox="0 0 10 10"><rect x="4" y="0" width="2" height="10" rx="1" fill="currentColor"/><rect x="0" y="4" width="10" height="2" rx="1" fill="currentColor"/></svg>` +
-        `</button>` +
-      `</div>`;
-
-    stage.querySelector('.tls-plus' ).addEventListener('click', () => { assignWorker(tier, role);   render(); });
-    stage.querySelector('.tls-minus').addEventListener('click', () => { unassignWorker(tier, role); render(); });
-    line.appendChild(stage);
-  }
-  panel.appendChild(line);
 }
 
 // ─── STATION UPGRADES (GLOBAL) ────────────────────────────────
@@ -2057,6 +2003,9 @@ function render() {
   if (strip) strip.style.background = `var(--tier-${viewTier()})`;
   // view-tier belt tint (Issue 4)
   el('scene-belt')?.style.setProperty('--belt-tint', `var(--tier-${viewTier()})`);
+
+  // ── Tier tabs (active highlight + unlock reveal) ──
+  renderTierTabs();
 
   // ── Station upgrades ──
   renderStationUpgrades();
